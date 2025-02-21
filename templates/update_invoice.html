@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Invoice{% endblock %}
+
+{% block content %}
+
+
+<div class="row justify-content-center">
+    <div class="page-header col-md-8">
+        <h1 class="px-5"><i class="fas fa-edit me-2"></i>Update Invoice</h1>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body px-5">
+                <form method="post" action="{% url 'bookings:edit_invoice' invoice.invoiceId %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Booking Details</label>
+                        <div class="form-control bg-light">
+                            {{ invoice.booking.name }} - {{ invoice.booking.getTitle }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" value="{{ invoice.amount }}" min="0" step="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isPaid" name="isPaid" {% if invoice.isPaid %}checked{% endif %}>
+                            <label class="form-check-label" for="isPaid">
+                                Mark as Paid
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Invoice
+                        </button>
+                        <a href="{% url 'bookings:all_invoices' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+
+                {% if invoice.payment_details %}
+                <hr>
+                <div class="mt-4">
+                    <h4>Payment Details</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tr>
+                                <th>Payment ID:</th>
+                                <td>{{ invoice.payment_details.paymentId }}</td>
+                            </tr>
+                            <tr>
+                                <th>Payment Method:</th>
+                                <td>{{ invoice.payment_details.paymentMethod|default:"Not specified" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Paid Amount:</th>
+                                <td>${{ invoice.payment_details.amount }}</td>
+                            </tr>
+                            <tr>
+                                <th>Paid At:</th>
+                                <td>{{ invoice.payment_details.paidAt|date:"F d, Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <!-- Header Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1 text-primary fw-bold">
+                                <i class="fas fa-user-tag me-2"></i>Lead #{{ lead.leadId }}
+                            </h4>
+                            <span class="text-muted fs-6">
+                                <i class="fa fa-calendar me-1"></i>Created on {{ lead.createdAt|date:"F d, Y" }}
+                            </span>
+                            <span class="text-muted fs-6 d-block">
+                                <i class="fa fa-clock me-1"></i>Updated on {{ lead.updatedAt|date:"F d, Y" }}
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <div class="mb-2">
+                                {% if lead.isConverted %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Converted
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-info fs-6">{{ lead.source }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Contact Information -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-circle bg-primary text-white me-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Contact Information</h5>
+                            </div>
+                            <div class="contact-info">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted">Name</span>
+                                    <span class="fw-bold">{{ lead.name }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted">Email</span>
+                                    <span>{{ lead.email }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted">Phone Number</span>
+                                    <span>{{ lead.phone_number }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lead Details -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-circle bg-info text-white me-3">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Lead Details</h5>
+                            </div>
+                            <div class="lead-info">
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Notes</h6>
+                                    <p class="mb-0">{{ lead.notes|default:"No notes available" }}</p>
+                                </div>
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Content</h6>
+                                    <p class="mb-0">{{ lead.content|default:"No content available" }}</p>
+                                </div>
+                                {% if lead.emailSentAt %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Email sent on {{ lead.emailSentAt|date:"F d, Y" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'update_lead' lead.leadId %}" class="btn btn-primary me-2">
+                                <i class="fas fa-edit me-2"></i>Edit Lead
+                            </a>
+                        </div>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete Lead
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+           
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Delete Lead</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete this lead?</p>
+                            <p class="text-danger"><small>This action cannot be undone.</small></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form action="{% url 'delete_lead' lead.leadId %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

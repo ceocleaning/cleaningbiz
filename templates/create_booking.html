@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Booking{% endblock %}
+
+{% block content %}
+
+
+<div class="row justify-content-center">
+    <div class="page-header card col-md-8">
+        <h2 class="px-5"><i class="fas fa-plus me-2"></i>Create New Booking</h2>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-5">
+                <form method="post" action="{% url 'bookings:create_booking' %}">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="scheduledDateTime" class="form-label">Scheduled Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="scheduledDateTime" name="scheduledDateTime" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="bedrooms" class="form-label">Number of Bedrooms</label>
+                            <input type="number" class="form-control" id="bedrooms" name="bedrooms" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bathrooms" class="form-label">Number of Bathrooms</label>
+                            <input type="number" class="form-control" id="bathrooms" name="bathrooms" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="sqft" class="form-label">Square Footage</label>
+                            <input type="number" class="form-control" id="sqft" name="sqft" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="serviceType" class="form-label">Service Type</label>
+                        <select class="form-control form-select" name="serviceType" id="serviceType" required>
+                            <option value="regularCleaning">Regular Cleaning</option>
+                            <option value="deepCleaning">Deep Cleaning</option>
+                            <option value="commercialCleaning">Commercial Cleaning</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount ($)</label>
+                        <input type="number" readonly class="form-control" id="amount" name="amount" min="0" required>
+                        <span class="form-text text-muted">Amount will be calculated based on the number of bedrooms, bathrooms, and square footage.</span>
+                    </div>
+
+                    
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Booking
+                        </button>
+                        <a href="{% url 'bookings:all_bookings' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-calculate amount based on bedrooms, bathrooms, and sqft
+    function calculateAmount() {
+        const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
+        const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
+        const sqft = parseInt(document.getElementById('sqft').value) || 0;
+        const serviceType = document.getElementById('serviceType').value;
+        
+        // Base price
+        let amount = 0;
+        
+        // Add per bedroom
+        amount += bedrooms * 50;
+        
+        // Add per bathroom
+        amount += bathrooms * 25;
+        
+        // Add per sqft
+        amount += sqft * 0.30;
+
+        if(serviceType == 'deepCleaning') {
+            amount += amount * 0.20;
+        }
+        
+        document.getElementById('amount').value = amount;
+    }
+
+    // Add event listeners to recalculate amount when values change
+    document.getElementById('bedrooms').addEventListener('change', calculateAmount);
+    document.getElementById('bathrooms').addEventListener('change', calculateAmount);
+    document.getElementById('sqft').addEventListener('change', calculateAmount);
+    document.getElementById('serviceType').addEventListener('change', calculateAmount);
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="fas fa-edit text-primary me-2"></i>Update Lead
+                    </h4>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <!-- Contact Information -->
+                            <div class="col-md-12">
+                                <h5 class="text-muted mb-3">Contact Information</h5>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ lead.name }}" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ lead.email }}" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ lead.phone_number }}" required>
+                            </div>
+
+                            <!-- Lead Details -->
+                            <div class="col-md-12 mt-4">
+                                <h5 class="text-muted mb-3">Lead Details</h5>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label for="source" class="form-label">Lead Source</label>
+                                <input type="text" class="form-control" id="source" name="source" value="{{ lead.source }}" required>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ lead.notes }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label for="content" class="form-label">Content</label>
+                                <textarea class="form-control" id="content" name="content" rows="3">{{ lead.content }}</textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isConverted" name="isConverted" 
+                                           {% if lead.isConverted %}checked{% endif %}>
+                                    <label class="form-check-label" for="isConverted">
+                                        Mark as Converted
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Update Lead
+                                </button>
+                                <a href="{% url 'lead_detail' lead.leadId %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

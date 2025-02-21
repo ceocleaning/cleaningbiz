@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Invoice{% endblock %}
+
+{% block content %}
+
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title px-5 py-2"><i class="fas fa-file-invoice me-2"></i>Create New Invoice</h2>
+            </div>
+            <div class="card-body px-5">
+                <form method="post" action="{% url 'bookings:create_invoice' booking.bookingId %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="booking" class="form-label">Select Booking</label>
+                        <input type="text" class="form-control" readonly disabled id="booking" name="booking" required value="{{ booking }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" min="0" step="1" required value="{{ booking.amount }}" disabled>
+                        <div class="form-text">Amount will be pre-filled based on booking selection</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Invoice
+                        </button>
+                        <a href="{% url 'bookings:all_invoices' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('booking').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const amount = selectedOption.textContent.split('$').pop();
+        document.getElementById('amount').value = amount;
+    });
+</script>
+{% endblock %}

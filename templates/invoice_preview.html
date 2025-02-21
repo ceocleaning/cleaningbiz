@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-5">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <img src="https://media.licdn.com/dms/image/v2/D4D35AQEhamMro6zZFw/profile-framedphoto-shrink_200_200/profile-framedphoto-shrink_200_200/0/1737002152260?e=1740319200&v=beta&t=E-fNzzmd6mdhHgosoAg0uAc5MEcJSjbta7Y641VKfVs" alt="Logo" style="width: 150px;">
+                </div>
+                <div class="col-6 text-end">
+                    <h4 class="mb-0">CEO Cleaners</h4>
+                    <p class="text-muted mb-0 small">
+                        123 Business Street<br>
+                        New York, NY 10001<br>
+                        Phone: (555) 123-4567<br>
+                        Email: info@ceocleaners.com
+                    </p>
+                </div>
+            </div>
+
+            <!-- Invoice Header -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <h2 class="mb-0">INVOICE #{{ invoice.invoiceId }}</h2>
+                </div>
+                <div class="col-6 text-end">
+                    <h2 class="mb-0 {% if invoice.isPaid %}text-success{% else %}text-danger{% endif %}">
+                        {{ invoice.isPaid|yesno:"PAID,UNPAID" }}
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Invoice Details and Client Info -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <div class="row">
+                        <div class="col-4 text-muted">Invoice Date:</div>
+                        <div class="col-8">{{ invoice.createdAt|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4 text-muted">Due Date:</div>
+                        <div class="col-8">{{ invoice.createdAt|date:"F d, Y" }}</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="row">
+                        <div class="col-4 text-muted">Bill To:</div>
+                        <div class="col-8">
+                            {{ invoice.booking.name }}<br>
+                            {{ invoice.booking.email }}<br>
+                            {{ invoice.booking.phoneNumber }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="table-responsive mb-4">
+                <table class="table">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 33%">Description</th>
+                            <th style="width: 34%">Details</th>
+                            <th style="width: 33%" class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong></td>
+                            <td>
+                                Date: {{ invoice.booking.scheduledDateTime|date:"F d, Y" }}<br>
+                                Time: {{ invoice.booking.scheduledDateTime|date:"g:i A" }}<br>
+                                Bedrooms: {{ invoice.booking.bedrooms }}<br>
+                                Bathrooms: {{ invoice.booking.bathrooms }}<br>
+                                Area: {{ invoice.booking.sqft }} sq ft
+                            </td>
+                            <td class="text-end"><strong>${{ invoice.amount }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="text-end"><strong>Subtotal:</strong></td>
+                            <td class="text-end"><strong>${{ invoice.amount }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="text-end"><strong>Tax (0%):</strong></td>
+                            <td class="text-end"><strong>$0.00</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="text-end border-bottom"><strong>Total:</strong></td>
+                            <td class="text-end border-bottom"><strong>${{ invoice.amount }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payment Instructions -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <strong>Payment Instructions</strong>
+                        </div>
+                        <div class="card-body">
+                            <strong>Bank Transfer:</strong><br>
+                            Bank: Example Bank<br>
+                            Account Name: CEO Cleaners LLC<br>
+                            Account Number: XXXX-XXXX-XXXX-1234<br>
+                            Routing Number: XXX-XXX-XXX
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <strong>Note</strong>
+                        </div>
+                        <div class="card-body">
+                            1. Please include invoice number in payment reference<br>
+                            2. Payment is due within 30 days<br>
+                            3. Late payments may incur additional fees
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thank You Note -->
+            <div class="text-center mt-5">
+                <h3>Thank You for Your Business!</h3>
+                <p class="text-muted small">If you have any questions about this invoice, please contact us at (555) 123-4567 or info@ceocleaners.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center mt-4">
+        <a href="{% url 'bookings:generate_pdf' invoice.invoiceId %}" class="btn btn-primary">
+            <i class="fas fa-download me-2"></i>Save as PDF
+        </a>
+        <a href="{% url 'bookings:invoice_detail' invoice.invoiceId %}" class="btn btn-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i>Back to Invoice
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border: none;
+    }
+    .table th {
+        font-weight: 600;
+    }
+    .table td {
+        vertical-align: top;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+</style>
+{% endblock %}

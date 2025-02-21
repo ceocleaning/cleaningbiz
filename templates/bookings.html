@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Bookings{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center p-4">
+    <h1><i class="fas fa-calendar-alt me-2"></i>Bookings <span class="fs-5">( {{ bookings.count }} )</span></h1>
+    <a href="{% url 'bookings:create_booking' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>New Booking
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Bookings</h6>
+                        <h2 class="mt-2 mb-0">{{ bookings.count }}</h2>
+                    </div>
+                    <i class="fas fa-calendar fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Pending Bookings</h6>
+                        <h2 class="mt-2 mb-0">{{ pending_bookings }}</h2>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Completed Bookings</h6>
+                        <h2 class="mt-2 mb-0">{{ completed_bookings }}</h2>
+                    </div>
+                    <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.bookingId }}</td>
+                        <td>{{ booking.firstName }}</td>
+                        <td>{{ booking.cleaningDateTime|date:"M d, Y" }}</td>
+                        <td>
+                            {% if not booking.isCompleted %}
+                            <span class="badge bg-warning text-dark">
+                                Pending
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">
+                                Completed
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
+                               class="btn btn-sm btn-outline-primary me-2"
+                               data-bs-toggle="tooltip" 
+                               data-bs-title="View booking details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'bookings:edit_booking' booking.bookingId %}" 
+                               class="btn btn-sm btn-outline-info me-2"
+                               data-bs-toggle="tooltip" 
+                               data-bs-title="Edit booking">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if not booking.invoice %}
+                            <a href="{% url 'bookings:create_invoice' booking.bookingId %}" 
+                               class="btn btn-sm btn-outline-success me-2"
+                               data-bs-toggle="tooltip" 
+                               data-bs-title="Create invoice for this booking">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'bookings:delete_booking' booking.bookingId %}" 
+                               class="btn btn-sm btn-outline-danger"
+                               data-bs-toggle="tooltip" 
+                               data-bs-title="Delete booking">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No bookings found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    });
+</script>
+{% endblock %}

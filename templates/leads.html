@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="mb-0">
+                <i class="fas fa-user-friends text-primary me-2"></i>Leads
+            </h2>
+            <p class="text-muted">Manage your potential customers</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'create_lead' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Lead
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Lead ID</th>
+                            <th>Name</th>
+                            <th>Contact Info</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-user-tag text-primary me-2"></i>
+                                {{ lead.leadId }}
+                            </td>
+                            <td>{{ lead.name }}</td>
+                            <td>
+                                <div>{{ lead.email }}</div>
+                                <small class="text-muted">{{ lead.phone_number }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ lead.source }}</span>
+                            </td>
+                            <td>
+                                {% if lead.isConverted %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Converted
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ lead.createdAt|date:"M d, Y" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'lead_detail' lead.leadId %}" 
+                                   class="btn btn-sm btn-outline-primary me-2"
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="View lead details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'update_lead' lead.leadId %}" 
+                                   class="btn btn-sm btn-outline-info me-2"
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-title="Edit lead">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ lead.leadId }}"
+                                        data-bs-tooltip="tooltip"
+                                        data-bs-title="Delete lead">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal{{ lead.leadId }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Delete Lead</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Are you sure you want to delete the lead for {{ lead.name }}?</p>
+                                        <p class="text-danger"><small>This action cannot be undone.</small></p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form action="{% url 'delete_lead' lead.leadId %}" method="POST" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-user-friends fa-2x mb-3"></i>
+                                    <h5>No leads found</h5>
+                                    <p>Start by adding a new lead</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    });
+</script>
+{% endblock %}

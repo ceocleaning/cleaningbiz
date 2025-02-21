@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+    <h1><i class="fas fa-home me-2"></i>Welcome to Booking System</h1>
+    <p class="lead">Manage your bookings and invoices efficiently</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-alt fa-3x mb-3 text-primary"></i>
+                <h3 class="card-title">Bookings</h3>
+                <p class="card-text">View and manage all your bookings in one place</p>
+                <a href="{% url 'bookings:all_bookings' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i>Go to Bookings
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-invoice fa-3x mb-3 text-primary"></i>
+                <h3 class="card-title">Invoices</h3>
+                <p class="card-text">Generate and manage invoices for your bookings</p>
+                <a href="{% url 'bookings:all_invoices' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i>Go to Invoices
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-circle bg-primary text-white me-3">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <h5 class="card-title mb-0">Leads</h5>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded text-center">
+                            <h3 class="mb-1">{{ total_leads }}</h3>
+                            <small class="text-muted">Total Leads</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded text-center">
+                            <h3 class="mb-1">{{ converted_leads }}</h3>
+                            <small class="text-muted">Converted</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'all_leads' %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-list me-1"></i>View All Leads
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leads Overview -->
+
+
+
+{% endblock %}
