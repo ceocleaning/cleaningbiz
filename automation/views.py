@@ -30,7 +30,7 @@ def home(request):
         return redirect('accounts:register_business')
 
     bookings = Booking.objects.filter(business=business).order_by('-createdAt')
-    leads = Lead.objects.filter(user=request.user).order_by('-createdAt')
+    leads = Lead.objects.filter(business=business).order_by('-createdAt')
     converted_leads = leads.filter(isConverted=True)
     total_leads = leads.count()
     credentials = ApiCredential.objects.filter(business=business).first()

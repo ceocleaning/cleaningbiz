@@ -3,40 +3,113 @@
 {% block title %}Create Booking{% endblock %}
 
 {% block content %}
-
-
 <div class="row justify-content-center">
-    <div class="page-header card col-md-8">
+    <div class="page-header card col-md-10">
         <h2 class="px-5"><i class="fas fa-plus me-2"></i>Create New Booking</h2>
     </div>
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card">
             <div class="card-body p-5">
                 <form method="post" action="{% url 'bookings:create_booking' %}">
                     {% csrf_token %}
                     
+                    <!-- Customer Information -->
+                    <h5 class="mb-4"><i class="fas fa-user me-2"></i>Customer Information</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">Customer Name</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" required>
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" required>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="companyName" class="form-label">Company Name (Optional)</label>
+                            <input type="text" class="form-control" id="companyName" name="companyName">
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <h5 class="mb-4 mt-4"><i class="fas fa-map-marker-alt me-2"></i>Address Information</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="address1" class="form-label">Address Line 1</label>
+                            <input type="text" class="form-control" id="address1" name="address1" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="address2" class="form-label">Address Line 2 (Optional)</label>
+                            <input type="text" class="form-control" id="address2" name="address2">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="stateOrProvince" class="form-label">State/Province</label>
+                            <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="zipCode" class="form-label">ZIP Code</label>
+                            <input type="text" class="form-control" id="zipCode" name="zipCode" required>
+                        </div>
+                    </div>
+
+                    <!-- Service Details -->
+                    <h5 class="mb-4 mt-4"><i class="fas fa-broom me-2"></i>Service Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cleaningDateTime" class="form-label">Cleaning Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="cleaningDateTime" name="cleaningDateTime" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="serviceType" class="form-label">Service Type</label>
+                            <select class="form-control form-select" name="serviceType" id="serviceType" required>
+                                <option value="standard">Standard Cleaning</option>
+                                <option value="deep">Deep Cleaning</option>
+                                <option value="moveinmoveout">Move In/Move Out</option>
+                                <option value="airbnb">Airbnb Cleaning</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="phoneNumber" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required>
+                            <label for="recurring" class="form-label">Recurring Service</label>
+                            <select class="form-control form-select" name="recurring" id="recurring">
+                                <option value="one-time">One Time</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="biweekly">Bi-weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="scheduledDateTime" class="form-label">Scheduled Date & Time</label>
-                            <input type="datetime-local" class="form-control" id="scheduledDateTime" name="scheduledDateTime" required>
+                            <label for="paymentMethod" class="form-label">Payment Method</label>
+                            <select class="form-control form-select" name="paymentMethod" id="paymentMethod">
+                                <option value="creditcard">Credit Card</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="stripe">Stripe</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
                     </div>
 
+                    <!-- Property Details -->
+                    <h5 class="mb-4 mt-4"><i class="fas fa-home me-2"></i>Property Details</h5>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="bedrooms" class="form-label">Number of Bedrooms</label>
@@ -47,32 +120,104 @@
                             <input type="number" class="form-control" id="bathrooms" name="bathrooms" min="0" required>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="sqft" class="form-label">Square Footage</label>
-                            <input type="number" class="form-control" id="sqft" name="sqft" min="0" required>
+                            <label for="squareFeet" class="form-label">Square Footage</label>
+                            <input type="number" class="form-control" id="squareFeet" name="squareFeet" min="0" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="serviceType" class="form-label">Service Type</label>
-                        <select class="form-control form-select" name="serviceType" id="serviceType" required>
-                            <option value="regularCleaning">Regular Cleaning</option>
-                            <option value="deepCleaning">Deep Cleaning</option>
-                            <option value="commercialCleaning">Commercial Cleaning</option>
-                        </select>
+                    <!-- Add-ons -->
+                    <h5 class="mb-4 mt-4"><i class="fas fa-plus me-2"></i>Add-on Services</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="addonDishes" class="form-label">Dishes</label>
+                            <input type="number" class="form-control addon-input" id="addonDishes" name="addonDishes" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonLaundryLoads" class="form-label">Laundry Loads</label>
+                            <input type="number" class="form-control addon-input" id="addonLaundryLoads" name="addonLaundryLoads" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonWindowCleaning" class="form-label">Window Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonWindowCleaning" name="addonWindowCleaning" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonPetsCleaning" class="form-label">Pet Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonPetsCleaning" name="addonPetsCleaning" min="0" value="0">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="address" class="form-label">Address</label>
-                        <input type="text" class="form-control" id="address" name="address" required>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="addonFridgeCleaning" class="form-label">Fridge Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonFridgeCleaning" name="addonFridgeCleaning" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonOvenCleaning" class="form-label">Oven Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonOvenCleaning" name="addonOvenCleaning" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonBaseboard" class="form-label">Baseboard</label>
+                            <input type="number" class="form-control addon-input" id="addonBaseboard" name="addonBaseboard" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonBlinds" class="form-label">Blinds</label>
+                            <input type="number" class="form-control addon-input" id="addonBlinds" name="addonBlinds" min="0" value="0">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="amount" class="form-label">Amount ($)</label>
-                        <input type="number" readonly class="form-control" id="amount" name="amount" min="0" required>
-                        <span class="form-text text-muted">Amount will be calculated based on the number of bedrooms, bathrooms, and square footage.</span>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="addonGreenCleaning" class="form-label">Green Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonGreenCleaning" name="addonGreenCleaning" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonCabinetsCleaning" class="form-label">Cabinets Cleaning</label>
+                            <input type="number" class="form-control addon-input" id="addonCabinetsCleaning" name="addonCabinetsCleaning" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonPatioSweeping" class="form-label">Patio Sweeping</label>
+                            <input type="number" class="form-control addon-input" id="addonPatioSweeping" name="addonPatioSweeping" min="0" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="addonGarageSweeping" class="form-label">Garage Sweeping</label>
+                            <input type="number" class="form-control addon-input" id="addonGarageSweeping" name="addonGarageSweeping" min="0" value="0">
+                        </div>
                     </div>
 
-                    
+                    <!-- Custom Add-ons -->
+                    {% if custom_addons %}
+                    <h5 class="mb-4 mt-4"><i class="fas fa-star me-2"></i>Custom Add-ons</h5>
+                    <div class="row">
+                        {% for addon in custom_addons %}
+                        <div class="col-md-3 mb-3">
+                            <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
+                            <input type="number" class="form-control custom-addon-input" 
+                                   id="custom_addon_{{ addon.id }}" 
+                                   name="custom_addon_{{ addon.id }}" 
+                                   min="0" value="0"
+                                   data-price="{{ addon.addonPrice }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Additional Information -->
+                    <h5 class="mb-4 mt-4"><i class="fas fa-info-circle me-2"></i>Additional Information</h5>
+                    <div class="mb-3">
+                        <label for="otherRequests" class="form-label">Special Requests or Notes</label>
+                        <textarea class="form-control" id="otherRequests" name="otherRequests" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="totalPrice" class="form-label">Total Price ($)</label>
+                            <input type="number" class="form-control" id="totalPrice" name="totalPrice" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tax" class="form-label">Tax ($)</label>
+                            <input type="number" class="form-control" id="tax" name="tax" readonly>
+                        </div>
+                    </div>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
@@ -91,36 +236,97 @@
 
 {% block scripts %}
 <script>
-    // Auto-calculate amount based on bedrooms, bathrooms, and sqft
-    function calculateAmount() {
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements that affect price calculation
+    const priceElements = document.querySelectorAll('#bedrooms, #bathrooms, #squareFeet, #serviceType, .addon-input, .custom-addon-input');
+    
+    // Add event listeners to all price-affecting elements
+    priceElements.forEach(element => {
+        element.addEventListener('change', calculateTotal);
+        element.addEventListener('input', calculateTotal);
+    });
+
+    // Calculate total price
+    function calculateTotal() {
         const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
         const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
-        const sqft = parseInt(document.getElementById('sqft').value) || 0;
+        const squareFeet = parseInt(document.getElementById('squareFeet').value) || 0;
         const serviceType = document.getElementById('serviceType').value;
         
-        // Base price
-        let amount = 0;
+        // Base calculation (this should match your backend logic)
+        let basePrice = calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType);
         
-        // Add per bedroom
-        amount += bedrooms * 50;
+        // Add standard add-ons
+        let addonTotal = calculateAddonsTotal();
         
-        // Add per bathroom
-        amount += bathrooms * 25;
+        // Add custom add-ons
+        let customAddonTotal = calculateCustomAddonsTotal();
         
-        // Add per sqft
-        amount += sqft * 0.30;
-
-        if(serviceType == 'deepCleaning') {
-            amount += amount * 0.20;
-        }
+        // Calculate tax (assuming 8% - adjust as needed)
+        let subtotal = basePrice + addonTotal + customAddonTotal;
+        let tax = subtotal * 0.08;
         
-        document.getElementById('amount').value = amount;
+        // Update form fields
+        document.getElementById('totalPrice').value = subtotal.toFixed(2);
+        document.getElementById('tax').value = tax.toFixed(2);
     }
 
-    // Add event listeners to recalculate amount when values change
-    document.getElementById('bedrooms').addEventListener('change', calculateAmount);
-    document.getElementById('bathrooms').addEventListener('change', calculateAmount);
-    document.getElementById('sqft').addEventListener('change', calculateAmount);
-    document.getElementById('serviceType').addEventListener('change', calculateAmount);
+    function calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType) {
+        // Base rates (adjust these according to your business logic)
+        const BEDROOM_RATE = 30;
+        const BATHROOM_RATE = 25;
+        const SQFT_RATE = 0.15;
+        
+        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE) + (squareFeet * SQFT_RATE);
+        
+        // Service type multipliers
+        const SERVICE_MULTIPLIERS = {
+            'standard': 1,
+            'deep': 1.5,
+            'moveinmoveout': 2,
+            'airbnb': 1.3
+        };
+        
+        return basePrice * SERVICE_MULTIPLIERS[serviceType];
+    }
+
+    function calculateAddonsTotal() {
+        // Add-on rates (adjust these according to your business logic)
+        const ADDON_RATES = {
+            'addonDishes': 5,
+            'addonLaundryLoads': 10,
+            'addonWindowCleaning': 15,
+            'addonPetsCleaning': 20,
+            'addonFridgeCleaning': 25,
+            'addonOvenCleaning': 30,
+            'addonBaseboard': 20,
+            'addonBlinds': 15,
+            'addonGreenCleaning': 25,
+            'addonCabinetsCleaning': 20,
+            'addonPatioSweeping': 30,
+            'addonGarageSweeping': 35
+        };
+        
+        let total = 0;
+        for (const [addon, rate] of Object.entries(ADDON_RATES)) {
+            const quantity = parseInt(document.getElementById(addon).value) || 0;
+            total += quantity * rate;
+        }
+        return total;
+    }
+
+    function calculateCustomAddonsTotal() {
+        let total = 0;
+        document.querySelectorAll('.custom-addon-input').forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const price = parseFloat(input.dataset.price) || 0;
+            total += quantity * price;
+        });
+        return total;
+    }
+
+    // Initial calculation
+    calculateTotal();
+});
 </script>
 {% endblock %}

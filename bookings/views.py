@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Booking, Invoice, Payment
+from .models import Booking, Invoice, Payment, BookingCustomAddons
+from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
 import uuid
 from django.utils import timezone
 from django.template.loader import render_to_string
@@ -20,6 +21,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 import io
 from PIL import Image
 import requests
+from decimal import Decimal
 
 def all_bookings(request):
     bookings = Booking.objects.filter(business__user=request.user)
@@ -62,26 +64,93 @@ def create_booking(request):
 def edit_booking(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
     
+    # Check if user has permission to edit this booking
+    if booking.business not in request.user.businesses.all():
+        messages.error(request, 'You do not have permission to edit this booking.')
+        return redirect('bookings:all_bookings')
+    
     if request.method == 'POST':
         try:
-            booking.name = request.POST.get('name')
+            # Personal Information
+            booking.firstName = request.POST.get('firstName')
+            booking.lastName = request.POST.get('lastName')
             booking.email = request.POST.get('email')
             booking.phoneNumber = request.POST.get('phoneNumber')
-            booking.bedrooms = int(request.POST.get('bedrooms'))
-            booking.bathrooms = int(request.POST.get('bathrooms'))
+            booking.companyName = request.POST.get('companyName')
+            
+            # Address Information
+            booking.address1 = request.POST.get('address1')
+            booking.address2 = request.POST.get('address2')
+            booking.city = request.POST.get('city')
+            booking.stateOrProvince = request.POST.get('stateOrProvince')
+            booking.zipCode = request.POST.get('zipCode')
+            
+            # Property Details
+            booking.bedrooms = int(request.POST.get('bedrooms', 0))
+            booking.bathrooms = int(request.POST.get('bathrooms', 0))
+            booking.squareFeet = int(request.POST.get('squareFeet', 0))
+            
+            # Service Information
+            booking.cleaningDateTime = request.POST.get('cleaningDateTime')
             booking.serviceType = request.POST.get('serviceType')
-            booking.sqft = int(request.POST.get('sqft'))
-            booking.address = request.POST.get('address')
-            booking.amount = int(request.POST.get('amount'))
-            booking.scheduledDateTime = request.POST.get('scheduledDateTime')
+            booking.recurring = request.POST.get('recurring', 'one-time')
+            booking.paymentMethod = request.POST.get('paymentMethod')
+            
+            # Add-ons
+            booking.addonDishes = int(request.POST.get('addonDishes', 0))
+            booking.addonLaundryLoads = int(request.POST.get('addonLaundryLoads', 0))
+            booking.addonWindowCleaning = int(request.POST.get('addonWindowCleaning', 0))
+            booking.addonPetsCleaning = int(request.POST.get('addonPetsCleaning', 0))
+            booking.addonFridgeCleaning = int(request.POST.get('addonFridgeCleaning', 0))
+            booking.addonOvenCleaning = int(request.POST.get('addonOvenCleaning', 0))
+            booking.addonBaseboard = int(request.POST.get('addonBaseboard', 0))
+            booking.addonBlinds = int(request.POST.get('addonBlinds', 0))
+            booking.addonGreenCleaning = int(request.POST.get('addonGreenCleaning', 0))
+            booking.addonCabinetsCleaning = int(request.POST.get('addonCabinetsCleaning', 0))
+            booking.addonPatioSweeping = int(request.POST.get('addonPatioSweeping', 0))
+            booking.addonGarageSweeping = int(request.POST.get('addonGarageSweeping', 0))
+            
+            # Handle custom addons
+            custom_addons = []
+            for key, value in request.POST.items():
+                if key.startswith('custom_addon_'):
+                    addon_id = int(key.replace('custom_addon_', ''))
+                    qty = int(value)
+                    if qty > 0:
+                        custom_addon = get_object_or_404(CustomAddons, id=addon_id)
+                        booking_addon = BookingCustomAddons.objects.create(
+                            addon=custom_addon,
+                            qty=qty
+                        )
+                        custom_addons.append(booking_addon)
+            
+            if custom_addons:
+                booking.customAddons.set(custom_addons)
+            
+            # Additional Information
+            booking.otherRequests = request.POST.get('otherRequests')
+            booking.totalPrice = Decimal(request.POST.get('totalPrice', 0))
+            booking.tax = Decimal(request.POST.get('tax', 0))
+            
             booking.save()
             messages.success(request, 'Booking updated successfully!')
-            return redirect('bookings:all_bookings')
+            return redirect('bookings:booking_detail', bookingId=booking.bookingId)
+            
         except Exception as e:
             messages.error(request, f'Error updating booking: {str(e)}')
     
-    return render(request, 'update_booking.html', {'booking': booking})
-
+    # Get custom addons for the business
+    custom_addons = CustomAddons.objects.filter(business=booking.business)
+    
+    context = {
+        'booking': booking,
+        'custom_addons': custom_addons,
+        'service_types': dict(serviceTypes),
+        'payment_methods': dict(paymentMethods),
+        'recurring_options': dict(recurringOptions)
+    }
+    
+    return render(request, 'bookings/edit_booking.html', context)
 
 
 def mark_completed(request, bookingId):
@@ -329,7 +398,7 @@ def generate_pdf(request, invoiceId):
                 Time: {invoice.booking.scheduledDateTime.strftime('%I:%M %p')}<br/>
                 Bedrooms: {invoice.booking.bedrooms}<br/>
                 Bathrooms: {invoice.booking.bathrooms}<br/>
-                Area: {invoice.booking.sqft} sq ft
+                Area: {invoice.booking.squareFeet} sq ft
             """, styles['Normal']),
             Paragraph(f"<b>${invoice.amount}</b>", styles['RightAlign'])
         ],
