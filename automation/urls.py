@@ -6,7 +6,6 @@ from .api_views import getAvailability, addAppointment,  getInvoiceLink
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('save-credentials/', views.save_credentials, name='save_credentials'),
 
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='handle_retell_webhook_no_slash'),
     path('webhook/<str:secretKey>', handle_retell_webhook, name='handle_retell_webhook'),

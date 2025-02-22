@@ -87,8 +87,15 @@ WSGI_APPLICATION = 'leadsAutomation.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',       # or 'django.db.backends.postgresql' if you're using PostgreSQL
+        'NAME': os.environ['DATABASE_NAME'],                     # Database name
+        'USER': os.environ['DATABASE_USER'],                      # Username created in CloudPanel
+        'PASSWORD': os.environ['DATABASE_PASSWORD'],         # Password from CloudPanel
+        'HOST': os.environ['DATABASE_HOST'],                        # Usually 'localhost' if on the same server
+        'PORT': os.environ['DATABASE_PORT'],                             # Default MySQL/MariaDB port
+        'OPTIONS': {
+            'charset': 'utf8mb4',                   # Recommended for full UTF-8 support
+        },
     }
 }
 
@@ -128,6 +135,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static',]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

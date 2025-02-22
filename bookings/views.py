@@ -39,18 +39,36 @@ def all_bookings(request):
 def create_booking(request):
     if request.method == 'POST':
         try:
+            # Combine first and last name
+            full_name = f"{request.POST.get('firstName')} {request.POST.get('lastName')}".strip()
+            
+            # Combine address fields
+            full_address = f"{request.POST.get('address1')}"
+            if address2 := request.POST.get('address2'):
+                full_address += f", {address2}"
+            full_address += f", {request.POST.get('city')}, {request.POST.get('stateOrProvince')} {request.POST.get('zipCode')}"
+
+            # Create the booking
             booking = Booking.objects.create(
                 user=request.user,
-                name=request.POST.get('name'),
+                name=full_name,
                 email=request.POST.get('email'),
                 phoneNumber=request.POST.get('phoneNumber'),
-                bedrooms=int(request.POST.get('bedrooms')),
-                bathrooms=int(request.POST.get('bathrooms')),
+                company_name=request.POST.get('companyName', ''),
+                address=full_address,
                 serviceType=request.POST.get('serviceType'),
-                sqft=int(request.POST.get('sqft')),
-                address=request.POST.get('address'),
-                amount=int(request.POST.get('amount')),
-                scheduledDateTime=request.POST.get('scheduledDateTime')
+                scheduledDateTime=request.POST.get('cleaningDateTime'),
+                bedrooms=int(request.POST.get('bedrooms', 0)),
+                bathrooms=int(request.POST.get('bathrooms', 0)),
+                sqft=int(request.POST.get('squareFeet', 0)),
+                amount=float(request.POST.get('totalAmount', 0)),
+                # Add-ons
+                fridge_cleaning=int(request.POST.get('addonFridgeCleaning', 0)),
+                oven_cleaning=int(request.POST.get('addonOvenCleaning', 0)),
+                window_cleaning=int(request.POST.get('addonWindowCleaning', 0)),
+                cabinet_cleaning=int(request.POST.get('addonCabinetCleaning', 0)),
+                laundry=int(request.POST.get('addonLaundry', 0)),
+                custom_addons=request.POST.get('customAddons', '')
             )
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:all_bookings')

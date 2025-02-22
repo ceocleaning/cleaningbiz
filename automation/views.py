@@ -18,7 +18,7 @@ from datetime import datetime
 from bookings.models import Booking, Invoice, Payment
 from accounts.models import ApiCredential
 
-retell = Retell(api_key=os.environ["RETELL_API_KEY"])
+
 
 
 @login_required(login_url='accounts:login')
@@ -49,29 +49,11 @@ def home(request):
 
 
 
-@login_required(login_url='accounts:login')
-def save_credentials(request):
-    if request.method == 'POST':
-        credentials, created = Credentials.objects.get_or_create(user=request.user)
-        
-        credentials.apiKey = request.POST.get('apiKey')
-        credentials.auth_token = request.POST.get('auth_token')
-        credentials.twilio_number = request.POST.get('twilio_number')
-        credentials.twilio_whatsapp_number = request.POST.get('twilio_whatsapp_number')
-        credentials.save()
-        
-        messages.success(request, 'Credentials saved successfully!')
-        return redirect('home')
-    
-    return redirect('home')
-
-
-
 
 
 @login_required
 def all_leads(request):
-    leads = Lead.objects.filter(user=request.user).order_by('-createdAt')
+    leads = Lead.objects.filter(business__user=request.user).order_by('-createdAt')
     context = {
         'leads': leads
     }
@@ -99,7 +81,7 @@ def create_lead(request):
                 source=request.POST.get('source'),
                 notes=request.POST.get('notes'),
                 content=request.POST.get('content'),
-                user=request.user
+                business=request.user.business_set.first()
             )
             messages.success(request, f'Lead {lead.leadId} created successfully!')
             return redirect('lead_detail', leadId=lead.leadId)
