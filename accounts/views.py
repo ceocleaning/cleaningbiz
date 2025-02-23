@@ -4,8 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential
+from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
 import random
+from django.http import JsonResponse
 
 
 def SignupPage(request):
@@ -360,3 +361,52 @@ def generate_secret_key(request):
         messages.error(request, f'Error generating secret key: {str(e)}')
     
     return redirect('accounts:profile')
+
+
+@login_required
+def add_custom_addon(request):
+    if request.method == 'POST':
+        business = request.user.business
+        addon_name = request.POST.get('addonName')
+        addon_price = request.POST.get('addonPrice', 0)
+        
+        CustomAddons.objects.create(
+            business=business,
+            addonName=addon_name,
+            addonPrice=addon_price
+        )
+        
+        messages.success(request, 'Custom addon added successfully!')
+        return redirect('accounts:edit_business_settings')
+    
+    return redirect('accounts:edit_business_settings')
+
+
+@login_required
+def edit_custom_addon(request, addon_id):
+    try:
+        addon = CustomAddons.objects.get(id=addon_id, business=request.user.business)
+        
+        if request.method == 'POST':
+            addon.addonName = request.POST.get('addonName')
+            addon.addonPrice = request.POST.get('addonPrice', addon.addonPrice)
+            addon.save()
+            
+            messages.success(request, 'Custom addon updated successfully!')
+            return JsonResponse({'status': 'success'})
+            
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+        
+    except CustomAddons.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+
+
+@login_required
+def delete_custom_addon(request, addon_id):
+    try:
+        addon = CustomAddons.objects.get(id=addon_id, business=request.user.business)
+        addon.delete()
+        messages.success(request, 'Custom addon deleted successfully!')
+        return JsonResponse({'status': 'success'})
+    except CustomAddons.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)

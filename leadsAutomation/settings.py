@@ -87,15 +87,8 @@ WSGI_APPLICATION = 'leadsAutomation.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',       # or 'django.db.backends.postgresql' if you're using PostgreSQL
-        'NAME': os.environ['DATABASE_NAME'],                     # Database name
-        'USER': os.environ['DATABASE_USER'],                      # Username created in CloudPanel
-        'PASSWORD': os.environ['DATABASE_PASSWORD'],         # Password from CloudPanel
-        'HOST': os.environ['DATABASE_HOST'],                        # Usually 'localhost' if on the same server
-        'PORT': os.environ['DATABASE_PORT'],                             # Default MySQL/MariaDB port
-        'OPTIONS': {
-            'charset': 'utf8mb4',                   # Recommended for full UTF-8 support
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -169,14 +162,6 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = 587  # Or 465 for SSL
-EMAIL_USE_TLS = True  # Use True if TLS is used, False if SSL is used
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 
 CSRF_TRUSTED_ORIGINS = [

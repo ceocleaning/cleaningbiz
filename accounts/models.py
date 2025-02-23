@@ -46,6 +46,9 @@ class BookingIntegration(models.Model):
     apiKey = models.CharField(max_length=255, null=True, blank=True)
     webhookUrl = models.URLField(null=True, blank=True)
 
+    emailHostUser = models.CharField(max_length=255, null=True, blank=True)
+    emailHostPasswrod = models.CharField(max_length=255, null=True, blank=True)
+
     def __str__(self):
         return self.business.businessName
 

@@ -103,7 +103,7 @@
                                 <input type="number" step="0.01" class="form-control" id="addonPriceGarage" name="addonPriceGarage" value="{{ settings.addonPriceGarage }}" required>
                             </div>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -114,4 +114,33 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle delete button click
+    $('.delete-addon').click(function() {
+        if (confirm('Are you sure you want to delete this addon?')) {
+            const addonId = $(this).data('addon-id');
+            
+            $.ajax({
+                url: `/accounts/custom-addon/${addonId}/delete/`,
+                method: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    alert('Error deleting addon');
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}
