@@ -53,6 +53,8 @@ def home(request):
 
 @login_required
 def all_leads(request):
+    if not request.user.business_set.first():
+        return redirect('accounts:register_business')
     leads = Lead.objects.filter(business__user=request.user).order_by('-createdAt')
     context = {
         'leads': leads

@@ -24,6 +24,8 @@ import requests
 from decimal import Decimal
 
 def all_bookings(request):
+    if not Business.objects.filter(user=request.user).exists():
+        return redirect('accounts:register_business')
     bookings = Booking.objects.filter(business__user=request.user)
     pending_bookings = bookings.filter(isCompleted=False).count()
     completed_bookings = bookings.filter(isCompleted=True).count()
@@ -192,6 +194,9 @@ def delete_booking(request, bookingId):
 
 @login_required
 def all_invoices(request):
+    if not request.user.business_set.first():
+        return redirect('accounts:register_business')
+
     invoices = Invoice.objects.select_related('booking').filter(booking__user=request.user).order_by('createdAt')
     pending_invoices = invoices.filter(isPaid=False).count()
     paid_invoices = invoices.filter(isPaid=True).count()
