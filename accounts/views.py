@@ -368,47 +368,64 @@ def generate_secret_key(request):
 @login_required
 def add_custom_addon(request):
     if request.method == 'POST':
-        business = request.user.business
+        business = request.user.business_set.first()
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
         addon_name = request.POST.get('addonName')
+        addon_data_name = request.POST.get('addonDataName')
         addon_price = request.POST.get('addonPrice', 0)
         
         CustomAddons.objects.create(
             business=business,
             addonName=addon_name,
+            addonDataName=addon_data_name,
             addonPrice=addon_price
         )
         
         messages.success(request, 'Custom addon added successfully!')
-        return redirect('accounts:edit_business_settings')
+        return redirect('accounts:profile')
     
-    return redirect('accounts:edit_business_settings')
+    return redirect('accounts:profile')
 
 
 @login_required
 def edit_custom_addon(request, addon_id):
-    try:
-        addon = CustomAddons.objects.get(id=addon_id, business=request.user.business)
-        
-        if request.method == 'POST':
+    if request.method == 'POST':
+        try:
+            business = request.user.business_set.first()
+            if not business:
+                return JsonResponse({'status': 'error', 'message': 'No business found'}, status=404)
+            
+            addon = CustomAddons.objects.get(id=addon_id, business=business)
             addon.addonName = request.POST.get('addonName')
+            addon.addonDataName = request.POST.get('addonDataName')
             addon.addonPrice = request.POST.get('addonPrice', addon.addonPrice)
             addon.save()
             
-            messages.success(request, 'Custom addon updated successfully!')
             return JsonResponse({'status': 'success'})
-            
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-        
-    except CustomAddons.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+        except CustomAddons.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 
 @login_required
 def delete_custom_addon(request, addon_id):
-    try:
-        addon = CustomAddons.objects.get(id=addon_id, business=request.user.business)
-        addon.delete()
-        messages.success(request, 'Custom addon deleted successfully!')
-        return JsonResponse({'status': 'success'})
-    except CustomAddons.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+    if request.method == 'POST':
+        try:
+            business = request.user.business_set.first()
+            if not business:
+                return JsonResponse({'status': 'error', 'message': 'No business found'}, status=404)
+            
+            addon = CustomAddons.objects.get(id=addon_id, business=business)
+            addon.delete()
+            return JsonResponse({'status': 'success'})
+        except CustomAddons.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)

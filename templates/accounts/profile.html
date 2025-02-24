@@ -255,7 +255,7 @@
                                         <p class="mb-1"><strong>Secret Key:</strong></p>
                                         <div class="d-flex align-items-center">
                                             {% if credentials.secretKey %}
-                                                <span class="text-muted secret-key" id="secretKey">•••••••••••••••</span>
+                                                <span class="text-muted secret-key" id="secretKey" data-key="{{ credentials.secretKey }}">•••••••••••••••</span>
                                                 <button class="btn btn-link btn-sm ms-2" onclick="toggleSecretKey(this)">
                                                     Show
                                                 </button>
@@ -451,7 +451,7 @@
                 <h5 class="modal-title" id="addCustomAddonModalLabel">Add Custom Addon</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'accounts:add_custom_addon' %}">
+            <form id="addCustomAddonForm" method="post" action="{% url 'accounts:add_custom_addon' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -524,100 +524,136 @@
 
 {% block scripts %}
 <script>
-function toggleSecretKey(button) {
-    const secretKey = document.getElementById('secretKey');
-    if (secretKey.textContent === '•••••••••••••••') {
-        secretKey.textContent = '{{ credentials.secretKey }}';
-        button.textContent = 'Hide';
-    } else {
-        secretKey.textContent = '•••••••••••••••';
-        button.textContent = 'Show';
-    }
-}
-
-function copyWebhookUrl(button) {
-    const webhookUrl = 'https://04b5-223-123-91-197.ngrok-free.app/webhook/{{ credentials.secretKey }}/';
-    navigator.clipboard.writeText(webhookUrl).then(() => {
-        button.textContent = 'Copied!';
-        setTimeout(() => {
-            button.textContent = 'Copy';
-        }, 2000);
-    });
-}
-
-$(document).ready(function() {
     // Function to generate data name from addon name
     function generateDataName(addonName) {
         return addonName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
     }
 
-    // Handle addon name input for new addon
-    $('#addonName').on('input', function() {
-        const dataName = generateDataName($(this).val());
-        $('#addonDataName').val(dataName);
-    });
+    // Function to show/hide secret key
+    function toggleSecretKey(button) {
+        const secretKey = button.previousElementSibling;
+        if (secretKey.textContent === '•••••••••••••••') {
+            secretKey.textContent = secretKey.dataset.key;
+            button.textContent = 'Hide';
+        } else {
+            secretKey.textContent = '•••••••••••••••';
+            button.textContent = 'Show';
+        }
+    }
 
-    // Handle addon name input for edit addon
-    $('#editAddonName').on('input', function() {
-        const dataName = generateDataName($(this).val());
-        $('#editAddonDataName').val(dataName);
-    });
-
-    // Handle edit button click
-    $('.edit-addon').click(function() {
-        const addonId = $(this).data('addon-id');
-        const addonName = $(this).data('addon-name');
-        const addonDataName = $(this).data('addon-data-name');
-        const addonPrice = $(this).data('addon-price');
-        
-        $('#editAddonId').val(addonId);
-        $('#editAddonName').val(addonName);
-        $('#editAddonDataName').val(addonDataName);
-        $('#editAddonPrice').val(addonPrice);
-    });
-    
-    // Handle edit form submission
-    $('#editAddonForm').submit(function(e) {
-        e.preventDefault();
-        const addonId = $('#editAddonId').val();
-        
-        $.ajax({
-            url: `/accounts/custom-addon/${addonId}/edit/`,
-            method: 'POST',
-            data: $(this).serialize(),
-            success: function(response) {
-                if (response.status === 'success') {
-                    location.reload();
-                }
-            },
-            error: function(xhr) {
-                alert('Error updating addon');
-            }
+    // Function to copy webhook URL
+    function copyWebhookUrl(button) {
+        const webhookUrl = 'https://04b5-223-123-91-197.ngrok-free.app/webhook/{{ credentials.secretKey }}/';
+        navigator.clipboard.writeText(webhookUrl).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
         });
-    });
-    
-    // Handle delete button click
-    $('.delete-addon').click(function() {
-        if (confirm('Are you sure you want to delete this addon?')) {
-            const addonId = $(this).data('addon-id');
-            
-            $.ajax({
-                url: `/accounts/custom-addon/${addonId}/delete/`,
-                method: 'POST',
-                data: {
-                    csrfmiddlewaretoken: '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    if (response.status === 'success') {
-                        location.reload();
-                    }
-                },
-                error: function(xhr) {
-                    alert('Error deleting addon');
-                }
+    }
+
+    // Wait for DOM to be loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle addon name input for new addon
+        const addonNameInput = document.getElementById('addonName');
+        const addonDataNameInput = document.getElementById('addonDataName');
+        
+        if (addonNameInput) {
+            addonNameInput.addEventListener('input', function() {
+                const dataName = generateDataName(this.value);
+                addonDataNameInput.value = dataName;
             });
         }
+
+        // Handle addon name input for edit addon
+        const editAddonNameInput = document.getElementById('editAddonName');
+        const editAddonDataNameInput = document.getElementById('editAddonDataName');
+        
+        if (editAddonNameInput) {
+            editAddonNameInput.addEventListener('input', function() {
+                const dataName = generateDataName(this.value);
+                editAddonDataNameInput.value = dataName;
+            });
+        }
+
+        // Handle new addon form submission
+        const addCustomAddonForm = document.getElementById('addCustomAddonForm');
+        if (addCustomAddonForm) {
+            addCustomAddonForm.addEventListener('submit', function() {
+                const addonName = addonNameInput.value;
+                const dataName = generateDataName(addonName);
+                addonDataNameInput.value = dataName;
+            });
+        }
+
+        // Handle edit form submission
+        const editAddonForm = document.getElementById('editAddonForm');
+        if (editAddonForm) {
+            editAddonForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const addonId = document.getElementById('editAddonId').value;
+                const addonName = editAddonNameInput.value;
+                const dataName = generateDataName(addonName);
+                editAddonDataNameInput.value = dataName;
+
+                fetch(`/account/custom-addon/${addonId}/edit/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(new FormData(editAddonForm))
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.reload();
+                    }
+                })
+                .catch(() => {
+                    alert('Error updating addon');
+                });
+            });
+        }
+
+        // Handle delete buttons
+        document.querySelectorAll('.delete-addon').forEach(button => {
+            button.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this addon?')) {
+                    const addonId = this.dataset.addonId;
+                    fetch(`/account/custom-addon/${addonId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(() => {
+                        alert('Error deleting addon');
+                    });
+                }
+            });
+        });
+
+        // Handle edit buttons
+        document.querySelectorAll('.edit-addon').forEach(button => {
+            button.addEventListener('click', function() {
+                const addonId = this.dataset.addonId;
+                const addonName = this.dataset.addonName;
+                const addonDataName = this.dataset.addonDataName;
+                const addonPrice = this.dataset.addonPrice;
+
+                document.getElementById('editAddonId').value = addonId;
+                document.getElementById('editAddonName').value = addonName;
+                document.getElementById('editAddonDataName').value = addonDataName;
+                document.getElementById('editAddonPrice').value = addonPrice;
+            });
+        });
     });
-});
 </script>
 {% endblock %}

@@ -105,5 +105,20 @@ class CustomAddons(models.Model):
     addonDataName = models.CharField(max_length=255, null=True, blank=True)
     addonPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
+    def generate_data_name(self):
+        if not self.addonName:
+            return None
+        # Convert to lowercase and replace spaces and special chars with underscore
+        data_name = self.addonName.lower()
+        data_name = ''.join(c if c.isalnum() else '_' for c in data_name)
+        # Remove consecutive underscores and trim
+        data_name = '_'.join(filter(None, data_name.split('_')))
+        return data_name
+    
+    def save(self, *args, **kwargs):
+        if not self.addonDataName and self.addonName:
+            self.addonDataName = self.generate_data_name()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return self.addonName
