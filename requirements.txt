@@ -25,11 +25,14 @@ httpcore==1.0.7
 httpx==0.27.2
 idna==3.10
 multidict==6.1.0
+mysqlclient==2.2.7
 packaging==24.2
 pillow==11.1.0
+postgres==4.0
 propcache==0.3.0
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
+psycopg2-pool==1.2
 pycparser==2.22
 pydantic==2.10.6
 pydantic_core==2.27.2
