@@ -279,7 +279,7 @@
                                         <strong>Retell Webhook URL:</strong><br>
                                         {% if credentials.secretKey %}
                                             <span class="text-muted">
-                                                https://04b5-223-123-91-197.ngrok-free.app/webhook/{{ credentials.secretKey }}/
+                                                https://ceocleaners.up.railway.app/webhook/{{ credentials.secretKey }}/
                                             </span>
                                             <button class="btn btn-link btn-sm" onclick="copyWebhookUrl(this)">
                                                 Copy
@@ -543,7 +543,7 @@
 
     // Function to copy webhook URL
     function copyWebhookUrl(button) {
-        const webhookUrl = 'https://04b5-223-123-91-197.ngrok-free.app/webhook/{{ credentials.secretKey }}/';
+        const webhookUrl = 'https://ceocleaners.up.railway.app/webhook/{{ credentials.secretKey }}/';
         navigator.clipboard.writeText(webhookUrl).then(() => {
             button.textContent = 'Copied!';
             setTimeout(() => {
