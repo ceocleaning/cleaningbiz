@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
-from .api_views import getAvailability, addAppointment,  getInvoiceLink
+
 
 
 urlpatterns = [
@@ -20,7 +20,5 @@ urlpatterns = [
     path('leads/<str:leadId>/update/', views.update_lead, name='update_lead'),
     path('leads/<str:leadId>/delete/', views.delete_lead, name='delete_lead'),
 
-    path('api/get-availability/', getAvailability, name='getAvailability'),
-    path('api/add-appointment/', addAppointment, name='addAppointment'),
-    path('api/get-invoice-link/', getInvoiceLink, name='getInvoiceLink'),
+   
 ]
