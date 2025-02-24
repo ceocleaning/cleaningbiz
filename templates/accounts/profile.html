@@ -327,6 +327,7 @@
                                     <thead>
                                         <tr>
                                             <th>Name</th>
+                                            <th>Data Name</th>
                                             <th>Price</th>
                                             <th class="text-end">Actions</th>
                                         </tr>
@@ -335,11 +336,13 @@
                                         {% for addon in business.business_custom_addons.all %}
                                         <tr>
                                             <td>{{ addon.addonName }}</td>
+                                            <td>{{ addon.addonDataName }}</td>
                                             <td>${{ addon.addonPrice }}</td>
                                             <td class="text-end">
                                                 <button type="button" class="btn btn-sm btn-outline-primary edit-addon me-2" 
                                                         data-addon-id="{{ addon.id }}"
                                                         data-addon-name="{{ addon.addonName }}"
+                                                        data-addon-data-name="{{ addon.addonDataName }}"
                                                         data-addon-price="{{ addon.addonPrice }}"
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#editCustomAddonModal">
@@ -353,7 +356,7 @@
                                         </tr>
                                         {% empty %}
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted">
+                                            <td colspan="4" class="text-center text-muted">
                                                 <p class="my-4">No custom addons added yet</p>
                                             </td>
                                         </tr>
@@ -455,6 +458,13 @@
                         <label for="addonName" class="form-label">Addon Name</label>
                         <input type="text" class="form-control" id="addonName" name="addonName" required>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="addonDataName" class="form-label">Addon Data Name</label>
+                        <input type="text" class="form-control" id="addonDataName" name="addonDataName" readonly>
+                        <small class="text-muted">This will be automatically generated from the addon name</small>
+                    </div>
+
                     <div class="mb-3">
                         <label for="addonPrice" class="form-label">Price</label>
                         <div class="input-group">
@@ -487,6 +497,11 @@
                     <div class="mb-3">
                         <label for="editAddonName" class="form-label">Addon Name</label>
                         <input type="text" class="form-control" id="editAddonName" name="addonName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAddonDataName" class="form-label">Addon Data Name</label>
+                        <input type="text" class="form-control" id="editAddonDataName" name="addonDataName" readonly>
+                        <small class="text-muted">This will be automatically generated from the addon name</small>
                     </div>
                     <div class="mb-3">
                         <label for="editAddonPrice" class="form-label">Price</label>
@@ -531,14 +546,33 @@ function copyWebhookUrl(button) {
 }
 
 $(document).ready(function() {
+    // Function to generate data name from addon name
+    function generateDataName(addonName) {
+        return addonName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+
+    // Handle addon name input for new addon
+    $('#addonName').on('input', function() {
+        const dataName = generateDataName($(this).val());
+        $('#addonDataName').val(dataName);
+    });
+
+    // Handle addon name input for edit addon
+    $('#editAddonName').on('input', function() {
+        const dataName = generateDataName($(this).val());
+        $('#editAddonDataName').val(dataName);
+    });
+
     // Handle edit button click
     $('.edit-addon').click(function() {
         const addonId = $(this).data('addon-id');
         const addonName = $(this).data('addon-name');
+        const addonDataName = $(this).data('addon-data-name');
         const addonPrice = $(this).data('addon-price');
         
         $('#editAddonId').val(addonId);
         $('#editAddonName').val(addonName);
+        $('#editAddonDataName').val(addonDataName);
         $('#editAddonPrice').val(addonPrice);
     });
     

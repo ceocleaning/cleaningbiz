@@ -266,6 +266,8 @@ def edit_credentials(request):
             credentials.retellAPIKey = request.POST.get('retellAPIKey')
             credentials.retellWebhookURL = request.POST.get('retellWebhookURL')
             credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber')
+            credentials.gmail_host_user = request.POST.get('gmail_host_user')
+            credentials.gmail_host_password = request.POST.get('gmail_host_password')
             credentials.save()
             
             messages.success(request, 'API credentials updated successfully!')

@@ -27,13 +27,15 @@ class Business(models.Model):
         super().save(*args, **kwargs)
 
     def generateBusinessId(self):
-        return f"BUS-{random.randint(1000000000, 9999999999)}"
+        return f"BUS-{random.randint(1000, 9999)}"
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
     retellAPIKey = models.CharField(max_length=255, null=True, blank=True)
     retellWebhookURL = models.URLField(null=True, blank=True)
     voiceAgentNumber = models.CharField(max_length=20, null=True, blank=True)
+    gmail_host_user = models.CharField(max_length=255, null=True, blank=True)
+    gmail_host_password = models.CharField(max_length=255, null=True, blank=True)
 
     secretKey = models.CharField(max_length=255, null=True, blank=True, unique=True) # Business Secret Key to Verify Incoming Webhook Data
 
@@ -46,8 +48,7 @@ class BookingIntegration(models.Model):
     apiKey = models.CharField(max_length=255, null=True, blank=True)
     webhookUrl = models.URLField(null=True, blank=True)
 
-    emailHostUser = models.CharField(max_length=255, null=True, blank=True)
-    emailHostPasswrod = models.CharField(max_length=255, null=True, blank=True)
+    
 
     def __str__(self):
         return self.business.businessName
@@ -101,6 +102,7 @@ class BusinessSettings(models.Model):
 class CustomAddons(models.Model):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_custom_addons')
     addonName = models.CharField(max_length=255, null=True, blank=True)
+    addonDataName = models.CharField(max_length=255, null=True, blank=True)
     addonPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def __str__(self):
