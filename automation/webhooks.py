@@ -14,17 +14,12 @@ from .utils import calculateAmount, calculateAddonsAmount
 
 
 @csrf_exempt
-def thumbtack_webhook(request, secretKey):
-    verifyScret = ApiCredential.objects.filter(secretKey=secretKey).first()
-    business = verifyScret.business
-    if not verifyScret:
-        return HttpResponse(status=401)
-    
+def thumbtack_webhook(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         print(data)
     
-    return HttpResponse(status=405)
+    return HttpResponse(status=200)
 
 
 

@@ -10,8 +10,8 @@ urlpatterns = [
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='handle_retell_webhook_no_slash'),
     path('webhook/<str:secretKey>', handle_retell_webhook, name='handle_retell_webhook'),
 
-    path('thubtack-webhook/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook_no_slash'),
-    path('thubtack-webhook/<str:secretKey>', thumbtack_webhook, name='thumbtack_webhook'),
+    path('thumbtack-webhook/', thumbtack_webhook, name='thumbtack_webhook_no_slash'),
+    path('thumbtack-webhook', thumbtack_webhook, name='thumbtack_webhook'),
 
     # Lead Management URLs
     path('leads/', views.all_leads, name='all_leads'),
