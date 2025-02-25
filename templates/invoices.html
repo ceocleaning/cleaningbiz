@@ -68,7 +68,7 @@
                     {% for invoice in invoices %}
                     <tr>
                         <td>{{ invoice.invoiceId }}</td>
-                        <td>{{ invoice.booking.name }}</td>
+                        <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                         <td>${{ invoice.amount }}</td>
                         <td>
                             {% if invoice.isPaid %}
