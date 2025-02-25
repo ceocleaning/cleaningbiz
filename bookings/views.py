@@ -22,6 +22,8 @@ import io
 from PIL import Image
 import requests
 from decimal import Decimal
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -39,25 +41,21 @@ def all_bookings(request):
 
 @require_http_methods(["GET", "POST"])
 def create_booking(request):
+    business = Business.objects.get(user=request.user)
+    business_settings = BusinessSettings.objects.get(business=business)
     if request.method == 'POST':
         try:
-            # Combine first and last name
-            full_name = f"{request.POST.get('firstName')} {request.POST.get('lastName')}".strip()
             
-            # Combine address fields
-            full_address = f"{request.POST.get('address1')}"
-            if address2 := request.POST.get('address2'):
-                full_address += f", {address2}"
-            full_address += f", {request.POST.get('city')}, {request.POST.get('stateOrProvince')} {request.POST.get('zipCode')}"
 
             # Create the booking
             booking = Booking.objects.create(
-                business=request.user.business_set.first(),
-                name=full_name,
+                business=business,
+                firstName=request.POST.get('firstName'),
+                lastName=request.POST.get('lastName'),
                 email=request.POST.get('email'),
                 phoneNumber=request.POST.get('phoneNumber'),
                 company_name=request.POST.get('companyName', ''),
-                address=full_address,
+                address=request.POST.get('address1'),
                 serviceType=request.POST.get('serviceType'),
                 scheduledDateTime=request.POST.get('cleaningDateTime'),
                 bedrooms=int(request.POST.get('bedrooms', 0)),
@@ -78,7 +76,37 @@ def create_booking(request):
             messages.error(request, f'Error creating booking: {str(e)}')
             return redirect('bookings:create_booking')
     
-    return render(request, 'create_booking.html')
+    customAddons = CustomAddons.objects.filter(business__user=request.user)
+    prices = {
+        'bedrooms': float(business_settings.bedroomPrice),
+        'bathrooms': float(business_settings.bathroomPrice),
+        'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
+        'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
+        'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
+        'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+
+        'addonPriceDishes': float(business_settings.addonPriceDishes),
+        'addonPriceLaundry': float(business_settings.addonPriceLaundry),
+        'addonPriceWindow': float(business_settings.addonPriceWindow),
+        'addonPricePets': float(business_settings.addonPricePets),
+        'addonPriceFridge': float(business_settings.addonPriceFridge),
+        'addonPriceOven': float(business_settings.addonPriceOven),
+        'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
+        'addonPriceBlinds': float(business_settings.addonPriceBlinds),
+        'addonPriceGreen': float(business_settings.addonPriceGreen),
+        'addonPriceCabinets': float(business_settings.addonPriceCabinets),
+        'addonPricePatio': float(business_settings.addonPricePatio),
+        'addonPriceGarage': float(business_settings.addonPriceGarage),
+
+        'tax': float(business_settings.taxPercent),
+    }
+
+    context = {
+        'customAddons': customAddons,
+        'prices': json.dumps(prices)
+    }
+
+    return render(request, 'create_booking.html', context)
 
 @require_http_methods(["GET", "POST"])
 def edit_booking(request, bookingId):

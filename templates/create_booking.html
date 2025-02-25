@@ -201,6 +201,17 @@
                     </div>
                     {% endif %}
 
+                    <!-- Custom Add-ons -->
+                     <h5 class="mb-4 mt-4">Custom Add-ons</h5>
+                     <div class="row">
+                        {% for addon in customAddons %}
+                        <div class="col-md-3 mb-3">
+                            <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
+                            <input type="number" class="form-control custom-addon-input" name="custom_addon_{{ addon.id }}" min="0" value="0">
+                        </div>
+                        {% endfor %}
+                    </div>
+
                     <!-- Additional Information -->
                     <h5 class="mb-4 mt-4"><i class="fas fa-info-circle me-2"></i>Additional Information</h5>
                     <div class="mb-3">
@@ -239,15 +250,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Elements that affect price calculation
     const priceElements = document.querySelectorAll('#bedrooms, #bathrooms, #squareFeet, #serviceType, .addon-input, .custom-addon-input');
+
+    const prices = JSON.parse('{{ prices|escapejs }}');
+    console.log(prices);
     
     // Add event listeners to all price-affecting elements
     priceElements.forEach(element => {
-        element.addEventListener('change', calculateTotal);
-        element.addEventListener('input', calculateTotal);
+        element.addEventListener('change', updateTotalPrice);
+        element.addEventListener('input', updateTotalPrice);
     });
 
     // Calculate total price
-    function calculateTotal() {
+    function updateTotalPrice() {
         const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
         const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
         const squareFeet = parseInt(document.getElementById('squareFeet').value) || 0;
@@ -264,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calculate tax (assuming 8% - adjust as needed)
         let subtotal = basePrice + addonTotal + customAddonTotal;
-        let tax = subtotal * 0.08;
+        let tax = subtotal * prices.tax;
         
         // Update form fields
         document.getElementById('totalPrice').value = subtotal.toFixed(2);
@@ -272,39 +286,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType) {
-        // Base rates (adjust these according to your business logic)
-        const BEDROOM_RATE = 30;
-        const BATHROOM_RATE = 25;
-        const SQFT_RATE = 0.15;
+        // Base rates from business settings
+        const BEDROOM_RATE = prices.bedrooms;
+        const BATHROOM_RATE = prices.bathrooms;
         
-        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE) + (squareFeet * SQFT_RATE);
+
+        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE);
         
-        // Service type multipliers
+        // Service type multipliers from business settings
         const SERVICE_MULTIPLIERS = {
-            'standard': 1,
-            'deep': 1.5,
-            'moveinmoveout': 2,
-            'airbnb': 1.3
+            'standard': prices.sqftMultiplierStandard,
+            'deep': prices.sqftMultiplierDeep,
+            'moveinmoveout': prices.sqftMultiplierMoveinout,
+            'airbnb': prices.sqftMultiplierAirbnb
         };
+
+        let sqftTotal = 0;
+        sqftTotal += squareFeet * SERVICE_MULTIPLIERS[serviceType];
+        console.log(sqftTotal);
+        console.log(SERVICE_MULTIPLIERS[serviceType]);
         
-        return basePrice * SERVICE_MULTIPLIERS[serviceType];
+        return basePrice + sqftTotal;
     }
 
     function calculateAddonsTotal() {
-        // Add-on rates (adjust these according to your business logic)
+        // Add-on rates from business settings
         const ADDON_RATES = {
-            'addonDishes': 5,
-            'addonLaundryLoads': 10,
-            'addonWindowCleaning': 15,
-            'addonPetsCleaning': 20,
-            'addonFridgeCleaning': 25,
-            'addonOvenCleaning': 30,
-            'addonBaseboard': 20,
-            'addonBlinds': 15,
-            'addonGreenCleaning': 25,
-            'addonCabinetsCleaning': 20,
-            'addonPatioSweeping': 30,
-            'addonGarageSweeping': 35
+            'addonDishes': prices.addonPriceDishes,
+            'addonLaundryLoads': prices.addonPriceLaundry,
+            'addonWindowCleaning': prices.addonPriceWindow,
+            'addonPetsCleaning': prices.addonPricePets,
+            'addonFridgeCleaning': prices.addonPriceFridge,
+            'addonOvenCleaning': prices.addonPriceOven,
+            'addonBaseboard': prices.addonPriceBaseboard,
+            'addonBlinds': prices.addonPriceBlinds,
+            'addonGreenCleaning': prices.addonPriceGreen,
+            'addonCabinetsCleaning': prices.addonPriceCabinets,
+            'addonPatioSweeping': prices.addonPricePatio,
+            'addonGarageSweeping': prices.addonPriceGarage
         };
         
         let total = 0;
@@ -326,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial calculation
-    calculateTotal();
+    updateTotalPrice();
 });
 </script>
 {% endblock %}
