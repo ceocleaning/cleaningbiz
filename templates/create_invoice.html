@@ -22,7 +22,7 @@
 
                     <div class="mb-3">
                         <label for="amount" class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="amount" name="amount" min="0" step="1" required value="{{ booking.amount }}" disabled>
+                        <input type="number" class="form-control" id="amount" name="amount" min="0" step="1" required value="{{ booking.totalPrice|default:0 }}" disabled>
                         <div class="form-text">Amount will be pre-filled based on booking selection</div>
                     </div>
 

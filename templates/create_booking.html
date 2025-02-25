@@ -4,12 +4,13 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="page-header card col-md-10">
-        <h2 class="px-5"><i class="fas fa-plus me-2"></i>Create New Booking</h2>
-    </div>
+    
     <div class="col-md-10">
         <div class="card">
-            <div class="card-body p-5">
+            <div class="card-header col-md-12">
+                <h2 class="px-5 py-3"><i class="fas fa-plus me-2"></i>Create New Booking</h2>
+            </div>
+            <div class="card-body px-5 py-5">
                 <form method="post" action="{% url 'bookings:create_booking' %}">
                     {% csrf_token %}
                     

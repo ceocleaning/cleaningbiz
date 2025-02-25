@@ -50,9 +50,9 @@ def create_booking(request):
     if request.method == 'POST':
         try:
             # Get price details from form
-            subtotal = Decimal(request.POST.get('totalPrice', '0'))
-            tax_amount = Decimal(request.POST.get('tax', '0'))
-            total_amount = Decimal(request.POST.get('grandTotal', '0'))
+            totalPrice = Decimal(request.POST.get('totalPrice', '0'))
+            tax = Decimal(request.POST.get('tax', '0'))
+          
 
             # Create the booking
             booking = Booking.objects.create(
@@ -75,10 +75,11 @@ def create_booking(request):
                 serviceType=request.POST.get('serviceType'),
                 cleaningDateTime=request.POST.get('cleaningDateTime'),
                 recurring=request.POST.get('recurring'),
+                paymentMethod=request.POST.get('paymentMethod', 'creditcard'),
 
                 otherRequests=request.POST.get('otherRequests', ''),
-                tax=tax_amount,
-                totalPrice=total_amount
+                tax=tax,
+                totalPrice=totalPrice
             )
 
             # Handle standard add-ons
@@ -144,96 +145,115 @@ def create_booking(request):
     return render(request, 'create_booking.html', context)
 
 @require_http_methods(["GET", "POST"])
+@transaction.atomic
 def edit_booking(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
+    business = booking.business
+    business_settings = BusinessSettings.objects.get(business=business)
+    customAddons = CustomAddons.objects.filter(business=business)
     
     # Check if user has permission to edit this booking
-    if booking.business not in request.user.businesses.all():
-        messages.error(request, 'You do not have permission to edit this booking.')
+    if booking.business not in request.user.business_set.all():
+        messages.error(request, 'You do not have permission to edit this booking')
         return redirect('bookings:all_bookings')
     
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
-            # Personal Information
+            # Get price details from form
+            subtotal = Decimal(request.POST.get('totalPrice', '0').strip() or '0')
+            tax_amount = Decimal(request.POST.get('tax', '0').strip() or '0')
+            total_amount = Decimal(request.POST.get('grandTotal', '0').strip() or '0')
+
+            # Update booking details
             booking.firstName = request.POST.get('firstName')
             booking.lastName = request.POST.get('lastName')
             booking.email = request.POST.get('email')
             booking.phoneNumber = request.POST.get('phoneNumber')
-            booking.companyName = request.POST.get('companyName')
-            
-            # Address Information
+            booking.companyName = request.POST.get('companyName', '')
+
             booking.address1 = request.POST.get('address1')
-            booking.address2 = request.POST.get('address2')
             booking.city = request.POST.get('city')
             booking.stateOrProvince = request.POST.get('stateOrProvince')
             booking.zipCode = request.POST.get('zipCode')
-            
-            # Property Details
-            booking.bedrooms = int(request.POST.get('bedrooms', 0))
-            booking.bathrooms = int(request.POST.get('bathrooms', 0))
-            booking.squareFeet = int(request.POST.get('squareFeet', 0))
-            
-            # Service Information
-            booking.cleaningDateTime = request.POST.get('cleaningDateTime')
+
+            # Handle numeric fields with proper default values
+            booking.bedrooms = int(request.POST.get('bedrooms', '0').strip() or '0')
+            booking.bathrooms = int(request.POST.get('bathrooms', '0').strip() or '0')
+            booking.squareFeet = int(request.POST.get('squareFeet', '0').strip() or '0')
+
             booking.serviceType = request.POST.get('serviceType')
-            booking.recurring = request.POST.get('recurring', 'one-time')
-            booking.paymentMethod = request.POST.get('paymentMethod')
+            booking.cleaningDateTime = request.POST.get('cleaningDateTime')
+            booking.recurring = request.POST.get('recurring')
+
+            booking.otherRequests = request.POST.get('otherRequests', '')
+            booking.tax = tax_amount
+            booking.totalPrice = total_amount
+
+            # Handle standard add-ons with proper default values
+            addon_fields = [
+                'addonDishes', 'addonLaundryLoads', 'addonWindowCleaning',
+                'addonPetsCleaning', 'addonFridgeCleaning', 'addonOvenCleaning',
+                'addonBaseboard', 'addonBlinds', 'addonGreenCleaning',
+                'addonCabinetsCleaning', 'addonPatioSweeping', 'addonGarageSweeping'
+            ]
             
-            # Add-ons
-            booking.addonDishes = int(request.POST.get('addonDishes', 0))
-            booking.addonLaundryLoads = int(request.POST.get('addonLaundryLoads', 0))
-            booking.addonWindowCleaning = int(request.POST.get('addonWindowCleaning', 0))
-            booking.addonPetsCleaning = int(request.POST.get('addonPetsCleaning', 0))
-            booking.addonFridgeCleaning = int(request.POST.get('addonFridgeCleaning', 0))
-            booking.addonOvenCleaning = int(request.POST.get('addonOvenCleaning', 0))
-            booking.addonBaseboard = int(request.POST.get('addonBaseboard', 0))
-            booking.addonBlinds = int(request.POST.get('addonBlinds', 0))
-            booking.addonGreenCleaning = int(request.POST.get('addonGreenCleaning', 0))
-            booking.addonCabinetsCleaning = int(request.POST.get('addonCabinetsCleaning', 0))
-            booking.addonPatioSweeping = int(request.POST.get('addonPatioSweeping', 0))
-            booking.addonGarageSweeping = int(request.POST.get('addonGarageSweeping', 0))
+            for field in addon_fields:
+                value = request.POST.get(field, '0').strip() or '0'
+                setattr(booking, field, int(value))
             
-            # Handle custom addons
-            custom_addons = []
-            for key, value in request.POST.items():
-                if key.startswith('custom_addon_'):
-                    addon_id = int(key.replace('custom_addon_', ''))
-                    qty = int(value)
-                    if qty > 0:
-                        custom_addon = get_object_or_404(CustomAddons, id=addon_id)
-                        booking_addon = BookingCustomAddons.objects.create(
-                            addon=custom_addon,
-                            qty=qty
-                        )
-                        custom_addons.append(booking_addon)
-            
-            if custom_addons:
-                booking.customAddons.set(custom_addons)
-            
-            # Additional Information
-            booking.otherRequests = request.POST.get('otherRequests')
-            booking.totalPrice = Decimal(request.POST.get('totalPrice', 0))
-            booking.tax = Decimal(request.POST.get('tax', 0))
-            
+            # Clear existing custom add-ons
+            booking.customAddons.clear()
+
+            # Add new custom add-ons
+            for addon in customAddons:
+                quantity = int(request.POST.get(f'custom_addon_qty_{addon.id}', 0))
+                if quantity > 0:
+                    newCustomBookingAddon = BookingCustomAddons.objects.create(
+                        addon=addon,
+                        qty=quantity
+                    )
+                    booking.customAddons.add(newCustomBookingAddon)
+
             booking.save()
             messages.success(request, 'Booking updated successfully!')
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             
         except Exception as e:
             messages.error(request, f'Error updating booking: {str(e)}')
-    
-    # Get custom addons for the business
-    custom_addons = CustomAddons.objects.filter(business=booking.business)
-    
+            return redirect('bookings:edit_booking', bookingId=bookingId)
+
+    # For GET request, prepare the context
+    prices = {
+        'bedrooms': float(business_settings.bedroomPrice),
+        'bathrooms': float(business_settings.bathroomPrice),
+        'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
+        'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
+        'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
+        'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+
+        'addonPriceDishes': float(business_settings.addonPriceDishes),
+        'addonPriceLaundry': float(business_settings.addonPriceLaundry),
+        'addonPriceWindow': float(business_settings.addonPriceWindow),
+        'addonPricePets': float(business_settings.addonPricePets),
+        'addonPriceFridge': float(business_settings.addonPriceFridge),
+        'addonPriceOven': float(business_settings.addonPriceOven),
+        'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
+        'addonPriceBlinds': float(business_settings.addonPriceBlinds),
+        'addonPriceGreen': float(business_settings.addonPriceGreen),
+        'addonPriceCabinets': float(business_settings.addonPriceCabinets),
+        'addonPricePatio': float(business_settings.addonPricePatio),
+        'addonPriceGarage': float(business_settings.addonPriceGarage),
+        'tax': float(business_settings.taxPercent)
+    }
+
     context = {
         'booking': booking,
-        'custom_addons': custom_addons,
-        'service_types': dict(serviceTypes),
-        'payment_methods': dict(paymentMethods),
-        'recurring_options': dict(recurringOptions)
+        'customAddons': customAddons,
+        'prices': json.dumps(prices),
+        'existing_custom_addons': {addon.addon.id: addon.qty for addon in booking.customAddons.all()}
     }
-    
-    return render(request, 'bookings/edit_booking.html', context)
+
+    return render(request, 'update_booking.html', context)
 
 
 def mark_completed(request, bookingId):
@@ -280,7 +300,7 @@ def create_invoice(request, bookingId):
         try:
             invoice = Invoice.objects.create(
                 booking=bookingObj,
-                amount=bookingObj.amount
+                amount=bookingObj.totalPrice
             )
             messages.success(request, f'Invoice {invoice.invoiceId} created successfully!')
             return redirect('bookings:invoice_detail', invoiceId=invoice.invoiceId)
@@ -344,11 +364,36 @@ def invoice_detail(request, invoiceId):
 @login_required
 def invoice_preview(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
-    return render(request, 'invoice_preview.html', {'invoice': invoice})
+
+    # Only include add-ons with values > 0
+    addons = [
+        addon for addon in [
+            ['Dishes', invoice.booking.addonDishes],
+            ['Laundry Loads', invoice.booking.addonLaundryLoads],
+            ['Window Cleaning', invoice.booking.addonWindowCleaning],
+            ['Pets Cleaning', invoice.booking.addonPetsCleaning],
+            ['Fridge Cleaning', invoice.booking.addonFridgeCleaning],
+            ['Oven Cleaning', invoice.booking.addonOvenCleaning],
+            ['Baseboard', invoice.booking.addonBaseboard],
+            ['Blinds', invoice.booking.addonBlinds],
+            ['Green Cleaning', invoice.booking.addonGreenCleaning],
+            ['Cabinets Cleaning', invoice.booking.addonCabinetsCleaning],
+            ['Patio Sweeping', invoice.booking.addonPatioSweeping],
+            ['Garage Sweeping', invoice.booking.addonGarageSweeping],
+        ] if addon[1] > 0
+    ]
+
+    context = {
+        'invoice': invoice,
+        'addons': addons
+    }
+    return render(request, 'invoice_preview.html', context)
 
 @login_required
 def mark_invoice_paid(request, invoiceId):
     if request.method == 'POST':
+        invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
+        payment_method = request.POST.get('paymentMethod')
         invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
         payment_method = request.POST.get('paymentMethod')
         amount = request.POST.get('amount')
@@ -480,8 +525,8 @@ def generate_pdf(request, invoiceId):
         [
             Paragraph(f"<b>{invoice.booking.get_serviceType_display()}</b>", styles['Normal']),
             Paragraph(f"""
-                Date: {invoice.booking.scheduledDateTime.strftime('%B %d, %Y')}<br/>
-                Time: {invoice.booking.scheduledDateTime.strftime('%I:%M %p')}<br/>
+                Date: {invoice.booking.cleaningDateTime.strftime('%B %d, %Y')}<br/>
+                Time: {invoice.booking.cleaningDateTime.strftime('%I:%M %p')}<br/>
                 Bedrooms: {invoice.booking.bedrooms}<br/>
                 Bathrooms: {invoice.booking.bathrooms}<br/>
                 Area: {invoice.booking.squareFeet} sq ft

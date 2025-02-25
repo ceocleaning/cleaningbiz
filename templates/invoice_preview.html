@@ -71,11 +71,23 @@
                         <tr>
                             <td><strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong></td>
                             <td>
-                                Date: {{ invoice.booking.scheduledDateTime|date:"F d, Y" }}<br>
-                                Time: {{ invoice.booking.scheduledDateTime|date:"g:i A" }}<br>
+                                Date: {{ invoice.booking.cleaningDateTime|date:"F d, Y" }}<br>
+                                Time: {{ invoice.booking.cleaningDateTime|date:"g:i A" }}<br>
                                 Bedrooms: {{ invoice.booking.bedrooms }}<br>
                                 Bathrooms: {{ invoice.booking.bathrooms }}<br>
-                                Area: {{ invoice.booking.sqft }} sq ft
+                                Area: {{ invoice.booking.squareFeet }} sq ft<br>
+                                {% if addons %}
+                                <strong>Add-ons:</strong><br>
+                                {% for addon_name, addon_value in addons %}
+                                    - {{ addon_name }}: {{ addon_value }}<br>
+                                {% endfor %}
+                                {% endif %}
+                                {% if invoice.booking.customAddons.exists %}
+                                <strong>Custom Add-ons:</strong><br>
+                                {% for addon in invoice.booking.customAddons.all %}
+                                    - {{ addon.addon.addonName }}: {{ addon.qty }}<br>
+                                {% endfor %}
+                                {% endif %}
                             </td>
                             <td class="text-end"><strong>${{ invoice.amount }}</strong></td>
                         </tr>

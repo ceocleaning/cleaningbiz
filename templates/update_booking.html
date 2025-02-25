@@ -80,11 +80,10 @@
                         <div class="col-md-6 mb-3">
                             <label for="serviceType" class="form-label">Service Type</label>
                             <select class="form-control form-select" name="serviceType" id="serviceType" required>
-                                {% for value, label in service_types.items %}
-                                    <option value="{{ value }}" {% if booking.serviceType == value %}selected{% endif %}>
-                                        {{ label }}
-                                    </option>
-                                {% endfor %}
+                                <option value="standard" {% if booking.serviceType == 'standard' %}selected{% endif %}>Standard Cleaning</option>
+                                <option value="deep" {% if booking.serviceType == 'deep' %}selected{% endif %}>Deep Cleaning</option>
+                                <option value="moveinmoveout" {% if booking.serviceType == 'moveinmoveout' %}selected{% endif %}>Move In/Move Out</option>
+                                <option value="airbnb" {% if booking.serviceType == 'airbnb' %}selected{% endif %}>Airbnb Cleaning</option>
                             </select>
                         </div>
                     </div>
@@ -93,21 +92,19 @@
                         <div class="col-md-6 mb-3">
                             <label for="recurring" class="form-label">Recurring Service</label>
                             <select class="form-control form-select" name="recurring" id="recurring">
-                                {% for value, label in recurring_options.items %}
-                                    <option value="{{ value }}" {% if booking.recurring == value %}selected{% endif %}>
-                                        {{ label }}
-                                    </option>
-                                {% endfor %}
+                                <option value="one-time" {% if booking.recurring == 'one-time' %}selected{% endif %}>One Time</option>
+                                <option value="weekly" {% if booking.recurring == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="biweekly" {% if booking.recurring == 'biweekly' %}selected{% endif %}>Bi-weekly</option>
+                                <option value="monthly" {% if booking.recurring == 'monthly' %}selected{% endif %}>Monthly</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="paymentMethod" class="form-label">Payment Method</label>
                             <select class="form-control form-select" name="paymentMethod" id="paymentMethod">
-                                {% for value, label in payment_methods.items %}
-                                    <option value="{{ value }}" {% if booking.paymentMethod == value %}selected{% endif %}>
-                                        {{ label }}
-                                    </option>
-                                {% endfor %}
+                                <option value="creditcard" {% if booking.paymentMethod == 'creditcard' %}selected{% endif %}>Credit Card</option>
+                                <option value="paypal" {% if booking.paymentMethod == 'paypal' %}selected{% endif %}>PayPal</option>
+                                <option value="stripe" {% if booking.paymentMethod == 'stripe' %}selected{% endif %}>Stripe</option>
+                                <option value="other" {% if booking.paymentMethod == 'other' %}selected{% endif %}>Other</option>
                             </select>
                         </div>
                     </div>
@@ -203,49 +200,56 @@
                         </div>
                     </div>
 
+                    <!-- Price Information (Hidden Fields) -->
+                    <input type="hidden" id="totalPrice" name="totalPrice" value="0">
+                    <input type="hidden" id="tax" name="tax" value="0">
+                    <input type="hidden" id="grandTotal" name="grandTotal" value="0">
+
+                    <!-- Total -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="subTotalDisplay" class="form-label">Total</label>
+                            <input type="text" value="0.00" class="form-control" id="subTotalDisplay" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="taxDisplay" class="form-label">Tax</label>
+                            <input type="text" value="0.00" class="form-control" id="taxDisplay" readonly>
+                        </div>
+                    </div>
+
                     <!-- Custom Add-ons -->
-                    {% if custom_addons %}
                     <h5 class="mb-4 mt-4"><i class="fas fa-star me-2"></i>Custom Add-ons</h5>
                     <div class="row">
-                        {% for addon in custom_addons %}
+                        {% for addon in customAddons %}
                         <div class="col-md-3 mb-3">
                             <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
                             <input type="number" class="form-control custom-addon-input" 
                                    id="custom_addon_{{ addon.id }}" 
-                                   name="custom_addon_{{ addon.id }}" 
+                                   name="custom_addon_qty_{{ addon.id }}" 
+                                   min="0" 
                                    value="{% for booking_addon in booking.customAddons.all %}{% if booking_addon.addon.id == addon.id %}{{ booking_addon.qty }}{% endif %}{% endfor %}"
-                                   min="0"
                                    data-price="{{ addon.addonPrice }}">
                         </div>
                         {% endfor %}
                     </div>
-                    {% endif %}
 
                     <!-- Additional Information -->
                     <h5 class="mb-4 mt-4"><i class="fas fa-info-circle me-2"></i>Additional Information</h5>
                     <div class="mb-3">
-                        <label for="otherRequests" class="form-label">Special Requests or Notes</label>
+                        <label for="otherRequests" class="form-label">Other Requests/Notes</label>
                         <textarea class="form-control" id="otherRequests" name="otherRequests" rows="3">{{ booking.otherRequests }}</textarea>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="totalPrice" class="form-label">Total Price ($)</label>
-                            <input type="number" class="form-control" id="totalPrice" name="totalPrice" value="{{ booking.totalPrice }}" readonly>
+                    <!-- Submit Button -->
+                    <div class="text-end mt-4">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <button type="submit" class="btn btn-primary w-100">Update Booking</button>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="{% url 'bookings:all_bookings' %}" class="btn btn-secondary w-100">Cancel</a>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="tax" class="form-label">Tax ($)</label>
-                            <input type="number" class="form-control" id="tax" name="tax" value="{{ booking.tax }}" readonly>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Save Changes
-                        </button>
-                        <a href="{% url 'bookings:booking_detail' bookingId=booking.bookingId %}" class="btn btn-secondary">
-                            <i class="fas fa-times me-2"></i>Cancel
-                        </a>
                     </div>
                 </form>
             </div>
@@ -259,77 +263,89 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Elements that affect price calculation
     const priceElements = document.querySelectorAll('#bedrooms, #bathrooms, #squareFeet, #serviceType, .addon-input, .custom-addon-input');
+
+    const prices = JSON.parse('{{ prices|escapejs }}');
+    console.log(prices);
     
     // Add event listeners to all price-affecting elements
     priceElements.forEach(element => {
-        element.addEventListener('change', calculateTotal);
-        element.addEventListener('input', calculateTotal);
+        element.addEventListener('change', updateTotalPrice);
+        element.addEventListener('input', updateTotalPrice);
     });
 
     // Calculate total price
-    function calculateTotal() {
+    function updateTotalPrice() {
         const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
         const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
         const squareFeet = parseInt(document.getElementById('squareFeet').value) || 0;
         const serviceType = document.getElementById('serviceType').value;
         
-        // Base calculation (this should match your backend logic)
-        let basePrice = calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType);
+        // Calculate base price
+        const basePrice = calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType);
         
-        // Add standard add-ons
-        let addonTotal = calculateAddonsTotal();
+        // Calculate add-ons total
+        const addonTotal = calculateAddonsTotal();
         
-        // Add custom add-ons
-        let customAddonTotal = calculateCustomAddonsTotal();
+        // Calculate custom add-ons total
+        const customAddonTotal = calculateCustomAddonsTotal();
         
-        // Calculate tax (assuming 8% - adjust as needed)
-        let subtotal = basePrice + addonTotal + customAddonTotal;
-        let tax = subtotal * 0.08;
+        // Calculate tax
+        const subtotal = basePrice + addonTotal + customAddonTotal;
+        const tax = subtotal * prices.tax;
+        const grandTotal = subtotal + tax;
         
         // Update form fields
         document.getElementById('totalPrice').value = subtotal.toFixed(2);
         document.getElementById('tax').value = tax.toFixed(2);
+        document.getElementById('grandTotal').value = grandTotal.toFixed(2);
+        
+        // Update display
+        document.getElementById('subTotalDisplay').value = subtotal.toFixed(2);
+        document.getElementById('taxDisplay').value = tax.toFixed(2);
+       
     }
 
     function calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType) {
-        // Base rates (adjust these according to your business logic)
-        const BEDROOM_RATE = 30;
-        const BATHROOM_RATE = 25;
-        const SQFT_RATE = 0.15;
+        // Base rates from business settings
+        const BEDROOM_RATE = prices.bedrooms;
+        const BATHROOM_RATE = prices.bathrooms;
         
-        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE) + (squareFeet * SQFT_RATE);
+        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE);
         
-        // Service type multipliers
+        // Service type multipliers from business settings
         const SERVICE_MULTIPLIERS = {
-            'standard': 1,
-            'deep': 1.5,
-            'moveinmoveout': 2,
-            'airbnb': 1.3
+            'standard': prices.sqftMultiplierStandard,
+            'deep': prices.sqftMultiplierDeep,
+            'moveinmoveout': prices.sqftMultiplierMoveinout,
+            'airbnb': prices.sqftMultiplierAirbnb
         };
+
+        let sqftTotal = 0;
+        sqftTotal += squareFeet * SERVICE_MULTIPLIERS[serviceType];
         
-        return basePrice * SERVICE_MULTIPLIERS[serviceType];
+        return basePrice + sqftTotal;
     }
 
     function calculateAddonsTotal() {
-        // Add-on rates (adjust these according to your business logic)
+        // Add-on rates from business settings
         const ADDON_RATES = {
-            'addonDishes': 5,
-            'addonLaundryLoads': 10,
-            'addonWindowCleaning': 15,
-            'addonPetsCleaning': 20,
-            'addonFridgeCleaning': 25,
-            'addonOvenCleaning': 30,
-            'addonBaseboard': 20,
-            'addonBlinds': 15,
-            'addonGreenCleaning': 25,
-            'addonCabinetsCleaning': 20,
-            'addonPatioSweeping': 30,
-            'addonGarageSweeping': 35
+            'addonDishes': prices.addonPriceDishes,
+            'addonLaundryLoads': prices.addonPriceLaundry,
+            'addonWindowCleaning': prices.addonPriceWindow,
+            'addonPetsCleaning': prices.addonPricePets,
+            'addonFridgeCleaning': prices.addonPriceFridge,
+            'addonOvenCleaning': prices.addonPriceOven,
+            'addonBaseboard': prices.addonPriceBaseboard,
+            'addonBlinds': prices.addonPriceBlinds,
+            'addonGreenCleaning': prices.addonPriceGreen,
+            'addonCabinetsCleaning': prices.addonPriceCabinets,
+            'addonPatioSweeping': prices.addonPricePatio,
+            'addonGarageSweeping': prices.addonPriceGarage
         };
         
         let total = 0;
         for (const [addon, rate] of Object.entries(ADDON_RATES)) {
-            const quantity = parseInt(document.getElementById(addon).value) || 0;
+            const quantity = parseInt(document.getElementById(addon)?.value) || 0;
             total += quantity * rate;
         }
         return total;
@@ -346,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial calculation
-    calculateTotal();
+    updateTotalPrice();
 });
 </script>
 {% endblock %}
