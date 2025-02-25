@@ -19,7 +19,7 @@ def thumbtack_webhook(request):
         data = json.loads(request.body)
         print(data)
     
-    return HttpResponse(status=200)
+    return JsonResponse({'status': 'success'}, status=200)
 
 
 
