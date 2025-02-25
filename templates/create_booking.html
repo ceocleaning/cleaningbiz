@@ -185,15 +185,15 @@
                     </div>
 
                     <!-- Custom Add-ons -->
-                    {% if custom_addons %}
+                    {% if customAddons %}
                     <h5 class="mb-4 mt-4"><i class="fas fa-star me-2"></i>Custom Add-ons</h5>
                     <div class="row">
-                        {% for addon in custom_addons %}
+                        {% for addon in customAddons %}
                         <div class="col-md-3 mb-3">
                             <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
                             <input type="number" class="form-control custom-addon-input" 
                                    id="custom_addon_{{ addon.id }}" 
-                                   name="custom_addon_{{ addon.id }}" 
+                                   name="custom_addon_qty_{{ addon.id }}" 
                                    min="0" value="0"
                                    data-price="{{ addon.addonPrice }}">
                         </div>
@@ -201,16 +201,6 @@
                     </div>
                     {% endif %}
 
-                    <!-- Custom Add-ons -->
-                     <h5 class="mb-4 mt-4">Custom Add-ons</h5>
-                     <div class="row">
-                        {% for addon in customAddons %}
-                        <div class="col-md-3 mb-3">
-                            <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
-                            <input type="number" class="form-control custom-addon-input" name="custom_addon_{{ addon.id }}" min="0" value="0">
-                        </div>
-                        {% endfor %}
-                    </div>
 
                     <!-- Additional Information -->
                     <h5 class="mb-4 mt-4"><i class="fas fa-info-circle me-2"></i>Additional Information</h5>
