@@ -52,7 +52,7 @@ def create_booking(request):
 
             # Create the booking
             booking = Booking.objects.create(
-                user=request.user,
+                business=request.user.business_set.first(),
                 name=full_name,
                 email=request.POST.get('email'),
                 phoneNumber=request.POST.get('phoneNumber'),
@@ -197,7 +197,7 @@ def all_invoices(request):
     if not request.user.business_set.first():
         return redirect('accounts:register_business')
 
-    invoices = Invoice.objects.select_related('booking').filter(booking__user=request.user).order_by('createdAt')
+    invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
     pending_invoices = invoices.filter(isPaid=False).count()
     paid_invoices = invoices.filter(isPaid=True).count()
     
