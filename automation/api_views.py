@@ -46,6 +46,8 @@ def is_slot_available(cleaners, time_to_check):
             endTime__gt=time_to_check.time()
         ).exists()
 
+        print("📌 Conflicting Booking:", conflicting_booking)
+
         if not conflicting_booking:
             return True  # Found an available cleaner
 
