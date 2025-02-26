@@ -132,13 +132,13 @@ def check_availability_retell(request, secretKey):
 
         # Extract parameters
         args = post_data.get("args", {})
-        appointment_available_ts = args.get("appointment_available_ts")
+        cleaningDateTime = args.get("cleaningDateTime")
 
-        if not appointment_available_ts:
-            return JsonResponse({"error": "Missing required field: appointment_available_ts"}, status=400)
+        if not cleaningDateTime:
+            return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
         # Convert string to datetime
-        datetimeToCheck = make_aware(datetime.fromisoformat(appointment_available_ts.replace("Z", "+00:00")))
+        datetimeToCheck = make_aware(datetime.fromisoformat(cleaningDateTime.replace("Z", "+00:00")))
         weekDay = datetimeToCheck.strftime('%A')
 
         cleaners = get_cleaners_for_business(business)
