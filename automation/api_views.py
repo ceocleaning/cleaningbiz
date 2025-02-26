@@ -7,7 +7,7 @@ from retell import Retell
 from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, is_naive
 
 # Initialize Retell AI SDK
 
@@ -138,8 +138,13 @@ def check_availability_retell(request, secretKey):
             return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
         # Convert string to datetime
-        datetimeToCheck = make_aware(datetime.fromisoformat(cleaningDateTime.replace("Z", "+00:00")))
+        datetimeToCheck = datetime.fromisoformat(cleaningDateTime.replace("Z", "+00:00"))
+        if is_naive(datetimeToCheck):
+            datetimeToCheck = make_aware(datetimeToCheck)
+
         weekDay = datetimeToCheck.strftime('%A')
+
+        print("Processed Date: ", datetimeToCheck)
 
         cleaners = get_cleaners_for_business(business)
 
