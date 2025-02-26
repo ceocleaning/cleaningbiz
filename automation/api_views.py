@@ -1,12 +1,16 @@
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
+import os
+import json
 from datetime import datetime, timedelta
-import dateparser
-from django.utils import timezone
-
-from accounts.models import ApiCredential, Business
-from bookings.models import Booking 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from retell import Retell
+from accounts.models import Business
+from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
+from django.utils.timezone import make_aware
+
+# Initialize Retell AI SDK
+
 
 
 def get_cleaners_for_business(business):
@@ -20,14 +24,10 @@ def get_cleaner_availabilities(week_day):
 
 
 def is_slot_available(cleaners, time_to_check):
-    """
-    Check if at least one cleaner is available for the given time.
-    """
+    """Check if at least one cleaner is available for the given time."""
     for cleaner in cleaners:
-        # Fetch cleaner availability for the given day
         availability = CleanerAvailability.objects.filter(
-            cleaner=cleaner, 
-            dayOfWeek=time_to_check.strftime('%A')
+            cleaner=cleaner, dayOfWeek=time_to_check.strftime('%A')
         ).first()
 
         if not availability:
@@ -37,7 +37,7 @@ def is_slot_available(cleaners, time_to_check):
         if not (availability.startTime <= time_to_check.time() < availability.endTime):
             continue
 
-        # Check if cleaner has an overlapping booking
+        # Check for conflicting bookings
         conflicting_booking = Booking.objects.filter(
             cleaner=cleaner,
             cleaningDate=time_to_check.date(),
@@ -57,7 +57,7 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     If no slots exist on the requested day, search the next available day.
     """
     alternate_slots = []
-    time_increment = timedelta(hours=1)
+    time_increment = timedelta(hours=1)  # Each slot is 60 minutes
     max_attempts = 10  # Prevent infinite loops
     next_time = datetimeToCheck + time_increment  # Start searching from the next hour
 
@@ -73,7 +73,7 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
             break
 
         next_time += time_increment
-        max_attempts -= 1
+        max_attempts -= 1  # Prevent infinite loop
 
     # If no slots found today, look for the next available day's slots
     if len(alternate_slots) < max_alternates:
@@ -103,52 +103,64 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     return alternate_slots[:max_alternates]
 
 
-@api_view(['POST'])
-def checkAvailability(request, secretKey):
+@csrf_exempt  # Required since Retell AI will send a direct POST request
+def check_availability_retell(request, secretKey):
     """
-    Check if there is an available cleaner for the given 60-minute timeslot.
-    If unavailable, suggest up to three alternative timeslots.
+    API endpoint for Retell AI to check appointment availability.
     """
     try:
-        # Validate business using request user
-        business = ApiCredential.objects.filter(secretKey=secretKey).first().business
-        if not business:
-            return Response({'status': 'error', 'message': 'Invalid secret key'}, status=400)
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method"}, status=405)
+        
+        apiCreds = ApiCredential.objects.get(secretKey=secretKey)
+        business = apiCreds.business
 
-        # Extract and parse datetime from request
-        datetimeToCheck_str = request.data.get('datetime')
-        if not datetimeToCheck_str:
-            return Response({'status': 'error', 'message': 'Datetime is required'}, status=400)
+        # Parse request body
+        post_data = json.loads(request.body)
 
-        datetimeToCheck = dateparser.parse(datetimeToCheck_str)
-        if not datetimeToCheck:
-            return Response({'status': 'error', 'message': 'Invalid datetime format'}, status=400)
+        retell = Retell(api_key=apiCreds.retellAPIKey)
 
-        # Round time to the nearest full hour (force 60-minute slots)
-        datetimeToCheck = datetimeToCheck.replace(minute=0, second=0, microsecond=0)
+        # Verify request signature
+        valid_signature = retell.verify(
+            json.dumps(post_data, separators=(",", ":"), ensure_ascii=False),
+            api_key=str(apiCreds.retellAPIKey),
+            signature=str(request.headers.get("X-Retell-Signature")),
+        )
+
+        if not valid_signature:
+            return JsonResponse({"error": "Unauthorized request"}, status=401)
+
+        # Extract parameters
+        args = post_data.get("args", {})
+        appointment_available_ts = args.get("appointment_available_ts")
+
+        if not appointment_available_ts:
+            return JsonResponse({"error": "Missing required field: appointment_available_ts"}, status=400)
+
+        # Convert string to datetime
+        datetimeToCheck = make_aware(datetime.fromisoformat(appointment_available_ts.replace("Z", "+00:00")))
         weekDay = datetimeToCheck.strftime('%A')
 
-        # Fetch all active cleaners for the business
         cleaners = get_cleaners_for_business(business)
 
         # Check if the requested time is available
         if is_slot_available(cleaners, datetimeToCheck):
-            return Response({
-                'status': 'success',
-                'available': True,
-                'timeslot': datetimeToCheck.strftime('%Y-%m-%d %H:%M:%S'),
-                'alternates': []
+            return JsonResponse({
+                "status": "success",
+                "available": True,
+                "timeslot": datetimeToCheck.strftime("%Y-%m-%d %H:%M:%S"),
+                "alternates": []
             }, status=200)
 
         # Find alternate available slots
         alternate_slots = find_alternate_slots(cleaners, datetimeToCheck)
 
-        return Response({
-            'status': 'success',
-            'available': False,
-            'timeslot': datetimeToCheck.strftime('%Y-%m-%d %H:%M:%S'),
-            'alternates': alternate_slots
+        return JsonResponse({
+            "status": "success",
+            "available": False,
+            "timeslot": datetimeToCheck.strftime("%Y-%m-%d %H:%M:%S"),
+            "alternates": alternate_slots
         }, status=200)
 
     except Exception as e:
-        return Response({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
