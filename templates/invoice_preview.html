@@ -147,10 +147,10 @@
 
     <!-- Action Buttons -->
     <div class="text-center mt-4">
-        <a href="{% url 'bookings:generate_pdf' invoice.invoiceId %}" class="btn btn-primary">
+        <a href="{% url 'invoice:generate_pdf' invoice.invoiceId %}" class="btn btn-primary">
             <i class="fas fa-download me-2"></i>Save as PDF
         </a>
-        <a href="{% url 'bookings:invoice_detail' invoice.invoiceId %}" class="btn btn-secondary ms-2">
+        <a href="{% url 'invoice:invoice_detail' invoice.invoiceId %}" class="btn btn-secondary ms-2">
             <i class="fas fa-arrow-left me-2"></i>Back to Invoice
         </a>
     </div>

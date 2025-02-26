@@ -15,7 +15,7 @@ from retell import Retell
 from .models import Lead
 from datetime import datetime
 
-from bookings.models import Booking, Invoice, Payment
+from bookings.models import Booking
 from accounts.models import ApiCredential
 
 

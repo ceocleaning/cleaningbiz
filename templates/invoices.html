@@ -79,13 +79,13 @@
                         </td>
                         <td>{{ invoice.createdAt|date:"M d, Y" }}</td>
                         <td class="text-end">
-                            <a href="{% url 'bookings:invoice_detail' invoice.invoiceId %}" 
+                            <a href="{% url 'invoice:invoice_detail' invoice.invoiceId %}" 
                                class="btn btn-sm btn-outline-primary me-2"
                                data-bs-toggle="tooltip" 
                                data-bs-title="View invoice details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{% url 'bookings:edit_invoice' invoice.invoiceId %}" 
+                            <a href="{% url 'invoice:edit_invoice' invoice.invoiceId %}" 
                                class="btn btn-sm btn-outline-info me-2"
                                data-bs-toggle="tooltip" 
                                data-bs-title="Edit invoice">

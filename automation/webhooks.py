@@ -8,7 +8,7 @@ import requests
 import threading
 
 from accounts.models import ApiCredential, Business, BusinessSettings, BookingIntegration, CustomAddons
-from bookings.models import Booking, Invoice, Payment
+from bookings.models import Booking
 from .utils import calculateAmount, calculateAddonsAmount
 
 
@@ -284,3 +284,8 @@ def send_booking_data(booking):
     except Exception as e:
         print(f"Error sending booking data: {str(e)}")
         return None
+
+
+
+
+

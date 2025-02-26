@@ -12,7 +12,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body px-5">
-                <form method="post" action="{% url 'bookings:edit_invoice' invoice.invoiceId %}">
+                <form method="post" action="{% url 'invoice:edit_invoice' invoice.invoiceId %}">
                     {% csrf_token %}
                     
                     <div class="mb-3">
@@ -40,7 +40,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save me-2"></i>Update Invoice
                         </button>
-                        <a href="{% url 'bookings:all_invoices' %}" class="btn btn-secondary">
+                        <a href="{% url 'invoice:all_invoices' %}" class="btn btn-secondary">
                             <i class="fas fa-times me-2"></i>Cancel
                         </a>
                     </div>

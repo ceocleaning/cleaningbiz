@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('automation.urls')),
     path('account/', include('accounts.urls')),
     path('booking/', include('bookings.urls')),
+    path('invoice/', include('invoice.urls')),
 ]
 
 

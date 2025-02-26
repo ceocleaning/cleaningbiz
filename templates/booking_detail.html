@@ -330,7 +330,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{% url 'bookings:invoice_detail' booking.invoice.invoiceId %}" 
+                                    <a href="{% url 'invoice:invoice_detail' booking.invoice.invoiceId %}" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-eye me-1"></i> View Details
                                     </a>
@@ -369,7 +369,7 @@
                     </a>
                     {% endif %}
                     {% if not booking.invoice %}
-                    <a href="{% url 'bookings:create_invoice' booking.bookingId %}" 
+                    <a href="{% url 'invoice:create_invoice' booking.bookingId %}" 
                        class="btn btn-info px-4">
                         <i class="fas fa-file-invoice me-2"></i>Generate Invoice
                     </a>

@@ -201,15 +201,15 @@
         <div class="card shadow-sm">
             <div class="card-body p-4">
                 <div class="d-flex gap-2 justify-content-center">
-                    <a href="{% url 'bookings:delete_invoice' invoice.invoiceId %}" 
+                    <a href="{% url 'invoice:delete_invoice' invoice.invoiceId %}" 
                        class="btn btn-danger px-4">
                         <i class="fas fa-trash me-2"></i>Delete Invoice
                     </a>
-                    <a href="{% url 'bookings:edit_invoice' invoice.invoiceId %}" 
+                    <a href="{% url 'invoice:edit_invoice' invoice.invoiceId %}" 
                        class="btn btn-primary px-4">
                         <i class="fas fa-edit me-2"></i>Edit Invoice
                     </a>
-                    <a href="{% url 'bookings:invoice_preview' invoice.invoiceId %}" 
+                    <a href="{% url 'invoice:invoice_preview' invoice.invoiceId %}" 
                        class="btn btn-primary me-2"
                        data-bs-toggle="tooltip"
                        data-bs-title="Preview invoice in printable format">
@@ -224,7 +224,7 @@
                        class="btn btn-info px-4">
                         <i class="fas fa-calendar-check me-2"></i>View Booking
                     </a>
-                    <a href="{% url 'bookings:all_invoices' %}" 
+                    <a href="{% url 'invoice:all_invoices' %}" 
                        class="btn btn-light px-4">
                         <i class="fas fa-arrow-left me-2"></i>Back to Invoices
                     </a>
