@@ -11,8 +11,11 @@ from .models import Cleaners, CleanerAvailability
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
-    """ Fetch all active cleaners who are NOT on vacation (isAvailable=False). """
-    return Cleaners.objects.filter(business=business, isActive=True, isAvailable=False)
+    """ Fetch all active cleaners who are available for work. """
+    print("Finding cleaners for business:", business)
+    cleaners = Cleaners.objects.filter(business=business, isActive=True, isAvailable=True)
+    print("Found cleaners:", cleaners)
+    return cleaners
 
 # Function to get cleaner availabilities for a specific day
 def get_cleaner_availabilities(week_day):
@@ -22,59 +25,27 @@ def get_cleaner_availabilities(week_day):
 # Function to check if a timeslot is available
 def is_slot_available(cleaners, time_to_check):
     """Check if at least one cleaner is available for the given time."""
+    print("\nChecking availability for time:", time_to_check)
+    print("Number of cleaners to check:", len(cleaners))
+    
     for cleaner in cleaners:
-        # Skip cleaner if they are unavailable (vacation)
-        if cleaner.isAvailable:
-            continue  
-
-        # Check cleaner's availability for the requested day
-        availability = CleanerAvailability.objects.filter(
-            cleaner=cleaner, dayOfWeek=time_to_check.strftime('%A'), offDay=False
-        ).first()
-        if not availability:
-            continue  # Skip if the cleaner is not available that day
-
-        # Ensure time falls within working hours
-        if not (availability.startTime <= time_to_check.time() < availability.endTime):
-            continue
-
-        # Check for conflicting bookings
-        booking = Booking.objects.filter(
-            cleaner=cleaner,
-            cleaningDate=time_to_check.date(),
-            startTime__lte=time_to_check.time(),
-            endTime__gt=time_to_check.time()
-        )
-
-        conflicting_booking = booking.exists()
-
-        print(" Conflicting Booking:", conflicting_booking)
-        print(" Booking:", booking)
-
-        if not conflicting_booking:
-            return True  # Found an available cleaner
-
-    return False  # No available cleaner found
-
-# Function to find an available cleaner
-def find_available_cleaner(cleaners, time_to_check):
-    """Find an available cleaner for the given time slot."""
-    for cleaner in cleaners:
-        # Skip cleaner if they are unavailable (vacation)
-        if cleaner.isAvailable:
-            continue  
-
+        print("\nChecking cleaner:", cleaner.name)
+        
         # Check cleaner's availability for the requested day
         availability = CleanerAvailability.objects.filter(
             cleaner=cleaner, 
-            dayOfWeek=time_to_check.strftime('%A'), 
+            dayOfWeek=time_to_check.strftime('%A'),
             offDay=False
         ).first()
 
         if not availability:
+            print(f"No availability found for {cleaner.name} on {time_to_check.strftime('%A')}")
             continue  # Skip if the cleaner is not available that day
 
+        print(f"Found availability for {cleaner.name}: {availability.startTime} - {availability.endTime}")
+
         if not (availability.startTime <= time_to_check.time() <= availability.endTime):
+            print(f"Time {time_to_check.time()} is outside {cleaner.name}'s working hours")
             continue
 
         # Check for conflicting bookings
@@ -85,10 +56,59 @@ def find_available_cleaner(cleaners, time_to_check):
             endTime__gte=time_to_check.time()
         ).exists()
 
-        if not conflicting_booking:
-            return cleaner  # Found an available cleaner
+        if conflicting_booking:
+            print(f"{cleaner.name} has a conflicting booking")
+            continue
 
-    return None  # No available cleaner found
+        print(f"✓ {cleaner.name} is available!")
+        return True
+
+    print("No available cleaners found for this time slot")
+    return False
+
+# Function to find an available cleaner
+def find_available_cleaner(cleaners, time_to_check):
+    """Find an available cleaner for the given time slot."""
+    print("\nFinding available cleaner for time:", time_to_check)
+    print("Number of cleaners to check:", len(cleaners))
+    
+    for cleaner in cleaners:
+        print("\nChecking cleaner:", cleaner.name)
+        
+        # Check cleaner's availability for the requested day
+        availability = CleanerAvailability.objects.filter(
+            cleaner=cleaner, 
+            dayOfWeek=time_to_check.strftime('%A'),
+            offDay=False
+        ).first()
+
+        if not availability:
+            print(f"No availability found for {cleaner.name} on {time_to_check.strftime('%A')}")
+            continue  # Skip if the cleaner is not available that day
+
+        print(f"Found availability for {cleaner.name}: {availability.startTime} - {availability.endTime}")
+
+        if not (availability.startTime <= time_to_check.time() <= availability.endTime):
+            print(f"Time {time_to_check.time()} is outside {cleaner.name}'s working hours")
+            continue
+
+        # Check for conflicting bookings
+        conflicting_booking = Booking.objects.filter(
+            cleaner=cleaner,
+            cleaningDate=time_to_check.date(),
+            startTime__lte=time_to_check.time(),
+            endTime__gte=time_to_check.time()
+        ).exists()
+
+        if conflicting_booking:
+            print(f"{cleaner.name} has a conflicting booking")
+            continue
+
+        print(f"✓ Found available cleaner: {cleaner.name}")
+        return cleaner
+
+    print("No available cleaners found for this time slot")
+    return None
 
 # Function to find alternate available slots
 def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):

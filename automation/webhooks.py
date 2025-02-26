@@ -193,6 +193,12 @@ def process_webhook_data(webhook_data):
             startTime = customer_data["appointmentDateTime"].time()
             endTime = (customer_data["appointmentDateTime"] + timedelta(minutes=60)).time()
 
+
+            # Find available cleaner for the booking
+            cleaners = get_cleaners_for_business(businessObj)
+            available_cleaner = find_available_cleaner(cleaners, customer_data["appointmentDateTime"])
+            print("Available Cleaner:", available_cleaner)
+
             newBooking = Booking.objects.create(
                 business=businessObj,
                 firstName=customer_data["firstName"],
@@ -224,7 +230,8 @@ def process_webhook_data(webhook_data):
                 addonGreenCleaning=addons["green"],
                 addonCabinetsCleaning=addons["cabinets"],
                 addonPatioSweeping=addons["patio"],
-                addonGarageSweeping=addons["garage"]
+                addonGarageSweeping=addons["garage"],
+                cleaner=available_cleaner
             )
 
 
