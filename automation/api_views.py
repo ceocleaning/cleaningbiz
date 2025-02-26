@@ -3,33 +3,34 @@ import json
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.timezone import make_aware, is_naive
 from retell import Retell
 from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
-from django.utils.timezone import make_aware, is_naive
 
-# Initialize Retell AI SDK
-
-
-
+# Function to get available cleaners for a business
 def get_cleaners_for_business(business):
-    """ Fetch all active cleaners for the given business. """
-    return Cleaners.objects.filter(business=business, isActive=True)
+    """ Fetch all active cleaners who are NOT on vacation (isAvailable=False). """
+    return Cleaners.objects.filter(business=business, isActive=True, isAvailable=False)
 
-
+# Function to get cleaner availabilities for a specific day
 def get_cleaner_availabilities(week_day):
-    """ Fetch all cleaner availabilities for the given day. """
-    return CleanerAvailability.objects.filter(dayOfWeek=week_day)
+    """ Fetch cleaner availabilities who are NOT on a day off. """
+    return CleanerAvailability.objects.filter(dayOfWeek=week_day, offDay=False)
 
-
+# Function to check if a timeslot is available
 def is_slot_available(cleaners, time_to_check):
     """Check if at least one cleaner is available for the given time."""
     for cleaner in cleaners:
-        availability = CleanerAvailability.objects.filter(
-            cleaner=cleaner, dayOfWeek=time_to_check.strftime('%A')
-        ).first()
+        # Skip cleaner if they are unavailable (vacation)
+        if cleaner.isAvailable:
+            continue  
 
+        # Check cleaner's availability for the requested day
+        availability = CleanerAvailability.objects.filter(
+            cleaner=cleaner, dayOfWeek=time_to_check.strftime('%A'), offDay=False
+        ).first()
         if not availability:
             continue  # Skip if the cleaner is not available that day
 
@@ -50,22 +51,21 @@ def is_slot_available(cleaners, time_to_check):
 
     return False  # No available cleaner found
 
-
+# Function to find alternate available slots
 def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     """
     Find up to `max_alternates` alternate available timeslots.
     If no slots exist on the requested day, search the next available day.
     """
     alternate_slots = []
-    time_increment = timedelta(hours=1)  # Each slot is 60 minutes
-    max_attempts = 10  # Prevent infinite loops
-    next_time = datetimeToCheck + time_increment  # Start searching from the next hour
+    time_increment = timedelta(hours=1)
+    max_attempts = 10
+    next_time = datetimeToCheck + time_increment
 
     while len(alternate_slots) < max_alternates and max_attempts > 0:
         if is_slot_available(cleaners, next_time):
             alternate_slots.append(next_time.strftime("%Y-%m-%d %H:%M:%S"))
 
-        # Stop checking beyond last working hour
         latest_end_time = max(get_cleaner_availabilities(next_time.strftime('%A'))
                               .values_list('endTime', flat=True), default=None)
 
@@ -73,12 +73,11 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
             break
 
         next_time += time_increment
-        max_attempts -= 1  # Prevent infinite loop
+        max_attempts -= 1
 
-    # If no slots found today, look for the next available day's slots
     if len(alternate_slots) < max_alternates:
         next_available_day = datetimeToCheck + timedelta(days=1)
-        day_attempts = 7  # Prevent infinite loops
+        day_attempts = 7
 
         while day_attempts > 0:
             next_weekDay = next_available_day.strftime('%A')
@@ -86,24 +85,20 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
 
             for availability in available_cleaners:
                 slot_time = next_available_day.replace(hour=availability.startTime.hour, minute=0)
-
                 while slot_time.time() < availability.endTime:
                     if is_slot_available(cleaners, slot_time):
                         alternate_slots.append(slot_time.strftime("%Y-%m-%d %H:%M:%S"))
-
                     if len(alternate_slots) >= max_alternates:
-                        return alternate_slots  # Stop once we have enough slots
+                        return alternate_slots
+                    slot_time += time_increment
 
-                    slot_time += time_increment  # Move to the next hourly slot
-
-            # Move to the next day
             next_available_day += timedelta(days=1)
             day_attempts -= 1
 
     return alternate_slots[:max_alternates]
 
-
-@csrf_exempt  # Required since Retell AI will send a direct POST request
+# API endpoint to check availability
+@csrf_exempt
 def check_availability_retell(request, secretKey):
     """
     API endpoint for Retell AI to check appointment availability.
@@ -144,7 +139,7 @@ def check_availability_retell(request, secretKey):
 
         weekDay = datetimeToCheck.strftime('%A')
 
-        print("Processed Date: ", datetimeToCheck)
+        print("📌 Processed Date:", datetimeToCheck)
 
         cleaners = get_cleaners_for_business(business)
 
