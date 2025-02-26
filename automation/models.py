@@ -61,6 +61,8 @@ class Cleaners(models.Model):
 
     bookings = models.ManyToManyField('bookings.Booking', blank=True, related_name='cleaners')
 
+    isAvailable = models.BooleanField(default=True)
+
     isActive = models.BooleanField(default=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
@@ -73,8 +75,13 @@ class CleanerAvailability(models.Model):
     cleaner = models.ForeignKey('automation.Cleaners', on_delete=models.CASCADE)
     
     dayOfWeek = models.CharField(max_length=10, choices=WEEKDAY_CHOICES)
-    startTime = models.TimeField()
-    endTime = models.TimeField()
+    startTime = models.TimeField(null=True, blank=True)
+    endTime = models.TimeField(null=True, blank=True)
+
+    offDay = models.BooleanField(default=False)
+
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.cleaner.name} - {self.dayOfWeek}"

@@ -7,11 +7,8 @@ from .api_views import check_availability_retell
 urlpatterns = [
     path('', views.home, name='home'),
 
-    path('webhook/<str:secretKey>/', handle_retell_webhook, name='handle_retell_webhook_no_slash'),
-    path('webhook/<str:secretKey>', handle_retell_webhook, name='handle_retell_webhook'),
-
-    path('thumbtack-webhook/', thumbtack_webhook, name='thumbtack_webhook_no_slash'),
-    path('thumbtack-webhook', thumbtack_webhook, name='thumbtack_webhook'),
+    path('webhooks/retell/', handle_retell_webhook, name='retell_webhook'),
+    path('webhooks/thumbtack/', thumbtack_webhook, name='thumbtack_webhook'),
 
     # Lead Management URLs
     path('leads/', views.all_leads, name='all_leads'),
@@ -22,4 +19,13 @@ urlpatterns = [
 
     path('check-availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
    
+    # Cleaners URLs
+    path('cleaners/', views.cleaners_list, name='cleaners_list'),
+    path('cleaners/add/', views.add_cleaner, name='add_cleaner'),
+    path('cleaners/<int:cleaner_id>/', views.cleaner_detail, name='cleaner_detail'),
+    path('cleaners/<int:cleaner_id>/update-profile/', views.update_cleaner_profile, name='update_cleaner_profile'),
+    path('cleaners/<int:cleaner_id>/update-schedule/', views.update_cleaner_schedule, name='update_cleaner_schedule'),
+    path('cleaners/<int:cleaner_id>/toggle-availability/', views.toggle_cleaner_availability, name='toggle_cleaner_availability'),
+    path('cleaners/<int:cleaner_id>/toggle-active/', views.toggle_cleaner_active, name='toggle_cleaner_active'),
+    path('cleaners/<int:cleaner_id>/delete/', views.delete_cleaner, name='delete_cleaner'),
 ]
