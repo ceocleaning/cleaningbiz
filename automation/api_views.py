@@ -49,7 +49,7 @@ def is_slot_available(cleaners, time_to_check):
         conflicting_booking = booking.exists()
 
         print("📌 Conflicting Booking:", conflicting_booking)
-        print("📌 Booking:", booking.startTime, booking.endTime)
+        print("📌 Booking:", booking)
 
         if not conflicting_booking:
             return True  # Found an available cleaner
