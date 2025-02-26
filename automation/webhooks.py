@@ -6,6 +6,10 @@ from asgiref.sync import sync_to_async
 import json
 import requests
 import threading
+from django.utils.timezone import make_aware, is_naive
+from datetime import datetime, timedelta
+from .models import *
+from .api_views import get_cleaners_for_business, find_available_cleaner
 
 from accounts.models import ApiCredential, Business, BusinessSettings, BookingIntegration, CustomAddons
 from bookings.models import Booking
@@ -101,7 +105,7 @@ def process_webhook_data(webhook_data):
                 "area": int(custom_data.get("area", 0)),
                 "additionalRequests": custom_data.get('additional_requests')
             }
-            print(customer_data)
+            
             # Get business settings
             businessSettingsObj = BusinessSettings.objects.get(business=businessObj)
 
@@ -126,7 +130,7 @@ def process_webhook_data(webhook_data):
                 businessSettingsObj
             )
 
-            print(calculateTotal)
+         
             
             # Process addons
             addons = {
@@ -144,7 +148,7 @@ def process_webhook_data(webhook_data):
                 "garage": int(custom_data.get("garage", 0))
             }
 
-            print(f"Addons: {addons}")
+           
             
             addonsPrices = {
                 "dishes": businessSettingsObj.addonPriceDishes,
@@ -161,7 +165,7 @@ def process_webhook_data(webhook_data):
                 "garage": businessSettingsObj.addonPriceGarage
             }
 
-            print(f"Addons prices: {addonsPrices}")
+          
 
             # Calculate custom addons
             customAddonsObj = CustomAddons.objects.filter(business=businessObj)
@@ -177,15 +181,18 @@ def process_webhook_data(webhook_data):
                         bookingCustomAddons.append(createNewBookingAddon)
                         customAddonTotal += customAddon.addonPrice * custom_data.get(customAddon.addonName, 0)
 
-            print(f"Custom addons total: {customAddonTotal}")
             
             # Calculate final amounts
             addons_result = calculateAddonsAmount(addons, addonsPrices)
-            print(f"Addons result: {addons_result}")
+            
             final_total = calculateTotal + addons_result + customAddonTotal
-            print(f"Final total: {final_total}")
             
             # Create booking
+
+            cleaningDate = customer_data["appointmentDateTime"].date()
+            startTime = customer_data["appointmentDateTime"].time()
+            endTime = (customer_data["appointmentDateTime"] + timedelta(minutes=60)).time()
+
             newBooking = Booking.objects.create(
                 business=businessObj,
                 firstName=customer_data["firstName"],
@@ -197,7 +204,9 @@ def process_webhook_data(webhook_data):
                 city=customer_data["city"],
                 stateOrProvince=customer_data["state"],
                 zipCode=customer_data["zipCode"],
-                cleaningDateTime=customer_data["appointmentDateTime"],
+                cleaningDate=cleaningDate,
+                startTime=startTime,
+                endTime=endTime,
                 serviceType=serviceType,
                 bedrooms=customer_data["bedrooms"],
                 bathrooms=customer_data["bathrooms"],
@@ -222,7 +231,6 @@ def process_webhook_data(webhook_data):
             newBooking.customAddons.set(bookingCustomAddons)
             newBooking.save()
 
-            print("Booking Id: ", newBooking.bookingId)
             
             # Send booking data to integration
             send_booking_data(newBooking)
@@ -284,8 +292,4 @@ def send_booking_data(booking):
     except Exception as e:
         print(f"Error sending booking data: {str(e)}")
         return None
-
-
-
-
 

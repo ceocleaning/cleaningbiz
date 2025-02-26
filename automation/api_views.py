@@ -48,13 +48,47 @@ def is_slot_available(cleaners, time_to_check):
 
         conflicting_booking = booking.exists()
 
-        print("📌 Conflicting Booking:", conflicting_booking)
-        print("📌 Booking:", booking)
+        print(" Conflicting Booking:", conflicting_booking)
+        print(" Booking:", booking)
 
         if not conflicting_booking:
             return True  # Found an available cleaner
 
     return False  # No available cleaner found
+
+# Function to find an available cleaner
+def find_available_cleaner(cleaners, time_to_check):
+    """Find an available cleaner for the given time slot."""
+    for cleaner in cleaners:
+        # Skip cleaner if they are unavailable (vacation)
+        if cleaner.isAvailable:
+            continue  
+
+        # Check cleaner's availability for the requested day
+        availability = CleanerAvailability.objects.filter(
+            cleaner=cleaner, 
+            dayOfWeek=time_to_check.strftime('%A'), 
+            offDay=False
+        ).first()
+
+        if not availability:
+            continue  # Skip if the cleaner is not available that day
+
+        if not (availability.startTime <= time_to_check.time() <= availability.endTime):
+            continue
+
+        # Check for conflicting bookings
+        conflicting_booking = Booking.objects.filter(
+            cleaner=cleaner,
+            cleaningDate=time_to_check.date(),
+            startTime__lte=time_to_check.time(),
+            endTime__gte=time_to_check.time()
+        ).exists()
+
+        if not conflicting_booking:
+            return cleaner  # Found an available cleaner
+
+    return None  # No available cleaner found
 
 # Function to find alternate available slots
 def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
@@ -144,7 +178,7 @@ def check_availability_retell(request, secretKey):
 
         weekDay = datetimeToCheck.strftime('%A')
 
-        print("📌 Processed Date:", datetimeToCheck)
+        print(" Processed Date:", datetimeToCheck)
 
         cleaners = get_cleaners_for_business(business)
 
