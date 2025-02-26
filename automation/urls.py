@@ -20,6 +20,6 @@ urlpatterns = [
     path('leads/<str:leadId>/update/', views.update_lead, name='update_lead'),
     path('leads/<str:leadId>/delete/', views.delete_lead, name='delete_lead'),
 
-    path('check-availability/', checkAvailability, name='check_availability'),
+    path('check-availability/<str:secretKey>/', checkAvailability, name='check_availability'),
    
 ]

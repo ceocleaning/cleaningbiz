@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import dateparser
 from django.utils import timezone
 
-from accounts.models import Business
+from accounts.models import ApiCredential, Business
 from bookings.models import Booking 
 from .models import Cleaners, CleanerAvailability
 
@@ -103,20 +103,20 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     return alternate_slots[:max_alternates]
 
 
-@api_view(['GET'])
-def checkAvailability(request):
+@api_view(['POST'])
+def checkAvailability(request, secretKey):
     """
     Check if there is an available cleaner for the given 60-minute timeslot.
     If unavailable, suggest up to three alternative timeslots.
     """
     try:
         # Validate business using request user
-        business = Business.objects.filter(user=request.user).first()
+        business = ApiCredential.objects.filter(secretKey=secretKey).first().business
         if not business:
             return Response({'status': 'error', 'message': 'Invalid secret key'}, status=400)
 
         # Extract and parse datetime from request
-        datetimeToCheck_str = request.GET.get('datetime')
+        datetimeToCheck_str = request.data.get('datetime')
         if not datetimeToCheck_str:
             return Response({'status': 'error', 'message': 'Datetime is required'}, status=400)
 
