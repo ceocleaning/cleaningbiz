@@ -9,9 +9,16 @@ class PlatformIntegration(models.Model):
         ('basic', 'Basic Authentication'),
     )
 
+    PLATFORM_TYPE_CHOICES = (
+        ('direct_api', 'Direct API Integration'),
+        ('workflow', 'Workflow Automation Platform'),
+    )
+
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='integrations')
+    platform_type = models.CharField(max_length=20, choices=PLATFORM_TYPE_CHOICES, default='direct_api')
     name = models.CharField(max_length=255)
-    base_url = models.URLField(help_text="Base URL for the API endpoint")
+    base_url = models.URLField(help_text="Base URL for the API endpoint", blank=True, null=True)
+    webhook_url = models.URLField(help_text="Webhook URL for workflow platforms", blank=True, null=True)
     auth_type = models.CharField(max_length=20, choices=AUTH_TYPE_CHOICES, default='none')
     auth_data = models.JSONField(default=dict, blank=True, help_text="Authentication credentials")
     is_active = models.BooleanField(default=True)

@@ -23,44 +23,52 @@ def integration_list(request):
 @login_required
 def add_integration(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        base_url = request.POST.get('base_url')
-        auth_type = request.POST.get('auth_type')
-        is_active = request.POST.get('is_active') == 'on'
+        name = request.POST.get('serviceName')
+        platform_type = request.POST.get('platformType')
         
-        # Get auth data based on type
-        auth_data = {}
-        if auth_type == 'token':
-            auth_data['token'] = request.POST.get('auth_token')
-        elif auth_type == 'basic':
-            auth_data['username'] = request.POST.get('username')
-            auth_data['password'] = request.POST.get('password')
+        integration_data = {
+            'name': name,
+            'platform_type': platform_type,
+            'business': request.user.business_set.first(),
+            'is_active': True
+        }
+
+        if platform_type == 'direct_api':
+            integration_data.update({
+                'base_url': request.POST.get('baseUrl'),
+                'auth_type': 'token',  # Default to token auth for now
+                'auth_data': {'token': request.POST.get('apiKey')}
+            })
+        else:  # workflow platform
+            integration_data.update({
+                'webhook_url': request.POST.get('webhookUrl'),
+                'auth_type': 'none'
+            })
 
         # Create new integration
-        integration = PlatformIntegration.objects.create(
-            name=name,
-            base_url=base_url,
-            auth_type=auth_type,
-            auth_data=auth_data,
-            is_active=is_active,
-            business=request.user.business_set.first()
-        )
+        integration = PlatformIntegration.objects.create(**integration_data)
 
         messages.success(request, 'Integration added successfully!')
+        if platform_type == 'direct_api':
+            return redirect('integration_mapping', platform_id=integration.id)
         return redirect('integration_list')
 
-    auth_types = PlatformIntegration._meta.get_field('auth_type').choices
-    
     context = {
-        'auth_types': auth_types,
+        'platform_types': dict(PlatformIntegration.PLATFORM_TYPE_CHOICES),
         'integration': None
     }
     
-    return render(request, 'integrations/add_integration.html', context)
+    return render(request, 'accounts/add_integration.html', context)
 
 @login_required
 def integration_mapping(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
+    
+    # If it's a workflow platform, redirect to integration list
+    if platform.platform_type == 'workflow':
+        messages.info(request, 'Workflow platforms do not require field mapping.')
+        return redirect('integration_list')
+        
     mappings = DataMapping.objects.filter(platform=platform)
     
     if request.method == 'POST':

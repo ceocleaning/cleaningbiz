@@ -16,18 +16,41 @@
                             <label for="serviceName" class="form-label">Service Name</label>
                             <input type="text" class="form-control" id="serviceName" name="serviceName" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="apiKey" class="form-label">API Key</label>
-                            <input type="password" class="form-control" id="apiKey" name="apiKey">
+                            <label for="platformType" class="form-label">Platform Type</label>
+                            <select class="form-select" id="platformType" name="platformType" required>
+                                <option value="">Select Platform Type</option>
+                                <option value="direct_api">Direct API Integration</option>
+                                <option value="workflow">Workflow Automation Platform</option>
+                            </select>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="webhookUrl" class="form-label">Webhook URL</label>
-                            <input type="url" class="form-control" id="webhookUrl" name="webhookUrl" required>
+                        <!-- Direct API Fields -->
+                        <div id="directApiFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="baseUrl" class="form-label">Base URL</label>
+                                <input type="url" class="form-control" id="baseUrl" name="baseUrl">
+                                <div class="form-text">The base URL for your API integration</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="apiKey" class="form-label">API Key</label>
+                                <input type="password" class="form-control" id="apiKey" name="apiKey">
+                                <div class="form-text">Your API authentication key</div>
+                            </div>
                         </div>
                         
-                        <div class="d-flex justify-content-between">
+                        <!-- Workflow Platform Fields -->
+                        <div id="workflowFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="webhookUrl" class="form-label">Webhook URL</label>
+                                <input type="url" class="form-control" id="webhookUrl" name="webhookUrl">
+                                <div class="form-text">The webhook URL where we'll send booking notifications</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">Add Integration</button>
                         </div>
@@ -37,4 +60,39 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const platformType = document.getElementById('platformType');
+    const directApiFields = document.getElementById('directApiFields');
+    const workflowFields = document.getElementById('workflowFields');
+    const baseUrl = document.getElementById('baseUrl');
+    const webhookUrl = document.getElementById('webhookUrl');
+
+    // Initially hide both sections
+    directApiFields.style.display = 'none';
+    workflowFields.style.display = 'none';
+
+    platformType.addEventListener('change', function() {
+        if (this.value === 'direct_api') {
+            directApiFields.style.display = 'block';
+            workflowFields.style.display = 'none';
+            baseUrl.required = true;
+            webhookUrl.required = false;
+        } else if (this.value === 'workflow') {
+            directApiFields.style.display = 'none';
+            workflowFields.style.display = 'block';
+            baseUrl.required = false;
+            webhookUrl.required = true;
+        } else {
+            directApiFields.style.display = 'none';
+            workflowFields.style.display = 'none';
+            baseUrl.required = false;
+            webhookUrl.required = false;
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
