@@ -7,6 +7,10 @@ from django.contrib.auth.forms import PasswordChangeForm
 from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
 import random
 from django.http import JsonResponse
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
+from django.utils.html import strip_tags
 
 
 def SignupPage(request):
@@ -429,3 +433,98 @@ def delete_custom_addon(request, addon_id):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+@login_required
+def test_email_settings(request):
+    """Test email settings for the business"""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request'
+        }, status=400)
+
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method'
+        }, status=400)
+
+    try:
+        business = request.user.business_set.first()
+        if not business:
+            return JsonResponse({
+                'success': False,
+                'message': 'No business found. Please set up your business first.'
+            })
+
+        api_credentials = ApiCredential.objects.get(business=business)
+        
+        if not api_credentials.gmail_host_user or not api_credentials.gmail_host_password:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email credentials not configured. Please set up your email credentials first.'
+            })
+
+        # Create test email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f'Test Email - {business.businessName}'
+        msg['From'] = api_credentials.gmail_host_user
+        msg['To'] = request.user.email
+
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Test Email</h2>
+            <p>Dear {request.user.first_name or request.user.username},</p>
+            <p>This is a test email from your cleaning business management system.</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>Email Configuration Details:</h3>
+                <p><strong>Business Name:</strong> {business.businessName}</p>
+                <p><strong>Email Address:</strong> {api_credentials.gmail_host_user}</p>
+                <p><strong>SMTP Server:</strong> smtp.gmail.com</p>
+            </div>
+            
+            <p>If you received this email, your email settings are configured correctly!</p>
+            
+            <p>Best regards,<br>
+            Your Business Management System</p>
+        </body>
+        </html>
+        """
+        
+        text_content = strip_tags(html_content)
+
+        part1 = MIMEText(text_content, 'plain')
+        part2 = MIMEText(html_content, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+
+        # Send test email
+        smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+        smtp_server.starttls()
+        smtp_server.login(api_credentials.gmail_host_user, api_credentials.gmail_host_password)
+        smtp_server.send_message(msg)
+        smtp_server.quit()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Test email sent successfully to {request.user.email}'
+        })
+
+    except ApiCredential.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Email credentials not found. Please configure your email settings.'
+        })
+    except smtplib.SMTPAuthenticationError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Gmail authentication failed. Please check your email and app password.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error sending test email: {str(e)}'
+        })

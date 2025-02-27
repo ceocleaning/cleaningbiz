@@ -367,8 +367,11 @@
             {% endfor %}
         {% endif %}
         
-        {% block content %}
-        {% endblock %}
+        <form>
+            {% csrf_token %}
+            {% block content %}
+            {% endblock %}
+        </form>
     </div>
 
     <!-- Footer -->
