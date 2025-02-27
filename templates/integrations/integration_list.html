@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">API Integrations</h1>
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-plug me-1"></i>
+                Managed Integrations
+            </div>
+            <a href="{% url 'add_integration' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Add New Integration
+            </a>
+        </div>
+        <div class="card-body">
+            {% if integrations %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Platform Name</th>
+                            <th>Base URL</th>
+                            <th>Auth Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for integration in integrations %}
+                        <tr>
+                            <td>{{ integration.name }}</td>
+                            <td>{{ integration.base_url }}</td>
+                            <td>{{ integration.get_auth_type_display }}</td>
+                            <td>
+                                {% if integration.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'integration_mapping' integration.id %}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-exchange-alt"></i> Mapping
+                                </a>
+                                <a href="{% url 'preview_mapping' integration.id %}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-eye"></i> Preview
+                                </a>
+                                <a href="{% url 'edit_integration' integration.id %}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'delete_integration' integration.id %}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">No integrations configured yet.</p>
+                <a href="{% url 'add_integration' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add Your First Integration
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

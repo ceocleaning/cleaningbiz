@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_js %}
+<script>
+// Global modal reference
+let addFieldModal;
+
+// Function declarations
+function showAddFieldModal(parentPath = '') {
+    if (!addFieldModal) {
+        addFieldModal = new bootstrap.Modal(document.getElementById('addFieldModal'));
+    }
+    const modal = document.getElementById('addFieldModal');
+    const parentPathInput = document.getElementById('parentPath');
+    const parentPathDiv = document.getElementById('parentPathInput');
+    const fieldTypeSelect = document.getElementById('fieldTypeSelect');
+    const nestedObjectConfig = document.getElementById('nestedObjectConfig');
+    
+    // Reset form
+    modal.querySelector('form')?.reset();
+    fieldTypeSelect.value = 'flat';
+    document.getElementById('objectName').value = '';
+    
+    // Set parent path if provided
+    parentPathInput.value = parentPath;
+    parentPathDiv.style.display = parentPath ? 'block' : 'none';
+    
+    // Hide nested object config initially
+    nestedObjectConfig.style.display = 'none';
+    
+    addFieldModal.show();
+}
+
+function updateNestedStructure() {
+    // Group mappings by parent path
+    const mappings = {};
+    document.querySelectorAll('.mapping-row').forEach(row => {
+        const parentPath = row.dataset.parentPath || '';
+        if (!mappings[parentPath]) {
+            mappings[parentPath] = [];
+        }
+        mappings[parentPath].push(row);
+    });
+
+    // Reorganize the DOM
+    Object.entries(mappings).forEach(([parentPath, rows]) => {
+        if (parentPath) {
+            // Create nested object container if it doesn't exist
+            let container = document.querySelector(`[data-object-path="${parentPath}"]`);
+            if (!container) {
+                container = createNestedObjectContainer(parentPath);
+                document.getElementById('root-mappings').appendChild(container);
+            }
+            rows.forEach(row => container.querySelector('.nested-fields').appendChild(row));
+        } else {
+            // Root level mappings
+            rows.forEach(row => document.getElementById('root-mappings').appendChild(row));
+        }
+    });
+}
+
+function createNestedObjectContainer(path) {
+    const container = document.createElement('div');
+    container.className = 'nested-object border rounded p-3 mb-3';
+    container.dataset.objectPath = path;
+    
+    const header = document.createElement('div');
+    header.className = 'd-flex justify-content-between align-items-center mb-3';
+    header.innerHTML = `
+        <h5 class="mb-0">
+            <i class="fas fa-folder me-2"></i>${path}
+        </h5>
+        <div>
+            <button type="button" class="btn btn-primary btn-sm me-2" onclick="showAddFieldModal('${path}')">
+                <i class="fas fa-plus me-1"></i>Add Field
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeNestedObject(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    const nestedFields = document.createElement('div');
+    nestedFields.className = 'nested-fields ps-4';
+    
+    container.appendChild(header);
+    container.appendChild(nestedFields);
+    return container;
+}
+
+function addNewField() {
+    const fieldType = document.getElementById('fieldTypeSelect').value;
+    const parentPath = document.getElementById('parentPath').value;
+    const objectName = document.getElementById('objectName').value;
+
+    if (fieldType === 'nested') {
+        if (!objectName) {
+            alert('Please enter an object name for nested fields');
+            return;
+        }
+        // Add a new nested object container
+        const newPath = parentPath ? `${parentPath}.${objectName}` : objectName;
+        const container = createNestedObjectContainer(newPath);
+        const targetContainer = parentPath ? 
+            document.querySelector(`[data-object-path="${parentPath}"] .nested-fields`) :
+            document.getElementById('root-mappings');
+        targetContainer.appendChild(container);
+    } else {
+        // Add a new mapping row
+        addMappingRow(parentPath);
+    }
+
+    addFieldModal.hide();
+}
+
+function addMappingRow(parentPath = '') {
+    const template = `
+        <div class="mapping-row border rounded p-3 mb-3" data-parent-path="${parentPath}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Source Field</label>
+                    <select class="form-select source-field" required>
+                        <option value="">Select a field</option>
+                        {% for field_name, field_label in booking_fields %}
+                        <option value="{{ field_name }}">{{ field_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Target Field</label>
+                    <input type="text" class="form-control target-field" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Field Type</label>
+                    <select class="form-select field-type">
+                        {% for type_value, type_label in field_types %}
+                        <option value="{{ type_value }}">{{ type_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Default Value</label>
+                    <input type="text" class="form-control default-value">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Required</label>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input is-required">
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm d-block w-100" onclick="removeMapping(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <label class="form-label">Transformation Rule (Optional JSON)</label>
+                    <textarea class="form-control transformation-rule" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const container = parentPath ? 
+        document.querySelector(`[data-object-path="${parentPath}"] .nested-fields`) :
+        document.getElementById('root-mappings');
+    
+    container.insertAdjacentHTML('beforeend', template);
+}
+
+function removeMapping(btn) {
+    btn.closest('.mapping-row').remove();
+}
+
+function removeNestedObject(btn) {
+    if (confirm('Are you sure you want to remove this nested object and all its fields?')) {
+        btn.closest('.nested-object').remove();
+    }
+}
+
+function saveMappings() {
+    const mappings = [];
+    
+    // Helper function to extract mapping data
+    function extractMappingData(row) {
+        return {
+            source_field: row.querySelector('.source-field').value,
+            target_field: row.querySelector('.target-field').value,
+            parent_path: row.dataset.parentPath || '',
+            field_type: row.querySelector('.field-type').value,
+            default_value: row.querySelector('.default-value').value,
+            is_required: row.querySelector('.is-required').checked,
+            transformation_rule: row.querySelector('.transformation-rule').value
+        };
+    }
+    
+    // Get all mapping rows
+    document.querySelectorAll('.mapping-row').forEach(row => {
+        mappings.push(extractMappingData(row));
+    });
+    
+    // Send mappings to server
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ mappings: mappings })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Mappings saved successfully!');
+        } else {
+            alert('Error saving mappings. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving mappings. Please try again.');
+    });
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize any existing nested objects
+    updateNestedStructure();
+
+    // Handle form submission
+    document.getElementById('mappingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveMappings();
+    });
+
+    // Handle field type selection in modal
+    document.getElementById('fieldTypeSelect').addEventListener('change', function() {
+        document.getElementById('nestedObjectConfig').style.display = 
+            this.value === 'nested' ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Data Mapping - {{ platform.name }}</h1>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-exchange-alt me-1"></i>
+            Configure Field Mappings
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Map your system's fields to the corresponding fields expected by {{ platform.name }}.
+                You can create both flat fields and nested object structures dynamically.
+            </div>
+
+            <form id="mappingForm" method="post">
+                {% csrf_token %}
+                <div id="mappings-container">
+                    <!-- Root level add button -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" class="btn btn-primary" onclick="showAddFieldModal()">
+                            <i class="fas fa-plus me-1"></i>Add Field
+                        </button>
+                    </div>
+
+                    <!-- Existing mappings will be displayed here -->
+                    <div id="root-mappings">
+                        {% for mapping in mappings %}
+                            {% include "integrations/mapping_row.html" with mapping=mapping %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="border-top pt-3">
+                    <button type="submit" class="btn btn-primary">Save Mappings</button>
+                    <a href="{% url 'preview_mapping' platform.id %}" class="btn btn-info">
+                        <i class="fas fa-eye me-1"></i>Preview Mapping
+                    </a>
+                    <a href="{% url 'integration_list' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Field Modal -->
+<div class="modal fade" id="addFieldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Field Type</label>
+                        <select class="form-select" id="fieldTypeSelect">
+                            <option value="flat">Flat Field</option>
+                            <option value="nested">Nested Object</option>
+                        </select>
+                    </div>
+                    
+                    <div id="nestedObjectConfig" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Object Name</label>
+                            <input type="text" class="form-control" id="objectName" placeholder="e.g., customer, address">
+                            <div class="form-text">This will create a new nested object container (e.g., customer: { ... })</div>
+                        </div>
+                    </div>
+
+                    <div id="parentPathInput" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Parent Path</label>
+                            <input type="text" class="form-control" id="parentPath" readonly>
+                            <div class="form-text">Fields will be nested under this path</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addNewField()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

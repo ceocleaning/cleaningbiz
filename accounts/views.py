@@ -259,15 +259,15 @@ def edit_credentials(request):
     if not business:
         return redirect('accounts:register_business')
     
-    credentials = business.apicredential
+    credentials = ApiCredential.objects.get(business=business)
     
     if request.method == 'POST':
         try:
-            credentials.retellAPIKey = request.POST.get('retellAPIKey')
-            credentials.retellWebhookURL = request.POST.get('retellWebhookURL')
-            credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber')
-            credentials.gmail_host_user = request.POST.get('gmail_host_user')
-            credentials.gmail_host_password = request.POST.get('gmail_host_password')
+            credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
+         
+            credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
+            credentials.gmail_host_user = request.POST.get('gmail_host_user', '')
+            credentials.gmail_host_password = request.POST.get('gmail_host_password', '')
             credentials.save()
             
             messages.success(request, 'API credentials updated successfully!')

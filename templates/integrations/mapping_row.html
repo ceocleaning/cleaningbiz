@@ -1,0 +1,51 @@
+<div class="mapping-row border rounded p-3 mb-3" data-parent-path="{{ mapping.parent_path|default:'' }}">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Source Field</label>
+            <select class="form-select source-field" required>
+                <option value="">Select a field</option>
+                {% for field_name, field_label in booking_fields %}
+                <option value="{{ field_name }}" {% if mapping.source_field == field_name %}selected{% endif %}>
+                    {{ field_label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Target Field</label>
+            <input type="text" class="form-control target-field" value="{{ mapping.target_field }}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Field Type</label>
+            <select class="form-select field-type">
+                {% for type_value, type_label in field_types %}
+                <option value="{{ type_value }}" {% if mapping.field_type == type_value %}selected{% endif %}>
+                    {{ type_label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Default Value</label>
+            <input type="text" class="form-control default-value" value="{{ mapping.default_value|default:'' }}">
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">Required</label>
+            <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input is-required" {% if mapping.is_required %}checked{% endif %}>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">&nbsp;</label>
+            <button type="button" class="btn btn-danger btn-sm d-block w-100" onclick="removeMapping(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-12">
+            <label class="form-label">Transformation Rule (Optional JSON)</label>
+            <textarea class="form-control transformation-rule" rows="2">{{ mapping.transformation_rule|default:"" }}</textarea>
+        </div>
+    </div>
+</div>

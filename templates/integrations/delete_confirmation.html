@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card mt-5">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Confirm Deletion
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="card-title">Delete Integration Platform</h5>
+                    <p class="card-text">
+                        Are you sure you want to delete the integration with <strong>{{ platform.name }}</strong>?
+                        This action cannot be undone.
+                    </p>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Yes, Delete Integration
+                        </button>
+                        <a href="{% url 'integration_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

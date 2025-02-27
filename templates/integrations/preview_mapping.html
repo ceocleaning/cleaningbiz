@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        setTimeout(() => btn.innerHTML = originalText, 2000);
+    });
+}
+
+function toggleJsonView() {
+    const prettyView = document.getElementById('prettyJsonView');
+    const rawView = document.getElementById('rawJsonView');
+    const toggleBtn = document.getElementById('toggleJsonBtn');
+    
+    if (prettyView.style.display === 'none') {
+        prettyView.style.display = 'block';
+        rawView.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-code me-1"></i>Show Raw JSON';
+    } else {
+        prettyView.style.display = 'none';
+        rawView.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="fas fa-sitemap me-1"></i>Show Visual Format';
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-eye me-2 text-primary"></i>
+            Mapping Preview - {{ platform.name }}
+        </h1>
+        <div>
+            <a href="{% url 'integration_mapping' platform.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Edit Mappings
+            </a>
+            <a href="{% url 'integration_list' %}" class="btn btn-secondary">
+                <i class="fas fa-list me-1"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Source Data -->
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-database me-1"></i>
+                    Your Booking Data
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field, value in sample_booking.items %}
+                                <tr>
+                                    <td>
+                                        <code class="text-success">{{ field }}</code>
+                                        {% if field in required_fields %}
+                                        <i class="fas fa-asterisk text-danger ms-1" data-bs-toggle="tooltip" title="Required"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="text-muted">{{ value }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapping Structure -->
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-sitemap me-1"></i>
+                    Mapped Structure
+                </div>
+                <div class="card-body">
+                    <div class="mapping-tree p-3">
+                        {% for type, mappings in grouped_mappings.items %}
+                            {% if type == 'Nested' %}
+                                {% regroup mappings by parent_path as nested_groups %}
+                                {% for group in nested_groups %}
+                                    <div class="nested-object mb-4">
+                                        <div class="object-name mb-2">
+                                            <i class="fas fa-folder text-warning me-2"></i>
+                                            <strong>{{ group.grouper }}</strong>
+                                        </div>
+                                        <div class="nested-fields">
+                                            {% for mapping in group.list %}
+                                                <div class="field-item">
+                                                    <i class="fas fa-long-arrow-alt-right text-muted me-2"></i>
+                                                    <code class="text-primary">{{ mapping.target_field }}</code>
+                                                    {% if mapping.is_required %}
+                                                        <i class="fas fa-asterisk text-danger ms-1" data-bs-toggle="tooltip" title="Required"></i>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            {% if type == 'Flat' %}
+                                <div class="flat-fields">
+                                    <div class="object-name mb-2">
+                                        <i class="fas fa-layer-group text-info me-2"></i>
+                                        <strong>Flat Fields</strong>
+                                    </div>
+                                    <div class="field-list">
+                                        {% for mapping in mappings %}
+                                            <div class="field-item">
+                                                <i class="fas fa-long-arrow-alt-right text-muted me-2"></i>
+                                                <code class="text-primary">{{ mapping.target_field }}</code>
+                                                {% if mapping.is_required %}
+                                                    <i class="fas fa-asterisk text-danger ms-1" data-bs-toggle="tooltip" title="Required"></i>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Preview -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-code me-1"></i>
+                JSON Output
+            </div>
+            <div>
+                <button class="btn btn-outline-light btn-sm" onclick="copyToClipboard('jsonPreview')">
+                    <i class="fas fa-copy me-1"></i>Copy
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <pre id="jsonPreview" class="mb-0"><code>{{ mapped_data|pprint }}</code></pre>
+        </div>
+    </div>
+</div>
+
+<style>
+.mapping-tree {
+    font-family: monospace;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.nested-object {
+    margin-left: 0;
+}
+
+.object-name {
+    font-size: 1.1em;
+    color: #333;
+}
+
+.nested-fields {
+    margin-left: 2rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--primary-color);
+}
+
+.field-list {
+    margin-left: 2rem;
+}
+
+.field-item {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+
+code {
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.05);
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+</style>
+{% endblock %}

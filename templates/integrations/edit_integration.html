@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Integration - {{ platform.name }}</h1>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-edit me-1"></i>
+            Update Platform Integration
+        </div>
+        <div class="card-body">
+            <form method="POST" id="integrationForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Platform Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ platform.name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="base_url" class="form-label">Base URL</label>
+                    <input type="url" class="form-control" id="base_url" name="base_url" value="{{ platform.base_url }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="auth_type" class="form-label">Authentication Type</label>
+                    <select class="form-select" id="auth_type" name="auth_type" required>
+                        <option value="none" {% if platform.auth_type == 'none' %}selected{% endif %}>No Authentication</option>
+                        <option value="api_key" {% if platform.auth_type == 'api_key' %}selected{% endif %}>API Key</option>
+                        <option value="basic" {% if platform.auth_type == 'basic' %}selected{% endif %}>Basic Auth</option>
+                        <option value="oauth2" {% if platform.auth_type == 'oauth2' %}selected{% endif %}>OAuth 2.0</option>
+                    </select>
+                </div>
+
+                <div id="auth_fields" class="{% if platform.auth_type == 'none' %}d-none{% endif %}">
+                    <!-- API Key Fields -->
+                    <div id="api_key_fields" class="auth-section {% if platform.auth_type != 'api_key' %}d-none{% endif %}">
+                        <div class="mb-3">
+                            <label for="api_key" class="form-label">API Key</label>
+                            <input type="password" class="form-control" id="api_key" name="api_key" 
+                                value="{{ platform.auth_data.api_key|default:'' }}">
+                            <div class="form-text">Leave blank to keep existing API key</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="api_key_header" class="form-label">Header Name</label>
+                            <input type="text" class="form-control" id="api_key_header" name="api_key_header" 
+                                value="{{ platform.auth_data.api_key_header|default:'Authorization' }}">
+                        </div>
+                    </div>
+
+                    <!-- Basic Auth Fields -->
+                    <div id="basic_auth_fields" class="auth-section {% if platform.auth_type != 'basic' %}d-none{% endif %}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                value="{{ platform.auth_data.username|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <div class="form-text">Leave blank to keep existing password</div>
+                        </div>
+                    </div>
+
+                    <!-- OAuth2 Fields -->
+                    <div id="oauth2_fields" class="auth-section {% if platform.auth_type != 'oauth2' %}d-none{% endif %}">
+                        <div class="alert alert-info">
+                            OAuth 2.0 configuration will be available in future updates.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Update Integration</button>
+                    <a href="{% url 'integration_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const authTypeSelect = document.getElementById('auth_type');
+    const authFields = document.getElementById('auth_fields');
+    const authSections = document.querySelectorAll('.auth-section');
+
+    authTypeSelect.addEventListener('change', function() {
+        const selectedAuth = this.value;
+        
+        // Hide all auth sections first
+        authSections.forEach(section => section.classList.add('d-none'));
+        
+        // Show auth fields container if not "none"
+        if (selectedAuth !== 'none') {
+            authFields.classList.remove('d-none');
+            
+            // Show specific auth section
+            const selectedSection = document.getElementById(`${selectedAuth}_fields`);
+            if (selectedSection) {
+                selectedSection.classList.remove('d-none');
+            }
+        } else {
+            authFields.classList.add('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
