@@ -14,8 +14,7 @@ from .api_views import get_cleaners_for_business, find_available_cleaner
 from accounts.models import ApiCredential, Business, BusinessSettings, BookingIntegration, CustomAddons
 from bookings.models import Booking
 from .utils import calculateAmount, calculateAddonsAmount
-
-
+from integrations.models import PlatformIntegration, DataMapping
 
 @csrf_exempt
 def thumbtack_webhook(request):
@@ -246,57 +245,199 @@ def process_webhook_data(webhook_data):
         print(f"Error processing webhook: {str(e)}")
 
 
+# Sending Data to External Sources
+def create_mapped_payload(booking, integration):
+    """Create payload based on user-defined field mappings"""
+    mappings = DataMapping.objects.filter(platform=integration)
+    payload = {}
+    
+    # Get all booking fields and their values
+    booking_data = {
+        "firstName": booking.firstName,
+        "lastName": booking.lastName,
+        "email": booking.email,
+        "phoneNumber": booking.phoneNumber,
+        "address1": booking.address1,
+        "address2": booking.address2,
+        "city": booking.city,
+        "stateOrProvince": booking.stateOrProvince,
+        "zipCode": booking.zipCode,
+        "bedrooms": booking.bedrooms,
+        "bathrooms": booking.bathrooms,
+        "squareFeet": booking.squareFeet,
+        "serviceType": booking.serviceType,
+        "cleaningDate": booking.cleaningDateTime.date(),
+        "startTime": booking.cleaningDateTime.time(),
+        "endTime": (booking.cleaningDateTime + timedelta(minutes=60)).time(),
+        "totalPrice": float(booking.totalPrice),
+        "tax": float(booking.tax or 0),
+        "addonDishes": booking.addonDishes,
+        "addonLaundryLoads": booking.addonLaundryLoads,
+        "addonWindowCleaning": booking.addonWindowCleaning,
+        "addonPetsCleaning": booking.addonPetsCleaning,
+        "addonFridgeCleaning": booking.addonFridgeCleaning,
+        "addonOvenCleaning": booking.addonOvenCleaning,
+        "addonBaseboard": booking.addonBaseboard,
+        "addonBlinds": booking.addonBlinds,
+        "addonGreenCleaning": booking.addonGreenCleaning,
+        "addonCabinetsCleaning": booking.addonCabinetsCleaning,
+        "addonPatioSweeping": booking.addonPatioSweeping,
+        "addonGarageSweeping": booking.addonGarageSweeping
+    }
+
+    # Apply mappings
+    for mapping in mappings:
+        source_value = booking_data.get(mapping.source_field)
+        
+        # Skip if source field doesn't exist
+        if source_value is None and not mapping.default_value:
+            if mapping.is_required:
+                raise ValueError(f"Required field {mapping.source_field} not found in booking data")
+            continue
+            
+        # Use default value if source is None
+        if source_value is None:
+            source_value = mapping.default_value
+
+                
+        # Handle nested fields
+        if mapping.parent_path:
+            parts = mapping.parent_path.split('.')
+            current = payload
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            if parts[-1] not in current:
+                current[parts[-1]] = {}
+            current[parts[-1]][mapping.target_field] = source_value
+        else:
+            payload[mapping.target_field] = source_value
+            
+    return payload
+
+
+
 def send_booking_data(booking):
     """Send booking data to integration webhook"""
     try:
-        integrationObj = BookingIntegration.objects.filter(business=booking.business).first()
-        if not integrationObj or not integrationObj.webhookUrl:
+        # Get all active integrations for the business
+        integrations = PlatformIntegration.objects.filter(
+            business=booking.business,
+            is_active=True
+        )
+        
+        if not integrations.exists():
+            print(f"No active integrations found for business {booking.business.businessName}")
             return
 
-        payload = {
-            "firstName": booking.firstName,
-            "lastName": booking.lastName,
-            "email": booking.email,
-            "phoneNumber": booking.phoneNumber,
-            "address1": booking.address1,
-            "address2": booking.address2,
-            "city": booking.city,
-            "stateOrProvince": booking.stateOrProvince,
-            "zipCode": booking.zipCode,
-            "bedrooms": booking.bedrooms,
-            "bathrooms": booking.bathrooms,
-            "squareFeet": booking.squareFeet,
-            "serviceType": booking.serviceType,
-            "cleaningDate": booking.cleaningDateTime.date(),
-            "startTime": booking.cleaningDateTime.time(),
-            "endTime": (booking.cleaningDateTime + timedelta(minutes=60)).time(),
-            "totalPrice": float(booking.totalPrice),
-            "tax": float(booking.tax or 0),
-            "addonDishes": booking.addonDishes,
-            "addonLaundryLoads": booking.addonLaundryLoads,
-            "addonWindowCleaning": booking.addonWindowCleaning,
-            "addonPetsCleaning": booking.addonPetsCleaning,
-            "addonFridgeCleaning": booking.addonFridgeCleaning,
-            "addonOvenCleaning": booking.addonOvenCleaning,
-            "addonBaseboard": booking.addonBaseboard,
-            "addonBlinds": booking.addonBlinds,
-            "addonGreenCleaning": booking.addonGreenCleaning,
-            "addonCabinetsCleaning": booking.addonCabinetsCleaning,
-            "addonPatioSweeping": booking.addonPatioSweeping,
-            "addonGarageSweeping": booking.addonGarageSweeping
+        results = {
+            'workflow': {'success': [], 'failed': []},
+            'direct_api': {'success': [], 'failed': []}
         }
+        
+        print(f"Processing {integrations.count()} integrations for business {booking.business.businessName}")
+        
+        for integration in integrations:
+            try:
+                integration_type = 'workflow' if integration.platform_type == 'workflow' else 'direct_api'
+                print(f"Processing {integration_type} integration: {integration.name}")
+                
+                if integration.platform_type == 'workflow':
+                    # For workflow platforms, use the default payload structure
+                    payload = {
+                        "firstName": booking.firstName,
+                        "lastName": booking.lastName,
+                        "email": booking.email,
+                        "phoneNumber": booking.phoneNumber,
+                        "address1": booking.address1,
+                        "address2": booking.address2,
+                        "city": booking.city,
+                        "stateOrProvince": booking.stateOrProvince,
+                        "zipCode": booking.zipCode,
+                        "bedrooms": booking.bedrooms,
+                        "bathrooms": booking.bathrooms,
+                        "squareFeet": booking.squareFeet,
+                        "serviceType": booking.serviceType,
+                        "cleaningDate": booking.cleaningDateTime.date(),
+                        "startTime": booking.cleaningDateTime.time(),
+                        "endTime": (booking.cleaningDateTime + timedelta(minutes=60)).time(),
+                        "totalPrice": float(booking.totalPrice),
+                        "tax": float(booking.tax or 0),
+                        "addonDishes": booking.addonDishes,
+                        "addonLaundryLoads": booking.addonLaundryLoads,
+                        "addonWindowCleaning": booking.addonWindowCleaning,
+                        "addonPetsCleaning": booking.addonPetsCleaning,
+                        "addonFridgeCleaning": booking.addonFridgeCleaning,
+                        "addonOvenCleaning": booking.addonOvenCleaning,
+                        "addonBaseboard": booking.addonBaseboard,
+                        "addonBlinds": booking.addonBlinds,
+                        "addonGreenCleaning": booking.addonGreenCleaning,
+                        "addonCabinetsCleaning": booking.addonCabinetsCleaning,
+                        "addonPatioSweeping": booking.addonPatioSweeping,
+                        "addonGarageSweeping": booking.addonGarageSweeping
+                    }
+                    
+                    print(f"Sending data to workflow webhook: {integration.webhook_url}")
+                    # Send to webhook URL
+                    response = requests.post(
+                        integration.webhook_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=30
+                    )
+                    
+                else:  # direct_api
+                    # Create payload using field mappings
+                    print(f"Creating mapped payload for {integration.name}")
+                    payload = create_mapped_payload(booking, integration)
+                    
+                    # Send to base URL
+                    headers = {"Content-Type": "application/json"}
+                    
+                    # Add authentication if configured
+                    if integration.auth_type == 'token' and integration.auth_data.get('token'):
+                        headers['Authorization'] = f"Bearer {integration.auth_data['token']}"
+                    
+                    print(f"Sending data to API endpoint: {integration.base_url}")
+                    response = requests.post(
+                        integration.base_url,
+                        json=payload,
+                        headers=headers,
+                        timeout=30
+                    )
+                
+                response.raise_for_status()
+                print(f"Successfully sent booking data to {integration.name}", response.text)
+                results[integration_type]['success'].append({
+                    'name': integration.name,
+                    'response': response.text,
+                    'status_code': response.status_code
+                })
+                
+            except Exception as e:
+                error_msg = f"Error sending booking data to {integration.name}: {str(e)}"
+                print(error_msg)
+                results[integration_type]['failed'].append({
+                    'name': integration.name,
+                    'error': str(e)
+                })
+                continue
 
-        response = requests.post(
-            integrationObj.webhookUrl,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            timeout=30
-        )
-        response.raise_for_status()
-        print("Successfully sent booking data to integration", response.text)
-        return response
+        # Print summary
+        print("\nIntegration Summary:")
+        for int_type in ['workflow', 'direct_api']:
+            print(f"\n{int_type.upper()} Integrations:")
+            print(f"Success: {len(results[int_type]['success'])} integration(s)")
+            print(f"Failed: {len(results[int_type]['failed'])} integration(s)")
+            
+            if results[int_type]['failed']:
+                print("\nFailed integrations:")
+                for fail in results[int_type]['failed']:
+                    print(f"- {fail['name']}: {fail['error']}")
+
+        return results
 
     except Exception as e:
-        print(f"Error sending booking data: {str(e)}")
+        print(f"Error in send_booking_data: {str(e)}")
         return None
-
