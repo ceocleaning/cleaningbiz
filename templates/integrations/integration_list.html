@@ -3,6 +3,9 @@
 
 {% block content %}
 <div class="container-fluid px-4">
+    <form id="csrfForm" style="display: none;">
+        {% csrf_token %}
+    </form>
     <h1 class="mt-4">API Integrations</h1>
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -57,18 +60,23 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'integration_mapping' integration.id %}" class="btn btn-info btn-sm">
-                                            <i class="fas fa-exchange-alt"></i> Mapping
-                                        </a>
-                                        <a href="{% url 'preview_mapping' integration.id %}" class="btn btn-secondary btn-sm">
-                                            <i class="fas fa-eye"></i> Preview
-                                        </a>
-                                        <a href="{% url 'edit_integration' integration.id %}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                        <a href="{% url 'delete_integration' integration.id %}" class="btn btn-danger btn-sm">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </a>
+                                        <div class="btn-group">
+                                            <a href="{% url 'integration_mapping' integration.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-exchange-alt"></i> Mapping
+                                            </a>
+                                            <a href="{% url 'preview_mapping' integration.id %}" class="btn btn-secondary btn-sm">
+                                                <i class="fas fa-eye"></i> Preview
+                                            </a>
+                                            <a href="{% url 'edit_integration' integration.id %}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <button class="btn btn-primary btn-sm test-integration" data-integration-id="{{ integration.id }}">
+                                                <i class="fas fa-vial"></i> Test
+                                            </button>
+                                            <a href="{% url 'delete_integration' integration.id %}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endif %}
@@ -104,12 +112,17 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'edit_integration' integration.id %}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                        <a href="{% url 'delete_integration' integration.id %}" class="btn btn-danger btn-sm">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </a>
+                                        <div class="btn-group">
+                                            <a href="{% url 'edit_integration' integration.id %}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <button class="btn btn-primary btn-sm test-integration" data-integration-id="{{ integration.id }}">
+                                                <i class="fas fa-vial"></i> Test
+                                            </button>
+                                            <a href="{% url 'delete_integration' integration.id %}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endif %}
@@ -130,6 +143,24 @@
         </div>
     </div>
 </div>
+
+<!-- Test Result Modal -->
+<div class="modal fade" id="testResultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Integration Test Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testResult"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -144,6 +175,65 @@ document.addEventListener('DOMContentLoaded', function() {
             tabTrigger.show()
         })
     })
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Test Integration functionality
+    document.querySelectorAll('.test-integration').forEach(button => {
+        button.addEventListener('click', async function() {
+            const integrationId = this.dataset.integrationId;
+            const resultModal = new bootstrap.Modal(document.getElementById('testResultModal'));
+            const resultDiv = document.getElementById('testResult');
+            
+            try {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+                
+                const response = await fetch(`/integration/${integrationId}/test/`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                
+                let result;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    // If response is not JSON, treat it as an error
+                    throw new Error('Invalid response from server');
+                }
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert ${result.success ? 'alert-success' : 'alert-danger'}">
+                            <h6>${result.success ? 'Success!' : 'Error!'}</h6>
+                            <p>${result.message}</p>
+                            ${result.response ? `<pre class="mt-3"><code>${JSON.stringify(result.response, null, 2)}</code></pre>` : ''}
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.message || 'Failed to test integration');
+                }
+            } catch (error) {
+                console.error('Test integration error:', error);
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6>Error!</h6>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-vial"></i> Test';
+                resultModal.show();
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

@@ -246,44 +246,17 @@ def process_webhook_data(webhook_data):
 
 
 # Sending Data to External Sources
-def create_mapped_payload(booking, integration):
+def create_mapped_payload(booking_data, integration):
     """Create payload based on user-defined field mappings"""
     mappings = DataMapping.objects.filter(platform=integration)
     payload = {}
     
-    # Get all booking fields and their values
-    booking_data = {
-        "firstName": booking.firstName,
-        "lastName": booking.lastName,
-        "email": booking.email,
-        "phoneNumber": booking.phoneNumber,
-        "address1": booking.address1,
-        "address2": booking.address2,
-        "city": booking.city,
-        "stateOrProvince": booking.stateOrProvince,
-        "zipCode": booking.zipCode,
-        "bedrooms": booking.bedrooms,
-        "bathrooms": booking.bathrooms,
-        "squareFeet": booking.squareFeet,
-        "serviceType": booking.serviceType,
-        "cleaningDate": booking.cleaningDateTime.date(),
-        "startTime": booking.cleaningDateTime.time(),
-        "endTime": (booking.cleaningDateTime + timedelta(minutes=60)).time(),
-        "totalPrice": float(booking.totalPrice),
-        "tax": float(booking.tax or 0),
-        "addonDishes": booking.addonDishes,
-        "addonLaundryLoads": booking.addonLaundryLoads,
-        "addonWindowCleaning": booking.addonWindowCleaning,
-        "addonPetsCleaning": booking.addonPetsCleaning,
-        "addonFridgeCleaning": booking.addonFridgeCleaning,
-        "addonOvenCleaning": booking.addonOvenCleaning,
-        "addonBaseboard": booking.addonBaseboard,
-        "addonBlinds": booking.addonBlinds,
-        "addonGreenCleaning": booking.addonGreenCleaning,
-        "addonCabinetsCleaning": booking.addonCabinetsCleaning,
-        "addonPatioSweeping": booking.addonPatioSweeping,
-        "addonGarageSweeping": booking.addonGarageSweeping
-    }
+    # Convert datetime fields to string format
+    if isinstance(booking_data["cleaningDateTime"], datetime):
+        booking_data = dict(booking_data)  # Create a copy to avoid modifying the original
+        booking_data["cleaningDate"] = booking_data["cleaningDateTime"].date().isoformat()
+        booking_data["startTime"] = booking_data["cleaningDateTime"].time().strftime("%H:%M:%S")
+        booking_data["endTime"] = (booking_data["cleaningDateTime"] + timedelta(minutes=60)).time().strftime("%H:%M:%S")
 
     # Apply mappings
     for mapping in mappings:
@@ -298,7 +271,6 @@ def create_mapped_payload(booking, integration):
         # Use default value if source is None
         if source_value is None:
             source_value = mapping.default_value
-
                 
         # Handle nested fields
         if mapping.parent_path:
@@ -390,7 +362,7 @@ def send_booking_data(booking):
                 else:  # direct_api
                     # Create payload using field mappings
                     print(f"Creating mapped payload for {integration.name}")
-                    payload = create_mapped_payload(booking, integration)
+                    payload = create_mapped_payload(booking.__dict__, integration)
                     
                     # Send to base URL
                     headers = {"Content-Type": "application/json"}

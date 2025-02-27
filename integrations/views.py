@@ -2,14 +2,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import PlatformIntegration, DataMapping
 from accounts.models import Business
 from bookings.models import Booking
 import json
+from datetime import datetime, timedelta
+from decimal import Decimal
+from automation.webhooks import send_booking_data
+import requests
 
 # Create your views here.
 
 @login_required
+@ensure_csrf_cookie
 def integration_list(request):
     business = request.user.business_set.first()
     if not business:
@@ -218,6 +225,159 @@ def preview_mapping(request, platform_id):
     }
 
     return render(request, 'integrations/preview_mapping.html', context)
+
+@login_required
+@require_POST
+def test_integration(request, platform_id):
+    """Test an integration by sending sample data"""
+    try:
+        integration = get_object_or_404(
+            PlatformIntegration, 
+            id=platform_id, 
+            business=request.user.business_set.first()
+        )
+
+        # Create test data that matches Booking model structure
+        test_data = {
+            "firstName": "Test",
+            "lastName": "User",
+            "email": "test@example.com",
+            "phoneNumber": "+1234567890",
+            "address1": "123 Test St",
+            "address2": "Apt 4B",
+            "city": "Test City",
+            "stateOrProvince": "Test State",
+            "zipCode": "12345",
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "squareFeet": 2000,
+            "serviceType": "Deep Clean",
+            "cleaningDateTime": datetime.now() + timedelta(days=7),
+            "totalPrice": "299.99",
+            "tax": "24.99",
+            "addonDishes": True,
+            "addonLaundryLoads": 2,
+            "addonWindowCleaning": True,
+            "addonPetsCleaning": False,
+            "addonFridgeCleaning": True,
+            "addonOvenCleaning": True,
+            "addonBaseboard": True,
+            "addonBlinds": False,
+            "addonGreenCleaning": True,
+            "addonCabinetsCleaning": True,
+            "addonPatioSweeping": False,
+            "addonGarageSweeping": False
+        }
+
+        # Send test data only to this specific integration
+        test_results = send_booking_data_to_integration(test_data, integration)
+        
+        if test_results.get('success', []):
+            return JsonResponse({
+                'success': True,
+                'message': 'Test data sent successfully!',
+                'response': test_results['success'][0]  # Get the first success response
+            })
+        else:
+            error_msg = test_results.get('failed', [{}])[0].get('error', 'Unknown error occurred')
+            return JsonResponse({
+                'success': False,
+                'message': f'Failed to send test data: {error_msg}'
+            }, status=400)
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print("Test Integration Error:", error_details)  # Log the full error
+        return JsonResponse({
+            'success': False,
+            'message': f'Error testing integration: {str(e)}'
+        }, status=500)
+
+def send_booking_data_to_integration(booking_data, integration):
+    """Send booking data to a specific integration"""
+    try:
+        results = {
+            'success': [],
+            'failed': []
+        }
+
+        if integration.platform_type == 'workflow':
+            # Convert datetime to string format
+            cleaning_date = booking_data["cleaningDateTime"].date().isoformat()
+            cleaning_time = booking_data["cleaningDateTime"].time().strftime("%H:%M:%S")
+            end_time = (booking_data["cleaningDateTime"] + timedelta(minutes=60)).time().strftime("%H:%M:%S")
+
+            # For workflow platforms, use the default payload structure
+            payload = {
+                "firstName": booking_data["firstName"],
+                "lastName": booking_data["lastName"],
+                "email": booking_data["email"],
+                "phoneNumber": booking_data["phoneNumber"],
+                "address1": booking_data["address1"],
+                "address2": booking_data["address2"],
+                "city": booking_data["city"],
+                "stateOrProvince": booking_data["stateOrProvince"],
+                "zipCode": booking_data["zipCode"],
+                "bedrooms": booking_data["bedrooms"],
+                "bathrooms": booking_data["bathrooms"],
+                "squareFeet": booking_data["squareFeet"],
+                "serviceType": booking_data["serviceType"],
+                "cleaningDate": cleaning_date,
+                "startTime": cleaning_time,
+                "endTime": end_time,
+                "totalPrice": float(booking_data["totalPrice"]),
+                "tax": float(booking_data["tax"] or 0),
+                "addonDishes": booking_data["addonDishes"],
+                "addonLaundryLoads": booking_data["addonLaundryLoads"],
+                "addonWindowCleaning": booking_data["addonWindowCleaning"],
+                "addonPetsCleaning": booking_data["addonPetsCleaning"],
+                "addonFridgeCleaning": booking_data["addonFridgeCleaning"],
+                "addonOvenCleaning": booking_data["addonOvenCleaning"],
+                "addonBaseboard": booking_data["addonBaseboard"],
+                "addonBlinds": booking_data["addonBlinds"],
+                "addonGreenCleaning": booking_data["addonGreenCleaning"],
+                "addonCabinetsCleaning": booking_data["addonCabinetsCleaning"],
+                "addonPatioSweeping": booking_data["addonPatioSweeping"],
+                "addonGarageSweeping": booking_data["addonGarageSweeping"]
+            }
+            
+            response = requests.post(
+                integration.webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+        else:  # direct_api
+            from automation.webhooks import create_mapped_payload
+            payload = create_mapped_payload(booking_data, integration)
+            
+            headers = {"Content-Type": "application/json"}
+            if integration.auth_type == 'token' and integration.auth_data.get('token'):
+                headers['Authorization'] = f"Bearer {integration.auth_data['token']}"
+            
+            response = requests.post(
+                integration.base_url,
+                json=payload,
+                headers=headers,
+                timeout=30
+            )
+        
+        response.raise_for_status()
+        results['success'].append({
+            'name': integration.name,
+            'response': response.text,
+            'status_code': response.status_code
+        })
+        
+    except Exception as e:
+        results['failed'].append({
+            'name': integration.name,
+            'error': str(e)
+        })
+    
+    return results
 
 @login_required
 def edit_integration(request, platform_id):
