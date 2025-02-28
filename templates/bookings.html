@@ -70,7 +70,7 @@
                     <tr>
                         <td>{{ booking.bookingId }}</td>
                         <td>{{ booking.firstName }}</td>
-                        <td>{{ booking.cleaningDateTime|date:"M d, Y" }}</td>
+                        <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                         <td>
                             {% if not booking.isCompleted %}
                             <span class="badge bg-warning text-dark">
@@ -82,7 +82,7 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="text-end">
+                        <td class="text-start">
                             <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
                                class="btn btn-sm btn-outline-primary me-2"
                                data-bs-toggle="tooltip" 
@@ -96,7 +96,7 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if not booking.invoice %}
-                            <a href="{% url 'bookings:create_invoice' booking.bookingId %}" 
+                            <a href="{% url 'invoice:create_invoice' booking.bookingId %}" 
                                class="btn btn-sm btn-outline-success me-2"
                                data-bs-toggle="tooltip" 
                                data-bs-title="Create invoice for this booking">

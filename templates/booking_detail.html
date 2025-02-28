@@ -35,7 +35,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
-                            <div class="icon-circle bg-primary bg-opacity-10 text-white me-3">
+                            <div class="icon-circle bg-primary text-white me-3">
                                 <i class="fas fa-user"></i>
                             </div>
                             <h5 class="card-title mb-0">Customer Details</h5>
@@ -75,7 +75,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
-                            <div class="icon-circle bg-success bg-opacity-10 text-white me-3">
+                            <div class="icon-circle bg-success text-white me-3">
                                 <i class="fas fa-broom"></i>
                             </div>
                             <h5 class="card-title mb-0">Service Details</h5>
@@ -87,11 +87,11 @@
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-calendar text-muted me-2"></i>
-                                {{ booking.cleaningDateTime|date:"F d, Y" }}
+                                {{ booking.cleaningDate|date:"F d, Y" }}
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-clock text-muted me-2"></i>
-                                {{ booking.cleaningDateTime|date:"h:i A" }}
+                                {{ booking.startTime|date:"h:i A" }} to {{ booking.endTime|date:"h:i A" }}
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-credit-card text-muted me-2"></i>
@@ -110,13 +110,75 @@
             </div>
         </div>
 
+       <!-- Cleaner Info -->
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <i class="fas fa-user-tie fa-lg"></i>
+                    </div>
+                    <h5 class="card-title mb-0">Assigned Cleaner</h5>
+                </div>
+                
+                {% if booking.cleaner %}
+                <div class="cleaner-info">
+                    <div class="row g-3"> <!-- Added gutter spacing between cards -->
+                        <!-- Name Card -->
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-user text-info fa-2x mb-3"></i>
+                                    <h6 class="card-title mb-2"><strong>Name</strong></h6>
+                                    <p class="card-text text-muted">{{ booking.cleaner.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email Card -->
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-envelope text-info fa-2x mb-3"></i>
+                                    <h6 class="card-title mb-2"><strong>Email</strong></h6>
+                                    <p class="card-text text-muted">{{ booking.cleaner.email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Phone Number Card -->
+                        {% if booking.cleaner.phoneNumber %}
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0 shadow-sm h-100">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-phone text-info fa-2x mb-3"></i>
+                                    <h6 class="card-title mb-2"><strong>Phone</strong></h6>
+                                    <p class="card-text text-muted">{{ booking.cleaner.phoneNumber }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-user-clock fa-3x mb-3 text-info"></i>
+                    <p class="mb-0">No cleaner has been assigned to this booking yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
         <div class="row">
             <!-- Property Info -->
             <div class="col-md-6 mb-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
-                            <div class="icon-circle bg-info bg-opacity-10 text-white me-3">
+                            <div class="icon-circle bg-info text-white me-3">
                                 <i class="fas fa-home"></i>
                             </div>
                             <h5 class="card-title mb-0">Property Details</h5>
@@ -150,7 +212,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
-                            <div class="icon-circle bg-warning bg-opacity-10 text-white me-3">
+                            <div class="icon-circle bg-warning text-white me-3">
                                 <i class="fas fa-plus"></i>
                             </div>
                             <h5 class="card-title mb-0">Add-on Services</h5>
@@ -279,7 +341,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="icon-circle bg-purple bg-opacity-10 text-white me-3">
+                    <div class="icon-circle bg-purple text-white me-3">
                         <i class="fas fa-comment-alt"></i>
                     </div>
                     <h5 class="card-title mb-0">Special Requests</h5>
@@ -293,7 +355,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="icon-circle bg-warning bg-opacity-10 text-white me-3">
+                    <div class="icon-circle bg-warning text-white me-3">
                         <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                     <h5 class="card-title mb-0">Related Invoice</h5>

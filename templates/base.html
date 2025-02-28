@@ -8,9 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Toastify CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <!-- Bootstrap JS Bundle (includes Popper) -->
@@ -23,47 +22,97 @@
     {% block extra_js %}{% endblock %}
     <style>
         :root {
-            --primary-color: #4361ee;
-            --success-color: #2ec4b6;
-            --warning-color: #ff9f1c;
-            --danger-color: #e71d36;
-            --info-color: #4cc9f0;
-            --dark-color: #011627;
-            --light-color: #fdfffc;
-            --gray-color: #6c757d;
-        }
-
-        .active {
-            
-            font-weight: 600;
+            --primary-color: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-dark: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #0ea5e9;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --gray-color: #64748b;
+            --gray-light: #e2e8f0;
         }
 
         body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
         }
 
+        /* Navigation Bar */
         .navbar {
-            background-color: rgb(255, 255, 255);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 0;
         }
 
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link {
+            position: relative;
+            font-weight: 500;
+            padding: 0.75rem 1rem !important;
+            color: var(--gray-color) !important;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+
+        .nav-link.active {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 1rem;
+            right: 1rem;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        /* Cards */
         .card {
             border: none;
-            border-radius: 10px;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
+            overflow: hidden;
         }
 
         .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
         }
 
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--gray-light);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Buttons */
         .btn {
             font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            border-radius: 7px;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            letter-spacing: 0.3px;
         }
 
         .btn-primary {
@@ -71,9 +120,21 @@
             border-color: var(--primary-color);
         }
 
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
         .btn-success {
             background-color: var(--success-color);
             border-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #0ca678;
+            border-color: #0ca678;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
         }
 
         .btn-warning {
@@ -92,144 +153,186 @@
             color: white;
         }
 
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
         }
 
-        .badge {
-            padding: 0.5em 1em;
-            font-weight: 500;
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
         }
 
+        /* Tables */
         .table {
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
+            margin-bottom: 0;
         }
 
         .table thead th {
-            background-color: #f8f9fa;
+            background-color: var(--gray-light);
             border-bottom: none;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            letter-spacing: 0.7px;
+            padding: 1rem;
+            color: var(--dark-color);
+            white-space: nowrap;
         }
 
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Form Controls */
         .form-control, .form-select {
-            border-radius: 7px;
-            padding: 0.6rem 1rem;
-            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1;
+            font-size: 0.95rem;
         }
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
         }
 
+        label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+
+        /* Page Headers */
         .page-header {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            padding-bottom: 1rem;
         }
 
-        .text-primary {
-            color: var(--primary-color) !important;
+        .page-header h1, .page-header h2 {
+            font-weight: 600;
+            color: var(--dark-color);
         }
 
-        .text-success {
-            color: var(--success-color) !important;
-        }
-
-        .text-warning {
-            color: var(--warning-color) !important;
-        }
-
-        .text-danger {
-            color: var(--danger-color) !important;
-        }
-
-        .text-info {
-            color: var(--info-color) !important;
-        }
-
-        .bg-primary {
-            background-color: var(--primary-color) !important;
-        }
-
-        .bg-success {
-            background-color: var(--success-color) !important;
-        }
-
-        .bg-warning {
-            background-color: var(--warning-color) !important;
-        }
-
-        .bg-danger {
-            background-color: var(--danger-color) !important;
-        }
-
-        .bg-info {
-            background-color: var(--info-color) !important;
-        }
-
-        .modal-content {
-            border-radius: 15px;
-        }
-
-        .icon-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
+        /* Badges */
+        .badge {
+            padding: 0.5em 1em;
+            font-weight: 500;
+            border-radius: 6px;
         }
 
         /* Avatar Circle Styles */
         .avatar-circle {
-            width: 32px;
-            height: 32px;
-            background-color: #0d6efd;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
         
         .avatar-initials {
             color: white;
-            font-weight: 500;
-            font-size: 14px;
+            font-weight: 600;
+            font-size: 16px;
             text-transform: uppercase;
         }
 
         /* Dropdown Styles */
         .dropdown-menu {
-            min-width: 240px;
-            padding: 0.5rem 0;
-            margin-top: 0.5rem;
+            min-width: 260px;
+            padding: 0.75rem 0;
+            margin-top: 0.75rem;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         
         .dropdown-item {
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.25rem;
             display: flex;
             align-items: center;
+            font-weight: 500;
+            color: var(--dark-color);
         }
         
         .dropdown-item:hover {
-            background-color: #f8f9fa;
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+        
+        .dropdown-item:hover i {
+            color: var(--primary-color) !important;
         }
         
         .dropdown-item.text-danger:hover {
-            background-color: #dc3545;
-            color: white !important;
+            background-color: #fee2e2;
+            color: var(--danger-color) !important;
         }
         
         .dropdown-item.text-danger:hover i {
-            color: white !important;
+            color: var(--danger-color) !important;
         }
 
-        /* Animation classes */
+        .dropdown-divider {
+            border-top: 1px solid var(--gray-light);
+            margin: 0.5rem 0;
+        }
+
+        /* Alert Messages */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        /* Footer */
+        footer {
+            background-color: white;
+            border-top: 1px solid var(--gray-light);
+            padding: 1.5rem 0;
+            margin-top: 5rem;
+        }
+
+        footer p {
+            color: var(--gray-color);
+            font-weight: 500;
+        }
+
+        /* Animation */
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
@@ -251,25 +354,56 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: var(--gray-light);
+            border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #888;
+            background: var(--gray-color);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: var(--dark-color);
+        }
+
+        /* Container width adjustments for larger screens */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1320px;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.5rem 0;
+            }
+            
+            .card-body {
+                padding: 1.25rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1.25rem;
+            }
+            
+            .table thead th {
+                padding: 0.75rem;
+            }
+            
+            .table tbody td {
+                padding: 0.75rem;
+            }
         }
     </style>
     {% block styles %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top mb-5">
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand text-primary fw-bold" href="{% url 'home' %}">
+            <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
                 <i class="fas fa-broom me-2"></i>CEO Cleaners
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -280,31 +414,31 @@
                 <ul class="navbar-nav me-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link text-muted {% if request.path == '/booking/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/booking/' %}active{% endif %}" 
                            href="{% url 'bookings:all_bookings' %}">
                             <i class="fas fa-calendar-check me-1"></i>Bookings
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-muted {% if request.path == '/booking/invoices/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/booking/invoices/' %}active{% endif %}" 
                            href="{% url 'invoice:all_invoices' %}">
                             <i class="fas fa-file-invoice-dollar me-1"></i>Invoices
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-muted {% if request.path == '/leads/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/leads/' %}active{% endif %}" 
                            href="{% url 'all_leads' %}">
                             <i class="fas fa-user-friends me-1"></i>Leads
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-muted {% if request.path == '/automation/cleaners/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/automation/cleaners/' %}active{% endif %}" 
                            href="{% url 'cleaners_list' %}">
                             <i class="fas fa-user-friends me-1"></i>Cleaners
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-muted {% if request.path == '/integrations/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/integrations/' %}active{% endif %}" 
                            href="{% url 'integration_list' %}">
                             <i class="fas fa-screwdriver me-1"></i>Integrations
                         </a>
@@ -316,39 +450,39 @@
                         <li style="list-style-type: none;" class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="avatar-circle me-2">
-                                    <span class="avatar-initials text-white">{{ request.user.username|make_list|first|upper }}</span>
+                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
                                 </div>
-                                <span class="d-none d-md-inline text-muted">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-none d-md-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <li class="px-3 py-2 d-flex flex-column">
                                     <span class="fw-bold">{{ request.user.get_full_name }}</span>
                                     <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item py-2" href="{% url 'accounts:profile' %}">
+                                    <a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                         <i class="fas fa-user-circle me-2 text-primary"></i>Profile Settings
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item py-2" href="{% url 'accounts:profile' %}#api-keys">
+                                    <a class="dropdown-item" href="{% url 'accounts:profile' %}#api-keys">
                                         <i class="fas fa-key me-2 text-warning"></i>API Credentials
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item py-2 text-danger" href="{% url 'accounts:logout' %}">
+                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
                                         <i class="fas fa-sign-out-alt me-2"></i>Sign Out
                                     </a>
                                 </li>
                             </ul>
                         </li>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-light me-2">
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
                             <i class="fas fa-sign-in-alt me-1"></i>Login
                         </a>
-                        <a href="{% url 'accounts:signup' %}" class="btn btn-success">
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
                             <i class="fas fa-user-plus me-1"></i>Get Started
                         </a>
                     {% endif %}
@@ -358,7 +492,7 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container">
+    <div class="container py-4">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -368,17 +502,16 @@
             {% endfor %}
         {% endif %}
         
-        <form>
-            {% csrf_token %}
+      
             {% block content %}
             {% endblock %}
-        </form>
+        
     </div>
 
     <!-- Footer -->
-    <footer class="bg-light mt-5 py-3">
+    <footer>
         <div class="container text-center">
-            <p class="mb-0">&copy; {% now "Y" %} Booking System. All rights reserved.</p>
+            <p class="mb-0">&copy; {% now "Y" %} CEO Cleaners. All rights reserved.</p>
         </div>
     </footer>
 

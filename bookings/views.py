@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
@@ -6,8 +7,10 @@ from django.db import transaction
 from .models import Booking, BookingCustomAddons
 from invoice.models import Invoice, Payment
 from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
+from automation.models import CleanerAvailability, Cleaners
 from decimal import Decimal
 import json
+from datetime import datetime
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -33,7 +36,7 @@ def create_booking(request):
     if request.method == 'POST':
         try:
             # Get price details from form
-            totalPrice = Decimal(request.POST.get('totalPrice', '0'))
+            totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
           
 
@@ -56,7 +59,9 @@ def create_booking(request):
                 squareFeet=int(request.POST.get('squareFeet', 0)),
 
                 serviceType=request.POST.get('serviceType'),
-                cleaningDateTime=request.POST.get('cleaningDateTime'),
+                cleaningDate=request.POST.get('cleaningDate'),
+                startTime=request.POST.get('startTime'),
+                endTime=(datetime.strptime(request.POST.get('startTime'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M'),
                 recurring=request.POST.get('recurring'),
                 paymentMethod=request.POST.get('paymentMethod', 'creditcard'),
 
@@ -266,4 +271,3 @@ def booking_detail(request, bookingId):
         'booking': booking
     }
     return render(request, 'booking_detail.html', context)
-

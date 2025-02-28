@@ -5,4 +5,5 @@ class BookingsConfig(AppConfig):
     name = 'bookings'
 
     def ready(self):
+        
         import bookings.signals  # Import signals when app is ready
