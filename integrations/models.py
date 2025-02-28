@@ -47,7 +47,6 @@ class DataMapping(models.Model):
     field_type = models.CharField(max_length=50, choices=FIELD_TYPES, default='string')
     is_required = models.BooleanField(default=False)
     default_value = models.CharField(max_length=255, null=True, blank=True)
-    transformation_rule = models.JSONField(null=True, blank=True, help_text="Optional transformation logic")
     order = models.IntegerField(default=0, help_text="Order within the parent object")
 
     class Meta:

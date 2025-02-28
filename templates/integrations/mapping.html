@@ -156,12 +156,6 @@ function addMappingRow(parentPath = '') {
                     </button>
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <label class="form-label">Transformation Rule (Optional JSON)</label>
-                    <textarea class="form-control transformation-rule" rows="2"></textarea>
-                </div>
-            </div>
         </div>
     `;
 
@@ -193,8 +187,7 @@ function saveMappings() {
             parent_path: row.dataset.parentPath || '',
             field_type: row.querySelector('.field-type').value,
             default_value: row.querySelector('.default-value').value,
-            is_required: row.querySelector('.is-required').checked,
-            transformation_rule: row.querySelector('.transformation-rule').value
+            is_required: row.querySelector('.is-required').checked
         };
     }
     

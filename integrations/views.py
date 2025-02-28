@@ -94,8 +94,7 @@ def integration_mapping(request, platform_id):
                 parent_path=mapping_data.get('parent_path'),
                 field_type=mapping_data.get('field_type', 'string'),
                 default_value=mapping_data.get('default_value', ''),
-                is_required=mapping_data.get('is_required', False),
-                transformation_rule=mapping_data.get('transformation_rule')
+                is_required=mapping_data.get('is_required', False)
             )
         
         return JsonResponse({'status': 'success'})
@@ -186,16 +185,6 @@ def preview_mapping(request, platform_id):
         if mapping.is_required:
             required_fields.add(mapping.source_field)
         
-        # Apply any transformation rules
-        if mapping.transformation_rule:
-            try:
-                # Example transformation: {"operation": "uppercase"}
-                if mapping.transformation_rule.get('operation') == 'uppercase' and value:
-                    value = str(value).upper()
-                # Add more transformations as needed
-            except Exception as e:
-                print(f"Error applying transformation: {e}")
-
         # Handle nested paths
         if mapping.parent_path:
             path_parts = mapping.parent_path.split('.')
@@ -424,4 +413,40 @@ def delete_integration(request, platform_id):
     
     return render(request, 'integrations/delete_confirmation.html', {
         'platform': platform
+    })
+
+@login_required
+def save_field_mappings(request, integration_id):
+    if request.method == 'POST':
+        try:
+            integration = get_object_or_404(PlatformIntegration, id=integration_id)
+            data = json.loads(request.body)
+            mappings = data.get('mappings', [])
+
+            # Delete existing mappings
+            DataMapping.objects.filter(platform=integration).delete()
+
+            # Create new mappings
+            for mapping in mappings:
+                DataMapping.objects.create(
+                    platform=integration,
+                    source_field=mapping['source_field'],
+                    target_field=mapping['target_field']
+                )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Mappings saved successfully',
+                'redirect_url': reverse('integration_list')
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
     })
