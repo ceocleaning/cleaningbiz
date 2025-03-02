@@ -47,7 +47,9 @@ class Lead(models.Model):
         super().save(*args, **kwargs)
     
     def generateLeadId(self):
-        return f"LD{random.choices(string.ascii_letters + string.digits, k=5)}"
+        prefix = "LD."
+        id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+        return f"{prefix}{id}"
 
 
 

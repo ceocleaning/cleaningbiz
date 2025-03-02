@@ -26,7 +26,7 @@ import requests
 from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
 import json
-
+import random
 
 
 
@@ -62,7 +62,7 @@ def create_invoice(request, bookingId):
             return redirect('bookings:invoice_detail', invoiceId=invoice.invoiceId)
         except Booking.DoesNotExist:
             messages.error(request, 'Booking not found.')
-            return redirect('bookings:create_invoice')
+            return redirect('invoice:create_invoice')
             
     context = {
         'booking': bookingObj,
@@ -82,7 +82,7 @@ def edit_invoice(request, invoiceId):
         invoice.save()
         
         messages.success(request, f'Invoice {invoice.invoiceId} updated successfully!')
-        return redirect('bookings:invoice_detail', invoiceId=invoice.invoiceId)
+        return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
     
     context = {
         'invoice': invoice
@@ -98,7 +98,7 @@ def delete_invoice(request, invoiceId):
         return redirect('bookings:all_invoices')
     except Invoice.DoesNotExist:
         messages.error(request, 'Invoice not found')
-        return redirect('bookings:all_invoices')
+        return redirect('invoice:all_invoices')
 
 
 @login_required
@@ -120,6 +120,7 @@ def invoice_detail(request, invoiceId):
 @login_required
 def invoice_preview(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
+    business = invoice.booking.business
 
     # Only include add-ons with values > 0
     addons = [
@@ -136,10 +137,11 @@ def invoice_preview(request, invoiceId):
             ['Cabinets Cleaning', invoice.booking.addonCabinetsCleaning],
             ['Patio Sweeping', invoice.booking.addonPatioSweeping],
             ['Garage Sweeping', invoice.booking.addonGarageSweeping],
-        ] if addon[1] > 0
+        ] if addon[1] is not None and addon[1] > 0
     ]
 
     context = {
+        'business': business,
         'invoice': invoice,
         'addons': addons
     }
@@ -164,9 +166,9 @@ def mark_invoice_paid(request, invoiceId):
         invoice.save()
         
         messages.success(request, f'Invoice {invoice.invoiceId} marked as paid successfully!')
-        return redirect('bookings:invoice_detail', invoiceId=invoice.invoiceId)
+        return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
     
-    return redirect('bookings:invoice_detail', invoiceId=invoiceId)
+    return redirect('invoice:invoice_detail', invoiceId=invoiceId)
 
 @login_required
 def generate_pdf(request, invoiceId):

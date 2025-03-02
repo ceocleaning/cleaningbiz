@@ -243,7 +243,7 @@
                 <h5 class="modal-title">Mark Invoice as Paid</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'bookings:mark_invoice_paid' invoice.invoiceId %}">
+            <form method="post" action="{% url 'invoice:mark_invoice_paid' invoice.invoiceId %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-4">

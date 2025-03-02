@@ -8,6 +8,7 @@ from retell import Retell
 import os
 import requests
 from django.core.mail import send_mail
+from accounts.models import ApiCredential
 
 
 
@@ -21,9 +22,10 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
     print("Signal received!")
     if created:
         try:
+            apiCreds = ApiCredential.objects.get(business=instance.business)
             call_response = client.call.create_phone_call(
-                from_number=instance.voiceAgentNumber,
-                to_number=instance.phoneNumber,
+                from_number=apiCreds.voiceAgentNumber,
+                to_number=instance.phone_number,
                 retell_llm_dynamic_variables={
                     'name': instance.name,
                     'service': instance.content
