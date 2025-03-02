@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test Email Sending{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Test Email Sending</h4>
+                </div>
+                <div class="card-body">
+                    <form id="emailTestForm" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="recipient" class="form-label">Recipient Email</label>
+                            <input type="email" class="form-control" id="recipient" name="recipient" required>
+                            <div class="form-text">Enter the email address to receive the test email</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="template" class="form-label">Email Template</label>
+                            <select class="form-select" id="template" name="template" required>
+                                <option value="">Select a template</option>
+                                <option value="otp">Password Reset OTP</option>
+                                <option value="booking_confirmation">Booking Confirmation</option>
+                                <option value="invoice">Invoice Notification</option>
+                                <option value="custom">Custom Message</option>
+                            </select>
+                        </div>
+                        
+                        <div id="customMessageDiv" class="mb-3 d-none">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control mb-2" id="subject" name="subject">
+                            
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="useHtml" name="use_html" checked>
+                            <label class="form-check-label" for="useHtml">
+                                Send as HTML
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Send Test Email</button>
+                    </form>
+                    
+                    {% if messages %}
+                    <div class="mt-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Email Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Current Email Settings</h6>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th scope="row">EMAIL_BACKEND</th>
+                                <td><code>{{ email_backend }}</code></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">EMAIL_HOST</th>
+                                <td><code>{{ email_host }}</code></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">EMAIL_PORT</th>
+                                <td><code>{{ email_port }}</code></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">EMAIL_USE_TLS</th>
+                                <td><code>{{ email_use_tls }}</code></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">EMAIL_HOST_USER</th>
+                                <td><code>{{ email_host_user }}</code></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">DEFAULT_FROM_EMAIL</th>
+                                <td><code>{{ default_from_email }}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Email settings can be configured in your <code>.env</code> file or in <code>settings.py</code>.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('template');
+    const customMessageDiv = document.getElementById('customMessageDiv');
+    
+    templateSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customMessageDiv.classList.remove('d-none');
+        } else {
+            customMessageDiv.classList.add('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

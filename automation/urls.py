@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
-from .api_views import check_availability_retell
+from .api_views import check_availability_retell, test_check_availability
 
 
 urlpatterns = [
@@ -17,7 +17,13 @@ urlpatterns = [
     path('leads/<str:leadId>/update/', views.update_lead, name='update_lead'),
     path('leads/<str:leadId>/delete/', views.delete_lead, name='delete_lead'),
 
-    path('check-availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
+    # API endpoints
+    path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
+    path('api/availability/<str:secretKey>/test', test_check_availability, name='test_check_availability'),
+    
+    # Test pages
+    path('test/', views.test_features, name='test_features'),
+    path('test/availability/', views.test_availability_api, name='test_availability_api'),
    
     # Cleaners URLs
     path('cleaners/', views.cleaners_list, name='cleaners_list'),

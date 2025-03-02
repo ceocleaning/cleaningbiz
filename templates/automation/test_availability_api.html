@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test Availability API{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Test Retell Availability API</h4>
+                </div>
+                <div class="card-body">
+                    <form id="availabilityForm" class="mb-4">
+                        <div class="mb-3">
+                            <label for="secretKey" class="form-label">Secret Key</label>
+                            <input type="text" class="form-control" id="secretKey" readonly required value="{{ secretKey }}">
+                            <div class="form-text">Secret Key</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="timezone" class="form-label">Business Time Zone</label>
+                            <input type="text" class="form-control" id="timezone" readonly required value="{{ business.timezone|default:'UTC' }}">
+                            <div class="form-text">Business Time Zone</div>
+                        </div>
+                     
+                        
+                        <div class="mb-3">
+                            <label for="cleaningDate" class="form-label">Cleaning Date</label>
+                            <input type="date" class="form-control" id="cleaningDate" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="cleaningTime" class="form-label">Cleaning Time</label>
+                            <input type="time" class="form-control" id="cleaningTime" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="checkButton">
+                            <span id="buttonText">Check Availability</span>
+                            <span id="loadingSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                    
+                    <!-- Loading indicator -->
+                    <div id="loadingIndicator" class="text-center my-4 d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Checking availability...</p>
+                    </div>
+                    
+                    <!-- Availability result card -->
+                    <div class="card mt-4 d-none" id="availabilityResultCard">
+                        <div class="card-header" id="resultCardHeader">
+                            <h5 class="mb-0" id="resultCardTitle">Availability Result</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="availabilityResult">
+                                <!-- Result will be displayed here -->
+                            </div>
+                            
+                            <div class="mt-3 d-none" id="cleanersList">
+                                <h6>Available Cleaners:</h6>
+                                <ul class="list-group" id="cleanersListItems">
+                                    <!-- Cleaners will be listed here -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Raw response (hidden by default, can be toggled) -->
+                    <div class="mt-3 d-none">
+                        <button class="btn btn-sm btn-outline-secondary" id="toggleRawResponse">
+                            Show Raw Response
+                        </button>
+                        <div class="card mt-2 d-none" id="responseCard">
+                            <div class="card-header">
+                                <h5 class="mb-0">Raw API Response</h5>
+                            </div>
+                            <div class="card-body">
+                                <pre id="responseData" class="bg-light p-3 rounded"></pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Process Logs Card -->
+                    <div class="card mt-4 shadow-sm d-none" id="processLogsCard">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Process Logs</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">These logs show how the request was processed on the server:</p>
+                            <div class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace;">
+                                <pre id="processLogs" class="mb-0" style="white-space: pre-wrap;"></pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alternative slots section -->
+                    <div class="mt-4 d-none" id="alternatesSection">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Alternative Time Slots</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted" id="alternatesMessage">The requested time is not available. Here are some alternative slots:</p>
+                                <div class="list-group" id="alternatesList">
+                                    <!-- Alternate slots will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">API Documentation</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Endpoint</h6>
+                    <code>POST /automation/api/availability/:secretKey</code>
+                    
+                    <h6 class="mt-3">Request Headers</h6>
+                    <ul>
+                        <li><code>Content-Type: application/json</code></li>
+                        <li><code>X-Retell-Signature: [signature]</code></li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Request Body</h6>
+                    <pre class="bg-light p-3 rounded">{
+  "args": {
+    "cleaningDateTime": "2023-05-15T14:00:00Z"
+  }
+}</pre>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-light p-3 rounded">{
+  "status": "success",
+  "available": true|false,
+  "timeslot": "2023-05-15 14:00:00",
+  "timezone": "America/New_York",
+  "alternates": [
+    "2023-05-15 15:00:00",
+    "2023-05-15 16:00:00"
+  ]
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('availabilityForm');
+    const businessSelect = document.getElementById('business');
+    const timezoneSelect = document.getElementById('timezone');
+    const checkButton = document.getElementById('checkButton');
+    const buttonText = document.getElementById('buttonText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const availabilityResultCard = document.getElementById('availabilityResultCard');
+    const resultCardHeader = document.getElementById('resultCardHeader');
+    const resultCardTitle = document.getElementById('resultCardTitle');
+    const availabilityResult = document.getElementById('availabilityResult');
+    const cleanersList = document.getElementById('cleanersList');
+    const cleanersListItems = document.getElementById('cleanersListItems');
+    const responseCard = document.getElementById('responseCard');
+    const responseData = document.getElementById('responseData');
+    const alternatesSection = document.getElementById('alternatesSection');
+    const alternatesList = document.getElementById('alternatesList');
+    const toggleRawResponse = document.getElementById('toggleRawResponse');
+    const processLogsCard = document.getElementById('processLogsCard');
+    const processLogs = document.getElementById('processLogs');
+    
+
+    
+    // Toggle raw response visibility
+    toggleRawResponse.addEventListener('click', function() {
+        if (responseCard.classList.contains('d-none')) {
+            responseCard.classList.remove('d-none');
+            toggleRawResponse.textContent = 'Hide Raw Response';
+        } else {
+            responseCard.classList.add('d-none');
+            toggleRawResponse.textContent = 'Show Raw Response';
+        }
+    });
+    
+    // Simple function to format date string without changing timezone
+    function formatDateDisplay(dateStr) {
+        try {
+            // For ISO strings with Z (UTC)
+            if (dateStr.includes('Z')) {
+                // Extract date and time parts
+                const parts = dateStr.replace('Z', '').split('T');
+                if (parts.length === 2) {
+                    const datePart = parts[0];
+                    const timePart = parts[1];
+                    
+                    // Format date: YYYY-MM-DD → DD/MM/YYYY
+                    const dateElements = datePart.split('-');
+                    const formattedDate = `${dateElements[2]}/${dateElements[1]}/${dateElements[0]}`;
+                    
+                    // Format time: HH:MM:SS → HH:MM
+                    const timeElements = timePart.split(':');
+                    const formattedTime = `${timeElements[0]}:${timeElements[1]}`;
+                    
+                    return `${formattedDate} ${formattedTime}`;
+                }
+            } 
+            // For database timestamps (YYYY-MM-DD HH:MM:SS)
+            else if (dateStr.includes('-') && dateStr.includes(':')) {
+                const parts = dateStr.split(' ');
+                if (parts.length === 2) {
+                    const datePart = parts[0];
+                    const timePart = parts[1];
+                    
+                    // Format date: YYYY-MM-DD → DD/MM/YYYY
+                    const dateElements = datePart.split('-');
+                    const formattedDate = `${dateElements[2]}/${dateElements[1]}/${dateElements[0]}`;
+                    
+                    // Format time: HH:MM:SS → HH:MM
+                    const timeElements = timePart.split(':');
+                    const formattedTime = `${timeElements[0]}:${timeElements[1]}`;
+                    
+                    return `${formattedDate} ${formattedTime}`;
+                }
+            }
+            
+            // If we can't parse it, return as is
+            return dateStr;
+        } catch (error) {
+            console.error('Error formatting date display:', error);
+            return dateStr;
+        }
+    }
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        checkButton.disabled = true;
+        buttonText.textContent = 'Checking...';
+        loadingSpinner.classList.remove('d-none');
+        loadingIndicator.classList.remove('d-none');
+        availabilityResultCard.classList.add('d-none');
+        alternatesSection.classList.add('d-none');
+        responseCard.classList.add('d-none');
+        toggleRawResponse.parentElement.classList.add('d-none');
+        processLogsCard.classList.add('d-none');
+        
+        const secretKey = document.getElementById('secretKey').value;
+        const cleaningDate = document.getElementById('cleaningDate').value;
+        const cleaningTime = document.getElementById('cleaningTime').value;
+        const selectedTimezone = document.getElementById('timezone').value;
+        
+        // Convert to ISO string with the selected timezone
+        const cleaningDateTime = `${cleaningDate}T${cleaningTime}:00Z`;
+        
+        try {
+            // In a real test, we would need to generate a valid Retell signature
+            // For this test page, we're simulating the API call
+            const response = await fetch(`/api/availability/${secretKey}/test`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    args: {
+                        cleaningDateTime: cleaningDateTime,
+                        timezone: selectedTimezone
+                    }
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Store raw response
+            responseData.textContent = JSON.stringify(data, null, 2);
+            toggleRawResponse.parentElement.classList.remove('d-none');
+            
+            // Just use the raw values from the API response without timezone conversion
+            const requestedTime = cleaningDateTime;
+            const responseTime = data.timeslot;
+            
+            // Format for display only (no timezone conversion)
+            const formattedRequestedTime = formatDateDisplay(requestedTime);
+            const formattedResponseTime = formatDateDisplay(responseTime);
+            
+            // Display user-friendly result
+            if (data.status === 'success') {
+                // Display process logs if available
+                if (data.process_logs && data.process_logs.length > 0) {
+                    // Format the process logs for better display
+                    const formattedLogs = data.process_logs.map(log => {
+                        // Add some styling to make the logs more readable
+                        if (log.includes('STEP')) {
+                            return `<span style="color: #0066cc; font-weight: bold;">${log}</span>`;
+                        } else if (log.includes('✅') || log.includes('AVAILABLE')) {
+                            return `<span style="color: #28a745;">${log}</span>`;
+                        } else if (log.includes('❌') || log.includes('NOT AVAILABLE')) {
+                            return `<span style="color: #dc3545;">${log}</span>`;
+                        } else if (log.trim().startsWith('👤')) {
+                            return `<span style="color: #6610f2; font-weight: bold;">${log}</span>`;
+                        } else if (log.includes('FINAL RESULT')) {
+                            return `<span style="color: #fd7e14; font-weight: bold; font-size: 1.1em;">${log}</span>`;
+                        }
+                        return log;
+                    }).join('\n');
+                    
+                    processLogs.innerHTML = formattedLogs;
+                    processLogsCard.classList.remove('d-none');
+                } else {
+                    processLogsCard.classList.add('d-none');
+                }
+                
+                if (data.available) {
+                    // Time slot is available
+                    resultCardHeader.className = 'card-header bg-success text-white';
+                    resultCardTitle.textContent = 'Time Slot Available';
+                    availabilityResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Good news!</strong> The requested time slot is available.
+                        </div>
+                        <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
+                       
+                        <p><strong>Business Timezone:</strong> ${data.timezone || selectedTimezone}</p>
+                    `;
+                    
+                    // Show cleaners if available in the response
+                    if (data.cleaners && data.cleaners.length > 0) {
+                        cleanersListItems.innerHTML = '';
+                        data.cleaners.forEach(cleaner => {
+                            const item = document.createElement('li');
+                            item.className = 'list-group-item';
+                            item.innerHTML = `<i class="fas fa-user me-2"></i> ${cleaner.name || 'Unnamed Cleaner'}`;
+                            cleanersListItems.appendChild(item);
+                        });
+                        cleanersList.classList.remove('d-none');
+                    } else {
+                        cleanersList.classList.add('d-none');
+                    }
+                } else {
+                    // Time slot is not available
+                    resultCardHeader.className = 'card-header bg-warning text-dark';
+                    resultCardTitle.textContent = 'Time Slot Not Available';
+                    availabilityResult.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Sorry!</strong> The requested time slot is not available.
+                        </div>
+                        <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
+                        <p><strong>Business Time:</strong> ${formattedResponseTime}</p>
+                        <p><strong>Business Timezone:</strong> ${data.timezone || selectedTimezone}</p>
+                    `;
+                    cleanersList.classList.add('d-none');
+                }
+                
+                // Display alternate slots if available
+                if (!data.available && data.alternates && data.alternates.length > 0) {
+                    alternatesList.innerHTML = '';
+                    data.alternates.forEach(slot => {
+                        const formattedSlot = formatDateDisplay(slot);
+                        const item = document.createElement('button');
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <i class="fas fa-calendar-check me-2"></i>
+                            ${formattedSlot}
+                        `;
+                        // Add click handler to use this slot
+                        item.addEventListener('click', function() {
+                            // You could implement functionality to select this slot
+                            // For now, just show an alert
+                            alert(`You selected: ${slot}`);
+                        });
+                        alternatesList.appendChild(item);
+                    });
+                    alternatesSection.classList.remove('d-none');
+                } else {
+                    alternatesSection.classList.add('d-none');
+                }
+            } else {
+                // Error in response
+                resultCardHeader.className = 'card-header bg-danger text-white';
+                resultCardTitle.textContent = 'Error';
+                availabilityResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>Error:</strong> ${data.error || 'Unknown error occurred'}
+                    </div>
+                `;
+                cleanersList.classList.add('d-none');
+                alternatesSection.classList.add('d-none');
+            }
+            
+            availabilityResultCard.classList.remove('d-none');
+            
+        } catch (error) {
+            // Handle fetch or parsing errors
+            resultCardHeader.className = 'card-header bg-danger text-white';
+            resultCardTitle.textContent = 'Error';
+            availabilityResult.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+            responseData.textContent = `Error: ${error.message}`;
+            availabilityResultCard.classList.remove('d-none');
+            toggleRawResponse.parentElement.classList.remove('d-none');
+            cleanersList.classList.add('d-none');
+            alternatesSection.classList.add('d-none');
+            processLogsCard.classList.add('d-none');
+        } finally {
+            // Hide loading indicators
+            loadingIndicator.classList.add('d-none');
+            loadingSpinner.classList.add('d-none');
+            buttonText.textContent = 'Check Availability';
+            checkButton.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

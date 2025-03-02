@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test Features{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Test Features</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">
+                        This page provides access to various testing features for development and debugging purposes.
+                    </p>
+                    
+                    <div class="list-group">
+                        <a href="{% url 'test_availability_api' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">Retell Availability API Test</h5>
+                                <p class="mb-1 text-muted">Test the availability checking API without Retell signature verification</p>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">
+                                <i class="fas fa-calendar-check"></i>
+                            </span>
+                        </a>
+                        
+                        <div class="list-group-item list-group-item-action">
+                            <div>
+                                <h5 class="mb-1">Business Email Settings Test</h5>
+                                <p class="mb-1 text-muted">Test the business email configuration (sends a test email to your account)</p>
+                                <button id="testEmailSettings" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="fas fa-paper-plane me-1"></i>Send Test Email
+                                </button>
+                                <div id="emailTestResult" class="mt-2 d-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Developer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> These test features are for development purposes only and should not be accessible in production.
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testEmailBtn = document.getElementById('testEmailSettings');
+    const resultDiv = document.getElementById('emailTestResult');
+    
+    testEmailBtn.addEventListener('click', function() {
+        testEmailBtn.disabled = true;
+        testEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+        resultDiv.classList.add('d-none');
+        
+        fetch('{% url "accounts:test_email_settings" %}', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            resultDiv.classList.remove('d-none');
+            if (data.success) {
+                resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            }
+        })
+        .catch(error => {
+            resultDiv.classList.remove('d-none');
+            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        })
+        .finally(() => {
+            testEmailBtn.disabled = false;
+            testEmailBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send Test Email';
+        });
+    });
+    
+    // Helper function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

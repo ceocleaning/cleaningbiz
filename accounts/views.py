@@ -4,13 +4,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
+from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons, PasswordResetOTP
 import random
 from django.http import JsonResponse
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from django.utils.html import strip_tags
+from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+from datetime import timedelta
+import string
+from django.conf import settings
 
 
 def SignupPage(request):
@@ -144,15 +149,20 @@ def register_business(request):
         messages.warning(request, 'You already have a registered business.')
         return redirect('accounts:profile')
     
+    # Get list of timezones for the template
+    import pytz
+    timezones = pytz.common_timezones
+    
     if request.method == 'POST':
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+        timezone = request.POST.get('timezone', 'UTC')
         
         # Validate required fields
-        if not all([businessName, phone, address]):
+        if not all([businessName, phone, address, timezone]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/register_business.html')
+            return render(request, 'accounts/register_business.html', {'timezones': timezones})
         
         try:
             # Create business
@@ -160,7 +170,8 @@ def register_business(request):
                 user=request.user,
                 businessName=businessName,
                 phone=phone,
-                address=address
+                address=address,
+                timezone=timezone
             )
             
             # Create default settings for the business
@@ -176,9 +187,9 @@ def register_business(request):
             
         except Exception as e:
             messages.error(request, f'Error registering business: {str(e)}')
-            return render(request, 'accounts/register_business.html')
+            return render(request, 'accounts/register_business.html', {'timezones': timezones})
     
-    return render(request, 'accounts/register_business.html')
+    return render(request, 'accounts/register_business.html', {'timezones': timezones})
 
 
 @login_required
@@ -187,19 +198,25 @@ def edit_business(request):
     if not business:
         return redirect('accounts:register_business')
     
+    # Get list of timezones for the template
+    import pytz
+    timezones = pytz.common_timezones
+    
     if request.method == 'POST':
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+        timezone = request.POST.get('timezone', 'UTC')
         
-        if not all([businessName, phone, address]):
+        if not all([businessName, phone, address, timezone]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/edit_business.html', {'business': business})
+            return render(request, 'accounts/edit_business.html', {'business': business, 'timezones': timezones})
         
         try:
             business.businessName = businessName
             business.phone = phone
             business.address = address
+            business.timezone = timezone
             business.save()
             
             messages.success(request, 'Business information updated successfully!')
@@ -208,7 +225,7 @@ def edit_business(request):
         except Exception as e:
             messages.error(request, f'Error updating business: {str(e)}')
     
-    return render(request, 'accounts/edit_business.html', {'business': business})
+    return render(request, 'accounts/edit_business.html', {'business': business, 'timezones': timezones})
 
 
 @login_required
@@ -528,3 +545,354 @@ def test_email_settings(request):
             'success': False,
             'message': f'Error sending test email: {str(e)}'
         })
+
+
+def forgot_password(request):
+    """
+    Handle forgot password request
+    - Generate and send OTP to user's email
+    - Limit to 3 OTP requests per day
+    """
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Generate a 6-digit OTP
+            otp = ''.join(random.choices(string.digits, k=6))
+            
+            # Set expiration time (10 minutes from now)
+            expires_at = timezone.now() + timedelta(minutes=10)
+            
+            # Get or create OTP record for the user
+            otp_obj, created = PasswordResetOTP.objects.get_or_create(
+                user=user,
+                defaults={
+                    'otp': otp,
+                    'expires_at': expires_at,
+                    'otp_sent_count': 1,
+                    'failed_attempts': 0,
+                    'is_used': False,
+                    'lock_expiry': None
+                }
+            )
+            
+            # If OTP record already exists, update it
+            if not created:
+                # Check if account is locked
+                if otp_obj.lock_expiry and otp_obj.lock_expiry > timezone.now():
+                    lock_time_remaining = int((otp_obj.lock_expiry - timezone.now()).total_seconds() / 60)
+                    messages.error(request, f'Your account is locked due to too many failed attempts. Please try again after {lock_time_remaining} minutes.')
+                    return render(request, 'accounts/forgot_password.html')
+                elif otp_obj.lock_expiry and otp_obj.lock_expiry <= timezone.now():
+                    # Reset lock if lock has expired
+                    otp_obj.lock_expiry = None
+                    otp_obj.failed_attempts = 0
+                    otp_obj.save()
+                
+                # Check if user has reached the daily OTP limit (3 per day)
+                today = timezone.now().date()
+                if otp_obj.created_at.date() == today and otp_obj.otp_sent_count >= 3:
+                    messages.error(request, 'You have reached the maximum number of OTP requests for today. Please try again tomorrow.')
+                    return render(request, 'accounts/forgot_password.html')
+                
+                # Reset the OTP record with new values
+                otp_obj.otp = otp
+                otp_obj.expires_at = expires_at
+                otp_obj.is_used = False
+                otp_obj.token = None
+                
+                # If it's a new day, reset the count
+                if otp_obj.created_at.date() != today:
+                    otp_obj.otp_sent_count = 1
+                    otp_obj.created_at = timezone.now()
+                else:
+                    otp_obj.otp_sent_count += 1
+                
+                otp_obj.save()
+            
+            # Send OTP via email
+            email_sent = send_otp_email(user, otp)
+            
+            if email_sent:
+                messages.success(request, f'An OTP has been sent to your email. It will expire in 10 minutes.')
+                return redirect('accounts:verify_otp', email=email)
+            else:
+                # If email sending fails and this is a new record, delete it
+                if created:
+                    otp_obj.delete()
+                messages.error(request, 'Failed to send OTP email. Please check your email configuration or try again later.')
+                return render(request, 'accounts/forgot_password.html')
+            
+        except User.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+    
+    return render(request, 'accounts/forgot_password.html')
+
+
+def verify_otp(request, email):
+    """
+    Verify the OTP entered by the user
+    - Limit to 5 failed attempts before locking the account
+    - OTP expires after 10 minutes
+    """
+    if request.method == 'POST':
+        otp = request.POST.get('otp')
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Get the user's OTP record
+            try:
+                otp_obj = PasswordResetOTP.objects.get(user=user)
+                
+                # Check if OTP is expired
+                if otp_obj.expires_at < timezone.now():
+                    messages.error(request, 'OTP has expired. Please request a new one.')
+                    otp_obj.delete()  # Delete expired OTP record
+                    return redirect('accounts:forgot_password')
+                
+                # Check if OTP is already used
+                if otp_obj.is_used:
+                    messages.error(request, 'This OTP has already been used. Please request a new one.')
+                    otp_obj.delete()  # Delete used OTP record
+                    return redirect('accounts:forgot_password')
+                
+                # Check if account is locked
+                if otp_obj.lock_expiry and otp_obj.lock_expiry > timezone.now():
+                    lock_time_remaining = int((otp_obj.lock_expiry - timezone.now()).total_seconds() / 60)
+                    messages.error(request, f'Too many failed attempts. Please try again after {lock_time_remaining} minutes.')
+                    return render(request, 'accounts/verify_otp.html', {'email': email})
+                elif otp_obj.lock_expiry and otp_obj.lock_expiry <= timezone.now():
+                    # Reset lock if lock has expired
+                    otp_obj.lock_expiry = None
+                    otp_obj.failed_attempts = 0
+                    otp_obj.save()
+                
+                # Verify OTP
+                if otp_obj.otp == otp:
+                    # Generate reset token
+                    token = ''.join(random.choices(string.ascii_letters + string.digits, k=30))
+                    
+                    # Set token expiration (30 minutes)
+                    token_expires_at = timezone.now() + timedelta(minutes=30)
+                    
+                    # Update OTP record
+                    otp_obj.token = token
+                    otp_obj.expires_at = token_expires_at
+                    otp_obj.save()
+                    
+                    return redirect('accounts:reset_password', email=email, token=token)
+                else:
+                    # Increment failed attempts
+                    otp_obj.failed_attempts += 1
+                    
+                    # Lock account after 5 failed attempts
+                    if otp_obj.failed_attempts >= 5:
+                        # Set lock expiry to 24 hours from now
+                        otp_obj.lock_expiry = timezone.now() + timedelta(hours=24)
+                        messages.error(request, 'Too many failed attempts. Your account has been locked for 24 hours.')
+                    else:
+                        remaining_attempts = 5 - otp_obj.failed_attempts
+                        messages.error(request, f'Invalid OTP. You have {remaining_attempts} attempts remaining.')
+                    
+                    otp_obj.save()
+                    
+            except PasswordResetOTP.DoesNotExist:
+                messages.error(request, 'No active password reset request found. Please request a new OTP.')
+                return redirect('accounts:forgot_password')
+                
+        except User.DoesNotExist:
+            messages.error(request, 'Invalid email address.')
+    
+    return render(request, 'accounts/verify_otp.html', {'email': email})
+
+
+def resend_otp(request, email):
+    """
+    Dedicated function to resend OTP
+    - Reuses the existing OTP record
+    - Updates the expiration time
+    """
+    try:
+        user = User.objects.get(email=email)
+        
+        # Get the user's OTP record
+        try:
+            otp_obj = PasswordResetOTP.objects.get(user=user)
+            
+            # Check if account is locked
+            if otp_obj.lock_expiry and otp_obj.lock_expiry > timezone.now():
+                lock_time_remaining = int((otp_obj.lock_expiry - timezone.now()).total_seconds() / 60)
+                messages.error(request, f'Your account is locked due to too many failed attempts. Please try again after {lock_time_remaining} minutes.')
+                return redirect('accounts:verify_otp', email=email)
+            elif otp_obj.lock_expiry and otp_obj.lock_expiry <= timezone.now():
+                # Reset lock if lock has expired
+                otp_obj.lock_expiry = None
+                otp_obj.failed_attempts = 0
+                otp_obj.save()
+            
+            # Check daily limit (3 OTPs per day)
+            today = timezone.now().date()
+            if otp_obj.created_at.date() == today and otp_obj.otp_sent_count >= 3:
+                messages.error(request, 'You have reached the maximum number of OTP requests for today. Please try again tomorrow.')
+                return redirect('accounts:verify_otp', email=email)
+            
+            # Generate new OTP
+            new_otp = ''.join(random.choices(string.digits, k=6))
+            
+            # Update OTP record
+            otp_obj.otp = new_otp
+            otp_obj.expires_at = timezone.now() + timedelta(minutes=10)
+            otp_obj.is_used = False
+            otp_obj.token = None
+            otp_obj.failed_attempts = 0  # Reset failed attempts
+            
+            # If it's a new day, reset the count
+            if otp_obj.created_at.date() != today:
+                otp_obj.otp_sent_count = 1
+                otp_obj.created_at = timezone.now()
+            else:
+                otp_obj.otp_sent_count += 1
+                
+            otp_obj.save()
+            
+            # Send OTP via email
+            email_sent = send_otp_email(user, new_otp)
+            
+            if email_sent:
+                messages.success(request, 'A new OTP has been sent to your email. It will expire in 10 minutes.')
+            else:
+                messages.error(request, 'Failed to send OTP email. Please check your email configuration or try again later.')
+                
+        except PasswordResetOTP.DoesNotExist:
+            messages.error(request, 'No active password reset request found. Please initiate a new password reset.')
+            return redirect('accounts:forgot_password')
+            
+    except User.DoesNotExist:
+        messages.error(request, 'Invalid email address.')
+    
+    return redirect('accounts:verify_otp', email=email)
+
+
+def reset_password(request, email, token):
+    """
+    Reset password with valid token
+    - Token expires after 30 minutes
+    """
+    try:
+        user = User.objects.get(email=email)
+        
+        # Get the user's OTP record and verify token
+        try:
+            otp_obj = PasswordResetOTP.objects.get(
+                user=user,
+                token=token,
+                is_used=False,
+                expires_at__gt=timezone.now()
+            )
+            
+            if request.method == 'POST':
+                password1 = request.POST.get('password1')
+                password2 = request.POST.get('password2')
+                
+                if password1 != password2:
+                    messages.error(request, 'Passwords do not match.')
+                    return render(request, 'accounts/reset_password.html', {'email': email, 'token': token})
+                
+                if len(password1) < 8:
+                    messages.error(request, 'Password must be at least 8 characters long.')
+                    return render(request, 'accounts/reset_password.html', {'email': email, 'token': token})
+                
+                # Update user password
+                user.password = make_password(password1)
+                user.save()
+                
+                # Delete the OTP record after successful password reset
+                otp_obj.delete()
+                
+                messages.success(request, 'Your password has been reset successfully. You can now login with your new password.')
+                return redirect('accounts:login')
+                
+        except PasswordResetOTP.DoesNotExist:
+            messages.error(request, 'Invalid or expired token. Please request a new password reset.')
+            return redirect('accounts:forgot_password')
+        
+    except User.DoesNotExist:
+        messages.error(request, 'Invalid email address.')
+        return redirect('accounts:forgot_password')
+    
+    return render(request, 'accounts/reset_password.html', {'email': email, 'token': token})
+
+
+def send_otp_email(user, otp):
+    """Helper function to send OTP via email"""
+    try:
+        # Get email settings from Django settings
+        sender_email = "8bpcoins4u@gmail.com"  # Hardcoded for testing
+        sender_password = "xori gjys nikt qoyo"  # Hardcoded for testing
+        
+        # Check if email credentials are configured
+        if not sender_email or not sender_password:
+            # Log the error
+            print("Email credentials not configured in settings")
+            return False
+        
+        # Create email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Password Reset OTP'
+        msg['From'] = sender_email
+        msg['To'] = user.email
+        
+        # Email content
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Password Reset OTP</h2>
+            <p>Dear {user.first_name or user.username},</p>
+            <p>You have requested to reset your password. Please use the following OTP to verify your identity:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
+                <h1 style="font-size: 32px; letter-spacing: 5px;">{otp}</h1>
+            </div>
+            
+            <p>This OTP will expire in 10 minutes.</p>
+            <p>If you did not request a password reset, please ignore this email or contact support.</p>
+            
+            <p>Best regards,<br>
+            CEO Cleaners Support Team</p>
+        </body>
+        </html>
+        """
+        
+        text_content = strip_tags(html_content)
+        
+        part1 = MIMEText(text_content, 'plain')
+        part2 = MIMEText(html_content, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # For debugging
+        print(f"Attempting to send email from: {sender_email}")
+        
+        # Skip Django's email system and use direct SMTP since we know it works
+        try:
+            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_server.starttls()
+            smtp_server.login(sender_email, sender_password)
+            smtp_server.send_message(msg)
+            smtp_server.quit()
+            print("Email sent successfully using direct SMTP")
+            return True
+        except Exception as smtp_error:
+            print(f"SMTP error: {smtp_error}")
+            print("Gmail authentication failed. Please check:")
+            print("1. Make sure you're using an App Password if 2-Step Verification is enabled")
+            print("2. Verify the email and password in your .env file are correct")
+            print("3. Check that 'Less secure app access' is enabled if not using 2-Step Verification")
+            return False
+                
+    except Exception as e:
+        print(f"Error sending OTP email: {e}")
+        return False

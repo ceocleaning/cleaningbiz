@@ -8,6 +8,7 @@ from retell import Retell
 from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
+import pytz
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
@@ -23,7 +24,7 @@ def get_cleaner_availabilities(week_day):
     return CleanerAvailability.objects.filter(dayOfWeek=week_day, offDay=False)
 
 # Function to check if a timeslot is available
-def is_slot_available(cleaners, time_to_check):
+def is_slot_available(cleaners, time_to_check, available_cleaners=None):
     """Check if at least one cleaner is available for the given time."""
     print("\nChecking availability for time:", time_to_check)
     print("Number of cleaners to check:", len(cleaners))
@@ -61,6 +62,8 @@ def is_slot_available(cleaners, time_to_check):
             continue
 
         print(f"✓ {cleaner.name} is available!")
+        if available_cleaners is not None:
+            available_cleaners.append(cleaner)
         return True
 
     print("No available cleaners found for this time slot")
@@ -115,14 +118,17 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     """
     Find up to `max_alternates` alternate available timeslots.
     If no slots exist on the requested day, search the next available day.
+    
+    Note: datetimeToCheck should already be in the business's timezone.
     """
     alternate_slots = []
     time_increment = timedelta(hours=1)
     max_attempts = 10
     next_time = datetimeToCheck + time_increment
+    available_cleaners = []
 
     while len(alternate_slots) < max_alternates and max_attempts > 0:
-        if is_slot_available(cleaners, next_time):
+        if is_slot_available(cleaners, next_time, available_cleaners):
             alternate_slots.append(next_time.strftime("%Y-%m-%d %H:%M:%S"))
 
         latest_end_time = max(get_cleaner_availabilities(next_time.strftime('%A'))
@@ -143,9 +149,17 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
             available_cleaners = get_cleaner_availabilities(next_weekDay)
 
             for availability in available_cleaners:
-                slot_time = next_available_day.replace(hour=availability.startTime.hour, minute=0)
+                # Create a new datetime object with the start time from availability
+                slot_time = next_available_day.replace(
+                    hour=availability.startTime.hour, 
+                    minute=availability.startTime.minute,
+                    second=0,
+                    microsecond=0
+                )
+                
                 while slot_time.time() < availability.endTime:
-                    if is_slot_available(cleaners, slot_time):
+                    temp_cleaners = []
+                    if is_slot_available(cleaners, slot_time, temp_cleaners):
                         alternate_slots.append(slot_time.strftime("%Y-%m-%d %H:%M:%S"))
                     if len(alternate_slots) >= max_alternates:
                         return alternate_slots
@@ -161,6 +175,7 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
 def check_availability_retell(request, secretKey):
     """
     API endpoint for Retell AI to check appointment availability.
+    Takes into account the business's timezone for accurate availability checks.
     """
     try:
         if request.method != "POST":
@@ -187,39 +202,168 @@ def check_availability_retell(request, secretKey):
         # Extract parameters
         args = post_data.get("args", {})
         cleaningDateTime = args.get("cleaningDateTime")
+        request_timezone = args.get("timezone")  # Get timezone from request if provided
 
         if not cleaningDateTime:
             return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
-        # Convert string to datetime
-        datetimeToCheck = datetime.fromisoformat(cleaningDateTime.replace("Z", "+00:00"))
-        if is_naive(datetimeToCheck):
-            datetimeToCheck = make_aware(datetimeToCheck)
+        # Get business timezone (default to UTC if not set)
+        business_timezone = business.timezone or 'UTC'
+        
+        # If request_timezone is provided, we'll use it for interpreting the input time
+        # but we'll still use the business timezone for checking availability
+        input_timezone = request_timezone or business_timezone
+        
 
-        weekDay = datetimeToCheck.strftime('%A')
+        
+        # Parse the input datetime - remove Z to handle it as a local time in the input timezone
+        input_datetime_str = cleaningDateTime.replace("Z", "")
+        
+        # Create a timezone-aware datetime in the input timezone
+        input_tz = pytz.timezone(input_timezone)
+        business_tz = pytz.timezone(business_timezone)
+        
+        # Parse the datetime and make it timezone-aware in the input timezone
+        naive_dt = datetime.fromisoformat(input_datetime_str)
+        input_aware_dt = input_tz.localize(naive_dt)
+        
+        print(f"Input Aware DateTime: {input_aware_dt}")
+        
+        # Convert to business timezone for availability checking
+        business_datetime = input_aware_dt.astimezone(business_tz)
+       
 
-        print(" Processed Date:", datetimeToCheck)
+        weekDay = business_datetime.strftime('%A')
+    
 
         cleaners = get_cleaners_for_business(business)
+        available_cleaners = []
 
         # Check if the requested time is available
-        if is_slot_available(cleaners, datetimeToCheck):
-            return JsonResponse({
+        if is_slot_available(cleaners, business_datetime, available_cleaners):
+            response = {
                 "status": "success",
                 "available": True,
-                "timeslot": datetimeToCheck.strftime("%Y-%m-%d %H:%M:%S"),
-                "alternates": []
-            }, status=200)
+                "timeslot": business_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+
+            return JsonResponse(response, status=200)
 
         # Find alternate available slots
-        alternate_slots = find_alternate_slots(cleaners, datetimeToCheck)
+        alternate_slots = find_alternate_slots(cleaners, business_datetime)
+        
+        # Format alternate slots with timezone info
+        formatted_alternates = []
+        for slot in alternate_slots:
+            # Convert string back to datetime
+            slot_dt = datetime.strptime(slot, "%Y-%m-%d %H:%M:%S")
+            # Make timezone aware in business timezone
+            slot_dt = business_tz.localize(slot_dt)
+            formatted_alternates.append(slot_dt.strftime("%Y-%m-%d %H:%M:%S"))
 
         return JsonResponse({
             "status": "success",
             "available": False,
-            "timeslot": datetimeToCheck.strftime("%Y-%m-%d %H:%M:%S"),
-            "alternates": alternate_slots
+            "timeslot": business_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "alternates": formatted_alternates
         }, status=200)
 
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({"error": str(e)}, status=500)
+
+# Test endpoint to check availability without Retell signature verification
+@csrf_exempt
+def test_check_availability(request, secretKey):
+    """
+    Test endpoint for checking appointment availability without Retell signature verification.
+    This is only for testing purposes and should not be used in production.
+    """
+    try:
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method"}, status=405)
+        
+        # Try to get API credentials
+        try:
+            apiCreds = ApiCredential.objects.get(secretKey=secretKey)
+            business = apiCreds.business
+        except ApiCredential.DoesNotExist:
+            return JsonResponse({"error": "Invalid secret key"}, status=401)
+
+        # Parse request body
+        post_data = json.loads(request.body)
+        
+        # Extract parameters
+        args = post_data.get("args", {})
+        cleaningDateTime = args.get("cleaningDateTime")
+        request_timezone = args.get("timezone")  # Get timezone from request
+
+        if not cleaningDateTime:
+            return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
+
+        # Get business timezone (default to UTC if not set)
+        business_timezone = business.timezone or 'UTC'
+        
+        # If request_timezone is provided, we'll use it for interpreting the input time
+        # but we'll still use the business timezone for checking availability
+        input_timezone = request_timezone or business_timezone
+        
+       
+        
+        # Parse the input datetime - remove Z to handle it as a local time in the input timezone
+        input_datetime_str = cleaningDateTime.replace("Z", "")
+        
+        # Create a timezone-aware datetime in the input timezone
+        input_tz = pytz.timezone(input_timezone)
+        business_tz = pytz.timezone(business_timezone)
+        
+        # Parse the datetime and make it timezone-aware in the input timezone
+        naive_dt = datetime.fromisoformat(input_datetime_str)
+        input_aware_dt = input_tz.localize(naive_dt)
+       
+        # Convert to business timezone for availability checking
+        business_datetime = input_aware_dt.astimezone(business_tz)
+
+        weekDay = business_datetime.strftime('%A')
+
+        cleaners = get_cleaners_for_business(business)
+        available_cleaners = []
+
+        # Check if the requested time is available
+        if is_slot_available(cleaners, business_datetime, available_cleaners):
+            response = {
+                "status": "success",
+                "available": True,
+                "timeslot": business_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                "timezone": business_timezone,
+                "cleaners": [{"id": c.id, "name": c.name} for c in available_cleaners],
+                "alternates": []
+            }
+ 
+            return JsonResponse(response, status=200)
+
+        # Find alternate available slots
+        alternate_slots = find_alternate_slots(cleaners, business_datetime)
+        
+        # Format alternate slots with timezone info
+        formatted_alternates = []
+        for slot in alternate_slots:
+            # Convert string back to datetime
+            slot_dt = datetime.strptime(slot, "%Y-%m-%d %H:%M:%S")
+            # Make timezone aware in business timezone
+            slot_dt = business_tz.localize(slot_dt)
+            formatted_alternates.append(slot_dt.strftime("%Y-%m-%d %H:%M:%S"))
+
+        return JsonResponse({
+            "status": "success",
+            "available": False,
+            "timeslot": business_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "timezone": business_timezone,
+            "alternates": formatted_alternates
+        }, status=200)
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)

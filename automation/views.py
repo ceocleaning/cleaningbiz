@@ -8,8 +8,10 @@ from django.db import models
 import logging
 from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
-from accounts.models import ApiCredential
+from accounts.models import ApiCredential, Business
 from retell import Retell
+import random
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -398,3 +400,31 @@ def toggle_cleaner_active(request, cleaner_id):
             messages.error(request, f'Error updating cleaner status: {str(e)}')
     
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
+
+
+@login_required
+def test_availability_api(request):
+    """
+    Render a page to test the Retell availability API.
+    """
+    
+    business = request.user.business_set.first()
+    apiCred = ApiCredential.objects.filter(business=business).first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    context = {
+        'business': business,
+        'secretKey': apiCred.secretKey,
+    }
+    
+    return render(request, 'automation/test_availability_api.html', context)
+
+
+@login_required
+def test_features(request):
+    """
+    Render a page that lists all available test features.
+    """
+    return render(request, 'automation/test_features.html')

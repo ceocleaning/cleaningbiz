@@ -12,6 +12,7 @@ class Business(models.Model):
     businessName = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
+    timezone = models.CharField(max_length=50, default='UTC', null=True, blank=True)
 
     bookingIntegrations = models.ManyToManyField('BookingIntegration', blank=True, related_name='integrated_businesses')
 
@@ -122,3 +123,24 @@ class CustomAddons(models.Model):
     
     def __str__(self):
         return self.addonName
+
+
+
+
+class PasswordResetOTP(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='password_reset_otp')
+    otp = models.CharField(max_length=6)
+    token = models.CharField(max_length=100, null=True, blank=True)
+    is_used = models.BooleanField(default=False)
+    failed_attempts = models.IntegerField(default=0)
+    otp_sent_count = models.IntegerField(default=0)
+    lock_expiry = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    def __str__(self):
+        return f"Password Reset OTP for {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Password Reset OTP"
+        verbose_name_plural = "Password Reset OTPs"

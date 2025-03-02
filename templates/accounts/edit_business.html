@@ -27,6 +27,16 @@
                             <input type="text" class="form-control" id="address" name="address" value="{{ business.address }}" required>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="timezone" class="form-label">Time Zone</label>
+                            <select class="form-select" id="timezone" name="timezone" required>
+                                {% for tz in timezones %}
+                                <option value="{{ tz }}" {% if tz == business.timezone %}selected{% endif %}>{{ tz }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the time zone where your business operates</div>
+                        </div>
+                        
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
