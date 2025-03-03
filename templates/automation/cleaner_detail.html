@@ -351,12 +351,7 @@
                 </div>
                 <div class="modal-body">
                     <p class="mb-0">Are you sure you want to delete <strong>{{ cleaner.name }}</strong>? This action cannot be undone.</p>
-                    {% if cleaner.bookings.exists %}
-                    <div class="alert alert-warning mt-3 mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Warning: This cleaner has associated bookings. Deleting them will affect existing booking records.
-                    </div>
-                    {% endif %}
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
