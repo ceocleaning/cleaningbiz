@@ -18,13 +18,7 @@
                             <input type="text" class="form-control" id="secretKey" readonly required value="{{ secretKey }}">
                             <div class="form-text">Secret Key</div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="timezone" class="form-label">Business Time Zone</label>
-                            <input type="text" class="form-control" id="timezone" readonly required value="{{ business.timezone|default:'UTC' }}">
-                            <div class="form-text">Business Time Zone</div>
-                        </div>
-                     
+                    
                         
                         <div class="mb-3">
                             <label for="cleaningDate" class="form-label">Cleaning Date</label>
@@ -65,6 +59,24 @@
                                 <ul class="list-group" id="cleanersListItems">
                                     <!-- Cleaners will be listed here -->
                                 </ul>
+                            </div>
+                            
+                            <!-- Process Logs Section -->
+                            <div class="mt-4">
+                                <h5>Availability Check Process:</h5>
+                                <div class="card bg-light">
+                                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                                        <pre class="mb-0" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem;"><code id="processLogs"></code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Alternative slots section -->
+                            <div class="mt-4 d-none" id="alternatesSection">
+                                <h5>Alternative Time Slots:</h5>
+                                <div class="list-group" id="alternatesList">
+                                    <!-- Alternate slots will be populated here -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -152,11 +164,36 @@
     </div>
 </div>
 
+<style>
+    .log-success {
+        color: #28a745;
+    }
+    .log-error {
+        color: #dc3545;
+    }
+    .log-info {
+        color: #0066cc;
+    }
+    .log-warning {
+        color: #ffc107;
+    }
+    pre#processLogs {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    pre#processLogs .emoji {
+        margin-right: 0.5rem;
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('availabilityForm');
     const businessSelect = document.getElementById('business');
-    const timezoneSelect = document.getElementById('timezone');
     const checkButton = document.getElementById('checkButton');
     const buttonText = document.getElementById('buttonText');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -172,71 +209,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const alternatesSection = document.getElementById('alternatesSection');
     const alternatesList = document.getElementById('alternatesList');
     const toggleRawResponse = document.getElementById('toggleRawResponse');
-    const processLogsCard = document.getElementById('processLogsCard');
-    const processLogs = document.getElementById('processLogs');
-    
 
-    
-    // Toggle raw response visibility
-    toggleRawResponse.addEventListener('click', function() {
-        if (responseCard.classList.contains('d-none')) {
-            responseCard.classList.remove('d-none');
-            toggleRawResponse.textContent = 'Hide Raw Response';
-        } else {
-            responseCard.classList.add('d-none');
-            toggleRawResponse.textContent = 'Show Raw Response';
-        }
-    });
-    
-    // Simple function to format date string without changing timezone
+    // Function to format date display
     function formatDateDisplay(dateStr) {
         try {
-            // For ISO strings with Z (UTC)
+            let date;
             if (dateStr.includes('Z')) {
-                // Extract date and time parts
-                const parts = dateStr.replace('Z', '').split('T');
-                if (parts.length === 2) {
-                    const datePart = parts[0];
-                    const timePart = parts[1];
-                    
-                    // Format date: YYYY-MM-DD → DD/MM/YYYY
-                    const dateElements = datePart.split('-');
-                    const formattedDate = `${dateElements[2]}/${dateElements[1]}/${dateElements[0]}`;
-                    
-                    // Format time: HH:MM:SS → HH:MM
-                    const timeElements = timePart.split(':');
-                    const formattedTime = `${timeElements[0]}:${timeElements[1]}`;
-                    
-                    return `${formattedDate} ${formattedTime}`;
-                }
-            } 
-            // For database timestamps (YYYY-MM-DD HH:MM:SS)
-            else if (dateStr.includes('-') && dateStr.includes(':')) {
-                const parts = dateStr.split(' ');
-                if (parts.length === 2) {
-                    const datePart = parts[0];
-                    const timePart = parts[1];
-                    
-                    // Format date: YYYY-MM-DD → DD/MM/YYYY
-                    const dateElements = datePart.split('-');
-                    const formattedDate = `${dateElements[2]}/${dateElements[1]}/${dateElements[0]}`;
-                    
-                    // Format time: HH:MM:SS → HH:MM
-                    const timeElements = timePart.split(':');
-                    const formattedTime = `${timeElements[0]}:${timeElements[1]}`;
-                    
-                    return `${formattedDate} ${formattedTime}`;
-                }
+                // For ISO strings with Z (UTC)
+                date = new Date(dateStr);
+            } else {
+                // For database timestamps (YYYY-MM-DD HH:MM:SS)
+                date = new Date(dateStr.replace(' ', 'T'));
             }
             
-            // If we can't parse it, return as is
-            return dateStr;
+            // Format date as DD/MM/YYYY HH:mm
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
         } catch (error) {
             console.error('Error formatting date display:', error);
             return dateStr;
         }
     }
-    
+
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -249,19 +248,15 @@ document.addEventListener('DOMContentLoaded', function() {
         alternatesSection.classList.add('d-none');
         responseCard.classList.add('d-none');
         toggleRawResponse.parentElement.classList.add('d-none');
-        processLogsCard.classList.add('d-none');
         
         const secretKey = document.getElementById('secretKey').value;
         const cleaningDate = document.getElementById('cleaningDate').value;
         const cleaningTime = document.getElementById('cleaningTime').value;
-        const selectedTimezone = document.getElementById('timezone').value;
-        
+    
         // Convert to ISO string with the selected timezone
         const cleaningDateTime = `${cleaningDate}T${cleaningTime}:00Z`;
         
         try {
-            // In a real test, we would need to generate a valid Retell signature
-            // For this test page, we're simulating the API call
             const response = await fetch(`/api/availability/${secretKey}/test`, {
                 method: 'POST',
                 headers: {
@@ -269,8 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     args: {
-                        cleaningDateTime: cleaningDateTime,
-                        timezone: selectedTimezone
+                        cleaningDateTime: cleaningDateTime
                     }
                 })
             });
@@ -291,30 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Display user-friendly result
             if (data.status === 'success') {
-                // Display process logs if available
-                if (data.process_logs && data.process_logs.length > 0) {
-                    // Format the process logs for better display
-                    const formattedLogs = data.process_logs.map(log => {
-                        // Add some styling to make the logs more readable
-                        if (log.includes('STEP')) {
-                            return `<span style="color: #0066cc; font-weight: bold;">${log}</span>`;
-                        } else if (log.includes('✅') || log.includes('AVAILABLE')) {
-                            return `<span style="color: #28a745;">${log}</span>`;
-                        } else if (log.includes('❌') || log.includes('NOT AVAILABLE')) {
-                            return `<span style="color: #dc3545;">${log}</span>`;
-                        } else if (log.trim().startsWith('👤')) {
-                            return `<span style="color: #6610f2; font-weight: bold;">${log}</span>`;
-                        } else if (log.includes('FINAL RESULT')) {
-                            return `<span style="color: #fd7e14; font-weight: bold; font-size: 1.1em;">${log}</span>`;
-                        }
-                        return log;
-                    }).join('\n');
-                    
-                    processLogs.innerHTML = formattedLogs;
-                    processLogsCard.classList.remove('d-none');
-                } else {
-                    processLogsCard.classList.add('d-none');
-                }
+                availabilityResultCard.classList.remove('d-none');
                 
                 if (data.available) {
                     // Time slot is available
@@ -326,19 +297,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong>Good news!</strong> The requested time slot is available.
                         </div>
                         <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
-                       
-                        <p><strong>Business Timezone:</strong> ${data.timezone || selectedTimezone}</p>
                     `;
                     
                     // Show cleaners if available in the response
                     if (data.cleaners && data.cleaners.length > 0) {
-                        cleanersListItems.innerHTML = '';
-                        data.cleaners.forEach(cleaner => {
-                            const item = document.createElement('li');
-                            item.className = 'list-group-item';
-                            item.innerHTML = `<i class="fas fa-user me-2"></i> ${cleaner.name || 'Unnamed Cleaner'}`;
-                            cleanersListItems.appendChild(item);
-                        });
+                        cleanersListItems.innerHTML = data.cleaners.map(cleaner => `
+                            <li class="list-group-item">
+                                <i class="fas fa-user me-2"></i> ${cleaner.name || 'Unnamed Cleaner'}
+                            </li>
+                        `).join('');
                         cleanersList.classList.remove('d-none');
                     } else {
                         cleanersList.classList.add('d-none');
@@ -354,30 +321,41 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
                         <p><strong>Business Time:</strong> ${formattedResponseTime}</p>
-                        <p><strong>Business Timezone:</strong> ${data.timezone || selectedTimezone}</p>
                     `;
                     cleanersList.classList.add('d-none');
                 }
                 
+                // Display process logs
+                if (data.logs && data.logs.length > 0) {
+                    const processLogs = document.getElementById('processLogs');
+                    const formattedLogs = data.logs.map(log => {
+                        // Add color classes based on log content
+                        if (log.includes('✅')) {
+                            return `<span class="log-success">${log}</span>`;
+                        } else if (log.includes('❌')) {
+                            return `<span class="log-error">${log}</span>`;
+                        } else if (log.includes('Found')) {
+                            return `<span class="log-info">${log}</span>`;
+                        } else if (log.includes('Looking for')) {
+                            return `<span class="log-warning">${log}</span>`;
+                        }
+                        return log;
+                    }).join('\n');
+                    
+                    processLogs.innerHTML = formattedLogs;
+                }
+                
                 // Display alternate slots if available
                 if (!data.available && data.alternates && data.alternates.length > 0) {
-                    alternatesList.innerHTML = '';
-                    data.alternates.forEach(slot => {
+                    alternatesList.innerHTML = data.alternates.map(slot => {
                         const formattedSlot = formatDateDisplay(slot);
-                        const item = document.createElement('button');
-                        item.className = 'list-group-item list-group-item-action';
-                        item.innerHTML = `
-                            <i class="fas fa-calendar-check me-2"></i>
-                            ${formattedSlot}
+                        return `
+                            <button class="list-group-item list-group-item-action">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                ${formattedSlot}
+                            </button>
                         `;
-                        // Add click handler to use this slot
-                        item.addEventListener('click', function() {
-                            // You could implement functionality to select this slot
-                            // For now, just show an alert
-                            alert(`You selected: ${slot}`);
-                        });
-                        alternatesList.appendChild(item);
-                    });
+                    }).join('');
                     alternatesSection.classList.remove('d-none');
                 } else {
                     alternatesSection.classList.add('d-none');
@@ -388,38 +366,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultCardTitle.textContent = 'Error';
                 availabilityResult.innerHTML = `
                     <div class="alert alert-danger">
-                        <i class="fas fa-times-circle me-2"></i>
-                        <strong>Error:</strong> ${data.error || 'Unknown error occurred'}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error!</strong> ${data.error || 'An unknown error occurred.'}
                     </div>
                 `;
-                cleanersList.classList.add('d-none');
-                alternatesSection.classList.add('d-none');
             }
-            
-            availabilityResultCard.classList.remove('d-none');
-            
         } catch (error) {
-            // Handle fetch or parsing errors
+            console.error('Error:', error);
+            availabilityResultCard.classList.remove('d-none');
             resultCardHeader.className = 'card-header bg-danger text-white';
             resultCardTitle.textContent = 'Error';
             availabilityResult.innerHTML = `
                 <div class="alert alert-danger">
-                    <i class="fas fa-times-circle me-2"></i>
-                    <strong>Error:</strong> ${error.message}
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error!</strong> ${error.message || 'An unknown error occurred.'}
                 </div>
             `;
-            responseData.textContent = `Error: ${error.message}`;
-            availabilityResultCard.classList.remove('d-none');
-            toggleRawResponse.parentElement.classList.remove('d-none');
-            cleanersList.classList.add('d-none');
-            alternatesSection.classList.add('d-none');
-            processLogsCard.classList.add('d-none');
         } finally {
-            // Hide loading indicators
-            loadingIndicator.classList.add('d-none');
-            loadingSpinner.classList.add('d-none');
-            buttonText.textContent = 'Check Availability';
+            // Reset loading state
             checkButton.disabled = false;
+            buttonText.textContent = 'Check Availability';
+            loadingSpinner.classList.add('d-none');
+            loadingIndicator.classList.add('d-none');
+        }
+    });
+    
+    // Toggle raw response visibility
+    toggleRawResponse.addEventListener('click', function() {
+        if (responseCard.classList.contains('d-none')) {
+            responseCard.classList.remove('d-none');
+            toggleRawResponse.textContent = 'Hide Raw Response';
+        } else {
+            responseCard.classList.add('d-none');
+            toggleRawResponse.textContent = 'Show Raw Response';
         }
     });
 });
