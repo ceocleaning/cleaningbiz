@@ -596,7 +596,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calculate tax
         let subtotal = basePrice + addonTotal + customAddonTotal;
-        let tax = subtotal * prices.tax;
+        let tax = subtotal * (prices.tax / 100);
+
         
         // Update form fields
         document.getElementById('subtotal').value = subtotal.toFixed(2);
