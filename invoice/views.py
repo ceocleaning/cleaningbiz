@@ -67,7 +67,7 @@ def create_invoice(request, bookingId):
     context = {
         'booking': bookingObj,
     }
-    return render(request, 'create_invoice.html', context)
+    return render(request, 'invoice:create_invoice.html', context)
 
 @login_required
 def edit_invoice(request, invoiceId):
