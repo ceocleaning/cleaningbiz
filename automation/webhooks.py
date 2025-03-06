@@ -8,6 +8,8 @@ import requests
 import threading
 from django.utils.timezone import make_aware, is_naive
 from datetime import datetime, timedelta
+
+from rest_framework import status
 from .models import *
 from .api_views import get_cleaners_for_business, find_available_cleaner
 
@@ -17,7 +19,13 @@ from .utils import calculateAmount, calculateAddonsAmount
 from integrations.models import PlatformIntegration, DataMapping
 
 @csrf_exempt
-def thumbtack_webhook(request):
+def thumbtack_webhook(request, secretKey):
+    verifySecretKey = ApiCredential.objects.filter(secretKey=secretKey)
+    if not verifySecretKey.exists():
+        return JsonResponse({'message': 'Secret Not Verified'},status=500)
+
+    business = verifySecretKey.business
+
     if request.method == 'POST':
         data = json.loads(request.body)
         print(data)

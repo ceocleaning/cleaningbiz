@@ -5,6 +5,8 @@ import random
 
 User = get_user_model()
 
+URL = 'https://ceocleaners.up.railway.app'
+
 
 class Business(models.Model):
     businessId = models.CharField(max_length=11, unique=True, null=True, blank=True)
@@ -41,6 +43,13 @@ class ApiCredential(models.Model):
 
     def __str__(self):
         return self.business.businessName
+    
+    def getRetellUrl(self):
+        return f"{URL}/webhook/{self.secretKey}/"
+    
+    def getThumbtackUrl(self):
+        return f"{URL}/webhook/thumbtack/{self.secretKey}/"
+    
 
 class BookingIntegration(models.Model):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='primary_integration')

@@ -8,7 +8,7 @@ urlpatterns = [
     path('', views.home, name='home'),
 
     path('webhooks/retell/', handle_retell_webhook, name='retell_webhook'),
-    path('webhooks/thumbtack/', thumbtack_webhook, name='thumbtack_webhook'),
+    path('webhooks/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
 
     # Lead Management URLs
     path('leads/', views.all_leads, name='all_leads'),
