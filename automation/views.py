@@ -175,6 +175,7 @@ def add_cleaner(request):
             for day in weekdays:
                 CleanerAvailability.objects.create(
                     cleaner=cleaner,
+                    availability_type='weekly',
                     dayOfWeek=day,
                     startTime=default_start_time,
                     endTime=default_end_time
@@ -199,13 +200,77 @@ def cleaner_detail(request, cleaner_id):
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
-    # Get cleaner's availability schedule
-    availabilities = CleanerAvailability.objects.filter(cleaner=cleaner)
+    # Define the correct order of days
+    day_order = {
+        'Monday': 0,
+        'Tuesday': 1,
+        'Wednesday': 2,
+        'Thursday': 3,
+        'Friday': 4,
+        'Saturday': 5,
+        'Sunday': 6
+    }
+    
+    # Get cleaner's availability schedule - keep the QuerySet for filtering later
+    weekly_availabilities_queryset = CleanerAvailability.objects.filter(
+        cleaner=cleaner, 
+        availability_type='weekly'
+    )
+    
+    # Create a sorted list for display
+    weekly_availabilities = sorted(weekly_availabilities_queryset, key=lambda x: day_order.get(x.dayOfWeek, 7))
+    
+    specific_availabilities = CleanerAvailability.objects.filter(
+        cleaner=cleaner, 
+        availability_type='specific'
+    ).order_by('specific_date')
     
     # Get current date and time
     now = timezone.now()
     current_date = now.date()
     current_time = now.time()
+    
+    # Check if a specific date was provided in the URL
+    date_str = request.GET.get('date', None)
+    if date_str:
+        try:
+            # Parse the date from the URL parameter
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            # If date is invalid, default to current date
+            selected_date = current_date
+    else:
+        # Default to current date if no date parameter
+        selected_date = current_date
+    
+    # Calculate the date of Monday for the week containing the selected date
+    selected_weekday_num = selected_date.weekday()
+    monday_date = selected_date - timedelta(days=selected_weekday_num)
+    
+    # Calculate the date of Sunday for this week
+    sunday_date = monday_date + timedelta(days=6)
+    
+    # Calculate dates for previous and next week navigation
+    prev_week_monday = monday_date - timedelta(days=7)
+    next_week_monday = monday_date + timedelta(days=7)
+    
+    # Group specific date exceptions by weekday for easy lookup
+    specific_by_weekday = {}
+    current_week_exceptions_by_weekday = {}
+    
+    for avail in specific_availabilities:
+        weekday = avail.specific_date.strftime('%A')
+        
+        # Add to general exceptions dictionary
+        if weekday not in specific_by_weekday:
+            specific_by_weekday[weekday] = []
+        specific_by_weekday[weekday].append(avail)
+        
+        # Add to current week exceptions dictionary if the date is in the current week
+        if monday_date <= avail.specific_date <= sunday_date:
+            if weekday not in current_week_exceptions_by_weekday:
+                current_week_exceptions_by_weekday[weekday] = []
+            current_week_exceptions_by_weekday[weekday].append(avail)
     
     logger.info(f"Fetching bookings for cleaner {cleaner.name} at {now}")
     
@@ -250,22 +315,43 @@ def cleaner_detail(request, cleaner_id):
     is_available = True
     current_weekday = now.strftime('%A')
     
-    today_availability = availabilities.filter(dayOfWeek=current_weekday).first()
-    if today_availability:
+    # First check if there's a specific date entry for today
+    today_specific_availability = specific_availabilities.filter(specific_date=current_date).first()
+    
+    if today_specific_availability:
+        # Specific date entry takes precedence
         is_available = (
-            today_availability.startTime <= current_time <= today_availability.endTime
+            not today_specific_availability.offDay and
+            today_specific_availability.startTime <= current_time <= today_specific_availability.endTime
             and not current_booking
         )
     else:
-        is_available = False
+        # Fall back to weekly schedule
+        today_weekly_availability = weekly_availabilities_queryset.filter(dayOfWeek=current_weekday).first()
+        if today_weekly_availability:
+            is_available = (
+                not today_weekly_availability.offDay and
+                today_weekly_availability.startTime <= current_time <= today_weekly_availability.endTime
+                and not current_booking
+            )
+        else:
+            is_available = False
     
     context = {
         'cleaner': cleaner,
-        'availabilities': availabilities,
+        'weekly_availabilities': weekly_availabilities,
+        'specific_availabilities': specific_availabilities,
+        'specific_by_weekday': specific_by_weekday,
+        'current_week_exceptions_by_weekday': current_week_exceptions_by_weekday,
         'current_booking': current_booking,
         'upcoming_bookings': upcoming_bookings,
         'past_bookings': past_bookings,
         'is_available': is_available,
+        'today': current_date,
+        'monday_date': monday_date,
+        'sunday_date': sunday_date,
+        'prev_week_monday': prev_week_monday,
+        'next_week_monday': next_week_monday,
         'title': f'Cleaner - {cleaner.name}',
     }
     
@@ -308,29 +394,155 @@ def update_cleaner_schedule(request, cleaner_id):
     
     if request.method == 'POST':
         try:
-            # Get form data
+            # Get form data for weekly schedule
             days = request.POST.getlist('dayOfWeek[]')
             start_times = request.POST.getlist('startTime[]')
             end_times = request.POST.getlist('endTime[]')
             off_days = request.POST.getlist('offDay[]')  # Get off days
             
-            # Delete existing availabilities
-            CleanerAvailability.objects.filter(cleaner=cleaner).delete()
+            # Get specific date exceptions if present
+            specific_dates = request.POST.getlist('specific_date[]', [])
+            specific_start_times = request.POST.getlist('specific_startTime[]', [])
+            specific_end_times = request.POST.getlist('specific_endTime[]', [])
+            specific_off_days = request.POST.getlist('specific_offDay[]', [])
             
-            # Create new availabilities
-            for i, day in enumerate(days):
+            # Delete existing weekly availabilities
+            CleanerAvailability.objects.filter(cleaner=cleaner, availability_type='weekly').delete()
+            
+            # Define the correct order of days
+            day_order = {
+                'Monday': 0,
+                'Tuesday': 1,
+                'Wednesday': 2,
+                'Thursday': 3,
+                'Friday': 4,
+                'Saturday': 5,
+                'Sunday': 6
+            }
+            
+            # Create new weekly availabilities
+            for i, day in enumerate(sorted(days, key=lambda x: day_order.get(x, 7))):
                 is_off_day = day in off_days
                 CleanerAvailability.objects.create(
                     cleaner=cleaner,
+                    availability_type='weekly',
                     dayOfWeek=day,
                     startTime=start_times[i] if not is_off_day else None,
                     endTime=end_times[i] if not is_off_day else None,
                     offDay=is_off_day
                 )
             
+            # Process specific date exceptions
+            if specific_dates:
+                # Create or update specific date exceptions
+                for i, date_str in enumerate(specific_dates):
+                    if not date_str:  # Skip empty dates
+                        continue
+                        
+                    specific_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    is_off_day = date_str in specific_off_days
+                    
+                    # Check if entry already exists
+                    existing = CleanerAvailability.objects.filter(
+                        cleaner=cleaner,
+                        availability_type='specific',
+                        specific_date=specific_date
+                    ).first()
+                    
+                    if existing:
+                        # Update existing
+                        existing.startTime = specific_start_times[i] if not is_off_day else None
+                        existing.endTime = specific_end_times[i] if not is_off_day else None
+                        existing.offDay = is_off_day
+                        existing.save()
+                    else:
+                        # Create new
+                        CleanerAvailability.objects.create(
+                            cleaner=cleaner,
+                            availability_type='specific',
+                            specific_date=specific_date,
+                            startTime=specific_start_times[i] if not is_off_day else None,
+                            endTime=specific_end_times[i] if not is_off_day else None,
+                            offDay=is_off_day
+                        )
+            
             messages.success(request, 'Cleaner schedule updated successfully.')
         except Exception as e:
             messages.error(request, f'Error updating cleaner schedule: {str(e)}')
+    
+    return redirect('cleaner_detail', cleaner_id=cleaner.id)
+
+
+@login_required
+def add_specific_date(request, cleaner_id):
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    if request.method == 'POST':
+        try:
+            specific_date = request.POST.get('specific_date')
+            start_time = request.POST.get('start_time')
+            end_time = request.POST.get('end_time')
+            is_off_day = request.POST.get('is_off_day') == 'on'
+            
+            if not specific_date:
+                raise ValueError('Date is required')
+                
+            # Convert to date object
+            date_obj = datetime.strptime(specific_date, '%Y-%m-%d').date()
+            
+            # Check if entry already exists
+            existing = CleanerAvailability.objects.filter(
+                cleaner=cleaner,
+                availability_type='specific',
+                specific_date=date_obj
+            ).first()
+            
+            if existing:
+                # Update existing
+                existing.startTime = start_time if not is_off_day else None
+                existing.endTime = end_time if not is_off_day else None
+                existing.offDay = is_off_day
+                existing.save()
+                messages.success(request, f'Updated exception for {specific_date}')
+            else:
+                # Create new
+                CleanerAvailability.objects.create(
+                    cleaner=cleaner,
+                    availability_type='specific',
+                    specific_date=date_obj,
+                    startTime=start_time if not is_off_day else None,
+                    endTime=end_time if not is_off_day else None,
+                    offDay=is_off_day
+                )
+                messages.success(request, f'Added exception for {specific_date}')
+                
+        except Exception as e:
+            messages.error(request, f'Error adding date exception: {str(e)}')
+    
+    return redirect('cleaner_detail', cleaner_id=cleaner.id)
+
+
+@login_required
+def delete_specific_date(request, cleaner_id, exception_id):
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    exception = get_object_or_404(CleanerAvailability, id=exception_id, cleaner=cleaner, availability_type='specific')
+    
+    try:
+        date_str = exception.specific_date.strftime('%Y-%m-%d')
+        exception.delete()
+        messages.success(request, f'Removed exception for {date_str}')
+    except Exception as e:
+        messages.error(request, f'Error removing date exception: {str(e)}')
     
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 

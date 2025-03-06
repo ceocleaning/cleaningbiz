@@ -19,9 +19,38 @@ def get_cleaners_for_business(business):
     return cleaners
 
 # Function to get cleaner availabilities for a specific day
-def get_cleaner_availabilities(week_day):
-    """ Fetch cleaner availabilities who are NOT on a day off. """
-    return CleanerAvailability.objects.filter(dayOfWeek=week_day, offDay=False)
+def get_cleaner_availabilities(cleaner, date_to_check):
+    """ 
+    Fetch cleaner availabilities for a specific date.
+    First checks for specific date exception, then falls back to weekly schedule.
+    Returns None if the cleaner is off on the requested date.
+    """
+    # First check for specific date exception
+    specific_availability = CleanerAvailability.objects.filter(
+        cleaner=cleaner,
+        availability_type='specific',
+        specific_date=date_to_check.date()
+    ).first()
+    
+    if specific_availability:
+        # If it's an off day, return None
+        if specific_availability.offDay:
+            return None
+        return specific_availability
+    
+    # Fall back to weekly schedule
+    week_day = date_to_check.strftime('%A')
+    weekly_availability = CleanerAvailability.objects.filter(
+        cleaner=cleaner,
+        availability_type='weekly',
+        dayOfWeek=week_day
+    ).first()
+    
+    # If it's an off day in the weekly schedule, return None
+    if weekly_availability and weekly_availability.offDay:
+        return None
+    
+    return weekly_availability
 
 # Function to check if a timeslot is available
 def is_slot_available(cleaners, time_to_check, available_cleaners=None):
@@ -41,17 +70,16 @@ def is_slot_available(cleaners, time_to_check, available_cleaners=None):
     logs.append(f"Found {len(cleaners)} cleaners to check")
     
     for cleaner in cleaners:
-        # Get the day of week
-        week_day = time_to_check.strftime('%A')
         logs.append(f"\nChecking cleaner: {cleaner.name}")
         
-        # Check if cleaner works on this day
-        if not get_cleaner_availabilities(week_day).filter(cleaner=cleaner).exists():
-            logs.append(f"❌ {cleaner.name} doesn't work on {week_day}")
+        # Get availability for this date/time
+        cleaner_availability = get_cleaner_availabilities(cleaner, time_to_check)
+        
+        if cleaner_availability is None:
+            logs.append(f"❌ {cleaner.name} doesn't work on {time_to_check.strftime('%A')} {time_to_check.strftime('%Y-%m-%d')}")
             continue
 
         # Check if time is within cleaner's working hours
-        cleaner_availability = get_cleaner_availabilities(week_day).filter(cleaner=cleaner).first()
         if not (cleaner_availability.startTime <= time_to_check.time() <= cleaner_availability.endTime):
             logs.append(f"❌ Time {time_to_check.strftime('%H:%M')} is outside {cleaner.name}'s working hours ({cleaner_availability.startTime.strftime('%H:%M')} - {cleaner_availability.endTime.strftime('%H:%M')})")
             continue
@@ -89,15 +117,11 @@ def find_available_cleaner(cleaners, time_to_check):
     for cleaner in cleaners:
         print("\nChecking cleaner:", cleaner.name)
         
-        # Check cleaner's availability for the requested day
-        availability = CleanerAvailability.objects.filter(
-            cleaner=cleaner, 
-            dayOfWeek=time_to_check.strftime('%A'),
-            offDay=False
-        ).first()
+        # Check cleaner's availability for the requested date/time
+        availability = get_cleaner_availabilities(cleaner, time_to_check)
 
         if not availability:
-            print(f"No availability found for {cleaner.name} on {time_to_check.strftime('%A')}")
+            print(f"No availability found for {cleaner.name} on {time_to_check.strftime('%A')} {time_to_check.strftime('%Y-%m-%d')}")
             continue  # Skip if the cleaner is not available that day
 
         print(f"Found availability for {cleaner.name}: {availability.startTime} - {availability.endTime}")
@@ -137,23 +161,58 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     
     alternate_slots = []
     time_increment = timedelta(hours=1)
-    max_attempts = 10
+    max_attempts = 24  # Increased to search more slots
+    
+    # Start from the next hour
     next_time = datetimeToCheck.replace(minute=0, second=0, microsecond=0) + time_increment
-    available_cleaners = []
-
+    
+    # Define business hours (9 AM to 5 PM by default)
+    business_start_hour = 9
+    business_end_hour = 17
+    
+    # Track days we've already checked to avoid checking the same day multiple times
+    checked_days = set()
+    
     while len(alternate_slots) < max_alternates and max_attempts > 0:
+        available_cleaners = []
+        
+        # Skip times outside of business hours (9 AM - 5 PM)
+        current_hour = next_time.hour
+        current_date = next_time.date()
+        date_str = current_date.strftime('%Y-%m-%d')
+        
+        # If we've already checked this day and found no slots, skip to next day
+        if date_str in checked_days and current_hour >= business_end_hour:
+            # Move to 9 AM the next day
+            next_time = (next_time + timedelta(days=1)).replace(hour=business_start_hour, minute=0, second=0, microsecond=0)
+            continue
+        
+        # If outside business hours, adjust time
+        if current_hour < business_start_hour:
+            # Move to start of business hours
+            next_time = next_time.replace(hour=business_start_hour, minute=0, second=0, microsecond=0)
+        elif current_hour >= business_end_hour:
+            # Move to start of business hours the next day
+            next_time = (next_time + timedelta(days=1)).replace(hour=business_start_hour, minute=0, second=0, microsecond=0)
+            
+        # Check if this slot is available
         is_available, slot_logs = is_slot_available(cleaners, next_time, available_cleaners)
         logs.extend(slot_logs)
         
-        if is_available:
-            alternate_slots.append(next_time.strftime("%Y-%m-%d %H:%M:%S"))
-            logs.append(f"✅ Found alternate slot at {next_time.strftime('%Y-%m-%d %H:%M')}")
+        # Add the date to checked days
+        checked_days.add(date_str)
         
+        if is_available and len(available_cleaners) > 0:
+            # Format the datetime in ISO format for consistency
+            alternate_slots.append(next_time.strftime("%Y-%m-%d %I:%M %p"))
+            logs.append(f"✅ Found alternate slot at {next_time.strftime('%Y-%m-%d %I:%M %p')} with {len(available_cleaners)} cleaner(s)")
+        
+        # Move to the next time slot
         next_time += time_increment
         max_attempts -= 1
 
     if len(alternate_slots) == 0:
-        logs.append("❌ No alternate slots found within the next few hours")
+        logs.append("❌ No alternate slots found within the search period")
     else:
         logs.append(f"✨ Found {len(alternate_slots)} alternate slot(s)")
 
@@ -261,7 +320,7 @@ def test_check_availability(request, secretKey):
         response = {
             "status": "success",
             "available": is_available,
-            "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S"),
+            "timeslot": time_to_check.strftime("%Y-%m-%d %I:%M %p"),
             "cleaners": [{"id": c.id, "name": c.name} for c in available_cleaners],
             "logs": availability_logs
         }

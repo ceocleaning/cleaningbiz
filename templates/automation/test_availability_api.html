@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-check-circle me-2"></i>
                             <strong>Good news!</strong> The requested time slot is available.
                         </div>
-                        <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
+                        <p><strong>Requested Time:</strong> ${cleaningDateTime}</p>
                     `;
                     
                     // Show cleaners if available in the response
@@ -319,8 +319,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Sorry!</strong> The requested time slot is not available.
                         </div>
-                        <p><strong>Requested Time:</strong> ${formattedRequestedTime}</p>
-                        <p><strong>Business Time:</strong> ${formattedResponseTime}</p>
+                        <p><strong>Requested Time:</strong> ${cleaningDateTime}</p>
+                        <p><strong>Business Time:</strong> ${responseTime}</p>
                     `;
                     cleanersList.classList.add('d-none');
                 }
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return `
                             <button class="list-group-item list-group-item-action">
                                 <i class="fas fa-calendar-check me-2"></i>
-                                ${formattedSlot}
+                                ${slot}
                             </button>
                         `;
                     }).join('');

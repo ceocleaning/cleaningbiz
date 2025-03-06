@@ -74,16 +74,43 @@ class Cleaners(models.Model):
         return self.name
 
 class CleanerAvailability(models.Model):
+    AVAILABILITY_TYPE_CHOICES = (
+        ('weekly', 'Weekly Recurring'),
+        ('specific', 'Specific Date'),
+    )
+    
     cleaner = models.ForeignKey('automation.Cleaners', on_delete=models.CASCADE)
     
-    dayOfWeek = models.CharField(max_length=10, choices=WEEKDAY_CHOICES)
+    # Type of availability entry
+    availability_type = models.CharField(max_length=10, choices=AVAILABILITY_TYPE_CHOICES, default='weekly')
+    
+    # For weekly recurring schedule
+    dayOfWeek = models.CharField(max_length=10, choices=WEEKDAY_CHOICES, null=True, blank=True)
+    
+    # For specific date exceptions
+    specific_date = models.DateField(null=True, blank=True)
+    
+    # Common fields for both types
     startTime = models.TimeField(null=True, blank=True)
     endTime = models.TimeField(null=True, blank=True)
-
     offDay = models.BooleanField(default=False)
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(availability_type='weekly', dayOfWeek__isnull=False, specific_date__isnull=True) |
+                    models.Q(availability_type='specific', dayOfWeek__isnull=True, specific_date__isnull=False)
+                ),
+                name='valid_availability_type_fields'
+            )
+        ]
+
     def __str__(self):
-        return f"{self.cleaner.name} - {self.dayOfWeek}"
+        if self.availability_type == 'weekly':
+            return f"{self.cleaner.name} - {self.dayOfWeek}"
+        else:
+            return f"{self.cleaner.name} - {self.specific_date.strftime('%Y-%m-%d')}"
