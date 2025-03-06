@@ -208,14 +208,12 @@ def check_availability_retell(request, secretKey):
             "available": is_available,
             "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S"),
             "cleaners": [{"id": c.id, "name": c.name} for c in available_cleaners],
-            "logs": availability_logs
         }
 
         # If not available, find alternate slots
         if not is_available:
             alternate_slots, alternate_logs = find_alternate_slots(cleaners, time_to_check)
             response["alternates"] = alternate_slots
-            response["logs"].extend(alternate_logs)
 
         return JsonResponse(response, status=200)
 
