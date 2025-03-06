@@ -67,7 +67,7 @@ def create_invoice(request, bookingId):
     context = {
         'booking': bookingObj,
     }
-    return render(request, 'invoice:create_invoice.html', context)
+    return render(request, 'create_invoice.html', context)
 
 @login_required
 def edit_invoice(request, invoiceId):
@@ -152,17 +152,17 @@ def mark_invoice_paid(request, invoiceId):
     if request.method == 'POST':
         invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
         payment_method = request.POST.get('paymentMethod')
-        invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
-        payment_method = request.POST.get('paymentMethod')
         amount = request.POST.get('amount')
+
+        payment = Payment.objects.create(
+            invoice=invoice,
+            paymentMethod=payment_method,
+            amount=amount,
+            paidAt=timezone.now()
+        )
         
         invoice.isPaid = True
-        invoice.payment_details = {
-            'paymentId': f'PAY-{uuid.uuid4().hex[:8].upper()}',
-            'paymentMethod': payment_method,
-            'amount': amount,
-            'paidAt': timezone.now().isoformat()
-        }
+        invoice.payment_details = payment
         invoice.save()
         
         messages.success(request, f'Invoice {invoice.invoiceId} marked as paid successfully!')

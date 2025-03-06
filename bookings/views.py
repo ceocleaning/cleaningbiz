@@ -69,6 +69,16 @@ def create_booking(request):
                 tax=tax,
                 totalPrice=totalPrice
             )
+            
+            # Assign cleaner if selected
+            cleaner_id = request.POST.get('selectedCleaner')
+            if cleaner_id:
+                try:
+                    cleaner = Cleaners.objects.get(id=cleaner_id)
+                    booking.cleaner = cleaner
+                    booking.save()
+                except Cleaners.DoesNotExist:
+                    pass  # Silently ignore if cleaner doesn't exist
 
             # Handle standard add-ons
             addon_fields = [

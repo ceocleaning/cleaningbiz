@@ -104,7 +104,7 @@ class Booking(models.Model):
 
 
     def __str__(self):
-        return f"{self.firstName} {self.lastName} - {self.email}"
+        return f"{self.bookingId} for {self.firstName} {self.lastName}"
     
     def generateBookingId(self):
         prefix = "BK"

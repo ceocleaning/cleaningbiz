@@ -337,3 +337,51 @@ def test_check_availability(request, secretKey):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
+
+# API endpoint to check availability for the booking form
+@api_view(['GET'])
+def check_availability_for_booking(request):
+    """
+    API endpoint to check if a timeslot is available for booking.
+    Returns availability status and alternative slots if not available.
+    """
+    try:
+        # Get date and time from request
+        date_str = request.GET.get('date')
+        time_str = request.GET.get('time')
+        
+        if not date_str or not time_str:
+            return JsonResponse({"error": "Missing date or time parameter"}, status=400)
+        
+        # Parse date and time
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        time_obj = datetime.strptime(time_str, '%H:%M').time()
+        
+        # Combine into a datetime object
+        datetime_to_check = datetime.combine(date_obj, time_obj)
+        
+        # Get all active cleaners
+        cleaners = Cleaners.objects.filter(isActive=True, isAvailable=True)
+        
+        # Check availability
+        available_cleaners = []
+        is_available, _ = is_slot_available(cleaners, datetime_to_check, available_cleaners)
+        
+        # Find alternative slots if not available
+        alternative_slots = []
+        if not is_available:
+            alt_slots, _ = find_alternate_slots(cleaners, datetime_to_check, max_alternates=3)
+            alternative_slots = alt_slots
+        
+        # Return response
+        return JsonResponse({
+            "available": is_available,
+            "alternative_slots": alternative_slots,
+            "cleaners": [{
+                "id": c.id,
+                "name": c.name
+            } for c in available_cleaners]
+        })
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

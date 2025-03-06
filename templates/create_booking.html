@@ -157,6 +157,32 @@
                             </div>
                         </div>
                         
+                        <!-- Availability Check Alert -->
+                        <div id="availability-alert" class="alert alert-danger mt-2" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="availability-message">This timeslot is not available.</span>
+                        </div>
+                        
+                        <!-- Available Cleaners Selection -->
+                        <div id="available-cleaners-container" class="mt-3" style="display: none;">
+                            <h6 class="text-primary"><i class="fas fa-user-check me-2"></i>Available Cleaners:</h6>
+                            <div class="form-group">
+                                <select class="form-control form-select" id="selectedCleaner" name="selectedCleaner">
+                                    <option value="">Select a cleaner</option>
+                                    <!-- Available cleaners will be added here -->
+                                </select>
+                                <small class="form-text text-muted">Select a cleaner for this booking</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Alternative Slots -->
+                        <div id="alternative-slots" class="mt-3" style="display: none;">
+                            <h6 class="text-primary"><i class="fas fa-calendar-alt me-2"></i>Alternative Available Slots:</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-2" id="alt-slots-list">
+                                <!-- Alternative slots will be added here -->
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-secondary prev-step"><i class="fas fa-arrow-left me-2"></i> Previous</button>
                             <button type="button" class="btn btn-primary next-step">Next <i class="fas fa-arrow-right ms-2"></i></button>
@@ -681,6 +707,124 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial calculation
     updateTotalPrice();
+
+    // Check timeslot availability
+    const cleaningDate = document.getElementById('cleaningDate');
+    const startTime = document.getElementById('startTime');
+    const availabilityAlert = document.getElementById('availability-alert');
+    const availabilityMessage = document.getElementById('availability-message');
+    const alternativeSlots = document.getElementById('alternative-slots');
+    const altSlotsList = document.getElementById('alt-slots-list');
+    const availableCleanersContainer = document.getElementById('available-cleaners-container');
+    const selectedCleaner = document.getElementById('selectedCleaner');
+
+    cleaningDate.addEventListener('change', checkAvailability);
+    startTime.addEventListener('change', checkAvailability);
+
+    function checkAvailability() {
+        const date = cleaningDate.value;
+        const time = startTime.value;
+        
+        // Only check if both date and time are selected
+        if (!date || !time) {
+            return;
+        }
+        
+        // Show loading state
+        availabilityAlert.style.display = 'block';
+        availabilityAlert.className = 'alert alert-info mt-2';
+        availabilityMessage.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Checking availability...';
+        
+        const url = '/api/check-availability/?date=' + date + '&time=' + time;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    // Show success message
+                    availabilityAlert.className = 'alert alert-success mt-2';
+                    availabilityMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i> This timeslot is available!';
+                    setTimeout(() => {
+                        availabilityAlert.style.display = 'none';
+                    }, 3000);
+                    alternativeSlots.style.display = 'none';
+                    availableCleanersContainer.style.display = 'block';
+                    selectedCleaner.innerHTML = '';
+                    data.cleaners.forEach(cleaner => {
+                        const option = document.createElement('option');
+                        option.value = cleaner.id;
+                        option.textContent = cleaner.name;
+                        selectedCleaner.appendChild(option);
+                    });
+                } else {
+                    // Show error message
+                    availabilityAlert.className = 'alert alert-danger mt-2';
+                    availabilityMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> This timeslot is not available.';
+                    
+                    // Show alternative slots if any
+                    if (data.alternative_slots && data.alternative_slots.length > 0) {
+                        alternativeSlots.style.display = 'block';
+                        altSlotsList.innerHTML = '';
+                        
+                        data.alternative_slots.forEach(slot => {
+                            // Parse the slot string to get date and time
+                            const slotParts = slot.split(' ');
+                            const slotDate = slotParts[0];
+                            const slotTime = slotParts[1] + ' ' + slotParts[2]; // e.g., "09:00 AM"
+                            
+                            // Create a button for each alternative slot
+                            const slotButton = document.createElement('button');
+                            slotButton.className = 'btn btn-outline-primary btn-sm';
+                            slotButton.innerHTML = `<i class="fas fa-calendar-check me-1"></i> ${slotTime} on ${formatDate(slotDate)}`;
+                            slotButton.type = 'button';
+                            slotButton.addEventListener('click', () => {
+                                // Set the form fields to this slot
+                                cleaningDate.value = slotDate;
+                                
+                                // Convert 12-hour format to 24-hour format for the select
+                                const timeValue = convert12to24(slotTime);
+                                startTime.value = timeValue;
+                                
+                                // Trigger availability check
+                                checkAvailability();
+                            });
+                            
+                            altSlotsList.appendChild(slotButton);
+                        });
+                    } else {
+                        alternativeSlots.style.display = 'none';
+                    }
+                    availableCleanersContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+                availabilityAlert.className = 'alert alert-warning mt-2';
+                availabilityMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Could not check availability. Please try again.';
+            });
+    }
+    
+    // Helper function to format date nicely
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    
+    // Helper function to convert 12-hour time format to 24-hour format
+    function convert12to24(time12h) {
+        const [time, modifier] = time12h.split(' ');
+        let [hours, minutes] = time.split(':');
+        
+        if (hours === '12') {
+            hours = '00';
+        }
+        
+        if (modifier === 'PM') {
+            hours = parseInt(hours, 10) + 12;
+        }
+        
+        return `${hours.padStart(2, '0')}:${minutes}`;
+    }
 });
 </script>
 
