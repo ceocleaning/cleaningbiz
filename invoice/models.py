@@ -29,11 +29,21 @@ class Invoice(models.Model):
 
 
 class Payment(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('AUTHORIZED', 'Authorized'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed'),
+        ('CANCELLED', 'Cancelled')
+    ]
+
     paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)  # Our Own ID
     invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name='payment_details')
     amount = models.IntegerField(default=0)
     paymentMethod = models.CharField(max_length=50, null=True, blank=True)
     squarePaymentId = models.CharField(max_length=100, null=True, blank=True)  # Square's payment ID
+    transactionId = models.CharField(max_length=100, null=True, blank=True)  # For bank transfers
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
     
     paidAt = models.DateTimeField(null=True, blank=True)
 

@@ -11,8 +11,8 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-1 text-primary fw-bold">Invoice #{{ invoice.invoiceId }}</h4>
-                        <span class="text-muted fs-6"><i class="fa fa-calendar me-1"></i>Created on {{ invoice.createdAt|date:"F d, Y" }}</span>
-                        <span class="text-muted fs-6 d-block"><i class="fa fa-clock me-1"></i>Updated on {{ invoice.updatedAt|date:"F d, Y" }}</span>
+                        <span class="text-muted fs-6"><i class="fa fa-calendar me-1"></i>Created on {{ invoice.createdAt }}</span>
+                        <span class="text-muted fs-6 d-block"><i class="fa fa-clock me-1"></i>Updated on {{ invoice.updatedAt }}</span>
                     </div>
                     <div class="text-end">
                         <div class="mb-2">
@@ -43,7 +43,7 @@
                             </div>
                             <div class="div">
                                 <h5 class="card-title mb-0">Booking Information</h5>
-                                <span style="font-size: 12px;" class="text-muted"><i class="fa fa-calendar me-1"></i>Booked on {{ invoice.booking.createdAt|date:"F d, Y" }}</span>
+                                <span style="font-size: 12px;" class="text-muted"><i class="fa fa-calendar me-1"></i>Booked on {{ invoice.booking.createdAt }}</span>
                             </div>
                             
                             
@@ -80,11 +80,11 @@
                            
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Service Date</span>
-                                <span>{{ invoice.booking.cleaningDate|date:"F d, Y" }}</span>
+                                <span>{{ invoice.booking.cleaningDate }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Service Time</span>
-                                <span>{{ invoice.booking.startTime|date:"h:i A" }} to {{ invoice.booking.endTime|date:"h:i A" }}</span>
+                                <span>{{ invoice.booking.startTime }} to {{ invoice.booking.endTime }}</span>
                             </div>
                         </div>
                     </div>
@@ -140,7 +140,6 @@
             </div>
         </div>
 
-       
         <!-- Payment Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-body p-4">
@@ -158,10 +157,18 @@
                                 <span class="text-muted">Payment ID</span>
                                 <span class="fw-bold">{{ invoice.payment_details.paymentId }}</span>
                             </div>
+                            {% if invoice.payment_details.paymentMethod == 'Square' %}
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Square Payment ID</span>
-                                <span class="fw-bold">{{ invoice.payment_details.squarePaymentId }}</span>
+                                <span class="fw-bold">{{ invoice.payment_details.squarePaymentId|default:"N/A" }}</span>
                             </div>
+                            {% endif %}
+                            {% if invoice.payment_details.paymentMethod == 'Bank Transfer' and invoice.payment_details.transactionId %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted">Transaction ID</span>
+                                <span class="fw-bold">{{ invoice.payment_details.transactionId }}</span>
+                            </div>
+                            {% endif %}
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Payment Method</span>
                                 <span class="badge bg-primary text-white px-3">
@@ -169,33 +176,131 @@
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="text-muted">Amount Paid</span>
+                                <span class="text-muted">Payment Status</span>
+                                <span class="badge {% if invoice.payment_details.status == 'COMPLETED' %}bg-success{% elif invoice.payment_details.status == 'AUTHORIZED' %}bg-info{% elif invoice.payment_details.status == 'FAILED' %}bg-danger{% else %}bg-warning{% endif %} text-white px-3">
+                                    {{ invoice.payment_details.status|title }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted">Amount</span>
                                 <span class="text-success fw-bold">${{ invoice.payment_details.amount }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Payment Date</span>
-                                <span>{{ invoice.payment_details.paidAt|date:"F d, Y h:i A" }}</span>
+                                <span>{{ invoice.payment_details.paidAt|default:"N/A" }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
+                        {% if invoice.payment_details.status == 'COMPLETED' %}
                         <div class="bg-success rounded-3 p-4 text-center">
                             <i class="fas fa-check-circle text-white mb-3" style="font-size: 3rem;"></i>
                             <h3 class="text-white mb-2">Payment Complete</h3>
                             <p class="text-white mb-0">Thank you for your payment!</p>
                         </div>
+                        {% elif invoice.payment_details.status == 'AUTHORIZED' %}
+                        <div class="bg-info rounded-3 p-4 text-center">
+                            <i class="fas fa-clock text-white mb-3" style="font-size: 3rem;"></i>
+                            <h3 class="text-white mb-2">Payment Authorized</h3>
+                            <p class="text-white mb-3">Ready to complete after work</p>
+                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#markPaidModal">
+                                <i class="fas fa-check me-2"></i>Complete Payment
+                            </button>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% else %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <h4 class="px-5 text-danger">No payment details available.</h4>
-                    </div>
-                </div>
+                <p class="text-muted mb-0">No payment information available.</p>
                 {% endif %}
             </div>
         </div>
-       
+
+        {% if not invoice.isPaid %}
+        <!-- Mark as Paid Modal -->
+        <div class="modal fade" id="markPaidModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Process Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="post" id="paymentForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Payment Method</label>
+                                <select class="form-select" id="paymentMethod" name="paymentMethod" required>
+                                    <option value="">Select Payment Method</option>
+                                    {% if invoice.payment_details and invoice.payment_details.paymentMethod == 'Square' and invoice.payment_details.status == 'AUTHORIZED' %}
+                                    <option value="Square" selected>Square</option>
+                                    {% else %}
+                                    <option value="Square">Square</option>
+                                    {% endif %}
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Cash">Cash</option>
+                                </select>
+                            </div>
+
+                            <!-- Square Payment Details (shown only when authorized Square payment exists) -->
+                            {% if invoice.payment_details and invoice.payment_details.paymentMethod == 'Square' and invoice.payment_details.status == 'AUTHORIZED' %}
+                            <div id="squarePaymentInfo" class="mb-3 p-3 border rounded bg-light">
+                                <h6 class="mb-3">Square Payment Details</h6>
+                                <div class="row mb-2">
+                                    <div class="col-5 fw-bold">Payment ID:</div>
+                                    <div class="col-7">{{ invoice.payment_details.squarePaymentId }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 fw-bold">Amount:</div>
+                                    <div class="col-7">${{ invoice.payment_details.amount }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 fw-bold">Status:</div>
+                                    <div class="col-7"><span class="badge bg-info">{{ invoice.payment_details.status }}</span></div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 fw-bold">Created:</div>
+                                    <div class="col-7">{{ invoice.payment_details.createdAt|date:"F j, Y, g:i a" }}</div>
+                                </div>
+                                <div class="alert alert-info mt-2 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>This payment is already authorized and will be completed.
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label class="form-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" value="{{ invoice.amount }}" required {% if invoice.payment_details and invoice.payment_details.paymentMethod == 'Square' and invoice.payment_details.status == 'AUTHORIZED' %}readonly{% endif %}>
+                                </div>
+                            </div>
+
+                            <!-- Transaction ID field (shown only for Bank Transfer) -->
+                            <div id="bankTransferInfo" class="d-none">
+                                <div class="mb-3">
+                                    <label class="form-label">Transaction ID</label>
+                                    <input type="text" class="form-control" id="transactionId" name="transactionId" placeholder="Enter bank transaction ID">
+                                    <div class="form-text">Please enter the bank transaction ID for reference</div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                                    {% if invoice.payment_details and invoice.payment_details.paymentMethod == 'Square' and invoice.payment_details.status == 'AUTHORIZED' %}
+                                    Complete Authorized Payment
+                                    {% else %}
+                                    Complete Payment
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Actions -->
         <div class="card shadow-sm">
@@ -233,72 +338,161 @@
         </div>
     </div>
 </div>
-
-{% if not invoice.isPaid %}
-<!-- Mark as Paid Modal -->
-<div class="modal fade" id="markPaidModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title">Mark Invoice as Paid</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="{% url 'invoice:mark_invoice_paid' invoice.invoiceId %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-4">
-                        <label class="form-label">Payment Method</label>
-                        <select class="form-select" name="paymentMethod" required>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label">Amount Paid</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" name="amount" value="{{ invoice.amount }}" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success px-4">
-                        <i class="fas fa-check me-2"></i>Confirm Payment
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block styles %}
 <style>
-    .icon-circle {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-    
-    .booking-info,
-    .payment-info {
-        font-size: 0.95rem;
-    }
-    
-    .badge {
-        font-weight: 500;
-    }
-    
-    .modal-content {
-        border: none;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
+.card {
+    border-width: 1px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border-bottom-width: 1px;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 1em;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.btn-outline-primary:hover {
+    color: #fff;
+}
+
+.bg-opacity-10 {
+    --bs-bg-opacity: 0.1;
+}
+
+#card-container {
+    min-height: 100px;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #fff;
+}
+
+/* Square Payment Form Customization */
+.button-credit-card {
+    display: block;
+    width: 100%;
+    height: 56px;
+    margin-top: 10px;
+    background: #4A90E2;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    border: 0;
+}
+
+.button-credit-card:hover {
+    background: #357ABD;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethod = document.getElementById('paymentMethod');
+    const bankTransferInfo = document.getElementById('bankTransferInfo');
+    const form = document.getElementById('paymentForm');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const spinner = submitButton.querySelector('.spinner-border');
+    
+    // Show/hide transaction ID field based on payment method
+    paymentMethod.addEventListener('change', function() {
+        bankTransferInfo.classList.toggle('d-none', this.value !== 'Bank Transfer');
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Validate form
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        // For bank transfer, validate transaction ID
+        if (paymentMethod.value === 'Bank Transfer') {
+            const transactionId = document.getElementById('transactionId').value;
+            if (!transactionId) {
+                alert('Please enter the transaction ID');
+                return;
+            }
+        }
+
+        // Show loading state
+        submitButton.disabled = true;
+        spinner.classList.remove('d-none');
+
+        try {
+            let url, requestData;
+            
+            // Check if this is an authorized Square payment that needs to be completed
+            {% if invoice.payment_details and invoice.payment_details.paymentMethod == 'Square' and invoice.payment_details.status == 'AUTHORIZED' %}
+            if (paymentMethod.value === 'Square') {
+                url = '{% url "invoice:process_manual_payment" %}';
+                requestData = {
+                    invoiceId: '{{ invoice.invoiceId }}',
+                    paymentMethod: 'Square',
+                    amount: {{ invoice.amount }},
+                    squarePaymentId: '{{ invoice.payment_details.squarePaymentId }}'
+                };
+            } else {
+                url = '{% url "invoice:process_manual_payment" %}';
+                requestData = {
+                    invoiceId: '{{ invoice.invoiceId }}',
+                    paymentMethod: paymentMethod.value,
+                    amount: document.getElementById('amount').value,
+                    transactionId: document.getElementById('transactionId')?.value || null
+                };
+            }
+            {% else %}
+            url = '{% url "invoice:process_manual_payment" %}';
+            requestData = {
+                invoiceId: '{{ invoice.invoiceId }}',
+                paymentMethod: paymentMethod.value,
+                amount: document.getElementById('amount').value,
+                transactionId: document.getElementById('transactionId')?.value || null
+            };
+            {% endif %}
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message || 'Payment processed successfully');
+                window.location.reload();
+            } else {
+                throw new Error(result.error || 'Failed to process payment');
+            }
+        } catch (error) {
+            alert(error.message || 'An error occurred while processing the payment');
+        } finally {
+            // Reset loading state
+            submitButton.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -1,142 +1,260 @@
 {% extends 'LandingPageBase.html' %}
 
-{% block title %}CleaningBiz AI - Cleaning Business Automation Platform{% endblock %}
+{% block title %}CleaningBiz AI - Smart Automation for Cleaning Businesses{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="relative overflow-hidden">
+<!-- Hero Section with Animated Background -->
+<section class="relative min-h-screen hero-pattern">
     <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3" alt="Background" class="w-full h-full object-cover">
-        <div class="absolute inset-0 gradient-overlay"></div>
+        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80" alt="Clean Office" class="object-cover w-full h-full opacity-20">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-900/90 to-primary-600/80"></div>
     </div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div class="space-y-8" data-aos="fade-right">
-                <h1 class="text-5xl md:text-6xl font-bold leading-tight text-white">
-                    Automate Your <span class="text-natural-200">Cleaning</span><br>
-                    Business Today
+                <h1 class="text-5xl lg:text-6xl font-bold text-white leading-tight">
+                    Transform Your <br>
+                    <span class="text-accent-400">Cleaning Business</span><br>
+                    with AI Power
                 </h1>
-                <p class="text-xl text-natural-100 leading-relaxed">CleaningBiz AI streamlines your operations with intelligent automation for lead capture, booking management, and customer communication.</p>
-                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                    <a href="/demo" class="group bg-white text-natural-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-natural-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center">
-                        Request Demo
-                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
+                <p class="text-xl text-gray-200 leading-relaxed">
+                    Automate everything from lead generation to payments. Let AI handle the routine while you focus on growth.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    
+                    <a href="/signup" class="bg-accent-500 px-8 py-4 rounded-xl text-white hover:bg-accent-600 transition flex items-center justify-center group accent-glow">
+                        <span class="mr-2">Start Free Trial</span>
+                        <i class="fas fa-arrow-right transform group-hover:translate-x-1 transition"></i>
                     </a>
-                    <a href="/features" class="group border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-natural-700 transition-all duration-300 flex items-center justify-center">
-                        Explore Features
-                        <i class="fas fa-robot ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
-                    </a>
+                    <a href="/demo" class="glass-card px-8 py-4 rounded-xl text-dark hover:bg-white/20 transition flex items-center justify-center group">
+                      <span class="mr-2">Watch Demo</span>
+                      <i class="fas fa-play-circle transform group-hover:scale-110 transition"></i>
+                  </a>
+                </div>
+                <div class="flex items-center space-x-8 pt-8">
+                    <div class="text-white">
+                        <div class="text-3xl font-bold">500+</div>
+                        <div class="text-gray-300">Active Businesses</div>
+                    </div>
+                    <div class="text-white">
+                        <div class="text-3xl font-bold">98%</div>
+                        <div class="text-gray-300">Client Satisfaction</div>
+                    </div>
+                    <div class="text-white">
+                        <div class="text-3xl font-bold">45%</div>
+                        <div class="text-gray-300">Time Saved</div>
+                    </div>
                 </div>
             </div>
-            <div class="hidden md:block" data-aos="fade-left">
-                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3" alt="Business Automation" class="rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500 animate-float">
+            <div class="relative" data-aos="fade-left">
+                <div class="absolute inset-0 bg-accent-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80" alt="Platform Preview" class="relative rounded-2xl shadow-2xl animate-float">
             </div>
         </div>
     </div>
     <div class="absolute bottom-0 left-0 right-0">
-        <svg class="w-full h-24 text-gray-50 fill-current" viewBox="0 0 1440 74" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,32L120,42.7C240,53,480,75,720,74.7C960,75,1200,53,1320,42.7L1440,32L1440,74L1320,74C1200,74,960,74,720,74C480,74,240,74,120,74L0,74Z"></path>
+        <svg class="w-full text-white fill-current" viewBox="0 0 1440 100">
+            <path d="M0,50 C150,100 350,0 700,50 C1050,100 1250,0 1440,50 L1440 100 L0 100 Z"></path>
         </svg>
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="py-24 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Why Choose CleaningBiz AI?</h2>
-            <p class="text-xl text-gray-600">The all-in-one platform that transforms how cleaning businesses operate</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100">
-                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
-                    <i class="fas fa-headset text-natural-600 text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-semibold mb-4">Automated Lead Capture</h3>
-                <p class="text-gray-600 leading-relaxed">Intelligent system captures and qualifies leads through your website, never missing an opportunity</p>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200">
-                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
-                    <i class="fas fa-comments text-natural-600 text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-semibold mb-4">AI Communication</h3>
-                <p class="text-gray-600 leading-relaxed">Automated SMS and calling with Retell AI integration converts leads into confirmed bookings</p>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300">
-                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
-                    <i class="fas fa-calendar-check text-natural-600 text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-semibold mb-4">Complete Business Management</h3>
-                <p class="text-gray-600 leading-relaxed">Effortlessly manage cleaners, bookings, invoices, and customer relationships in one platform</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Services Showcase -->
+<!-- Features Grid -->
 <section class="py-24 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Our Platform Features</h2>
-            <p class="text-xl text-gray-600">Comprehensive tools designed specifically for cleaning business operations</p>
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Scale</h2>
+            <p class="text-xl text-gray-600">One platform, unlimited possibilities for your cleaning business</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="100">
-                <div class="relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3" alt="Lead Management" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
+            <!-- AI Communication -->
+            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+                <div class="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1531746790731-6c087fecd65a?auto=format&fit=crop&q=80" alt="AI Communication" class="object-cover w-full h-full opacity-5">
                 </div>
-                <div class="p-8">
-                    <h3 class="text-2xl font-semibold mb-4">Lead Management</h3>
-                    <p class="text-gray-600 mb-6">Capture, qualify, and convert leads with AI-powered communication</p>
-                    <a href="/features#lead-management" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
-                        Learn More 
-                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="200">
-                <div class="relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3" alt="Booking System" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
-                </div>
-                <div class="p-8">
-                    <h3 class="text-2xl font-semibold mb-4">Booking & Scheduling</h3>
-                    <p class="text-gray-600 mb-6">Smart scheduling system optimizes cleaner assignments and routes</p>
-                    <a href="/features#booking" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
-                        Learn More 
-                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
-                    </a>
+                <div class="relative z-10">
+                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">AI Communication</h3>
+                    <p class="text-gray-600 mb-6">Smart chatbot handles inquiries, schedules appointments, and follows up with customers automatically.</p>
+                    <div class="flex items-center text-primary-600 font-medium">
+                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
                 </div>
             </div>
-            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="300">
-                <div class="relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3" alt="Invoice Management" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
+
+            <!-- Smart Scheduling -->
+            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+                <div class="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80" alt="Smart Scheduling" class="object-cover w-full h-full opacity-5">
                 </div>
-                <div class="p-8">
-                    <h3 class="text-2xl font-semibold mb-4">Invoice & Payment</h3>
-                    <p class="text-gray-600 mb-6">Automated invoicing, payment processing, and financial reporting</p>
-                    <a href="/features#invoicing" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
-                        Learn More 
-                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
-                    </a>
+                <div class="relative z-10">
+                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-calendar-check text-2xl text-primary-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Smart Scheduling</h3>
+                    <p class="text-gray-600 mb-6">AI-powered scheduling optimizes routes and assigns the best cleaners based on skills and location.</p>
+                    <div class="flex items-center text-primary-600 font-medium">
+                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Automation -->
+            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="300">
+                <div class="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80" alt="Payment Automation" class="object-cover w-full h-full opacity-5">
+                </div>
+                <div class="relative z-10">
+                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-credit-card text-2xl text-primary-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Payment Automation</h3>
+                    <p class="text-gray-600 mb-6">Automated invoicing, online payments, and financial reporting streamline your cash flow.</p>
+                    <div class="flex items-center text-primary-600 font-medium">
+                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Call to Action -->
-<section class="relative py-24 overflow-hidden">
-    <div class="absolute inset-0 natural-gradient"></div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-aos="zoom-in">
-        <h2 class="text-4xl font-bold text-white mb-6">Ready to Transform Your Cleaning Business?</h2>
-        <p class="text-xl text-natural-100 mb-10">Join hundreds of cleaning businesses already growing with CleaningBiz AI</p>
-        <a href="/demo" class="inline-flex items-center bg-white text-natural-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-natural-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-            Schedule Your Free Demo
-            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
-        </a>
+<!-- How It Works -->
+<section class="py-24 bg-gray-50 relative overflow-hidden">
+    <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80" alt="Background" class="object-cover w-full h-full opacity-5">
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p class="text-xl text-gray-600">Get started in minutes, see results instantly</p>
+        </div>
+        <div class="relative">
+            <div class="absolute top-1/2 left-0 right-0 h-1 bg-primary-200 transform -translate-y-1/2"></div>
+            <div class="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="100">
+                    <div class="relative mb-6">
+                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">1</div>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Connect Your Business</h3>
+                    <p class="text-gray-600">Sign up and integrate your existing tools and customer data in minutes.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="200">
+                    <div class="relative mb-6">
+                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">2</div>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Customize Your Flow</h3>
+                    <p class="text-gray-600">Set up your automation rules and communication preferences.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="300">
+                    <div class="relative mb-6">
+                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">3</div>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Watch It Grow</h3>
+                    <p class="text-gray-600">Monitor your business growth with real-time analytics and insights.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-24 bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Loved by Cleaning Businesses</h2>
+            <p class="text-xl text-gray-600">Join hundreds of satisfied customers who transformed their business</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Testimonial 1 -->
+            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="100">
+                <div class="flex items-center mb-6">
+                    <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80" alt="Sarah Wilson" class="h-14 w-14 rounded-full object-cover">
+                    <div class="ml-4">
+                        <h4 class="text-lg font-semibold text-gray-900">Sarah Wilson</h4>
+                        <p class="text-gray-600">Sparkle Clean Co.</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"Since implementing CleaningBiz AI, we've reduced our administrative work by 70% and increased our customer satisfaction scores significantly."</p>
+                <div class="mt-6 text-accent-500">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex items-center mb-6">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80" alt="John Martinez" class="h-14 w-14 rounded-full object-cover">
+                    <div class="ml-4">
+                        <h4 class="text-lg font-semibold text-gray-900">John Martinez</h4>
+                        <p class="text-gray-600">Elite Cleaning Services</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"The AI-powered scheduling has revolutionized our operations. We're handling 40% more clients with the same team size."</p>
+                <div class="mt-6 text-accent-500">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="300">
+                <div class="flex items-center mb-6">
+                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80" alt="Emily Chen" class="h-14 w-14 rounded-full object-cover">
+                    <div class="ml-4">
+                        <h4 class="text-lg font-semibold text-gray-900">Emily Chen</h4>
+                        <p class="text-gray-600">Fresh & Clean Co.</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"The automated payment system has eliminated our cash flow issues. Plus, the customer communication is seamless!"</p>
+                <div class="mt-6 text-accent-500">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="relative py-24 overflow-hidden bg-primary-900">
+    <div class="absolute inset-0">
+        <img src="https://images.unsplash.com/photo-1587614382346-4ec70e388b28?auto=format&fit=crop&q=80" alt="Background" class="object-cover w-full h-full opacity-10">
+        <div class="absolute inset-0 bg-primary-900 opacity-90"></div>
+        <div class="absolute inset-0 hero-pattern opacity-10"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-4xl font-bold text-white mb-6" data-aos="fade-up">Ready to Transform Your Business?</h2>
+            <p class="text-xl text-gray-300 mb-8" data-aos="fade-up" data-aos-delay="100">Join hundreds of cleaning businesses already growing with CleaningBiz AI.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="200">
+                <a href="/signup" class="bg-accent-500 px-8 py-4 rounded-xl text-white hover:bg-accent-600 transition flex items-center justify-center group accent-glow">
+                    <span class="mr-2">Start Free Trial</span>
+                    <i class="fas fa-rocket transform group-hover:translate-x-1 transition"></i>
+                </a>
+                <a href="/contact" class="glass-card px-8 py-4 rounded-xl text-dark hover:bg-white/20 transition flex items-center justify-center group">
+                    <span class="mr-2">Contact Sales</span>
+                    <i class="fas fa-arrow-right transform group-hover:translate-x-1 transition"></i>
+                </a>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

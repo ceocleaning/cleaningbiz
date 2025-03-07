@@ -29,7 +29,8 @@
     .payment-badge {
         position: absolute;
         top: 20px;
-        right: 20px;
+        right: 50%;
+        transform: translateX(50%);
         padding: 8px 16px;
         border-radius: 4px;
         font-weight: 600;
@@ -40,8 +41,12 @@
 {% block content %}
 <div class="invoice-container position-relative">
     {% if invoice.isPaid %}
-    <div class="payment-badge bg-success text-white p-2 px-3 rounded">
+    <div class="payment-badge bg-success text-white">
         <i class="fas fa-check-circle me-1"></i>Paid
+    </div>
+    {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
+    <div class="payment-badge bg-info text-white">
+        <i class="fas fa-clock me-1"></i>Payment Authorized
     </div>
     {% endif %}
 
@@ -88,9 +93,13 @@
             <h2 class="mb-0">INVOICE #{{ invoice.invoiceId }}</h2>
         </div>
         <div class="col-6 text-end">
-            <h2 class="mb-0 {% if invoice.isPaid %}text-success{% else %}text-danger{% endif %}">
-                {{ invoice.isPaid|yesno:"PAID,UNPAID" }}
-            </h2>
+            {% if invoice.isPaid %}
+            <h2 class="mb-0 text-success">PAID</h2>
+            {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
+            <h2 class="mb-0 text-info">AUTHORIZED</h2>
+            {% else %}
+            <h2 class="mb-0 text-danger">UNPAID</h2>
+            {% endif %}
         </div>
     </div>
 
@@ -200,122 +209,163 @@
     </div>
     {% endif %}
 
-    {% if not invoice.isPaid and booking.business.user != request.user or request.user.isAnonymousUser %}
+    {% if not invoice.isPaid and not invoice.payment_details.status == 'AUTHORIZED' %}
     <div class="fixed-bottom mb-3" style="right: 20px;">
         <a href="#" class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#paymentModal">
             <i class="fas fa-credit-card me-2"></i>Pay Now
         </a>
     </div>
+    {% endif %}
 
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="paymentModalLabel">Payment Details</h5>
+                    <h5 class="modal-title" id="paymentModalLabel">Payment Options</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-4">
-                        <h6>Invoice Amount: <span class="text-primary">{{ invoice.amount|format_currency }}</span></h6>
-                        <p class="text-muted small mb-0">Secure payment powered by Square</p>
-                    </div>
-                    <form id="payment-form">
+                        <h6 class="mb-3">Amount to Pay: <strong>{{ invoice.amount|format_currency }}</strong></h6>
                         <div id="card-container"></div>
-                        <button id="card-button" type="button" class="btn btn-primary w-100 mt-3">
-                            <i class="fas fa-lock me-2"></i>Pay {{ invoice.amount|format_currency }}
+                        <div id="payment-status-container" class="payment-status-container"></div>
+                    </div>
+                    <div class="d-grid gap-3">
+                        <button id="pay-now-button" class="btn btn-success">
+                            <i class="fas fa-credit-card me-2"></i>Pay Now
                         </button>
-                    </form>
-                    <div id="payment-status-container" class="mt-3"></div>
+                        <button id="authorize-button" class="btn btn-primary">
+                            <i class="fas fa-clock me-2"></i>Authorize Now, Pay After Work
+                        </button>
+                        <p class="text-muted small text-center mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            "Pay Now" processes the payment immediately. "Authorize Now" reserves the funds but only charges after service completion.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const paymentModal = document.getElementById('paymentModal');
-    if (paymentModal) {
-        paymentModal.addEventListener('show.bs.modal', async function () {
-            try {
-                if (!window.payments) {
-                    window.payments = Square.payments('{{ settings.SQUARE_APP_ID }}');
-                    await initializeCard(window.payments);
-                }
-            } catch (error) {
-                console.error('Error initializing Square:', error);
-                const paymentStatusContainer = document.getElementById('payment-status-container');
-                if (paymentStatusContainer) {
-                    paymentStatusContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to initialize payment form. Please try again later.</div>';
-                }
-            }
-        });
-    }
-});
-
-async function initializeCard(payments) {
-    try {
+    const appId = '{{ settings.SQUARE_APP_ID }}';
+    let payments;
+    
+    async function initializeCard(payments) {
         const card = await payments.card();
         await card.attach('#card-container');
+        return card;
+    }
 
-        const cardButton = document.getElementById('card-button');
-        const paymentStatusContainer = document.getElementById('payment-status-container');
+    async function createPayment(token, autoComplete = true) {
+        const bodyData = {
+            sourceId: token,
+            amount: {{ invoice.amount }},
+            invoiceId: '{{ invoice.invoiceId }}',
+            autoComplete: autoComplete
+        };
 
-        if (cardButton && paymentStatusContainer) {
-            cardButton.addEventListener('click', async () => {
-                try {
-                    cardButton.disabled = true;
-                    cardButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-                    
-                    const result = await card.tokenize();
-                    if (result.status === 'OK') {
-                        paymentStatusContainer.innerHTML = '<div class="alert alert-info"><span class="spinner-border spinner-border-sm me-2"></span>Processing your payment...</div>';
-                        
-                        const response = await fetch('{% url "invoice:process_payment" invoice.invoiceId %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': '{{ csrf_token }}'
-                            },
-                            body: JSON.stringify({
-                                sourceId: result.token,
-                                amount: {{ invoice.amount }},
-                                currency: 'USD'
-                            })
-                        });
+        const paymentResponse = await fetch('{% url "invoice:process_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(bodyData)
+        });
 
-                        const paymentResult = await response.json();
-                        if (paymentResult.success) {
-                            paymentStatusContainer.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Payment successful! Redirecting...</div>';
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            throw new Error(paymentResult.error || 'Payment failed. Please try again.');
-                        }
-                    } else {
-                        throw new Error('Card tokenization failed. Please check your card details and try again.');
-                    }
-                } catch (e) {
-                    console.error('Payment error:', e);
-                    cardButton.disabled = false;
-                    cardButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay {{ invoice.amount|format_currency }}';
-                    paymentStatusContainer.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${e.message}</div>`;
-                }
-            });
+        if (paymentResponse.ok) {
+            return paymentResponse.json();
         }
-    } catch (error) {
-        console.error('Error in initializeCard:', error);
-        const paymentStatusContainer = document.getElementById('payment-status-container');
-        if (paymentStatusContainer) {
-            paymentStatusContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to initialize payment form. Please try again later.</div>';
+        const errorBody = await paymentResponse.text();
+        throw new Error(errorBody);
+    }
+
+    function displayPaymentResults(status) {
+        const statusContainer = document.getElementById('payment-status-container');
+        const buttons = document.querySelectorAll('#pay-now-button, #authorize-button');
+        
+        // Disable buttons during processing
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (status.error) {
+            statusContainer.classList.remove('text-success', 'text-info');
+            statusContainer.classList.add('text-danger');
+            statusContainer.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>${status.error}</div>`;
+            // Re-enable buttons on error
+            buttons.forEach(btn => btn.disabled = false);
+        } else {
+            statusContainer.classList.remove('text-danger');
+            statusContainer.classList.add(status.isAuthorized ? 'text-info' : 'text-success');
+            statusContainer.innerHTML = `<div class="alert alert-${status.isAuthorized ? 'info' : 'success'} mb-0">
+                <i class="fas fa-${status.isAuthorized ? 'clock' : 'check-circle'} me-2"></i>${status.message}</div>`;
+            
+            // Reload page after success
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     }
-}
+
+    window.addEventListener('load', async function () {
+        payments = window.Square.payments(appId);
+        let card;
+        try {
+            card = await initializeCard(payments);
+        } catch (e) {
+            console.error('Failed to initialize card:', e);
+            displayPaymentResults({ error: 'Failed to initialize payment form. Please try again.' });
+            return;
+        }
+
+        // Pay Now button handler
+        document.getElementById('pay-now-button').addEventListener('click', async function (event) {
+            event.preventDefault();
+            try {
+                const result = await card.tokenize();
+                if (result.status === 'OK') {
+                    displayPaymentResults({ message: 'Processing payment...' });
+                    try {
+                        const payment = await createPayment(result.token, true);
+                        displayPaymentResults({ 
+                            message: 'Payment successful! Redirecting...',
+                            isAuthorized: false 
+                        });
+                    } catch (e) {
+                        displayPaymentResults({ error: e.message });
+                    }
+                }
+            } catch (e) {
+                displayPaymentResults({ error: e.message });
+            }
+        });
+
+        // Authorize button handler
+        document.getElementById('authorize-button').addEventListener('click', async function (event) {
+            event.preventDefault();
+            try {
+                const result = await card.tokenize();
+                if (result.status === 'OK') {
+                    displayPaymentResults({ message: 'Processing authorization...' });
+                    try {
+                        const payment = await createPayment(result.token, false);
+                        displayPaymentResults({ 
+                            message: 'Authorization successful! Payment will be completed after work.',
+                            isAuthorized: true 
+                        });
+                    } catch (e) {
+                        displayPaymentResults({ error: e.message });
+                    }
+                }
+            } catch (e) {
+                displayPaymentResults({ error: e.message });
+            }
+        });
+    });
 </script>
 {% endblock %}

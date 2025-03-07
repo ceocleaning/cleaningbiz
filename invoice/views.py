@@ -115,7 +115,10 @@ def booking_detail(request, bookingId):
 def invoice_detail(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
     context = {
-        'invoice': invoice
+        'invoice': invoice,
+        'SQUARE_APP_ID': settings.SQUARE_APP_ID,
+        'SQUARE_LOCATION_ID': settings.SQUARE_LOCATION_ID,
+        'SQUARE_ENVIRONMENT': settings.SQUARE_ENVIRONMENT,
     }
     return render(request, 'invoice_detail.html', context)
 

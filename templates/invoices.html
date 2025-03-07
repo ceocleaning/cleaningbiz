@@ -71,11 +71,7 @@
                         <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                         <td>${{ invoice.amount }}</td>
                         <td>
-                            {% if invoice.isPaid %}
-                            <span class="badge bg-success">Paid</span>
-                            {% else %}
-                            <span class="badge bg-warning">Pending</span>
-                            {% endif %}
+                            {{invoice.payment_details.status|default:'Pending'}}
                         </td>
                         <td>{{ invoice.createdAt|date:"M d, Y" }}</td>
                         <td class="text-end">
