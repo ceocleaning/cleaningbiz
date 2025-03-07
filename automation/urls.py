@@ -5,8 +5,8 @@ from .api_views import check_availability_retell, test_check_availability, check
 
 
 urlpatterns = [
-    path('', views.home, name='home'),
-
+    path('', views.LandingPage, name='LandingPage'),
+    path('dashboard/', views.home, name='home'),
     path('webhooks/retell/', handle_retell_webhook, name='retell_webhook'),
     path('webhooks/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
 

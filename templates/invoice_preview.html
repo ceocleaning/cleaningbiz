@@ -1,184 +1,321 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load automation_filters %}
+
+{% block title %}Invoice Preview{% endblock %}
+
+{% block styles %}
+<style>
+    .invoice-container {
+        max-width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .payment-status-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        min-height: 30px;
+    }
+    #card-container {
+        min-height: 90px;
+    }
+    .payment-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-    <div class="card shadow-sm">
-        <div class="card-body p-5">
-            <!-- Header Section -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <img src="https://media.licdn.com/dms/image/v2/D4D35AQEhamMro6zZFw/profile-framedphoto-shrink_200_200/profile-framedphoto-shrink_200_200/0/1737002152260?e=1740319200&v=beta&t=E-fNzzmd6mdhHgosoAg0uAc5MEcJSjbta7Y641VKfVs" alt="Logo" style="width: 150px;">
-                </div>
-                <div class="col-6 text-end">
-                    <h4 class="mb-0">{{ business.name }}</h4>
-                    <p class="text-muted mb-0 small">
-                        {{ business.address }}<br>
-                        Phone: {{ business.phone }}<br>
-                        Email: {{ business.user.email }}
-                    </p>
-                </div>
-            </div>
+<div class="invoice-container position-relative">
+    {% if invoice.isPaid %}
+    <div class="payment-badge bg-success text-white p-2 px-3 rounded">
+        <i class="fas fa-check-circle me-1"></i>Paid
+    </div>
+    {% endif %}
 
-            <!-- Invoice Header -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <h2 class="mb-0">INVOICE #{{ invoice.invoiceId }}</h2>
-                </div>
-                <div class="col-6 text-end">
-                    <h2 class="mb-0 {% if invoice.isPaid %}text-success{% else %}text-danger{% endif %}">
-                        {{ invoice.isPaid|yesno:"PAID,UNPAID" }}
-                    </h2>
-                </div>
-            </div>
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <img src="https://img.freepik.com/free-vector/gradient-squeegee-logo-template_23-2150208857.jpg?uid=R23824890&ga=GA1.1.1921205845.1737568792&semt=ais_hybrid" alt="Logo" style="width: 150px;">
+        </div>
+        <div class="col-6 text-end">
+            <h4 class="mb-0">{{ business.name }}</h4>
+            <p class="mb-0">{{ business.address }}</p>
+            <p class="mb-0">{{ business.phone }}</p>
+            <p class="mb-0">{{ business.user.email }}</p>
+        </div>
+    </div>
 
-            <!-- Invoice Details and Client Info -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <div class="row">
-                        <div class="col-4 text-muted">Invoice Date:</div>
-                        <div class="col-8">{{ invoice.createdAt|date:"F d, Y" }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-4 text-muted">Due Date:</div>
-                        <div class="col-8">{{ invoice.createdAt|date:"F d, Y" }}</div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="row">
-                        <div class="col-4 text-muted">Bill To:</div>
-                        <div class="col-8">
-                            {{ invoice.booking.firstName }} {{ invoice.booking.lastName }}<br>
-                            {{ invoice.booking.email }}<br>
-                            {{ invoice.booking.phoneNumber }}
-                        </div>
-                    </div>
-                </div>
+    <!-- Invoice Details -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <div class="row">
+                <div class="col-4 text-muted">Invoice Date:</div>
+                <div class="col-8">{{ invoice.createdAt|format_date }}</div>
             </div>
-
-            <!-- Service Details -->
-            <div class="table-responsive mb-4">
-                <table class="table">
-                    <thead class="bg-light">
-                        <tr>
-                            <th style="width: 25%">Description</th>
-                            <th style="width: 25%">Details</th>
-                            <th style="width: 25%">Addons</th>
-                            <th style="width: 25%" class="text-end">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong></td>
-                            <td>
-                                Date: {{ invoice.booking.cleaningDate|date:"F d, Y" }}<br>
-                                Time: {{ invoice.booking.starTime }}<br>
-                                Bedrooms: {{ invoice.booking.bedrooms }}<br>
-                                Bathrooms: {{ invoice.booking.bathrooms }}<br>
-                                Area: {{ invoice.booking.squareFeet }} sq ft<br>
-                            </td>
-                            <td>
-                                {% if addons %}
-                                    <strong>Add-ons:</strong><br>
-                                    {% for addon_name, addon_value in addons %}
-                                        - {{ addon_name }}: {{ addon_value }}<br>
-                                    {% endfor %}
-                                {% endif %}
-                                
-                                {% if invoice.booking.customAddons.exists %}
-                                    <strong>Custom Add-ons:</strong><br>
-                                    {% for addon in invoice.booking.customAddons.all %}
-                                        - {{ addon.addon.addonName }}: {{ addon.qty }}<br>
-                                    {% endfor %}
-                                {% endif %}
-                                
-                                {% if not addons and not invoice.booking.customAddons.exists %}
-                                    No addons
-                                {% endif %}
-                            </td>
-                            <td class="text-end"><strong>${{ invoice.amount }}</strong></td>
-                        </tr>
-                        
-                        <tr>
-                            <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                            <td class="text-end"><strong>${{ invoice.amount }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end"><strong>Tax (0%):</strong></td>
-                            <td class="text-end"><strong>$0.00</strong></td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end border-bottom"><strong>Total:</strong></td>
-                            <td class="text-end border-bottom"><strong>${{ invoice.amount }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="row">
+                <div class="col-4 text-muted">Due Date:</div>
+                <div class="col-8">{{ invoice.dueDate|format_date|default:invoice.createdAt|format_date }}</div>
             </div>
-
-            <!-- Payment Instructions -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <strong>Payment Instructions</strong>
-                        </div>
-                        <div class="card-body">
-                            <strong>Bank Transfer:</strong><br>
-                            Bank: Example Bank<br>
-                            Account Name: CEO Cleaners LLC<br>
-                            Account Number: XXXX-XXXX-XXXX-1234<br>
-                            Routing Number: XXX-XXX-XXX
-                        </div>
-                    </div>
+        </div>
+        <div class="col-6">
+            <div class="row">
+                <div class="col-4 text-muted">Bill To:</div>
+                <div class="col-8">
+                    {{ invoice.booking.firstName }} {{ invoice.booking.lastName }}<br>
+                    {{ invoice.booking.email }}<br>
+                    {{ invoice.booking.phoneNumber }}
                 </div>
-                <div class="col-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <strong>Note</strong>
-                        </div>
-                        <div class="card-body">
-                            1. Please include invoice number in payment reference<br>
-                            2. Payment is due within 30 days<br>
-                            3. Late payments may incur additional fees
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Thank You Note -->
-            <div class="text-center mt-5">
-                <h3>Thank You for Your Business!</h3>
-                <p class="text-muted small">If you have any questions about this invoice, please contact us at (555) 123-4567 or info@ceocleaners.com</p>
             </div>
         </div>
     </div>
 
-    <!-- Action Buttons -->
+    <!-- Invoice Header -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <h2 class="mb-0">INVOICE #{{ invoice.invoiceId }}</h2>
+        </div>
+        <div class="col-6 text-end">
+            <h2 class="mb-0 {% if invoice.isPaid %}text-success{% else %}text-danger{% endif %}">
+                {{ invoice.isPaid|yesno:"PAID,UNPAID" }}
+            </h2>
+        </div>
+    </div>
+
+    <!-- Service Details -->
+    <div class="table-responsive mb-4">
+        <table class="table">
+            <thead class="bg-light">
+                <tr>
+                    <th style="width: 25%">Description</th>
+                    <th style="width: 25%">Details</th>
+                    <th style="width: 25%">Addons</th>
+                    <th style="width: 25%" class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong></td>
+                    <td>
+                        Date: {{ invoice.booking.cleaningDate|format_date }}<br>
+                        Time: {{ invoice.booking.startTime|format_time }}<br>
+                        Bedrooms: {{ invoice.booking.bedrooms }}<br>
+                        Bathrooms: {{ invoice.booking.bathrooms }}<br>
+                        Area: {{ invoice.booking.squareFeet }} sq ft<br>
+                    </td>
+                    <td>
+                        {% if addons %}
+                            <strong>Add-ons:</strong><br>
+                            {% for addon_name, addon_value in addons %}
+                                - {{ addon_name }}: {{ addon_value }}<br>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if invoice.booking.customAddons.exists %}
+                            <strong>Custom Add-ons:</strong><br>
+                            {% for addon in invoice.booking.customAddons.all %}
+                                - {{ addon.addon.addonName }}: {{ addon.qty }}<br>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if not addons and not invoice.booking.customAddons.exists %}
+                            No addons
+                        {% endif %}
+                    </td>
+                    <td class="text-end"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                </tr>
+                
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                    <td class="text-end"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Tax (0%):</strong></td>
+                    <td class="text-end"><strong>$0.00</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-end border-bottom"><strong>Total:</strong></td>
+                    <td class="text-end border-bottom"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Payment Instructions -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <strong>Payment Instructions</strong>
+                </div>
+                <div class="card-body">
+                    <strong>Bank Transfer:</strong><br>
+                    Bank: Example Bank<br>
+                    Account Name: CEO Cleaners LLC<br>
+                    Account Number: XXXX-XXXX-XXXX-1234<br>
+                    Routing Number: XXX-XXX-XXX
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <strong>Note</strong>
+                </div>
+                <div class="card-body">
+                    1. Please include invoice number in payment reference<br>
+                    2. Payment is due within 30 days<br>
+                    3. Late payments may incur additional fees
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thank You Note -->
+    <div class="text-center mt-5">
+        <h3>Thank You for Your Business!</h3>
+        <p class="text-muted small">If you have any questions about this invoice, please contact us at (555) 123-4567 or info@ceocleaners.com</p>
+    </div>
+
+    {% if booking.business.user == request.user %}
     <div class="text-center mt-4">
         <a href="{% url 'invoice:generate_pdf' invoice.invoiceId %}" class="btn btn-primary">
             <i class="fas fa-download me-2"></i>Save as PDF
         </a>
-        <a href="{% url 'invoice:invoice_detail' invoice.invoiceId %}" class="btn btn-secondary ms-2">
-            <i class="fas fa-arrow-left me-2"></i>Back to Invoice
+        <a href="{% url 'invoice:all_invoices' %}" class="btn btn-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i>Back to Invoices
         </a>
     </div>
+    {% endif %}
+
+    {% if not invoice.isPaid and booking.business.user != request.user or request.user.isAnonymousUser %}
+    <div class="fixed-bottom mb-3" style="right: 20px;">
+        <a href="#" class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#paymentModal">
+            <i class="fas fa-credit-card me-2"></i>Pay Now
+        </a>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Payment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6>Invoice Amount: <span class="text-primary">{{ invoice.amount|format_currency }}</span></h6>
+                        <p class="text-muted small mb-0">Secure payment powered by Square</p>
+                    </div>
+                    <form id="payment-form">
+                        <div id="card-container"></div>
+                        <button id="card-button" type="button" class="btn btn-primary w-100 mt-3">
+                            <i class="fas fa-lock me-2"></i>Pay {{ invoice.amount|format_currency }}
+                        </button>
+                    </form>
+                    <div id="payment-status-container" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .card {
-        border: none;
+{% block extra_js %}
+<script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+        paymentModal.addEventListener('show.bs.modal', async function () {
+            try {
+                if (!window.payments) {
+                    window.payments = Square.payments('{{ settings.SQUARE_APP_ID }}');
+                    await initializeCard(window.payments);
+                }
+            } catch (error) {
+                console.error('Error initializing Square:', error);
+                const paymentStatusContainer = document.getElementById('payment-status-container');
+                if (paymentStatusContainer) {
+                    paymentStatusContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to initialize payment form. Please try again later.</div>';
+                }
+            }
+        });
     }
-    .table th {
-        font-weight: 600;
+});
+
+async function initializeCard(payments) {
+    try {
+        const card = await payments.card();
+        await card.attach('#card-container');
+
+        const cardButton = document.getElementById('card-button');
+        const paymentStatusContainer = document.getElementById('payment-status-container');
+
+        if (cardButton && paymentStatusContainer) {
+            cardButton.addEventListener('click', async () => {
+                try {
+                    cardButton.disabled = true;
+                    cardButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                    
+                    const result = await card.tokenize();
+                    if (result.status === 'OK') {
+                        paymentStatusContainer.innerHTML = '<div class="alert alert-info"><span class="spinner-border spinner-border-sm me-2"></span>Processing your payment...</div>';
+                        
+                        const response = await fetch('{% url "invoice:process_payment" invoice.invoiceId %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                sourceId: result.token,
+                                amount: {{ invoice.amount }},
+                                currency: 'USD'
+                            })
+                        });
+
+                        const paymentResult = await response.json();
+                        if (paymentResult.success) {
+                            paymentStatusContainer.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Payment successful! Redirecting...</div>';
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            throw new Error(paymentResult.error || 'Payment failed. Please try again.');
+                        }
+                    } else {
+                        throw new Error('Card tokenization failed. Please check your card details and try again.');
+                    }
+                } catch (e) {
+                    console.error('Payment error:', e);
+                    cardButton.disabled = false;
+                    cardButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay {{ invoice.amount|format_currency }}';
+                    paymentStatusContainer.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${e.message}</div>`;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error in initializeCard:', error);
+        const paymentStatusContainer = document.getElementById('payment-status-container');
+        if (paymentStatusContainer) {
+            paymentStatusContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to initialize payment form. Please try again later.</div>';
+        }
     }
-    .table td {
-        vertical-align: top;
-    }
-    .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0,0,0,.125);
-    }
-</style>
+}
+</script>
 {% endblock %}

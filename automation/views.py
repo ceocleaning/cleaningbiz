@@ -9,11 +9,18 @@ import logging
 from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
 from accounts.models import ApiCredential, Business
+from invoice.models import Invoice, Payment
 from retell import Retell
 import random
 import pytz
 
 logger = logging.getLogger(__name__)
+
+
+
+def LandingPage(request):
+    return render(request, 'LandingPage.html')
+
 
 @login_required(login_url='accounts:login')
 def home(request):
@@ -23,20 +30,93 @@ def home(request):
     if not business:
         return redirect('accounts:register_business')
 
-    bookings = Booking.objects.filter(business=business).order_by('-createdAt')
-    leads = Lead.objects.filter(business=business).order_by('-createdAt')
-    converted_leads = leads.filter(isConverted=True)
+    # Get current date for filtering
+    now = datetime.now()
+
+    # Leads metrics
+    leads = Lead.objects.filter(business=business)
     total_leads = leads.count()
-    credentials = ApiCredential.objects.filter(business=business).first()
+    converted_leads = leads.filter(isConverted=True).count()
+
+    # Bookings metrics
+    bookings = Booking.objects.filter(business=business)
+    active_bookings = bookings.filter(
+        isCompleted=False,
+        cleaningDate__gte=now.date()
+    ).count()
+    completed_bookings = bookings.filter(isCompleted=True).count()
+
+    # Revenue metrics (from confirmed bookings in last 30 days)
+    confirmed_bookings = bookings.filter(
+        isCompleted=True,
+    )
+    total_revenue = Invoice.objects.filter(
+        booking__in=confirmed_bookings
+    ).aggregate(
+        total=models.Sum('amount', default=0)
+    )['total']
+
+    # Invoice metrics
+    pending_invoices = bookings.filter(
+        isCompleted=True,
+        invoice__isnull=True
+    ).count()
+
+    # Cleaners metrics
+    cleaners = Cleaners.objects.filter(business=business)
+    active_cleaners = cleaners.filter(isActive=True).count()
+    top_rated_cleaners = cleaners.filter(isActive=True).count()
+
+    # Recent activities (last 10 activities)
+    recent_activities = []
+    
+    # Add recent leads
+    recent_leads = leads.order_by('-createdAt')[:5]
+    for lead in recent_leads:
+        recent_activities.append({
+            'type': 'primary',
+            'icon': 'user-plus',
+            'title': f"New lead: {lead.name}",
+            'timestamp': lead.createdAt
+        })
+
+    # Add recent bookings
+    recent_bookings = bookings.order_by('-createdAt')[:5]
+    for booking in recent_bookings:
+        client_name = f"{booking.firstName} {booking.lastName}"
+        recent_activities.append({
+            'type': 'success',
+            'icon': 'calendar-check',
+            'title': f"New booking: {client_name}",
+            'timestamp': booking.createdAt
+        })
+
+    # Add recent cleaner activities
+    recent_cleaner_changes = cleaners.order_by('-updatedAt')[:5]
+    for cleaner in recent_cleaner_changes:
+        recent_activities.append({
+            'type': 'warning',
+            'icon': 'user-edit',
+            'title': f"Updated cleaner: {cleaner.name}",
+            'timestamp': cleaner.updatedAt
+        })
+
+    # Sort all activities by timestamp and get the 10 most recent
+    recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    recent_activities = recent_activities[:10]
 
     context = {
-        'leads': leads, 
-        'bookings': bookings,
-        'credentials': credentials,
         'total_leads': total_leads,
-        'converted_leads': converted_leads.count(),
-        'total_bookings': bookings.count()
+        'converted_leads': converted_leads,
+        'active_bookings': active_bookings,
+        'completed_bookings': completed_bookings,
+        'total_revenue': total_revenue,
+        'pending_invoices': pending_invoices,
+        'active_cleaners': active_cleaners,
+        'top_rated_cleaners': top_rated_cleaners,
+        'recent_activities': recent_activities,
     }
+    
     return render(request, 'home.html', context)    
 
 

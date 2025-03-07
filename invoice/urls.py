@@ -1,6 +1,6 @@
 from django.urls import path
-
 from . import views
+from . import payment_views
 
 app_name = 'invoice'
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path('invoices/mark-paid/<str:invoiceId>/', views.mark_invoice_paid, name='mark_invoice_paid'),
     path('invoices/<str:invoiceId>/preview/', views.invoice_preview, name='invoice_preview'),
     path('invoices/<str:invoiceId>/generate-pdf/', views.generate_pdf, name='generate_pdf'),
+    path('invoices/process-payment/<str:invoiceId>/', payment_views.process_payment, name='process_payment'),
 ]

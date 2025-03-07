@@ -1,0 +1,142 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}CleaningBiz AI - Cleaning Business Automation Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative overflow-hidden">
+    <div class="absolute inset-0">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3" alt="Background" class="w-full h-full object-cover">
+        <div class="absolute inset-0 gradient-overlay"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-8" data-aos="fade-right">
+                <h1 class="text-5xl md:text-6xl font-bold leading-tight text-white">
+                    Automate Your <span class="text-natural-200">Cleaning</span><br>
+                    Business Today
+                </h1>
+                <p class="text-xl text-natural-100 leading-relaxed">CleaningBiz AI streamlines your operations with intelligent automation for lead capture, booking management, and customer communication.</p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="/demo" class="group bg-white text-natural-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-natural-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center">
+                        Request Demo
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
+                    </a>
+                    <a href="/features" class="group border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-natural-700 transition-all duration-300 flex items-center justify-center">
+                        Explore Features
+                        <i class="fas fa-robot ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="hidden md:block" data-aos="fade-left">
+                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3" alt="Business Automation" class="rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500 animate-float">
+            </div>
+        </div>
+    </div>
+    <div class="absolute bottom-0 left-0 right-0">
+        <svg class="w-full h-24 text-gray-50 fill-current" viewBox="0 0 1440 74" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,32L120,42.7C240,53,480,75,720,74.7C960,75,1200,53,1320,42.7L1440,32L1440,74L1320,74C1200,74,960,74,720,74C480,74,240,74,120,74L0,74Z"></path>
+        </svg>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Why Choose CleaningBiz AI?</h2>
+            <p class="text-xl text-gray-600">The all-in-one platform that transforms how cleaning businesses operate</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100">
+                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
+                    <i class="fas fa-headset text-natural-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4">Automated Lead Capture</h3>
+                <p class="text-gray-600 leading-relaxed">Intelligent system captures and qualifies leads through your website, never missing an opportunity</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200">
+                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
+                    <i class="fas fa-comments text-natural-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4">AI Communication</h3>
+                <p class="text-gray-600 leading-relaxed">Automated SMS and calling with Retell AI integration converts leads into confirmed bookings</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300">
+                <div class="w-16 h-16 bg-natural-100 rounded-2xl flex items-center justify-center mb-6 transform hover:rotate-12 transition-transform duration-300">
+                    <i class="fas fa-calendar-check text-natural-600 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4">Complete Business Management</h3>
+                <p class="text-gray-600 leading-relaxed">Effortlessly manage cleaners, bookings, invoices, and customer relationships in one platform</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Showcase -->
+<section class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Our Platform Features</h2>
+            <p class="text-xl text-gray-600">Comprehensive tools designed specifically for cleaning business operations</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3" alt="Lead Management" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
+                </div>
+                <div class="p-8">
+                    <h3 class="text-2xl font-semibold mb-4">Lead Management</h3>
+                    <p class="text-gray-600 mb-6">Capture, qualify, and convert leads with AI-powered communication</p>
+                    <a href="/features#lead-management" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
+                        Learn More 
+                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="200">
+                <div class="relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3" alt="Booking System" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
+                </div>
+                <div class="p-8">
+                    <h3 class="text-2xl font-semibold mb-4">Booking & Scheduling</h3>
+                    <p class="text-gray-600 mb-6">Smart scheduling system optimizes cleaner assignments and routes</p>
+                    <a href="/features#booking" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
+                        Learn More 
+                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="300">
+                <div class="relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3" alt="Invoice Management" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-natural-900 opacity-50"></div>
+                </div>
+                <div class="p-8">
+                    <h3 class="text-2xl font-semibold mb-4">Invoice & Payment</h3>
+                    <p class="text-gray-600 mb-6">Automated invoicing, payment processing, and financial reporting</p>
+                    <a href="/features#invoicing" class="inline-flex items-center text-natural-600 hover:text-natural-700 font-medium group">
+                        Learn More 
+                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform duration-300"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="relative py-24 overflow-hidden">
+    <div class="absolute inset-0 natural-gradient"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-aos="zoom-in">
+        <h2 class="text-4xl font-bold text-white mb-6">Ready to Transform Your Cleaning Business?</h2>
+        <p class="text-xl text-natural-100 mb-10">Join hundreds of cleaning businesses already growing with CleaningBiz AI</p>
+        <a href="/demo" class="inline-flex items-center bg-white text-natural-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-natural-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+            Schedule Your Free Demo
+            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform duration-300"></i>
+        </a>
+    </div>
+</section>
+{% endblock %}

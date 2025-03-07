@@ -12,7 +12,7 @@ class Invoice(models.Model):
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"Invoice for {self.booking.firstName} {self.booking.lastName} - {self.booking.email}"
 
@@ -29,17 +29,17 @@ class Invoice(models.Model):
 
 
 class Payment(models.Model):
-    paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)
+    paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)  # Our Own ID
     invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name='payment_details')
     amount = models.IntegerField(default=0)
     paymentMethod = models.CharField(max_length=50, null=True, blank=True)
-    stripeChargeId = models.CharField(max_length=11, null=True, blank=True)
+    squarePaymentId = models.CharField(max_length=100, null=True, blank=True)  # Square's payment ID
     
     paidAt = models.DateTimeField(null=True, blank=True)
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"Payment for {self.invoice.booking.firstName} {self.invoice.booking.lastName} - {self.invoice.booking.email}"
     
@@ -52,5 +52,3 @@ class Payment(models.Model):
         if not self.paymentId:
             self.paymentId = self.generatePaymentId()
         super().save(*args, **kwargs)
-
-

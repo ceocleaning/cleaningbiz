@@ -1,20 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.http import require_http_methods
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from bookings.models import Booking
+from django.contrib import messages
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
 from .models import Invoice, Payment
+from bookings.models import Booking
+import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+from django.views.decorators.http import require_http_methods
+from django.db import transaction
 from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
 import uuid
 from django.utils import timezone
 from django.template.loader import render_to_string
-from django.conf import settings
 import os
-from django.http import HttpResponse
 from datetime import datetime
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import inch, cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
@@ -59,7 +61,7 @@ def create_invoice(request, bookingId):
                 amount=bookingObj.totalPrice
             )
             messages.success(request, f'Invoice {invoice.invoiceId} created successfully!')
-            return redirect('bookings:invoice_detail', invoiceId=invoice.invoiceId)
+            return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
         except Booking.DoesNotExist:
             messages.error(request, 'Booking not found.')
             return redirect('invoice:create_invoice')
@@ -117,35 +119,44 @@ def invoice_detail(request, invoiceId):
     }
     return render(request, 'invoice_detail.html', context)
 
-@login_required
+
 def invoice_preview(request, invoiceId):
-    invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
-    business = invoice.booking.business
+    try:
+        invoice = Invoice.objects.get(invoiceId=invoiceId)
+        booking = invoice.booking
+        business = booking.business
 
-    # Only include add-ons with values > 0
-    addons = [
-        addon for addon in [
-            ['Dishes', invoice.booking.addonDishes],
-            ['Laundry Loads', invoice.booking.addonLaundryLoads],
-            ['Window Cleaning', invoice.booking.addonWindowCleaning],
-            ['Pets Cleaning', invoice.booking.addonPetsCleaning],
-            ['Fridge Cleaning', invoice.booking.addonFridgeCleaning],
-            ['Oven Cleaning', invoice.booking.addonOvenCleaning],
-            ['Baseboard', invoice.booking.addonBaseboard],
-            ['Blinds', invoice.booking.addonBlinds],
-            ['Green Cleaning', invoice.booking.addonGreenCleaning],
-            ['Cabinets Cleaning', invoice.booking.addonCabinetsCleaning],
-            ['Patio Sweeping', invoice.booking.addonPatioSweeping],
-            ['Garage Sweeping', invoice.booking.addonGarageSweeping],
-        ] if addon[1] is not None and addon[1] > 0
-    ]
+        # Only include add-ons with values > 0
+        addons = [
+            addon for addon in [
+                ['Dishes', invoice.booking.addonDishes],
+                ['Laundry Loads', invoice.booking.addonLaundryLoads],
+                ['Window Cleaning', invoice.booking.addonWindowCleaning],
+                ['Pets Cleaning', invoice.booking.addonPetsCleaning],
+                ['Fridge Cleaning', invoice.booking.addonFridgeCleaning],
+                ['Oven Cleaning', invoice.booking.addonOvenCleaning],
+                ['Baseboard', invoice.booking.addonBaseboard],
+                ['Blinds', invoice.booking.addonBlinds],
+                ['Green Cleaning', invoice.booking.addonGreenCleaning],
+                ['Cabinets Cleaning', invoice.booking.addonCabinetsCleaning],
+                ['Patio Sweeping', invoice.booking.addonPatioSweeping],
+                ['Garage Sweeping', invoice.booking.addonGarageSweeping],
+            ] if addon[1] is not None and addon[1] > 0
+        ]
 
-    context = {
-        'business': business,
-        'invoice': invoice,
-        'addons': addons
-    }
-    return render(request, 'invoice_preview.html', context)
+        context = {
+            'invoice': invoice,
+            'booking': booking,
+            'business': business,
+            'addons': addons,
+            'settings': {
+                'SQUARE_APP_ID': settings.SQUARE_APP_ID
+            }
+        }
+        return render(request, 'invoice_preview.html', context)
+    except Invoice.DoesNotExist:
+        messages.error(request, 'Invoice not found.')
+        return redirect('invoice:all_invoices')
 
 @login_required
 def mark_invoice_paid(request, invoiceId):
@@ -181,7 +192,7 @@ def generate_pdf(request, invoiceId):
     # Create the PDF object using ReportLab
     doc = SimpleDocTemplate(
         buffer,
-        pagesize=A4,
+        pagesize=letter,
         rightMargin=30,
         leftMargin=30,
         topMargin=30,
