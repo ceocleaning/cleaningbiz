@@ -654,76 +654,12 @@
                   </div>
               </div>
 
-                <!-- GMAIL HOST USER -->
-                <div class="col-md-6">
-                    <div class="dashboard-card h-100 api-key-card">
-                        <div class="card-body">
-                            <div class="api-key-wrapper">
-                                <span class="badge bg-primary rounded-pill">Private</span>
-                                <div class="api-key-label">
-                                    <i class="fa fa-user me-2"></i>GMAIL HOST USER
-                                </div>
-                                <div class="input-group mb-3">
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="gmail_host_user" 
-                                           value="{{ credentials.gmail_host_user }}" 
-                                           readonly>
-                                  
-                                </div>
-                                <small class="text-muted">
-                                    <i class="fa fa-lock me-1"></i>
-                                    Using to send emails from your GMAIL account.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- GMAIL HOST PASSWORD -->
-                <div class="col-md-6">
-                    <div class="dashboard-card h-100 api-key-card">
-                        <div class="card-body">
-                            <div class="api-key-wrapper">
-                                <span class="badge bg-success rounded-pill">Private</span>
-                                <div class="api-key-label">
-                                    <i class="fa fa-key me-2"></i>GMAIL HOST PASSWORD
-                                </div>
-                                <div class="input-group mb-3">
-                                    <input type="password" 
-                                           class="form-control api-key-input masked" 
-                                           id="gmail_host_password" 
-                                           value="{{ credentials.gmail_host_password }}" 
-                                           readonly>
-                                    <button class="btn btn-outline-secondary key-action-btn" 
-                                            type="button" 
-                                            onclick="toggleKey(this, 'gmail_host_password')"
-                                            data-bs-toggle="tooltip"    
-                                            data-bs-placement="top"
-                                            title="Show/Hide Key">
-                                        <i class="fa fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-outline-primary key-action-btn"
-                                            type="button"
-                                            onclick="copyToClipboard('gmail_host_password')"
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            title="Copy to Clipboard">
-                                        <i class="fa fa-clipboard me-1"></i>Copy
-                                    </button>
-                                </div>
-                                <small class="text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Keep this password Hidden
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        
             </div>  
         </div>
     </div>
 </div>
+
 
  <!-- Custom Addons Tab -->
 <div class="tab-pane fade" id="custom-addons" role="tabpanel" aria-labelledby="custom-addons-tab">

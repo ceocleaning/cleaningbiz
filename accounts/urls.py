@@ -20,13 +20,16 @@ urlpatterns = [
     path('custom-addon/<int:addon_id>/delete/', views.delete_custom_addon, name='delete_custom_addon'),
     path('business/credentials/edit/', views.edit_credentials, name='edit_credentials'),
     path('business/credentials/generate-secret/', views.generate_secret_key, name='generate_secret_key'),
-    path('business/integrations/add/', views.add_integration, name='add_integration'),
-    path('business/integrations/<int:pk>/edit/', views.edit_integration, name='edit_integration'),
-    path('business/integrations/<int:pk>/delete/', views.delete_integration, name='delete_integration'),
+   
     
     # Password Reset URLs
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('verify-otp/<str:email>/', views.verify_otp, name='verify_otp'),
     path('resend-otp/<str:email>/', views.resend_otp, name='resend_otp'),
     path('reset-password/<str:email>/<str:token>/', views.reset_password, name='reset_password'),
+    
+    # SMTP Configuration URLs
+    path('smtp-config/', views.smtp_config, name='smtp_config'),
+   
+    path('smtp-config/delete/', views.delete_smtp_config, name='delete_smtp_config'),
 ]

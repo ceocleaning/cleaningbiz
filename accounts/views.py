@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons, PasswordResetOTP
+from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
 import random
 from django.http import JsonResponse
 from email.mime.multipart import MIMEMultipart
@@ -157,10 +157,9 @@ def register_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-        timezone = request.POST.get('timezone', 'UTC')
         
         # Validate required fields
-        if not all([businessName, phone, address, timezone]):
+        if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
             return render(request, 'accounts/register_business.html', {'timezones': timezones})
         
@@ -171,7 +170,6 @@ def register_business(request):
                 businessName=businessName,
                 phone=phone,
                 address=address,
-                timezone=timezone
             )
             
             # Create default settings for the business
@@ -206,9 +204,8 @@ def edit_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-        timezone = request.POST.get('timezone', 'UTC')
         
-        if not all([businessName, phone, address, timezone]):
+        if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
             return render(request, 'accounts/edit_business.html', {'business': business, 'timezones': timezones})
         
@@ -216,7 +213,6 @@ def edit_business(request):
             business.businessName = businessName
             business.phone = phone
             business.address = address
-            business.timezone = timezone
             business.save()
             
             messages.success(request, 'Business information updated successfully!')
@@ -287,8 +283,6 @@ def edit_credentials(request):
             credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
          
             credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
-            credentials.gmail_host_user = request.POST.get('gmail_host_user', '')
-            credentials.gmail_host_password = request.POST.get('gmail_host_password', '')
             credentials.save()
             
             messages.success(request, 'API credentials updated successfully!')
@@ -300,72 +294,6 @@ def edit_credentials(request):
     return render(request, 'accounts/edit_credentials.html', {'credentials': credentials})
 
 
-@login_required
-def add_integration(request):
-    business = request.user.business_set.first()
-    if not business:
-        return redirect('accounts:register_business')
-    
-    if request.method == 'POST':
-        try:
-            integration = BookingIntegration(
-                business=business,
-                serviceName=request.POST.get('serviceName'),
-                apiKey=request.POST.get('apiKey'),
-                webhookUrl=request.POST.get('webhookUrl')
-            )
-            integration.save()
-
-            business.bookingIntegrations.add(integration)
-            
-            messages.success(request, 'Integration added successfully!')
-            return redirect('accounts:profile')
-            
-        except Exception as e:
-            messages.error(request, f'Error adding integration: {str(e)}')
-    
-    return render(request, 'accounts/add_integration.html')
-
-
-@login_required
-def edit_integration(request, pk):
-    business = request.user.business_set.first()
-    if not business:
-        return redirect('accounts:register_business')
-    
-    integration = get_object_or_404(BookingIntegration, pk=pk, business=business)
-    
-    if request.method == 'POST':
-        try:
-            integration.serviceName = request.POST.get('serviceName')
-            integration.apiKey = request.POST.get('apiKey')
-            integration.webhookUrl = request.POST.get('webhookUrl')
-            integration.save()
-            
-            messages.success(request, 'Integration updated successfully!')
-            return redirect('accounts:profile')
-            
-        except Exception as e:
-            messages.error(request, f'Error updating integration: {str(e)}')
-    
-    return render(request, 'accounts/edit_integration.html', {'integration': integration})
-
-
-@login_required
-def delete_integration(request, pk):
-    business = request.user.business_set.first()
-    if not business:
-        return redirect('accounts:register_business')
-    
-    integration = get_object_or_404(BookingIntegration, pk=pk, business=business)
-    
-    try:
-        integration.delete()
-        messages.success(request, 'Integration deleted successfully!')
-    except Exception as e:
-        messages.error(request, f'Error deleting integration: {str(e)}')
-    
-    return redirect('accounts:profile')
 
 
 @login_required
@@ -475,9 +403,9 @@ def test_email_settings(request):
                 'message': 'No business found. Please set up your business first.'
             })
 
-        api_credentials = ApiCredential.objects.get(business=business)
+        smtpConfig = SMTPConfig.objects.get(business=business)
         
-        if not api_credentials.gmail_host_user or not api_credentials.gmail_host_password:
+        if not smtpConfig.host or not smtpConfig.port or not smtpConfig.username or not smtpConfig.password:
             return JsonResponse({
                 'success': False,
                 'message': 'Email credentials not configured. Please set up your email credentials first.'
@@ -486,7 +414,7 @@ def test_email_settings(request):
         # Create test email
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f'Test Email - {business.businessName}'
-        msg['From'] = api_credentials.gmail_host_user
+        msg['From'] = smtpConfig.username
         msg['To'] = request.user.email
 
         html_content = f"""
@@ -499,8 +427,8 @@ def test_email_settings(request):
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h3>Email Configuration Details:</h3>
                 <p><strong>Business Name:</strong> {business.businessName}</p>
-                <p><strong>Email Address:</strong> {api_credentials.gmail_host_user}</p>
-                <p><strong>SMTP Server:</strong> smtp.gmail.com</p>
+                <p><strong>Email Address:</strong> {smtpConfig.username}</p>
+                <p><strong>SMTP Server:</strong> {smtpConfig.host}</p>
             </div>
             
             <p>If you received this email, your email settings are configured correctly!</p>
@@ -519,9 +447,9 @@ def test_email_settings(request):
         msg.attach(part2)
 
         # Send test email
-        smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+        smtp_server = smtplib.SMTP(smtpConfig.host, smtpConfig.port)
         smtp_server.starttls()
-        smtp_server.login(api_credentials.gmail_host_user, api_credentials.gmail_host_password)
+        smtp_server.login(smtpConfig.username, smtpConfig.password)
         smtp_server.send_message(msg)
         smtp_server.quit()
 
@@ -530,7 +458,7 @@ def test_email_settings(request):
             'message': f'Test email sent successfully to {request.user.email}'
         })
 
-    except ApiCredential.DoesNotExist:
+    except SMTPConfig.DoesNotExist:
         return JsonResponse({
             'success': False,
             'message': 'Email credentials not found. Please configure your email settings.'
@@ -896,3 +824,83 @@ def send_otp_email(user, otp):
     except Exception as e:
         print(f"Error sending OTP email: {e}")
         return False
+
+
+
+
+# Views for Creating SMTPConfig, Updating, Deleting
+
+
+@login_required
+def smtp_config(request):
+    business = request.user.business_set.first()
+    if not business:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'No business found.'
+            }, status=400)
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    smtp_config, created = SMTPConfig.objects.get_or_create(business=business)
+    
+    if request.method == 'POST':
+        smtp_config.host = request.POST.get('host', '')
+        smtp_config.port = request.POST.get('port', '')
+        smtp_config.username = request.POST.get('username', '')
+        smtp_config.password = request.POST.get('password', '')
+        smtp_config.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'SMTP configuration updated successfully!'
+            })
+        
+        messages.success(request, 'SMTP configuration updated successfully!')
+        return redirect('accounts:smtp_config')
+    
+    return render(request, 'accounts/smtp_config.html', {'smtp_config': smtp_config})
+
+
+@login_required
+def delete_smtp_config(request):
+    business = request.user.business_set.first()
+    if not business:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'No business found.'
+            }, status=400)
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    try:
+        smtp_config = SMTPConfig.objects.get(business=business)
+        
+        if request.method == 'POST':
+            smtp_config.delete()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'SMTP configuration deleted successfully!'
+                })
+            
+            messages.success(request, 'SMTP configuration deleted successfully!')
+            return redirect('accounts:smtp_config')
+    except SMTPConfig.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'SMTP configuration not found.'
+            }, status=404)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method.'
+        }, status=400)
+        
+    return redirect('accounts:smtp_config')
