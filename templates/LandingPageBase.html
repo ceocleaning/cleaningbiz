@@ -114,7 +114,7 @@
                         <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                     </a>
                     {% else %}
-                    <a href="{% url 'account:signup' %}" class="bg-accent-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-accent-600 transition accent-glow">
+                    <a href="{% url 'accounts:signup' %}" class="bg-accent-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-accent-600 transition accent-glow">
                         <i class="fas fa-rocket mr-1"></i> Get Started
                     </a>
                     {% endif %}
@@ -139,7 +139,7 @@
                     <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                 </a>
                 {% else %}
-                <a href="/signup" class="block px-3 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600">
+                <a href="{% url 'accounts:signup' %}" class="block px-3 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600">
                     <i class="fas fa-rocket mr-1"></i> Get Started
                 </a>
                 {% endif %}
