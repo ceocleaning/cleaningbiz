@@ -26,6 +26,7 @@ urlpatterns = [
     path('booking/', include('bookings.urls')),
     path('invoice/', include('invoice.urls')),
     path('integration/', include('integrations.urls')),
+    path('analytics/', include('analytics.urls')),
 ]
 
 

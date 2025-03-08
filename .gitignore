@@ -31,3 +31,4 @@ Thumbs.db
 # Ignore Static & Media Files (Optional)
 staticfiles/
 media/
+Doc.md

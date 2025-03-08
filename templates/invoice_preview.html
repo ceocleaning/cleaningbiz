@@ -251,9 +251,15 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if settings.SQUARE_ENVIRONMENT == 'sandbox' %}
 <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+{% else %}
+<script src="https://web.squarecdn.com/v1/square.js"></script>
+{% endif %}
 <script>
     const appId = '{{ settings.SQUARE_APP_ID }}';
+    const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
+    const square_location_id = '{{ settings.SQUARE_LOCATION_ID }}';
     let payments;
     
     async function initializeCard(payments) {

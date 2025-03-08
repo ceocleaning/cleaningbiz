@@ -8,6 +8,8 @@ import uuid
 from square.client import Client
 from .models import Invoice, Payment
 
+
+
 @require_http_methods(["POST"])
 def process_payment(request):
     """Process a Square payment for an invoice with option to authorize only"""
@@ -27,7 +29,7 @@ def process_payment(request):
         # Initialize Square client
         client = Client(
             access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment='sandbox'  # Change to 'production' for live payments
+            environment=settings.SQUARE_ENVIRONMENT
         )
 
         # Create unique idempotency key
@@ -91,6 +93,8 @@ def process_payment(request):
             'error': 'An unexpected error occurred while processing your payment. Please try again.'
         }, status=500)
 
+
+
 @require_http_methods(["POST"])
 def process_manual_payment(request):
     """Process payments (Square, Cash, Bank Transfer) for an invoice"""
@@ -121,7 +125,7 @@ def process_manual_payment(request):
                 # Initialize Square client
                 client = Client(
                     access_token=settings.SQUARE_ACCESS_TOKEN,
-                    environment='sandbox'  # Change to 'production' for live payments
+                    environment=settings.SQUARE_ENVIRONMENT
                 )
 
                 # Complete the payment in Square

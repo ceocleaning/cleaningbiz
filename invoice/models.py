@@ -14,7 +14,7 @@ class Invoice(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Invoice for {self.booking.firstName} {self.booking.lastName} - {self.booking.email}"
+        return f"{self.invoiceId}"
 
     def generateInvoiceId(self):
         prefix = "INV"
@@ -51,7 +51,7 @@ class Payment(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Payment for {self.invoice.booking.firstName} {self.invoice.booking.lastName} - {self.invoice.booking.email}"
+        return f"{self.paymentId}"
     
     def generatePaymentId(self):
         prefix = "PY"

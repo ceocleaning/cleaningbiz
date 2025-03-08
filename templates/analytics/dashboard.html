@@ -1,0 +1,2132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load automation_filters %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mb-1"><i class="fas fa-chart-line text-primary me-2"></i>Analytics Dashboard</h1>
+            <p class="text-muted mb-0">Track and analyze your cleaning business performance</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Analytics Sidebar -->
+        <div class="col-lg-3 col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Analytics</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#revenue-chart" class="list-group-item list-group-item-action active" id="revenue-tab" data-bs-toggle="tab">
+                        <i class="fas fa-dollar-sign me-2"></i>Revenue Trends
+                    </a>
+                    <a href="#booking-chart" class="list-group-item list-group-item-action" id="booking-tab" data-bs-toggle="tab">
+                        <i class="fas fa-calendar-check me-2"></i>Booking Analytics
+                    </a>
+                    <a href="#cleaner-chart" class="list-group-item list-group-item-action" id="cleaner-tab" data-bs-toggle="tab">
+                        <i class="fas fa-user-tie me-2"></i>Cleaner Analysis
+                    </a>
+                    <a href="#customer-chart" class="list-group-item list-group-item-action" id="customer-tab" data-bs-toggle="tab">
+                        <i class="fas fa-users me-2"></i>Customer Analysis
+                    </a>
+                    <a href="#addon-chart" class="list-group-item list-group-item-action" id="addon-tab" data-bs-toggle="tab">
+                        <i class="fas fa-plus me-2"></i>Addons Analysis
+                    </a>
+                   
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="fas fa-tachometer-alt text-primary me-2"></i>Key Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="text-muted fw-normal mb-1">Total Revenue</h6>
+                            <h4 class="mb-0">{{ total_revenue|format_currency }}</h4>
+                        </div>
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                            <i class="fas fa-dollar-sign text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="text-muted fw-normal mb-1">Total Bookings</h6>
+                            <h4 class="mb-0">{{ total_bookings }}</h4>
+                        </div>
+                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                            <i class="fas fa-calendar-check text-success"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="text-muted fw-normal mb-1">Completed Bookings</h6>
+                            <h4 class="mb-0">{{ completed_bookings }}</h4>
+                        </div>
+                        <div class="rounded-circle bg-info bg-opacity-10 p-2">
+                            <i class="fas fa-check-circle text-info"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted fw-normal mb-1">Completion Rate</h6>
+                            <h4 class="mb-0">{{ completion_rate }}%</h4>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+                            <i class="fas fa-percentage text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-lg-9 col-md-8">
+            
+
+            <!-- Chart Tabs Content -->
+            <div class="tab-content">
+                <!-- Revenue Trends Chart -->
+                <div class="tab-pane fade show active" id="revenue-chart">
+                    <h3 class="mb-4">Revenue Analysis</h3>
+                        
+                        <!-- Revenue Metrics Cards -->
+                        <div class="row mb-4">
+                            <!-- Total Revenue Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-dollar-sign text-primary fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Total Revenue</h6>
+                                            <h3 class="mb-0" id="totalRevenueAmount"></h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Received Revenue Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Received Revenue</h6>
+                                            <h3 class="mb-0" id="receivedRevenueAmount">-</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pending Revenue Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-hourglass-half text-warning fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Pending Revenue</h6>
+                                            <h3 class="mb-0" id="pendingRevenueAmount">-</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Revenue Trends Chart -->
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Revenue Trends</h5>
+                                    <div class="btn-group" role="group" aria-label="Time period selector">
+                                        <button type="button" class="btn btn-sm btn-outline-primary period-selector active" data-period="monthly">Monthly</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary period-selector" data-period="yearly">Yearly</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary period-selector" data-period="daily">Daily</button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="revenueChartLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading chart data...</p>
+                                    </div>
+                                    
+                                    <div class="chart-container" style="position: relative; height:400px;">
+                                        <canvas id="revenueChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Analytics Charts -->
+                <div class="tab-pane fade" id="booking-chart">
+                    <h3 class="mb-4">Booking Analysis</h3>
+                        
+                        <!-- Booking Metrics Cards -->
+                        <div class="row mb-4">
+                            <!-- Total Bookings Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-calendar-check text-primary fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Total Bookings</h6>
+                                            <h3 class="mb-0" id="totalBookingsCount">-</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Completed Bookings Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Completed Bookings</h6>
+                                            <h3 class="mb-0" id="completedBookingsCount">-</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pending Bookings Card -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                                            <i class="fas fa-hourglass-half text-warning fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-muted mb-1">Pending Bookings</h6>
+                                            <h3 class="mb-0" id="pendingBookingsCount">-</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Booking Trends Chart -->
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Booking Trends</h5>
+                                    <div class="btn-group" role="group" aria-label="Time period selector">
+                                        <button type="button" class="btn btn-sm btn-outline-primary booking-period-selector active" data-period="monthly">Monthly</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary booking-period-selector" data-period="yearly">Yearly</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary booking-period-selector" data-period="daily">Daily</button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="bookingChartLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading chart data...</p>
+                                    </div>
+                                    
+                                    <div class="chart-container" style="position: relative; height:400px;">
+                                        <canvas id="bookingTrendChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Booking Status Distribution Chart -->
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-transparent">
+                                    <h5 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Cleaning Services Distribution</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="statusChartLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading chart data...</p>
+                                    </div>
+                                    
+                                    <div class="chart-container" style="position: relative; height:300px;">
+                                        <canvas id="bookingStatusChart"></canvas>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <div class="d-inline-block mx-2">
+                                            <span class="badge rounded-pill" style="background-color: rgba(54, 162, 235, 0.6);">Standard Cleaning</span>
+                                        </div>
+                                        <div class="d-inline-block mx-2">
+                                            <span class="badge rounded-pill" style="background-color: rgba(75, 192, 92, 0.6);">Deep Cleaning</span>
+                                        </div>
+                                        <div class="d-inline-block mx-2">
+                                            <span class="badge rounded-pill" style="background-color: rgba(255, 159, 64, 0.6);">Move In/Move Out</span>
+                                        </div>
+                                        <div class="d-inline-block mx-2">
+                                            <span class="badge rounded-pill" style="background-color: rgba(153, 102, 255, 0.6);">Airbnb Cleaning</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cleaner Analysis Charts -->
+                <div class="tab-pane fade" id="cleaner-chart">
+                    <div class="row g-4">
+                        <!-- Cleaner Key Metrics -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Cleaner Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Total Cleaners -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="text-muted mb-2">Total Cleaners</h6>
+                                                    <h2 class="mb-0">{{ total_cleaners }}</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Active Cleaners -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="text-muted mb-2">Active Cleaners</h6>
+                                                    <h2 class="mb-0">{{ active_cleaners }}</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Cleaner Utilization -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="text-muted mb-2">Cleaner Utilization</h6>
+                                                    <h2 class="mb-0">{{ cleaner_utilization }}%</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Period Selector for Cleaner Charts -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4">
+                                            <h6 class="mb-0">Select Time Period</h6>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select id="cleanerPeriodSelect" class="form-select">
+                                                <option value="monthly">Last 6 Months</option>
+                                                <option value="yearly">Last 5 Years</option>
+                                                <option value="daily">Last 30 Days</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select id="cleanerChartTypeSelect" class="form-select">
+                                                <option value="overview">Overview</option>
+                                                <option value="revenue">Revenue Analysis</option>
+                                                <option value="performance">Performance Metrics</option>
+                                                <option value="services">Service Types</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cleaner Overview Section -->
+                        <div id="cleaner-overview-section" class="col-12">
+                            <div class="row">
+                                <!-- Cleaner Bookings Distribution Chart -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Bookings by Cleaner</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Loading spinner -->
+                                            <div id="cleanerBookingsChartLoader" class="text-center py-5" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading chart data...</p>
+                                            </div>
+                                            
+                                            <div class="chart-container" style="position: relative; height:300px;">
+                                                <canvas id="cleanerBookingsChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cleaner Performance Chart -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>Cleaner Performance</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Loading spinner -->
+                                            <div id="cleanerPerformanceChartLoader" class="text-center py-5" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading chart data...</p>
+                                            </div>
+                                            
+                                            <div class="chart-container" style="position: relative; height:300px;">
+                                                <canvas id="cleanerPerformanceChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cleaner Detailed Table -->
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Detailed Cleaner Performance</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Loading spinner -->
+                                            <div id="cleanerTableLoader" class="text-center py-5" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading data...</p>
+                                            </div>
+                                            
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover" id="cleanerDetailsTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Cleaner</th>
+                                                            <th>Total Bookings</th>
+                                                            <th>Completion Rate</th>
+                                                            <th>Avg. Revenue</th>
+                                                            <th>Avg. Property Size</th>
+                                                            <th>Primary Service</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Table rows will be populated by JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cleaner Revenue Section -->
+                        <div id="cleaner-revenue-section" class="col-12" style="display: none;">
+                            <div class="row">
+                                <!-- Cleaner Revenue Chart -->
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-dollar-sign text-primary me-2"></i>Revenue by Cleaner</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Loading spinner -->
+                                            <div id="cleanerRevenueChartLoader" class="text-center py-5" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading chart data...</p>
+                                            </div>
+                                            
+                                            <div class="chart-container" style="position: relative; height:400px;">
+                                                <canvas id="cleanerRevenueChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Revenue Details Table -->
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Revenue Details</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover" id="revenueDetailsTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Cleaner</th>
+                                                            <th>Total Revenue</th>
+                                                            <th>Paid Revenue</th>
+                                                            <th>Pending Revenue</th>
+                                                            <th>Collection Rate</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Table rows will be populated by JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cleaner Performance Metrics Section -->
+                        <div id="cleaner-performance-section" class="col-12" style="display: none;">
+                            <div class="row">
+                                <!-- Performance Metrics Chart -->
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-tachometer-alt text-primary me-2"></i>Performance Metrics</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Loading spinner -->
+                                            <div id="performanceMetricsChartLoader" class="text-center py-5" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Loading chart data...</p>
+                                            </div>
+                                            
+                                            <div class="chart-container" style="position: relative; height:400px;">
+                                                <canvas id="performanceMetricsChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Performance Metrics Table -->
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-transparent">
+                                            <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Performance Details</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover" id="performanceDetailsTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Cleaner</th>
+                                                            <th>Completion Rate</th>
+                                                            <th>Avg. Bookings/Month</th>
+                                                            <th>Avg. Square Footage</th>
+                                                            <th>Avg. Bedrooms</th>
+                                                            <th>Avg. Bathrooms</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Table rows will be populated by JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cleaner Service Types Section -->
+                        <div id="cleaner-services-section" class="col-12" style="display: none;">
+                            <div class="row">
+                                <!-- Service Types Cards -->
+                                <div class="col-12 mb-4" id="serviceTypeCards">
+                                    <!-- Service type cards will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Tab -->
+                <div class="tab-pane fade" id="customer-chart">
+                    <!-- Customer Analysis Charts -->
+                    <div class="row g-4">
+                        <!-- Customer Key Metrics -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Customer Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Total Customers -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-primary border-0 shadow-sm">
+                                                <div class="card-body bg-primary text-center">
+                                                    <h6 class="mb-2">Total Unique Customers</h6>
+                                                    <h2 id="total-unique-customers" class="mb-0">0</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Repeat Customers -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-success border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="mb-2">Repeat Customers</h6>
+                                                    <h2 id="repeat-customers" class="mb-0">0</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Repeat Customer Percentage -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-warning border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="mb-2">Repeat Customer %</h6>
+                                                    <h2 id="repeat-customer-percentage" class="mb-0">0%</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Detailed Table -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Customer List</h5>
+                                    <div class="d-flex align-items-center">
+                                        <select id="customerPeriodSelect" class="form-select form-select-sm px-3">
+                                            <option value="monthly">Last 6 Months</option>
+                                            <option value="yearly">Last 5 Years</option>
+                                            <option value="daily">Last 30 Days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="customerTableLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading data...</p>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover" id="customerDetailsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Customer</th>
+                                                    <th>Total Bookings</th>
+                                                    <th>Total Spent</th>
+                                                    <th>First Booking</th>
+                                                    <th>Last Booking</th>
+                                                    <th>Phone</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Addons Analysis Tab Content -->
+                <div class="tab-pane fade" id="addon-chart">
+                    <div class="row">
+                        <!-- Addon Key Metrics -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Addons Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Total Addon Revenue -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-primary border-0 shadow-sm">
+                                                <div class="card-body bg-primary text-center">
+                                                    <h6 class="mb-2">Total Addon Revenue</h6>
+                                                    <h2 id="total-addon-revenue" class="mb-0">$0</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Most Popular Addon -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-success border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="mb-2">Most Popular Addon</h6>
+                                                    <h2 id="most-popular-addon" class="mb-0">-</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Highest Revenue Addon -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 text-white bg-warning border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <h6 class="mb-2">Highest Revenue Addon</h6>
+                                                    <h2 id="highest-revenue-addon" class="mb-0">-</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Addon Distribution Chart -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Addon Usage Distribution</h5>
+                                    <div class="d-flex align-items-center">
+                                        <select id="addonPeriodSelect" class="form-select form-select-sm px-3">
+                                            <option value="monthly">Last 6 Months</option>
+                                            <option value="yearly">Last 5 Years</option>
+                                            <option value="daily">Last 30 Days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="addonChartLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading data...</p>
+                                    </div>
+                                    
+                                    <!-- Addon Distribution Chart Canvas -->
+                                    <div style="height: 300px;">
+                                        <canvas id="addonDistributionChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Addon Revenue Table -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Addon Revenue</h5>
+                                    <div class="d-flex align-items-center">
+                                        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Sort options">
+                                            <button type="button" class="btn btn-outline-primary" id="sortByRevenue">Sort by Revenue</button>
+                                            <button type="button" class="btn btn-outline-primary" id="sortByCount">Sort by Usage</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Loading spinner -->
+                                    <div id="addonTableLoader" class="text-center py-5" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Loading data...</p>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover dataTable" id="addonRevenueTable">
+                                            <thead>
+                                                <tr>
+                                                    <th class="sorting-header">
+                                                        Addon <i class="fas fa-sort ms-1"></i>
+                                                    </th>
+                                                    <th class="sorting-header">
+                                                        Usage Count <i class="fas fa-sort ms-1"></i>
+                                                    </th>
+                                                    <th class="sorting-header">
+                                                        Revenue <i class="fas fa-sort ms-1"></i>
+                                                    </th>
+                                                    <th class="sorting-header">
+                                                        % of Total <i class="fas fa-sort ms-1"></i>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    // Declare chart variables
+    let revenueChart, bookingTrendsChart, bookingStatusChart, cleanerRevenueChart, cleanerBookingsChart, customerBookingsChart, addonDistributionChart;
+    
+    // Wait for DOM to be fully loaded before initializing charts
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing charts...');
+        
+        // Initialize Revenue Chart
+        const revenueChartCanvas = document.getElementById('revenueChart');
+        const revenueChartLoader = document.getElementById('revenueChartLoader');
+        
+        if (!revenueChartCanvas) {
+            console.error('Canvas element #revenueChart not found!');
+            return;
+        }
+        
+        const revenueChartCtx = revenueChartCanvas.getContext('2d');
+        let revenueChart = null;
+        let currentRevenuePeriod = 'monthly';
+
+        // Function to show loading spinner
+        function showLoader(loader, canvas) {
+            if (loader) {
+                loader.style.display = 'block';
+                canvas.style.opacity = '0.3';
+            }
+        }
+        
+        // Function to hide loading spinner
+        function hideLoader(loader, canvas) {
+            if (loader) {
+                loader.style.display = 'none';
+                canvas.style.opacity = '1';
+            }
+        }
+
+        // Function to load revenue chart data
+        function loadRevenueData(period = 'monthly') {
+            currentRevenuePeriod = period;
+            showLoader(revenueChartLoader, revenueChartCanvas);
+            console.log('Loading revenue data for period:', period);
+            
+            fetch(`/analytics/api/revenue-data/?period=${period}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Revenue data received:', data);
+                    hideLoader(revenueChartLoader, revenueChartCanvas);
+                    
+                    // Update revenue metrics cards
+                    const totalRevenueEl = document.getElementById('totalRevenueAmount');
+                    const receivedRevenueEl = document.getElementById('receivedRevenueAmount');
+                    const pendingRevenueEl = document.getElementById('pendingRevenueAmount');
+                    
+                    if (totalRevenueEl && data.datasets && data.datasets.length > 0) {
+                        // Calculate total revenue from the data
+                        const totalRevenue = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
+                        totalRevenueEl.textContent = `$${totalRevenue.toFixed(2)}`;
+                        
+                        // For received and pending, we'll check if the API provides this data
+                        // If not, we'll use estimates
+                        if (receivedRevenueEl) {
+                            let receivedRevenue = 0;
+                            if (data.receivedRevenue !== undefined) {
+                                receivedRevenue = data.receivedRevenue;
+                            } else {
+                                // Estimate: 80% received
+                                receivedRevenue = totalRevenue * 0.8;
+                            }
+                            receivedRevenueEl.textContent = `$${receivedRevenue.toFixed(2)}`;
+                        }
+                        
+                        if (pendingRevenueEl) {
+                            let pendingRevenue = 0;
+                            if (data.pendingRevenue !== undefined) {
+                                pendingRevenue = data.pendingRevenue;
+                            } else {
+                                // Estimate: 20% pending
+                                pendingRevenue = totalRevenue * 0.2;
+                            }
+                            pendingRevenueEl.textContent = `$${pendingRevenue.toFixed(2)}`;
+                        }
+                    }
+                    
+                    // Update active button state
+                    document.querySelectorAll('.revenue-period-selector').forEach(btn => {
+                        if (btn.dataset.period === period) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    
+                    if (revenueChart) {
+                        revenueChart.destroy();
+                    }
+
+                    revenueChart = new Chart(revenueChartCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.dataset.label || '';
+                                            const value = context.parsed.y;
+                                            const invoiceCount = context.dataset.invoice_counts[context.dataIndex];
+                                            return [
+                                                `${label}: $${value.toFixed(2)}`,
+                                                `Invoices: ${invoiceCount}`
+                                            ];
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '$' + value;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading revenue data:', error);
+                    hideLoader(revenueChartLoader, revenueChartCanvas);
+                });
+        }
+
+        // Function to load booking charts (both trend and status)
+        function loadBookingCharts(period = 'monthly') {
+            currentBookingPeriod = period;
+            loadBookingTrendData(period);
+            loadBookingStatusData();
+            
+            // Update active button state
+            document.querySelectorAll('.booking-period-selector').forEach(btn => {
+                if (btn.dataset.period === period) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize Booking Charts
+        const bookingTrendCanvas = document.getElementById('bookingTrendChart');
+        const bookingStatusCanvas = document.getElementById('bookingStatusChart');
+        const bookingChartLoader = document.getElementById('bookingChartLoader');
+        const statusChartLoader = document.getElementById('statusChartLoader');
+        
+        let bookingTrendChart = null;
+        let bookingStatusChart = null;
+        let currentBookingPeriod = 'monthly';
+
+        // Function to load booking trend data
+        function loadBookingTrendData(period = 'monthly') {
+            showLoader(bookingChartLoader, bookingTrendCanvas);
+            console.log('Loading booking trend data for period:', period);
+            
+            fetch(`/analytics/api/booking-data/?period=${period}&chart_type=trend`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Booking trend data received:', data);
+                    hideLoader(bookingChartLoader, bookingTrendCanvas);
+                    
+                    // Update booking metrics cards
+                    const totalBookingsEl = document.getElementById('totalBookingsCount');
+                    const completedBookingsEl = document.getElementById('completedBookingsCount');
+                    const pendingBookingsEl = document.getElementById('pendingBookingsCount');
+                    
+                    if (totalBookingsEl && data.datasets && data.datasets.length > 0) {
+                        // Calculate total bookings from the data
+                        const totalBookings = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
+                        totalBookingsEl.textContent = totalBookings;
+                        
+                        // For completed and pending, we'll use estimates until we have actual data
+                        if (completedBookingsEl) {
+                            const completedBookings = Math.round(totalBookings * 0.75); // Estimate: 75% completed
+                            completedBookingsEl.textContent = completedBookings;
+                        }
+                        
+                        if (pendingBookingsEl) {
+                            const pendingBookings = Math.round(totalBookings * 0.25); // Estimate: 25% pending
+                            pendingBookingsEl.textContent = pendingBookings;
+                        }
+                    }
+                    
+                    if (bookingTrendChart) {
+                        bookingTrendChart.destroy();
+                    }
+
+                    bookingTrendChart = new Chart(bookingTrendCanvas.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading booking trend data:', error);
+                    hideLoader(bookingChartLoader, bookingTrendCanvas);
+                });
+        }
+
+        // Function to load booking status distribution data
+        function loadBookingStatusData() {
+            showLoader(statusChartLoader, bookingStatusCanvas);
+            console.log('Loading booking status distribution data');
+            
+            fetch(`/analytics/api/booking-data/?period=${currentBookingPeriod}&chart_type=status`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Booking status data received:', data);
+                    hideLoader(statusChartLoader, bookingStatusCanvas);
+                    
+                    // Update booking metrics cards with more accurate data
+                    const completedBookingsEl = document.getElementById('completedBookingsCount');
+                    const pendingBookingsEl = document.getElementById('pendingBookingsCount');
+                    
+                    if (data.datasets && data.datasets.length > 0) {
+                        // Assuming the API returns data in the format where data[0] is completed and data[1] is pending
+                        // This is more accurate than the estimates in loadBookingTrendData
+                        const completedCount = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
+                        const pendingCount = data.datasets[1] ? data.datasets[1].data.reduce((sum, value) => sum + value, 0) : 0;
+                        
+                        if (completedBookingsEl) {
+                            completedBookingsEl.textContent = completedCount;
+                        }
+                        
+                        if (pendingBookingsEl) {
+                            pendingBookingsEl.textContent = pendingCount;
+                        }
+                    }
+                    
+                    if (bookingStatusChart) {
+                        bookingStatusChart.destroy();
+                    }
+
+                    bookingStatusChart = new Chart(bookingStatusCanvas.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = Math.round((value / total) * 100);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading booking status data:', error);
+                    hideLoader(statusChartLoader, bookingStatusCanvas);
+                });
+        }
+
+        // Event listeners for booking period selectors
+        document.querySelectorAll('.booking-period-selector').forEach(button => {
+            button.addEventListener('click', function() {
+                const period = this.dataset.period;
+                loadBookingCharts(period);
+            });
+        });
+
+        // Load initial data for all charts
+        loadRevenueData(currentRevenuePeriod);
+        loadBookingCharts(currentBookingPeriod);
+        loadBookingStatusData();
+
+        // Set up revenue period selector buttons
+        document.querySelectorAll('.period-selector').forEach(button => {
+            button.addEventListener('click', function() {
+                const period = this.dataset.period;
+                document.querySelectorAll('.period-selector').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentRevenuePeriod = period;
+                loadRevenueData(period);
+            });
+        });
+
+        // Set up tab change handlers
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(event) {
+                const targetId = event.target.getAttribute('href');
+                if (targetId === '#booking-chart') {
+                    // Refresh booking charts when tab is shown
+                    if (bookingTrendChart) bookingTrendChart.update();
+                    if (bookingStatusChart) bookingStatusChart.update();
+                } else if (targetId === '#revenue-chart') {
+                    // Refresh revenue chart when tab is shown
+                    if (revenueChart) revenueChart.update();
+                }
+            });
+        });
+
+        // Check if URL hash is set to load specific tab
+        if (window.location.hash === '#cleaner-chart') {
+            // Trigger click on cleaner tab
+            cleanerTabEl.click();
+        } else if (window.location.hash === '#booking-chart') {
+            // Trigger click on booking tab
+            bookingTabEl.click();
+        } else if (window.location.hash === '#customer-chart') {
+            // Trigger click on customer tab
+            customerTabEl.click();
+        }
+
+        // Global variables for customer charts
+        let customerBookingsChart = null;
+        let customerPerformanceChart = null;
+        let customerRevenueChart = null;
+        let customerPerformanceMetricsChart = null;
+
+        // Function to load all customer charts
+        function loadCustomerCharts() {
+            const period = document.getElementById('customerPeriodSelect').value;
+            loadCustomerData(period);
+        }
+
+        // Function to load customer data
+        function loadCustomerData(period) {
+            // Show loader
+            document.getElementById('customerTableLoader').style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/customer-data/?period=${period}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    document.getElementById('customerTableLoader').style.display = 'none';
+                    
+                    // Update metrics
+                    updateCustomerMetrics(data.metrics);
+                    
+                    // Populate customer table
+                    populateCustomerTable(data.customer_list);
+                })
+                .catch(error => {
+                    console.error('Error loading customer data:', error);
+                    document.getElementById('customerTableLoader').style.display = 'none';
+                });
+        }
+
+        // Function to update customer metrics
+        function updateCustomerMetrics(metrics) {
+            // Update the metrics cards
+            document.getElementById('total-unique-customers').textContent = metrics.unique_customers;
+            document.getElementById('repeat-customers').textContent = metrics.repeat_customers;
+            document.getElementById('repeat-customer-percentage').textContent = `${metrics.repeat_customer_percentage}%`;
+        }
+
+        // Function to populate customer table
+        function populateCustomerTable(customers) {
+            const tableBody = document.querySelector('#customerDetailsTable tbody');
+            if (!tableBody) return;
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Add rows for each customer
+            customers.forEach(customer => {
+                const row = document.createElement('tr');
+                
+                // Format the customer name and email
+                const customerName = customer.name || 'Unknown';
+                const customerEmail = customer.email || 'No Email';
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span class="fw-bold">${customerName}</span>
+                            <small class="text-muted">${customerEmail}</small>
+                        </div>
+                    </td>
+                    <td>${customer.count}</td>
+                    <td>$${customer.total_spent.toFixed(2)}</td>
+                    <td>${customer.first_booking}</td>
+                    <td>${customer.last_booking}</td>
+                    <td>${customer.phone || 'N/A'}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Event listener for customer period select
+        document.getElementById('customerPeriodSelect').addEventListener('change', function() {
+            loadCustomerCharts();
+        });
+
+        // Cleaner Charts
+        let cleanerBookingsChart = null;
+        let cleanerPerformanceChart = null;
+        let cleanerRevenueChart = null;
+        let performanceMetricsChart = null;
+
+        // Function to load cleaner charts
+        function loadCleanerCharts() {
+            try {
+                // Get selected period and chart type
+                const period = document.getElementById('cleanerPeriodSelect').value;
+                const chartType = document.getElementById('cleanerChartTypeSelect').value;
+                
+                // Hide all chart containers first
+                document.getElementById('cleaner-overview-section').style.display = 'none';
+                document.getElementById('cleaner-revenue-section').style.display = 'none';
+                document.getElementById('cleaner-performance-section').style.display = 'none';
+                document.getElementById('cleaner-services-section').style.display = 'none';
+                
+                // Show selected container
+                if (chartType === 'overview') {
+                    document.getElementById('cleaner-overview-section').style.display = 'block';
+                    loadCleanerBookingsChart(period);
+                    loadCleanerPerformanceChart(period);
+                    loadCleanerDetailsTable(period);
+                } else if (chartType === 'revenue') {
+                    document.getElementById('cleaner-revenue-section').style.display = 'block';
+                    loadCleanerRevenueChart(period);
+                } else if (chartType === 'performance') {
+                    document.getElementById('cleaner-performance-section').style.display = 'block';
+                    loadPerformanceMetricsChart(period);
+                } else if (chartType === 'services') {
+                    document.getElementById('cleaner-services-section').style.display = 'block';
+                    loadServiceTypeCards(period);
+                }
+            } catch (error) {
+                console.error('Error in loadCleanerCharts:', error);
+            }
+        }
+
+        // Function to load cleaner bookings chart
+        function loadCleanerBookingsChart(period) {
+            // Show loader
+            const loader = document.getElementById('cleanerBookingsChartLoader');
+            if (!loader) return; // Exit if element doesn't exist
+            loader.style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=bookings`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    loader.style.display = 'none';
+                    
+                    // Get the canvas element
+                    const canvas = document.getElementById('cleanerBookingsChart');
+                    if (!canvas) return; // Exit if element doesn't exist
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (cleanerBookingsChart) {
+                        cleanerBookingsChart.destroy();
+                    }
+                    
+                    // Check if data is valid
+                    if (!data.labels || !data.datasets) {
+                        console.error('Invalid data format for cleaner bookings chart');
+                        return;
+                    }
+                    
+                    // Create new chart
+                    cleanerBookingsChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        boxWidth: 15,
+                                        padding: 15
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                            const percentage = Math.round((value / total) * 100);
+                                            return `${label}: ${value} bookings (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cleaner bookings chart:', error);
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+
+        // Function to load cleaner performance chart
+        function loadCleanerPerformanceChart(period) {
+            // Show loader
+            const loader = document.getElementById('cleanerPerformanceChartLoader');
+            if (!loader) return; // Exit if element doesn't exist
+            loader.style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=performance`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    loader.style.display = 'none';
+                    
+                    // Get the canvas element
+                    const canvas = document.getElementById('cleanerPerformanceChart');
+                    if (!canvas) return; // Exit if element doesn't exist
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (cleanerPerformanceChart) {
+                        cleanerPerformanceChart.destroy();
+                    }
+                    
+                    // Check if data is valid
+                    if (!data.labels || !data.datasets) {
+                        console.error('Invalid data format for cleaner performance chart');
+                        return;
+                    }
+                    
+                    // Create new chart
+                    cleanerPerformanceChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: {
+                                        display: true,
+                                        text: 'Completion Rate (%)'
+                                    },
+                                    min: 0,
+                                    max: 100
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: {
+                                        display: true,
+                                        text: 'Avg. Bookings/Month'
+                                    },
+                                    min: 0,
+                                    grid: {
+                                        drawOnChartArea: false
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cleaner performance chart:', error);
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+
+        // Function to load cleaner details table
+        function loadCleanerDetailsTable(period) {
+            // Show loader
+            const loader = document.getElementById('cleanerTableLoader');
+            if (!loader) return; // Exit if element doesn't exist
+            loader.style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=detailed`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    loader.style.display = 'none';
+                    
+                    // Get the table body
+                    const tableBody = document.querySelector('#cleanerDetailsTable tbody');
+                    if (!tableBody) return; // Exit if element doesn't exist
+                    tableBody.innerHTML = '';
+                    
+                    // Check if data is valid
+                    if (!data.detailed_data || !Array.isArray(data.detailed_data)) {
+                        console.error('Invalid data format for cleaner details');
+                        return;
+                    }
+                    
+                    // Add rows to table
+                    data.detailed_data.forEach(cleaner => {
+                        // Find primary service type
+                        let primaryService = 'N/A';
+                        if (cleaner.service_types && cleaner.service_types.length > 0) {
+                            primaryService = cleaner.service_types[0].type + ` (${cleaner.service_types[0].percentage}%)`;
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${cleaner.name}</td>
+                            <td>${cleaner.total_bookings}</td>
+                            <td>${cleaner.completion_rate}%</td>
+                            <td>$${cleaner.avg_revenue_per_booking.toFixed(2)}</td>
+                            <td>${cleaner.avg_square_footage} sq ft</td>
+                            <td>${primaryService}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cleaner details table:', error);
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+
+        // Function to load cleaner revenue chart
+        function loadCleanerRevenueChart(period) {
+            // Show loader
+            const loader = document.getElementById('cleanerRevenueChartLoader');
+            if (!loader) return; // Exit if element doesn't exist
+            loader.style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=revenue`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    loader.style.display = 'none';
+                    
+                    // Get the canvas element
+                    const canvas = document.getElementById('cleanerRevenueChart');
+                    if (!canvas) return; // Exit if element doesn't exist
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (cleanerRevenueChart) {
+                        cleanerRevenueChart.destroy();
+                    }
+                    
+                    // Check if data is valid
+                    if (!data.labels || !data.datasets) {
+                        console.error('Invalid data format for cleaner revenue chart');
+                        return;
+                    }
+                    
+                    // Create new chart
+                    cleanerRevenueChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Revenue ($)'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.dataset.label || '';
+                                            const value = context.raw || 0;
+                                            return `${label}: $${value.toFixed(2)}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Also populate the revenue details table
+                    const tableBody = document.querySelector('#revenueDetailsTable tbody');
+                    if (tableBody) {
+                        tableBody.innerHTML = '';
+                        
+                        // For each cleaner, create a row with revenue details
+                        for (let i = 0; i < data.labels.length; i++) {
+                            const row = document.createElement('tr');
+                            const totalRevenue = data.datasets[0].data[i];
+                            const paidRevenue = data.datasets[1].data[i];
+                            const pendingRevenue = data.datasets[2].data[i];
+                            const paidPercentage = totalRevenue > 0 ? (paidRevenue / totalRevenue * 100).toFixed(1) : 0;
+                            
+                            row.innerHTML = `
+                                <td>${data.labels[i]}</td>
+                                <td>$${totalRevenue.toFixed(2)}</td>
+                                <td>$${paidRevenue.toFixed(2)}</td>
+                                <td>$${pendingRevenue.toFixed(2)}</td>
+                                <td>${paidPercentage}%</td>
+                            `;
+                            tableBody.appendChild(row);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading cleaner revenue chart:', error);
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+
+        // Function to load performance metrics chart
+        function loadPerformanceMetricsChart(period) {
+            // Show loader
+            const loader = document.getElementById('performanceMetricsChartLoader');
+            if (!loader) return; // Exit if element doesn't exist
+            loader.style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=performance`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    loader.style.display = 'none';
+                    
+                    // Get the canvas element
+                    const canvas = document.getElementById('performanceMetricsChart');
+                    if (!canvas) return; // Exit if element doesn't exist
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (performanceMetricsChart) {
+                        performanceMetricsChart.destroy();
+                    }
+                    
+                    // Check if data is valid
+                    if (!data.labels || !data.detailed_data || !Array.isArray(data.detailed_data)) {
+                        console.error('Invalid data format for performance metrics chart');
+                        return;
+                    }
+                    
+                    // Create new chart - radar chart for multiple metrics
+                    const cleaners = data.labels;
+                    const completionRates = data.detailed_data.map(c => c.completion_rate);
+                    const avgBookings = data.detailed_data.map(c => c.avg_bookings_per_month);
+                    const avgSquareFootage = data.detailed_data.map(c => c.avg_square_footage / 500); // Scale down for better visualization
+                    const avgBedrooms = data.detailed_data.map(c => c.avg_bedrooms * 20); // Scale up for better visualization
+                    const avgBathrooms = data.detailed_data.map(c => c.avg_bathrooms * 20); // Scale up for better visualization
+                    
+                    performanceMetricsChart = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ['Completion Rate', 'Bookings/Month', 'Property Size', 'Bedrooms', 'Bathrooms'],
+                            datasets: cleaners.map((cleaner, index) => ({
+                                label: cleaner,
+                                data: [
+                                    completionRates[index],
+                                    avgBookings[index],
+                                    avgSquareFootage[index],
+                                    avgBedrooms[index],
+                                    avgBathrooms[index]
+                                ],
+                                fill: true,
+                                backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.2)`,
+                                borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+                                pointBackgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
+                            }))
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            elements: {
+                                line: {
+                                    borderWidth: 3
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.dataset.label || '';
+                                            const index = context.dataIndex;
+                                            let value = context.raw;
+                                            
+                                            // Format based on metric type
+                                            if (index === 0) return `${label}: ${value}%`; // Completion Rate
+                                            if (index === 1) return `${label}: ${value}`; // Bookings/Month
+                                            if (index === 2) return `${label}: ${value * 500} sq ft`; // Property Size (unscale)
+                                            if (index === 3) return `${label}: ${(value / 20).toFixed(1)}`; // Bedrooms (unscale)
+                                            if (index === 4) return `${label}: ${(value / 20).toFixed(1)}`; // Bathrooms (unscale)
+                                            
+                                            return `${label}: ${value}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Populate performance details table
+                    const tableBody = document.querySelector('#performanceDetailsTable tbody');
+                    if (tableBody) {
+                        tableBody.innerHTML = '';
+                        
+                        data.detailed_data.forEach(cleaner => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${cleaner.name}</td>
+                                <td>${cleaner.completion_rate}%</td>
+                                <td>${cleaner.avg_bookings_per_month}</td>
+                                <td>${cleaner.avg_square_footage} sq ft</td>
+                                <td>${cleaner.avg_bedrooms.toFixed(1)}</td>
+                                <td>${cleaner.avg_bathrooms.toFixed(1)}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading performance metrics chart:', error);
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+
+        // Function to load service type cards
+        function loadServiceTypeCards(period) {
+            // Fetch data from API
+            fetch(`/analytics/api/cleaner-data/?period=${period}&chart_type=service_types`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Get the container
+                    const container = document.getElementById('serviceTypeCards');
+                    if (!container) return; // Exit if element doesn't exist
+                    container.innerHTML = '';
+                    
+                    // Check if data is valid
+                    if (!data.cleaner_service_data || !Array.isArray(data.cleaner_service_data)) {
+                        console.error('Invalid data format for service type cards');
+                        return;
+                    }
+                    
+                    // Create a row for each cleaner
+                    data.cleaner_service_data.forEach(cleaner => {
+                        // Skip cleaners with no bookings
+                        if (cleaner.total_bookings === 0) return;
+                        
+                        // Create card
+                        const card = document.createElement('div');
+                        card.className = 'card shadow-sm mb-4';
+                        
+                        // Card header
+                        const cardHeader = document.createElement('div');
+                        cardHeader.className = 'card-header bg-transparent';
+                        cardHeader.innerHTML = `<h5 class="mb-0">${cleaner.name} - Service Types</h5>`;
+                        card.appendChild(cardHeader);
+                        
+                        // Card body
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+                        
+                        // Create progress bars for each service type
+                        let serviceTypesHtml = '';
+                        if (cleaner.service_types && Array.isArray(cleaner.service_types)) {
+                            cleaner.service_types.forEach(service => {
+                                const progressBarColor = getProgressBarColor(service.type);
+                                serviceTypesHtml += `
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>${service.type}</span>
+                                            <span>${service.count} bookings (${service.percentage}%)</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar ${progressBarColor}" role="progressbar" style="width: ${service.percentage}%" 
+                                                aria-valuenow="${service.percentage}" aria-valuemin="0" aria-valuemax="100">${service.percentage}%</div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                        
+                        cardBody.innerHTML = `
+                            <p class="text-muted">Total Bookings: ${cleaner.total_bookings}</p>
+                            ${serviceTypesHtml}
+                        `;
+                        card.appendChild(cardBody);
+                        
+                        // Add card to container
+                        container.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading service type cards:', error);
+                });
+        }
+
+        // Helper function to get progress bar color based on service type
+        function getProgressBarColor(serviceType) {
+            switch(serviceType) {
+                case 'Standard Cleaning': return 'bg-primary';
+                case 'Deep Cleaning': return 'bg-success';
+                case 'Move In/Move Out': return 'bg-warning';
+                case 'Airbnb Cleaning': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // Initialize Cleaner Charts
+        loadCleanerCharts();
+        
+        // Event listeners for cleaner charts
+        document.getElementById('cleanerPeriodSelect').addEventListener('change', loadCleanerCharts);
+        document.getElementById('cleanerChartTypeSelect').addEventListener('change', loadCleanerCharts);
+        
+        // Set up tab navigation
+        const revenueChartEl = document.getElementById('revenue-chart');
+        const bookingChartEl = document.getElementById('booking-chart');
+        const cleanerChartEl = document.getElementById('cleaner-chart');
+        const customerChartEl = document.getElementById('customer-chart');
+        const addonChartEl = document.getElementById('addon-chart');
+        
+        const revenueTabEl = document.getElementById('revenue-tab');
+        const bookingTabEl = document.getElementById('booking-tab');
+        const cleanerTabEl = document.getElementById('cleaner-tab');
+        const customerTabEl = document.getElementById('customer-tab');
+        const addonTabEl = document.getElementById('addon-tab');
+        
+        // Show Revenue section by default
+        revenueChartEl.classList.add('show', 'active');
+        
+        revenueTabEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            revenueChartEl.classList.add('show', 'active');
+            bookingChartEl.classList.remove('show', 'active');
+            cleanerChartEl.classList.remove('show', 'active');
+            customerChartEl.classList.remove('show', 'active');
+            addonChartEl.classList.remove('show', 'active');
+            
+            revenueTabEl.classList.add('active');
+            bookingTabEl.classList.remove('active');
+            cleanerTabEl.classList.remove('active');
+            customerTabEl.classList.remove('active');
+            addonTabEl.classList.remove('active');
+        });
+        
+        bookingTabEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            revenueChartEl.classList.remove('show', 'active');
+            bookingChartEl.classList.add('show', 'active');
+            cleanerChartEl.classList.remove('show', 'active');
+            customerChartEl.classList.remove('show', 'active');
+            addonChartEl.classList.remove('show', 'active');
+            
+            revenueTabEl.classList.remove('active');
+            bookingTabEl.classList.add('active');
+            cleanerTabEl.classList.remove('active');
+            customerTabEl.classList.remove('active');
+            addonTabEl.classList.remove('active');
+            
+            // Load booking charts if not already loaded
+            if (!bookingTrendsChart) {
+                loadBookingCharts();
+            }
+        });
+        
+        cleanerTabEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            revenueChartEl.classList.remove('show', 'active');
+            bookingChartEl.classList.remove('show', 'active');
+            cleanerChartEl.classList.add('show', 'active');
+            customerChartEl.classList.remove('show', 'active');
+            addonChartEl.classList.remove('show', 'active');
+            
+            revenueTabEl.classList.remove('active');
+            bookingTabEl.classList.remove('active');
+            cleanerTabEl.classList.add('active');
+            customerTabEl.classList.remove('active');
+            addonTabEl.classList.remove('active');
+            
+            // Always load cleaner charts when tab is clicked
+            loadCleanerCharts();
+        });
+        
+        customerTabEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            revenueChartEl.classList.remove('show', 'active');
+            bookingChartEl.classList.remove('show', 'active');
+            cleanerChartEl.classList.remove('show', 'active');
+            customerChartEl.classList.add('show', 'active');
+            addonChartEl.classList.remove('show', 'active');
+            
+            revenueTabEl.classList.remove('active');
+            bookingTabEl.classList.remove('active');
+            cleanerTabEl.classList.remove('active');
+            customerTabEl.classList.add('active');
+            addonTabEl.classList.remove('active');
+            
+            // Always load customer charts when tab is clicked
+            loadCustomerCharts();
+        });
+        
+        addonTabEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            revenueChartEl.classList.remove('show', 'active');
+            bookingChartEl.classList.remove('show', 'active');
+            cleanerChartEl.classList.remove('show', 'active');
+            customerChartEl.classList.remove('show', 'active');
+            addonChartEl.classList.add('show', 'active');
+            
+            revenueTabEl.classList.remove('active');
+            bookingTabEl.classList.remove('active');
+            cleanerTabEl.classList.remove('active');
+            customerTabEl.classList.remove('active');
+            addonTabEl.classList.add('active');
+            
+            // Always load addon charts when tab is clicked
+            loadAddonCharts();
+        });
+        
+        // Function to load addon charts
+        function loadAddonCharts() {
+            const period = document.getElementById('addonPeriodSelect').value;
+            loadAddonData(period);
+        }
+        
+        // Function to load addon data
+        function loadAddonData(period) {
+            // Show loader
+            document.getElementById('addonTableLoader').style.display = 'block';
+            document.getElementById('addonChartLoader').style.display = 'block';
+            
+            // Fetch data from API
+            fetch(`/analytics/api/addon-data/?period=${period}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loader
+                    document.getElementById('addonTableLoader').style.display = 'none';
+                    document.getElementById('addonChartLoader').style.display = 'none';
+                    
+                    // Update metrics
+                    document.getElementById('total-addon-revenue').textContent = `$${data.total_addon_revenue.toFixed(2)}`;
+                    
+                    // Set most popular and highest revenue addons if available
+                    if (data.addons_by_revenue.length > 0) {
+                        document.getElementById('highest-revenue-addon').textContent = data.addons_by_revenue[0].name;
+                    }
+                    
+                    if (data.pie_chart.labels.length > 0) {
+                        document.getElementById('most-popular-addon').textContent = data.pie_chart.labels[0];
+                    }
+                    
+                    // Create addon distribution chart
+                    createAddonDistributionChart(data.pie_chart);
+                    
+                    // Populate addon revenue table
+                    populateAddonRevenueTable(data.addons_by_revenue);
+                })
+                .catch(error => {
+                    console.error('Error loading addon data:', error);
+                    document.getElementById('addonTableLoader').style.display = 'none';
+                    document.getElementById('addonChartLoader').style.display = 'none';
+                });
+        }
+
+        // Function to create addon distribution chart
+        function createAddonDistributionChart(chartData) {
+            const ctx = document.getElementById('addonDistributionChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (addonDistributionChart) {
+                addonDistributionChart.destroy();
+            }
+            
+            // Generate colors for the chart
+            const backgroundColors = [
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 159, 64, 0.7)',
+                'rgba(199, 199, 199, 0.7)',
+                'rgba(83, 102, 255, 0.7)',
+                'rgba(40, 167, 69, 0.7)',
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(255, 193, 7, 0.7)'
+            ];
+            
+            const borderColors = backgroundColors.map(color => color.replace('0.7', '1'));
+            
+            // Create new chart
+            addonDistributionChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.data,
+                        backgroundColor: backgroundColors.slice(0, chartData.data.length),
+                        borderColor: borderColors.slice(0, chartData.data.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to populate addon revenue table
+        function populateAddonRevenueTable(addons) {
+            const tableBody = document.querySelector('#addonRevenueTable tbody');
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Add rows for each addon
+            addons.forEach(addon => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${addon.name}</td>
+                    <td>${addon.count}</td>
+                    <td>$${addon.revenue.toFixed(2)}</td>
+                    <td>${addon.percentage}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Destroy existing DataTable if it exists
+            if ($.fn.DataTable.isDataTable('#addonRevenueTable')) {
+                $('#addonRevenueTable').DataTable().destroy();
+            }
+            
+            // Initialize DataTable with options
+            let addonTable = $('#addonRevenueTable').DataTable({
+                "pageLength": 10,
+                "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                "order": [[2, "desc"]], // Sort by revenue column (index 2) in descending order
+                "responsive": true,
+                "language": {
+                    "search": "Search addons:",
+                    "lengthMenu": "Show _MENU_ addons",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ addons"
+                }
+            });
+            
+            // Set up event listeners for sort buttons if they exist
+            const sortByRevenueBtn = document.getElementById('sortByRevenue');
+            const sortByCountBtn = document.getElementById('sortByCount');
+            
+            if (sortByRevenueBtn) {
+                sortByRevenueBtn.addEventListener('click', function() {
+                    addonTable.order([2, 'desc']).draw(); // Sort by revenue column (index 2)
+                    sortByRevenueBtn.classList.add('active');
+                    sortByCountBtn.classList.remove('active');
+                });
+                // Set as active by default
+                sortByRevenueBtn.classList.add('active');
+            }
+            
+            if (sortByCountBtn) {
+                sortByCountBtn.addEventListener('click', function() {
+                    addonTable.order([1, 'desc']).draw(); // Sort by count column (index 1)
+                    sortByCountBtn.classList.add('active');
+                    sortByRevenueBtn.classList.remove('active');
+                });
+            }
+        }
+        
+        // Event listener for addon period select
+        document.getElementById('addonPeriodSelect').addEventListener('change', loadAddonCharts);
+    });
+</script>
+<style>
+    /* DataTable sorting styles */
+    .sorting-header {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .sorting-header:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    /* DataTables automatically adds these classes when sorting */
+    table.dataTable thead .sorting_asc .fa-sort:before {
+        content: "\f0de"; /* fa-sort-up */
+        color: #007bff;
+    }
+    
+    table.dataTable thead .sorting_desc .fa-sort:before {
+        content: "\f0dd"; /* fa-sort-down */
+        color: #007bff;
+    }
+</style>
+{% endblock %}

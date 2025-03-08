@@ -153,7 +153,9 @@ def invoice_preview(request, invoiceId):
             'business': business,
             'addons': addons,
             'settings': {
-                'SQUARE_APP_ID': settings.SQUARE_APP_ID
+                'SQUARE_APP_ID': settings.SQUARE_APP_ID,
+                'SQUARE_LOCATION_ID': settings.SQUARE_LOCATION_ID,
+                'SQUARE_ENVIRONMENT': settings.SQUARE_ENVIRONMENT
             }
         }
         return render(request, 'invoice_preview.html', context)
