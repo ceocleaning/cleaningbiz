@@ -196,15 +196,17 @@ def process_webhook_data(webhook_data):
             final_total = calculateTotal + addons_result + customAddonTotal
             
             # Create booking
+            print("Creating booking...")
 
-            cleaningDate = customer_data["appointmentDateTime"].date()
-            startTime = customer_data["appointmentDateTime"].time()
-            endTime = (customer_data["appointmentDateTime"] + timedelta(minutes=60)).time()
+            cleaningDatetime = customer_data["appointmentDateTime"].datetime()
+            cleaningDate = cleaningDatetime.date()
+            startTime = cleaningDatetime.time()
+            endTime = (cleaningDatetime + timedelta(minutes=60)).time()
 
 
             # Find available cleaner for the booking
             cleaners = get_cleaners_for_business(businessObj)
-            available_cleaner = find_available_cleaner(cleaners, customer_data["appointmentDateTime"])
+            available_cleaner = find_available_cleaner(cleaners, cleaningDatetime)
             print("Available Cleaner:", available_cleaner)
 
             newBooking = Booking.objects.create(
