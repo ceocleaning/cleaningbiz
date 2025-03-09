@@ -262,11 +262,11 @@ def create_mapped_payload(booking_data, integration):
     payload = {}
     
     # Convert datetime fields to string format
-    if isinstance(booking_data["cleaningDateTime"], datetime):
+    if isinstance(booking_data["cleaningDate"], datetime):
         booking_data = dict(booking_data)  # Create a copy to avoid modifying the original
-        booking_data["cleaningDate"] = booking_data["cleaningDateTime"].date().isoformat()
-        booking_data["startTime"] = booking_data["cleaningDateTime"].time().strftime("%H:%M:%S")
-        booking_data["endTime"] = (booking_data["cleaningDateTime"] + timedelta(minutes=60)).time().strftime("%H:%M:%S")
+        booking_data["cleaningDate"] = booking_data["cleaningDate"].date().isoformat()
+        booking_data["startTime"] = booking_data["startTime"].time().strftime("%H:%M:%S")
+        booking_data["endTime"] = (booking_data["startTime"] + timedelta(minutes=60)).time().strftime("%H:%M:%S")
 
     # Apply mappings
     for mapping in mappings:
@@ -341,9 +341,9 @@ def send_booking_data(booking):
                         "bathrooms": booking.bathrooms,
                         "squareFeet": booking.squareFeet,
                         "serviceType": booking.serviceType,
-                        "cleaningDate": booking.cleaningDateTime.date(),
-                        "startTime": booking.cleaningDateTime.time(),
-                        "endTime": (booking.cleaningDateTime + timedelta(minutes=60)).time(),
+                        "cleaningDate": booking.cleaningDate,
+                        "startTime": booking.startTime,
+                        "endTime": booking.endTime,
                         "totalPrice": float(booking.totalPrice),
                         "tax": float(booking.tax or 0),
                         "addonDishes": booking.addonDishes,
