@@ -197,12 +197,10 @@ def process_webhook_data(webhook_data):
             
             # Create booking
             print("Creating booking...")
-
-            cleaningDatetime = customer_data["appointmentDateTime"].datetime()
+            cleaningDatetime = datetime.fromisoformat(cleaningDateTime)
             cleaningDate = cleaningDatetime.date()
             startTime = cleaningDatetime.time()
             endTime = (cleaningDatetime + timedelta(minutes=60)).time()
-
 
             # Find available cleaner for the booking
             cleaners = get_cleaners_for_business(businessObj)
