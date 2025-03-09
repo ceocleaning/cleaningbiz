@@ -337,10 +337,11 @@ def send_booking_data_to_integration(booking_data, integration):
                 headers={"Content-Type": "application/json"},
                 timeout=30
             )
-            
+            print("Payload:", payload)
         else:  # direct_api
             from automation.webhooks import create_mapped_payload
             payload = create_mapped_payload(booking_data, integration)
+            print("Payload:", payload)
             
             headers = {"Content-Type": "application/json"}
             if integration.auth_type == 'token' and integration.auth_data.get('token'):
@@ -352,6 +353,8 @@ def send_booking_data_to_integration(booking_data, integration):
                 headers=headers,
                 timeout=30
             )
+
+         
         
         response.raise_for_status()
         results['success'].append({
