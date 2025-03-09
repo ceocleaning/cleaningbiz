@@ -402,10 +402,10 @@ def check_availability_n8n(request, secretKey):
         try:
             api_credential = ApiCredential.objects.get(secretKey=secretKey)
             business = api_credential.business
-            print(f"[DEBUG] Found API credential for business: {business.name}")
+            print(f"[DEBUG] Found API credential for business: {business.businessName}")
         except ApiCredential.DoesNotExist:
             print("[DEBUG] Invalid API key - no matching credential found")
-            return JsonResponse({"error": "Invalid or inactive API key"}, status=403)
+            return JsonResponse({"error": "Invalid or inactive Secret key"}, status=403)
         
         # Get data from request
         print("[DEBUG] Request body:", request.body)
