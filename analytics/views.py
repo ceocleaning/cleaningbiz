@@ -92,9 +92,19 @@ def revenue_data_api(request):
     # Get time period from request (default to last 6 months)
     period = request.GET.get('period', 'monthly')
     months = int(request.GET.get('months', 6))
+
+    totalRevenue = Invoice.objects.filter(
+        booking__business__user=request.user
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    pendingRevenue = Invoice.objects.filter(
+        booking__business__user=request.user,
+        isPaid=False
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    receivedRevenue = totalRevenue - pendingRevenue
     
     # Calculate date range based on period
-    end_date = timezone.now().date()
+    end_date = timezone.now().date() + timedelta(days=1)
     
     if period == 'yearly':
         # For yearly, get data for the last 5 years
@@ -275,6 +285,9 @@ def revenue_data_api(request):
     # Return JSON response
     return JsonResponse({
         'labels': labels,
+        'totalRevenue': totalRevenue,
+        'receivedRevenue': receivedRevenue,
+        'pendingRevenue': pendingRevenue,
         'datasets': [
             {
                 'label': 'Total Revenue',
@@ -313,7 +326,7 @@ def booking_data_api(request):
     chart_type = request.GET.get('chart_type', 'trend')  # trend or status
     
     # Calculate date range based on period
-    end_date = timezone.now().date()
+    end_date = timezone.now().date() + timedelta(days=1)
     
     if period == 'yearly':
         # For yearly, get data for the last 5 years
@@ -529,7 +542,7 @@ def cleaner_data_api(request):
     chart_type = request.GET.get('chart_type', 'bookings')  # bookings, performance, revenue, service_types, or detailed
     
     # Calculate date range based on period
-    end_date = timezone.now().date()
+    end_date = timezone.now().date() + timedelta(days=1)
     
     if period == 'yearly':
         # For yearly, get data for the last 5 years
@@ -922,7 +935,7 @@ def customer_data_api(request):
     months = int(request.GET.get('months', 6))
     
     # Calculate date range based on period
-    end_date = timezone.now().date()
+    end_date = timezone.now().date() + timedelta(days=1)
     
     if period == 'yearly':
         # For yearly, get data for the last 5 years
@@ -1013,7 +1026,7 @@ def addon_data_api(request):
     months = int(request.GET.get('months', 6))
     
     # Calculate date range based on period
-    end_date = timezone.now().date()
+    end_date = timezone.now().date() + timedelta(days=1)
     
     if period == 'yearly':
         # For yearly, get data for the last 5 years

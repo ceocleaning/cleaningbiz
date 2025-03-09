@@ -193,7 +193,9 @@ def process_webhook_data(webhook_data):
             # Calculate final amounts
             addons_result = calculateAddonsAmount(addons, addonsPrices)
             
-            final_total = calculateTotal + addons_result + customAddonTotal
+            sub_total = calculateTotal + addons_result + customAddonTotal
+            tax = sub_total * (businessSettingsObj.taxPercent / 100)
+            total = sub_total + tax
             
             # Create booking
             print("Creating booking...")
@@ -226,7 +228,8 @@ def process_webhook_data(webhook_data):
                 bathrooms=customer_data["bathrooms"],
                 squareFeet=customer_data["area"],
                 otherRequests=customer_data["additionalRequests"],
-                totalPrice=final_total,
+                totalPrice=total,
+                tax=tax,
                 addonDishes=addons["dishes"],
                 addonLaundryLoads=addons["laundry"],
                 addonWindowCleaning=addons["windows"],

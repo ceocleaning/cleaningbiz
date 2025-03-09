@@ -65,6 +65,7 @@ def process_payment(request):
             
             # Only mark invoice as paid if payment is completed
             if auto_complete:
+                payment.paidAt = timezone.now()
                 invoice.isPaid = True
                 invoice.save()
 

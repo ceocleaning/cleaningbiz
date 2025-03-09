@@ -143,20 +143,20 @@
                             No addons
                         {% endif %}
                     </td>
-                    <td class="text-end"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                    <td class="text-end"><strong id="amount_display">{{ invoice.amount|format_currency }}</strong></td>
                 </tr>
                 
                 <tr>
                     <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                    <td class="text-end"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                    <td class="text-end"><strong id="sub_total_display">{{ invoice.booking.totalPrice|format_currency }}</strong></td>
                 </tr>
                 <tr>
                     <td colspan="3" class="text-end"><strong>Tax (0%):</strong></td>
-                    <td class="text-end"><strong>$0.00</strong></td>
+                    <td class="text-end"><strong id="tax_display">{{ invoice.booking.tax|format_currency }}</strong></td>
                 </tr>
                 <tr>
                     <td colspan="3" class="text-end border-bottom"><strong>Total:</strong></td>
-                    <td class="text-end border-bottom"><strong>{{ invoice.amount|format_currency }}</strong></td>
+                    <td class="text-end border-bottom"><strong id="total_display">{{ invoice.amount|format_currency }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -257,6 +257,31 @@
 <script src="https://web.squarecdn.com/v1/square.js"></script>
 {% endif %}
 <script>
+
+
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const sub_total_display = document.getElementById('sub_total_display');
+        const tax_display = document.getElementById('tax_display');
+        const total_display = document.getElementById('total_display');
+        const amount_display = document.getElementById('amount_display');
+
+        // Get the text content and clean it properly to handle currency formatting
+        const totalText = total_display.innerText.replace(/[^0-9.-]+/g, '');
+        const taxText = tax_display.innerText.replace(/[^0-9.-]+/g, '');
+        
+        const total = parseFloat(totalText) || 0;
+        const tax = parseFloat(taxText) || 0;
+        
+        const sub_total = total - tax;
+
+        // Format with currency symbol
+        sub_total_display.textContent = `$${sub_total.toFixed(2)}`;
+        amount_display.textContent = `$${sub_total.toFixed(2)}`;
+    })
+
     const appId = '{{ settings.SQUARE_APP_ID }}';
     const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
     const square_location_id = '{{ settings.SQUARE_LOCATION_ID }}';

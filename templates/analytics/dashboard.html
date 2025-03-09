@@ -859,29 +859,12 @@
                         const totalRevenue = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
                         totalRevenueEl.textContent = `$${totalRevenue.toFixed(2)}`;
                         
-                        // For received and pending, we'll check if the API provides this data
-                        // If not, we'll use estimates
-                        if (receivedRevenueEl) {
-                            let receivedRevenue = 0;
-                            if (data.receivedRevenue !== undefined) {
-                                receivedRevenue = data.receivedRevenue;
-                            } else {
-                                // Estimate: 80% received
-                                receivedRevenue = totalRevenue * 0.8;
-                            }
-                            receivedRevenueEl.textContent = `$${receivedRevenue.toFixed(2)}`;
-                        }
+                        // Calculate received and pending revenue
+                        const receivedRevenue = data.receivedRevenue || 0;
+                        const pendingRevenue = data.pendingRevenue || 0;
                         
-                        if (pendingRevenueEl) {
-                            let pendingRevenue = 0;
-                            if (data.pendingRevenue !== undefined) {
-                                pendingRevenue = data.pendingRevenue;
-                            } else {
-                                // Estimate: 20% pending
-                                pendingRevenue = totalRevenue * 0.2;
-                            }
-                            pendingRevenueEl.textContent = `$${pendingRevenue.toFixed(2)}`;
-                        }
+                        receivedRevenueEl.textContent = `$${receivedRevenue.toFixed(2)}`;
+                        pendingRevenueEl.textContent = `$${pendingRevenue.toFixed(2)}`;
                     }
                     
                     // Update active button state

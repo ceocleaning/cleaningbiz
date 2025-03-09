@@ -108,8 +108,7 @@ def create_booking(request):
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             
         except Exception as e:
-            messages.error(request, f'Error creating booking: {str(e)}')
-            return redirect('bookings:create_booking')
+            raise Exception(f'Error creating booking: {str(e)}')
     
     
     prices = {
@@ -158,9 +157,8 @@ def edit_booking(request, bookingId):
     if request.method == "POST":
         try:
             # Get price details from form
-            subtotal = Decimal(request.POST.get('totalPrice', '0').strip() or '0')
-            tax_amount = Decimal(request.POST.get('tax', '0').strip() or '0')
-            total_amount = Decimal(request.POST.get('grandTotal', '0').strip() or '0')
+            totalPrice = Decimal(request.POST.get('totalAmount', '0'))
+            tax = Decimal(request.POST.get('tax', '0'))
 
             # Update booking details
             booking.firstName = request.POST.get('firstName')
@@ -180,12 +178,23 @@ def edit_booking(request, bookingId):
             booking.squareFeet = int(request.POST.get('squareFeet', '0').strip() or '0')
 
             booking.serviceType = request.POST.get('serviceType')
-            booking.cleaningDateTime = request.POST.get('cleaningDateTime')
+            booking.cleaningDate = request.POST.get('cleaningDate')
+            booking.startTime = request.POST.get('startTime')
             booking.recurring = request.POST.get('recurring')
 
             booking.otherRequests = request.POST.get('otherRequests', '')
-            booking.tax = tax_amount
-            booking.totalPrice = total_amount
+            booking.tax = tax
+            booking.totalPrice = totalPrice
+
+            # Assign cleaner if selected
+            cleaner_id = request.POST.get('selectedCleaner')
+            if cleaner_id:
+                try:
+                    cleaner = Cleaners.objects.get(id=cleaner_id)
+                    booking.cleaner = cleaner
+                    booking.save()
+                except Cleaners.DoesNotExist:
+                    pass  # Silently ignore if cleaner doesn't exist
 
             # Handle standard add-ons with proper default values
             addon_fields = [
@@ -217,8 +226,7 @@ def edit_booking(request, bookingId):
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             
         except Exception as e:
-            messages.error(request, f'Error updating booking: {str(e)}')
-            return redirect('bookings:edit_booking', bookingId=bookingId)
+            raise Exception(f'Error updating booking: {str(e)}')
 
     # For GET request, prepare the context
     prices = {
@@ -251,7 +259,7 @@ def edit_booking(request, bookingId):
         'existing_custom_addons': {addon.addon.id: addon.qty for addon in booking.customAddons.all()}
     }
 
-    return render(request, 'update_booking.html', context)
+    return render(request, 'edit_booking.html', context)
 
 
 def mark_completed(request, bookingId):
