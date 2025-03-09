@@ -8,7 +8,7 @@ from .test_error import test_error_view
 urlpatterns = [
     path('', views.LandingPage, name='LandingPage'),
     path('dashboard/', views.home, name='home'),
-    path('webhook/', handle_retell_webhook, name='retell_webhook'),
+    path('webhook/<str:secretKey>/', handle_retell_webhook, name='retell_webhook'),
     path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
 
     # Lead Management URLs

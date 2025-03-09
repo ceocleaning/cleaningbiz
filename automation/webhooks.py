@@ -85,6 +85,7 @@ def process_webhook_data(webhook_data):
         
         event = post_data.get("event")
         if event == "call_analyzed":
+            print("Call Analyzed")
             call_analysis = post_data.get("call", {}).get("call_analysis", {})
             custom_data = call_analysis.get("custom_analysis_data", {})
 
