@@ -197,7 +197,7 @@ def process_webhook_data(webhook_data):
             
             # Create booking
             print("Creating booking...")
-            cleaningDatetime = datetime.fromisoformat(cleaningDateTime)
+            cleaningDatetime = datetime.fromisoformat(customer_data["appointmentDateTime"])
             cleaningDate = cleaningDatetime.date()
             startTime = cleaningDatetime.time()
             endTime = (cleaningDatetime + timedelta(minutes=60)).time()
@@ -252,6 +252,7 @@ def process_webhook_data(webhook_data):
             
     except Exception as e:
         print(f"Error processing webhook: {str(e)}")
+        raise Exception(f"Error processing webhook: {str(e)}")
 
 
 # Sending Data to External Sources
@@ -421,4 +422,4 @@ def send_booking_data(booking):
 
     except Exception as e:
         print(f"Error in send_booking_data: {str(e)}")
-        return None
+        raise Exception(f"Error in send_booking_data: {str(e)}")
