@@ -87,7 +87,7 @@
                                data-bs-title="Edit invoice">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="" 
+                            <a href="{% url 'invoice:generate_pdf' invoice.invoiceId %}" 
                                class="btn btn-sm btn-outline-success me-2"
                                data-bs-toggle="tooltip" 
                                data-bs-title="Download invoice">

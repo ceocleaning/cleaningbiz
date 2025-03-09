@@ -406,17 +406,13 @@ def edit_integration(request, platform_id):
             platform.base_url = ''
             platform.auth_data = {}
         
-        try:
-            platform.save()
-            messages.success(request, 'Integration updated successfully!')
-            
-            if platform_type == 'direct_api':
-                return redirect('integration_mapping', platform_id=platform.id)
-            return redirect('integration_list')
-        except Exception as e:
-            messages.error(request, f'Error updating integration: {str(e)}')
-            raise Exception(str(e))
-    
+        platform.save()
+        messages.success(request, 'Integration updated successfully!')
+        
+        if platform_type == 'direct_api':
+            return redirect('integration_mapping', platform_id=platform.id)
+        return redirect('integration_list')
+       
     # Get choices from model
     platform_types = dict(PlatformIntegration.PLATFORM_TYPE_CHOICES)
     

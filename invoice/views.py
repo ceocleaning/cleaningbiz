@@ -162,6 +162,9 @@ def invoice_preview(request, invoiceId):
     except Invoice.DoesNotExist:
         messages.error(request, 'Invoice not found.')
         return redirect('invoice:all_invoices')
+    
+    except Exception as e:
+        raise Exception(f"Error Generating Invoice Preview: {str(e)}")
 
 @login_required
 def mark_invoice_paid(request, invoiceId):
@@ -184,12 +187,13 @@ def mark_invoice_paid(request, invoiceId):
         messages.success(request, f'Invoice {invoice.invoiceId} marked as paid successfully!')
         return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
     
-    return redirect('invoice:invoice_detail', invoiceId=invoiceId)
+    return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
 
 @login_required
 def generate_pdf(request, invoiceId):
     # Get the invoice
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
+    business = invoice.booking.business
     
     # Create a buffer to receive PDF data
     buffer = io.BytesIO()
@@ -231,20 +235,20 @@ def generate_pdf(request, invoiceId):
     # Create header table for logo and company info
     try:
         # Download and process logo
-        logo_response = requests.get("https://i.imgur.com/8bWQUQX.png")
+        logo_response = requests.get("https://img.freepik.com/free-vector/gradient-squeegee-logo-template_23-2150208857.jpg?uid=R23824890&ga=GA1.1.1921205845.1737568792&semt=ais_hybrid")
         logo_data = io.BytesIO(logo_response.content)
-        logo_img = RLImage(logo_data, width=100, height=40)
+        logo_img = RLImage(logo_data, width=150, height=60)
         
         header_data = [
             [logo_img,
-             Paragraph("CEO Cleaners<br/>123 Business Street<br/>New York, NY 10001<br/>Phone: (555) 123-4567<br/>Email: info@ceocleaners.com", 
+             Paragraph(f"{business.businessName}<br/>{business.address}<br/>Phone: {business.phone}<br/>Email: {business.user.email}", 
                       ParagraphStyle('CompanyInfo', parent=styles['Normal'], fontSize=9, alignment=TA_RIGHT))]
         ]
     except:
         # If logo fails to load, use text instead
         header_data = [
-            [Paragraph("CEO Cleaners", styles['CustomTitle']),
-             Paragraph("CEO Cleaners<br/>123 Business Street<br/>New York, NY 10001<br/>Phone: (555) 123-4567<br/>Email: info@ceocleaners.com", 
+            [Paragraph(f"{business.businessName}", styles['CustomTitle']),
+             Paragraph(f"{business.businessName}<br/>{business.address}<br/>Phone: {business.phone}<br/>Email: {business.user.email}", 
                       ParagraphStyle('CompanyInfo', parent=styles['Normal'], fontSize=9, alignment=TA_RIGHT))]
         ]
 
@@ -257,11 +261,35 @@ def generate_pdf(request, invoiceId):
     elements.append(header_table)
     elements.append(Spacer(1, 20))
     
+    # Add invoice details (date and bill to)
+    details_data = [
+        [Paragraph('<b>Invoice Date:</b>', styles['Normal']), 
+         Paragraph(f"{invoice.createdAt.strftime('%B %d, %Y')}", styles['Normal']),
+         Paragraph('<b>Bill To:</b>', styles['Normal']), 
+         Paragraph(f"{invoice.booking.firstName} {invoice.booking.lastName}<br/>{invoice.booking.email}<br/>{invoice.booking.phoneNumber}", styles['Normal'])],
+        [Paragraph('<b>Due Date:</b>', styles['Normal']), 
+         Paragraph(f"{(invoice.createdAt + timezone.timedelta(days=30)).strftime('%B %d, %Y')}", styles['Normal']),
+         Paragraph('<b>Payment Date:</b>', styles['Normal']), 
+         Paragraph(f"{invoice.payment_details.paidAt.strftime('%B %d, %Y') if invoice.isPaid and hasattr(invoice.payment_details, 'paidAt') and invoice.payment_details.paidAt else 'Not Paid Yet'}", styles['Normal'])]
+    ]
+    
+    details_table = Table(details_data, colWidths=[doc.width/8.0, doc.width*3/8.0, doc.width/8.0, doc.width*3/8.0])
+    details_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (1, -1), 'LEFT'),
+        ('ALIGN', (2, 0), (3, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('SPAN', (2, 1), (3, 1)),
+    ]))
+    elements.append(details_table)
+    elements.append(Spacer(1, 20))
+    
     # Add invoice header with status
     status_color = colors.green if invoice.isPaid else colors.red
+    status_text = 'PAID' if invoice.isPaid else 'UNPAID'
+    
     invoice_header = [
         [Paragraph(f"<font size=16><b>INVOICE #{invoice.invoiceId}</b></font>", styles['Normal']),
-         Paragraph(f"<font size=16 color={status_color}><b>{'PAID' if invoice.isPaid else 'UNPAID'}</b></font>", styles['RightAlign'])]
+         Paragraph(f"<font size=16 color={status_color}><b>{status_text}</b></font>", styles['RightAlign'])]
     ]
     header_table = Table(invoice_header, colWidths=[doc.width/2.0]*2)
     header_table.setStyle(TableStyle([
@@ -269,54 +297,74 @@ def generate_pdf(request, invoiceId):
         ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
     ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 10))
-    
-    # Add invoice details and client info in a table
-    details_data = [
-        ['Invoice Date:', invoice.createdAt.strftime('%B %d, %Y'), 'Bill To:', ''],
-        ['Due Date:', (invoice.createdAt + timezone.timedelta(days=30)).strftime('%B %d, %Y'), invoice.booking.name, ''],
-        ['', '', invoice.booking.email, ''],
-        ['', '', invoice.booking.phoneNumber, ''],
-    ]
-    
-    details_table = Table(details_data, colWidths=[doc.width/6.0, doc.width/3.0, doc.width/6.0, doc.width/3.0])
-    details_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (3, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('TOPPADDING', (0, 0), (-1, -1), 1),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
-        ('TEXTCOLOR', (2, 0), (2, -1), colors.grey),
-    ]))
-    elements.append(details_table)
     elements.append(Spacer(1, 20))
     
-    # Add service details
+    # Get addon information
+    addons = [
+        addon for addon in [
+            ['Dishes', invoice.booking.addonDishes],
+            ['Laundry Loads', invoice.booking.addonLaundryLoads],
+            ['Window Cleaning', invoice.booking.addonWindowCleaning],
+            ['Pets Cleaning', invoice.booking.addonPetsCleaning],
+            ['Fridge Cleaning', invoice.booking.addonFridgeCleaning],
+            ['Oven Cleaning', invoice.booking.addonOvenCleaning],
+            ['Baseboard', invoice.booking.addonBaseboard],
+            ['Blinds', invoice.booking.addonBlinds],
+            ['Green Cleaning', invoice.booking.addonGreenCleaning],
+            ['Cabinets Cleaning', invoice.booking.addonCabinetsCleaning],
+            ['Patio Sweeping', invoice.booking.addonPatioSweeping],
+            ['Garage Sweeping', invoice.booking.addonGarageSweeping],
+        ] if addon[1] is not None and addon[1] > 0
+    ]
+    
+    # Format addons text
+    addons_text = ""
+    if addons:
+        addons_text += "<b>Add-ons:</b><br/>"
+        for addon_name, addon_value in addons:
+            addons_text += f"- {addon_name}: {addon_value}<br/>"
+    
+    # Add custom addons if they exist
+    custom_addons = invoice.booking.customAddons.all()
+    if custom_addons.exists():
+        if addons_text:
+            addons_text += "<br/>"
+        addons_text += "<b>Custom Add-ons:</b><br/>"
+        for addon in custom_addons:
+            addons_text += f"- {addon.addon.addonName}: {addon.qty}<br/>"
+    
+    if not addons and not custom_addons.exists():
+        addons_text = "No addons"
+    
+    # Calculate subtotal (price without tax)
+    subtotal = invoice.booking.totalPrice - invoice.booking.tax
+    
+    # Add service details table
     service_data = [
-        ['Description', 'Details', 'Amount'],
+        ['Description', 'Details', 'Addons', 'Amount'],
         [
             Paragraph(f"<b>{invoice.booking.get_serviceType_display()}</b>", styles['Normal']),
             Paragraph(f"""
-                Date: {invoice.booking.cleaningDateTime.strftime('%B %d, %Y')}<br/>
-                Time: {invoice.booking.cleaningDateTime.strftime('%I:%M %p')}<br/>
+                Date: {invoice.booking.cleaningDate.strftime('%B %d, %Y')}<br/>
+                Time: {invoice.booking.startTime.strftime('%I:%M %p')}<br/>
                 Bedrooms: {invoice.booking.bedrooms}<br/>
                 Bathrooms: {invoice.booking.bathrooms}<br/>
                 Area: {invoice.booking.squareFeet} sq ft
             """, styles['Normal']),
-            Paragraph(f"<b>${invoice.amount}</b>", styles['RightAlign'])
+            Paragraph(addons_text, styles['Normal']),
+            Paragraph(f"<b>${subtotal:.2f}</b>", styles['RightAlign'])
         ],
     ]
     
-    # Calculate totals
+    # Add totals rows
     service_data.extend([
-        ['', Paragraph('<b>Subtotal:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount}</b>", styles['RightAlign'])],
-        ['', Paragraph('<b>Tax (0%):</b>', styles['RightAlign']), Paragraph('<b>$0.00</b>', styles['RightAlign'])],
-        ['', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount}</b>", styles['RightAlign'])],
+        ['', '', Paragraph('<b>Subtotal:</b>', styles['RightAlign']), Paragraph(f"<b>${subtotal:.2f}</b>", styles['RightAlign'])],
+        ['', '', Paragraph('<b>Tax:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.booking.tax:.2f}</b>", styles['RightAlign'])],
+        ['', '', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount:.2f}</b>", styles['RightAlign'])],
     ])
     
-    service_table = Table(service_data, colWidths=[doc.width/3.0, doc.width/3.0, doc.width/3.0])
+    # Create service table with styling to match the preview
+    service_table = Table(service_data, colWidths=[doc.width/4.0]*4)
     service_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8f9fa')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
@@ -327,18 +375,21 @@ def generate_pdf(request, invoiceId):
         ('BACKGROUND', (0, 1), (-1, 1), colors.white),
         ('TEXTCOLOR', (0, 1), (-1, 1), colors.black),
         ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('GRID', (0, 0), (-1, -2), 0.25, colors.black),
+        ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),  # Right align amounts
+        ('GRID', (0, 0), (-1, 1), 0.25, colors.black),
         ('LINEBELOW', (0, -1), (-1, -1), 1, colors.black),
         ('TOPPADDING', (0, 0), (-1, -1), 6),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
     elements.append(service_table)
     
-    # Add payment instructions
+    # Add payment instructions and notes in a two-column layout
     elements.append(Spacer(1, 20))
     payment_data = [
-        [Paragraph("<b>Payment Instructions</b>", styles['Normal']),
-         Paragraph("<b>Note</b>", styles['Normal'])],
+        [Paragraph("<b>Payment Instructions</b>", 
+                  ParagraphStyle('Header', parent=styles['Normal'], fontSize=10, backColor=colors.HexColor('#f8f9fa'))),
+         Paragraph("<b>Note</b>", 
+                  ParagraphStyle('Header', parent=styles['Normal'], fontSize=10, backColor=colors.HexColor('#f8f9fa')))],
         [Paragraph("""
             <b>Bank Transfer:</b><br/>
             Bank: Example Bank<br/>
