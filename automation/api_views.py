@@ -8,7 +8,7 @@ from retell import Retell
 from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
-import pytz
+import dateparser
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
@@ -375,6 +375,75 @@ def check_availability_for_booking(request):
         
         # Return response
         return JsonResponse({
+            "available": is_available,
+            "alternative_slots": alternative_slots,
+            "cleaners": [{
+                "id": c.id,
+                "name": c.name
+            } for c in available_cleaners]
+        })
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+# API endpoint to check availability with natural language date parsing
+@api_view(['POST'])
+@csrf_exempt
+def check_availability_n8n(request, secretKey):
+    """
+    API endpoint to check appointment availability using natural language date input.
+    Accepts inputs like 'Tuesday 10 am', 'tomorrow 10 am', etc.
+    Returns availability status and alternative slots if not available.
+    """
+    try:
+        # Verify secret key
+        try:
+            api_credential = ApiCredential.objects.get(secretKey=secretKey)
+            business = api_credential.business
+        except ApiCredential.DoesNotExist:
+            return JsonResponse({"error": "Invalid or inactive API key"}, status=403)
+        
+        # Get data from request
+        data = json.loads(request.body)
+        date_string = data.get('datetime')
+        
+        if not date_string:
+            return JsonResponse({"error": "Missing datetime parameter"}, status=400)
+        
+        # Parse the human language date string using dateparser
+        try:
+            parsed_datetime = dateparser.parse(date_string)
+            
+            if parsed_datetime is None:
+                return JsonResponse({"error": "Could not parse the datetime string"}, status=400)
+                
+            # Ensure datetime is in the future
+            current_time = datetime.now()
+            if parsed_datetime <= current_time:
+                return JsonResponse({"error": "The requested time has already passed"}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({"error": f"Error parsing datetime: {str(e)}"}, status=400)
+        
+        # Get all active cleaners for the business
+        cleaners = get_cleaners_for_business(business)
+        
+        # Check availability
+        available_cleaners = []
+        is_available, _ = is_slot_available(cleaners, parsed_datetime, available_cleaners)
+        
+        # Find alternative slots if not available
+        alternative_slots = []
+        if not is_available:
+            alt_slots, _ = find_alternate_slots(cleaners, parsed_datetime, max_alternates=3)
+            alternative_slots = alt_slots
+        
+        # Format the parsed datetime for response
+        formatted_datetime = parsed_datetime.strftime('%Y-%m-%d %H:%M')
+        
+        # Return response
+        return JsonResponse({
+            "parsed_datetime": formatted_datetime,
             "available": is_available,
             "alternative_slots": alternative_slots,
             "cleaners": [{

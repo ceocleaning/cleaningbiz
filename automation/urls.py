@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
-from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking
+from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, check_availability_n8n
 
 
 urlpatterns = [
@@ -19,8 +19,9 @@ urlpatterns = [
 
     # API endpoints
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
-    path('api/availability/<str:secretKey>/test', test_check_availability, name='test_check_availability'),
+    path('api/availability/<str:secretKey>/test/', test_check_availability, name='test_check_availability'),
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
+    path('api/check-availability/n8n/<str:secretKey>/', check_availability_n8n, name='check_availability_n8n'),
     
     # Test pages
     path('test/', views.test_features, name='test_features'),
