@@ -36,8 +36,8 @@
                                    class="form-control" 
                                    id="phone" 
                                    name="phone" 
-                                   placeholder="Enter Phone Number"
-                                   pattern="[0-9]{10,15}"
+                                   placeholder="eg. +14155552671"
+                                   pattern="^\+[1-9]\d{0,2}\d{1,4}\d{3,4}\d{4,6}$"
                                    title="Please enter a valid phone number"
                                    required>
                         </div>
@@ -52,19 +52,6 @@
                                       required></textarea>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label for="timezone">Time Zone</label>
-                            <select class="form-select" 
-                                    id="timezone" 
-                                    name="timezone" 
-                                    required>
-                                {% for tz in timezones %}
-                                <option value="{{ tz }}" {% if tz == 'UTC' %}selected{% endif %}>{{ tz }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="form-text">Select the time zone where your business operates</div>
-                        </div>
-
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Register Business</button>
                         </div>

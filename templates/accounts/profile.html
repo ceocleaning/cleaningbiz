@@ -503,7 +503,7 @@
                                     <input type="password" 
                                            class="form-control api-key-input masked" 
                                            id="secretKey" 
-                                           value="{{ credentials.secretKey }}" 
+                                           value="{{ credentials.secretKey|default:'' }}" 
                                            readonly>
                                     <button class="btn btn-outline-secondary key-action-btn" 
                                             type="button" 
@@ -513,6 +513,7 @@
                                             title="Show/Hide Key">
                                         <i class="fa fa-eye"></i>
                                     </button>
+                                    {% if credentials.secretKey %}
                                     <button class="btn btn-outline-primary key-action-btn"
                                             type="button"
                                             onclick="copyToClipboard('secretKey')"
@@ -521,6 +522,9 @@
                                             title="Copy to Clipboard">
                                         <i class="fa fa-clipboard me-1"></i>Copy
                                     </button>
+                                    {% else %}
+                                    <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-primary">Generate</a>
+                                    {% endif %}
                                 </div>
                                 <small class="text-muted">
                                     <i class="fa fa-lock me-1"></i>
@@ -544,7 +548,7 @@
                                     <input type="password" 
                                            class="form-control api-key-input masked" 
                                            id="apiKey" 
-                                           value="{{ credentials.retellAPIKey }}" 
+                                           value="{{ credentials.retellAPIKey|default:'' }}" 
                                            readonly>
                                     <button class="btn btn-outline-secondary key-action-btn" 
                                             type="button" 
@@ -572,8 +576,33 @@
                     </div>
                 </div>
 
+                <!-- Voice Agent Number Card -->
+                <div class="col-12 pt-2 pb-2">
+                  <div class="dashboard-card api-key-card">
+                      <div class="card-body">
+                          <div class="api-key-wrapper">
+                              <span class="badge bg-info rounded-pill">Retell Voice Agent Number</span>
+                              <div class="api-key-label">
+                                  <i class="fa fa-phone me-2"></i>Retell Voice Agent Number
+                              </div>
+                             
+                                  <div class="input-group mb-3">
+                                      <input type="text" 
+                                             class="form-control api-key-input" 
+                                             id="voiceAgentNumber" 
+                                             value="{{ credentials.voiceAgentNumber|default:'' }}" 
+                                             readonly>
+                                     
+                                  </div>
+                                 
+                             
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
                 <!-- Webhook URL Card -->
-                <div class="col-12 pt-4 pb-4">
+                <div class="col-12 pt-2 pb-2">
                     <div class="dashboard-card api-key-card">
                         <div class="card-body">
                             <div class="api-key-wrapper">
@@ -614,7 +643,7 @@
                 </div>
 
                 <!-- Thumbtack URL Card -->
-                <div class="col-12 pt-2 pb-4">
+                <div class="col-12 pb-2">
                   <div class="dashboard-card api-key-card">
                       <div class="card-body">
                           <div class="api-key-wrapper">

@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from leadsAutomation.error_handlers import handler400, handler403, handler404, handler500
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,5 +30,9 @@ urlpatterns = [
     path('analytics/', include('analytics.urls')),
 ]
 
-
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+handler400 = 'leadsAutomation.error_handlers.handler400'
+handler403 = 'leadsAutomation.error_handlers.handler403'
+handler404 = 'leadsAutomation.error_handlers.handler404'
+handler500 = 'leadsAutomation.error_handlers.handler500'

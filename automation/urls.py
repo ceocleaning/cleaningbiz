@@ -2,13 +2,14 @@ from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
 from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, check_availability_n8n
+from .test_error import test_error_view
 
 
 urlpatterns = [
     path('', views.LandingPage, name='LandingPage'),
     path('dashboard/', views.home, name='home'),
-    path('webhooks/retell/', handle_retell_webhook, name='retell_webhook'),
-    path('webhooks/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
+    path('webhook/', handle_retell_webhook, name='retell_webhook'),
+    path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
 
     # Lead Management URLs
     path('leads/', views.all_leads, name='all_leads'),
@@ -26,6 +27,7 @@ urlpatterns = [
     # Test pages
     path('test/', views.test_features, name='test_features'),
     path('test/availability/', views.test_availability_api, name='test_availability_api'),
+    path('test/error/', test_error_view, name='test_error'),  # Test route for error handling
    
     # Cleaners URLs
     path('cleaners/', views.cleaners_list, name='cleaners_list'),

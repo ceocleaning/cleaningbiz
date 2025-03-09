@@ -10,44 +10,46 @@
             Integration Details
         </div>
         <div class="card-body">
-            <form method="post">
+            <form method="POST" action="{% url 'add_integration' %}">
                 {% csrf_token %}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">Platform Name</label>
-                        <input type="text" name="name" class="form-control" value="{{ integration.name|default:'' }}" required>
+                        <label class="form-label">Service Name</label>
+                        <input type="text" name="serviceName" class="form-control" value="{{ integration.name|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Base URL</label>
-                        <input type="url" name="base_url" class="form-control" value="{{ integration.base_url|default:'' }}" required>
-                        <div class="form-text">The base URL for the API endpoint (e.g., https://api.example.com/v1)</div>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Authentication Type</label>
-                        <select name="auth_type" class="form-select" id="authType">
-                            {% for value, label in auth_types %}
-                            <option value="{{ value }}" {% if integration.auth_type == value %}selected{% endif %}>{{ label }}</option>
+                        <label class="form-label">Platform Type</label>
+                        <select name="platformType" class="form-select" id="platformType" required>
+                            {% for value, label in platform_types.items %}
+                            <option value="{{ value }}" {% if integration.platform_type == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
 
-                <!-- Auth fields will be shown/hidden based on auth type -->
-                <div id="authFields" class="row mb-3">
-                    <div class="col-md-12 auth-field" id="tokenAuth" style="display: none;">
-                        <label class="form-label">Authentication Token</label>
-                        <input type="password" name="auth_token" class="form-control" value="{{ integration.auth_data.token|default:'' }}">
+                <!-- Direct API fields -->
+                <div id="directApiFields" class="platform-fields">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Base URL</label>
+                            <input type="url" name="api_url" class="form-control" value="{{ integration.base_url|default:'' }}">
+                            <div class="form-text">The base URL for the API endpoint (e.g., https://api.example.com/v1)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <input type="password" name="api_key" class="form-control" value="{{ integration.auth_data.token|default:'' }}">
+                        </div>
                     </div>
-                    <div class="col-md-6 auth-field" id="basicAuth" style="display: none;">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" value="{{ integration.auth_data.username|default:'' }}">
-                    </div>
-                    <div class="col-md-6 auth-field" id="basicAuthPass" style="display: none;">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" value="{{ integration.auth_data.password|default:'' }}">
+                </div>
+
+                <!-- Workflow platform fields -->
+                <div id="workflowFields" class="platform-fields">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Webhook URL</label>
+                            <input type="url" name="webhook_url" class="form-control" value="{{ integration.webhook_url|default:'' }}">
+                            <div class="form-text">The URL where lead data will be sent</div>
+                        </div>
                     </div>
                 </div>
 
@@ -68,32 +70,37 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const authType = document.getElementById('authType');
-    const authFields = {
-        'token': document.getElementById('tokenAuth'),
-        'basic': [document.getElementById('basicAuth'), document.getElementById('basicAuthPass')],
-        'none': []
-    };
+    const platformType = document.getElementById('platformType');
+    const directApiFields = document.getElementById('directApiFields');
+    const workflowFields = document.getElementById('workflowFields');
 
-    function updateAuthFields() {
-        // Hide all auth fields first
-        document.querySelectorAll('.auth-field').forEach(field => {
+    function updateFields() {
+        // Hide all fields first
+        document.querySelectorAll('.platform-fields').forEach(field => {
             field.style.display = 'none';
         });
 
-        // Show relevant fields based on selected auth type
-        const selectedAuth = authType.value;
-        if (selectedAuth === 'token') {
-            authFields.token.style.display = 'block';
-        } else if (selectedAuth === 'basic') {
-            authFields.basic.forEach(field => {
-                field.style.display = 'block';
-            });
+        // Show relevant fields based on selected platform type
+        const selectedType = platformType.value;
+        if (selectedType === 'direct_api') {
+            directApiFields.style.display = 'block';
+            // Make direct API fields required when this option is selected
+            document.querySelector('input[name="api_url"]').required = true;
+            document.querySelector('input[name="api_key"]').required = true;
+            // Make webhook URL not required
+            document.querySelector('input[name="webhook_url"]').required = false;
+        } else {
+            workflowFields.style.display = 'block';
+            // Make webhook URL required when this option is selected
+            document.querySelector('input[name="webhook_url"]').required = true;
+            // Make direct API fields not required
+            document.querySelector('input[name="api_url"]').required = false;
+            document.querySelector('input[name="api_key"]').required = false;
         }
     }
 
-    authType.addEventListener('change', updateAuthFields);
-    updateAuthFields(); // Initial state
+    platformType.addEventListener('change', updateFields);
+    updateFields(); // Initial state
 });
 </script>
 {% endblock %}

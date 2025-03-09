@@ -24,6 +24,7 @@ def SignupPage(request):
     
     if request.method == 'POST':
         username = request.POST.get('username')
+        email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
         
@@ -32,7 +33,7 @@ def SignupPage(request):
                 messages.error(request, 'Username already exists.')
                 return redirect('accounts:signup')
 
-            user = User.objects.create_user(username=username, password=password1)
+            user = User.objects.create_user(username=username, password=password1, email=email)
             messages.success(request, 'Account created successfully!')
             login(request, user)
             return redirect('home')
@@ -149,10 +150,7 @@ def register_business(request):
         messages.warning(request, 'You already have a registered business.')
         return redirect('accounts:profile')
     
-    # Get list of timezones for the template
-    import pytz
-    timezones = pytz.common_timezones
-    
+
     if request.method == 'POST':
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
@@ -161,7 +159,7 @@ def register_business(request):
         # Validate required fields
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/register_business.html', {'timezones': timezones})
+            return render(request, 'accounts/register_business.html')
         
         try:
             # Create business
@@ -185,9 +183,9 @@ def register_business(request):
             
         except Exception as e:
             messages.error(request, f'Error registering business: {str(e)}')
-            return render(request, 'accounts/register_business.html', {'timezones': timezones})
+            raise Exception(str(e))
     
-    return render(request, 'accounts/register_business.html', {'timezones': timezones})
+    return render(request, 'accounts/register_business.html')
 
 
 @login_required
@@ -196,23 +194,23 @@ def edit_business(request):
     if not business:
         return redirect('accounts:register_business')
     
-    # Get list of timezones for the template
-    import pytz
-    timezones = pytz.common_timezones
-    
+
     if request.method == 'POST':
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+        email = request.POST.get('email')
         
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/edit_business.html', {'business': business, 'timezones': timezones})
+            return render(request, 'accounts/edit_business.html', {'business': business})
         
         try:
             business.businessName = businessName
             business.phone = phone
             business.address = address
+            business.user.email = email
+            business.user.save()
             business.save()
             
             messages.success(request, 'Business information updated successfully!')
@@ -220,8 +218,9 @@ def edit_business(request):
             
         except Exception as e:
             messages.error(request, f'Error updating business: {str(e)}')
+            raise Exception(str(e))
     
-    return render(request, 'accounts/edit_business.html', {'business': business, 'timezones': timezones})
+    return render(request, 'accounts/edit_business.html', {'business': business})
 
 
 @login_required
@@ -266,8 +265,9 @@ def edit_business_settings(request):
             
         except Exception as e:
             messages.error(request, f'Error updating settings: {str(e)}')
+            raise Exception(str(e))
     
-    return render(request, 'accounts/edit_business_settings.html', {'settings': settings})
+    return render(request, 'accounts/edit_business_settings.html', {'settings': settings, 'business': business})
 
 
 @login_required
@@ -290,6 +290,7 @@ def edit_credentials(request):
             
         except Exception as e:
             messages.error(request, f'Error updating credentials: {str(e)}')
+            raise Exception(str(e))
     
     return render(request, 'accounts/edit_credentials.html', {'credentials': credentials})
 
@@ -310,6 +311,7 @@ def generate_secret_key(request):
         messages.success(request, 'Secret key generated successfully!')
     except Exception as e:
         messages.error(request, f'Error generating secret key: {str(e)}')
+        raise Exception(str(e))
     
     return redirect('accounts:profile')
 
@@ -354,9 +356,10 @@ def edit_custom_addon(request, addon_id):
             
             return JsonResponse({'status': 'success'})
         except CustomAddons.DoesNotExist:
+           
             return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            raise Exception(str(e))
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
@@ -375,7 +378,7 @@ def delete_custom_addon(request, addon_id):
         except CustomAddons.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            raise Exception(str(e))
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
@@ -469,10 +472,7 @@ def test_email_settings(request):
             'message': 'Gmail authentication failed. Please check your email and app password.'
         })
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Error sending test email: {str(e)}'
-        })
+        raise Exception(str(e))
 
 
 def forgot_password(request):
@@ -555,6 +555,9 @@ def forgot_password(request):
             
         except User.DoesNotExist:
             messages.error(request, 'No account found with this email address.')
+        
+        except Exception as e:
+            raise Exception(str(e))
     
     return render(request, 'accounts/forgot_password.html')
 
@@ -633,6 +636,8 @@ def verify_otp(request, email):
                 
         except User.DoesNotExist:
             messages.error(request, 'Invalid email address.')
+        except Exception as e:
+            raise Exception(str(e))
     
     return render(request, 'accounts/verify_otp.html', {'email': email})
 
@@ -701,6 +706,9 @@ def resend_otp(request, email):
     except User.DoesNotExist:
         messages.error(request, 'Invalid email address.')
     
+    except Exception as e:
+        raise Exception(str(e))
+    
     return redirect('accounts:verify_otp', email=email)
 
 
@@ -750,6 +758,9 @@ def reset_password(request, email, token):
     except User.DoesNotExist:
         messages.error(request, 'Invalid email address.')
         return redirect('accounts:forgot_password')
+    
+    except Exception as e:
+        raise Exception(str(e))
     
     return render(request, 'accounts/reset_password.html', {'email': email, 'token': token})
 

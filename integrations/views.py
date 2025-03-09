@@ -42,19 +42,20 @@ def add_integration(request):
 
         if platform_type == 'direct_api':
             integration_data.update({
-                'base_url': request.POST.get('baseUrl'),
+                'base_url': request.POST.get('api_url'),
                 'auth_type': 'token',  # Default to token auth for now
-                'auth_data': {'token': request.POST.get('apiKey')}
+                'auth_data': {'token': request.POST.get('api_key')}
             })
         else:  # workflow platform
             integration_data.update({
-                'webhook_url': request.POST.get('webhookUrl'),
+                'webhook_url': request.POST.get('webhook_url'),
                 'auth_type': 'none'
             })
 
         # Create new integration
         integration = PlatformIntegration.objects.create(**integration_data)
 
+      
         messages.success(request, 'Integration added successfully!')
         if platform_type == 'direct_api':
             return redirect('integration_mapping', platform_id=integration.id)
@@ -65,7 +66,7 @@ def add_integration(request):
         'integration': None
     }
     
-    return render(request, 'accounts/add_integration.html', context)
+    return render(request, 'integrations/add_integration.html', context)
 
 @login_required
 def integration_mapping(request, platform_id):
@@ -376,34 +377,52 @@ def edit_integration(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
     
     if request.method == 'POST':
-        platform.name = request.POST.get('name')
-        platform.base_url = request.POST.get('base_url')
-        platform.auth_type = request.POST.get('auth_type')
-        platform.is_active = request.POST.get('is_active') == 'on'
+        name = request.POST.get('serviceName')
+        platform_type = request.POST.get('platformType')
+        is_active = request.POST.get('is_active') == 'on'
         
-        auth_data = {}
-        if platform.auth_type == 'token':
-            auth_data = {
-                'token': request.POST.get('auth_token')
-            }
-        elif platform.auth_type == 'basic':
-            auth_data = {
-                'username': request.POST.get('username'),
-                'password': request.POST.get('password')
-            }
+        # Update basic fields
+        platform.name = name
+        platform.platform_type = platform_type
+        platform.is_active = is_active
         
-        platform.auth_data = auth_data
-        platform.save()
+        # Update type-specific fields
+        if platform_type == 'direct_api':
+            platform.base_url = request.POST.get('api_url')
+            platform.auth_type = 'token'  # Default to token auth
+            
+            # Only update the token if a new one is provided
+            api_key = request.POST.get('api_key')
+            if api_key:
+                platform.auth_data = {'token': api_key}
+                
+            # Clear webhook URL if switching from workflow to direct API
+            platform.webhook_url = ''
+        else:  # workflow platform
+            platform.webhook_url = request.POST.get('webhook_url')
+            platform.auth_type = 'none'
+            
+            # Clear API-specific fields if switching from direct API to workflow
+            platform.base_url = ''
+            platform.auth_data = {}
         
-        messages.success(request, 'Integration updated successfully!')
-        return redirect('integration_list')
+        try:
+            platform.save()
+            messages.success(request, 'Integration updated successfully!')
+            
+            if platform_type == 'direct_api':
+                return redirect('integration_mapping', platform_id=platform.id)
+            return redirect('integration_list')
+        except Exception as e:
+            messages.error(request, f'Error updating integration: {str(e)}')
+            raise Exception(str(e))
     
     # Get choices from model
-    auth_types = PlatformIntegration._meta.get_field('auth_type').choices
+    platform_types = dict(PlatformIntegration.PLATFORM_TYPE_CHOICES)
     
-    return render(request, 'integrations/add_integration.html', {
+    return render(request, 'integrations/edit_integration.html', {
         'integration': platform,
-        'auth_types': auth_types
+        'platform_types': platform_types,
     })
 
 @login_required
