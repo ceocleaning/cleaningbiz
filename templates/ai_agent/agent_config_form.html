@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if mode == 'edit' %}Edit{% else %}Create{% endif %} AI Agent Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{% if mode == 'edit' %}Edit{% else %}Create{% endif %} AI Voice Agent Configuration</h1>
+            <p class="text-muted">{% if mode == 'edit' %}Update the configuration for {{ config.business.businessName }}{% else %}Configure a new AI Voice Agent for your business{% endif %}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if mode == 'edit' %}
+            <a href="{% url 'ai_agent:agent_config' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" id="agentConfigForm">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4>Basic Information</h4>
+                        <hr>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+      
+                    <div class="col-md-6 mb-3">
+                        <label for="agent_name" class="form-label">Agent Name</label>
+                        <input type="text" class="form-control" id="agent_name" name="agent_name" value="{% if config %}{{ config.agent_name }}{% else %}Sarah{% endif %}" required>
+                        <div class="form-text">The name your AI Voice Agent will use</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="agent_role" class="form-label">Agent Role</label>
+                        <input type="text" class="form-control" id="agent_role" name="agent_role" value="{% if config %}{{ config.agent_role }}{% else %}virtual customer support and sales representative{% endif %}" required>
+                        <div class="form-text">The role description for your AI Voice Agent</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4>Business Details</h4>
+                        <hr>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12 mb-3">
+                        <label for="business_description" class="form-label">Business Description</label>
+                        <textarea class="form-control" id="business_description" name="business_description" rows="4">{% if config %}{{ config.business_description }}{% endif %}</textarea>
+                        <div class="form-text">Describe your business in detail (services, specialties, etc.)</div>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <label for="business_mission" class="form-label">Business Mission</label>
+                        <textarea class="form-control" id="business_mission" name="business_mission" rows="4" placeholder="Enter each mission point on a new line">{% if config %}{{ config.business_mission }}{% endif %}</textarea>
+                        <div class="form-text">Your business mission or values (one per line)</div>
+                    </div>
+                </div>
+     
+                <div class="row mb-3">
+                    <div class="col-12 mb-3">
+                        <label for="services" class="form-label">Services</label>
+                        <textarea class="form-control" placeholder="Enter services one per line" id="services" name="services" rows="6">{% if config %}{{ config.services }}{% endif %}</textarea>
+                        <div class="form-text">List your services one per line (e.g., "Regular Cleaning - Weekly cleaning service")</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12 mb-3">
+                        <label for="script" class="form-label">Script</label>
+                        <textarea class="form-control" id="script" name="script" rows="6">{% if config %}{{ config.script }}{% endif %}</textarea>
+                        <div class="form-text">The script for the AI Voice Agent</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4>Additional Settings</h4>
+                        <hr>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12 mb-3">
+                        <label for="custom_instructions" class="form-label">Custom Instructions</label>
+                        <textarea class="form-control" id="custom_instructions" name="custom_instructions" rows="4">{% if config %}{{ config.custom_instructions }}{% endif %}</textarea>
+                        <div class="form-text">Any additional instructions for the AI Voice Agent</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Update{% else %}Create{% endif %} Configuration</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}{% endblock %}
+{% endblock %}

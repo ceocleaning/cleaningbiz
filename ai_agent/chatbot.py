@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 
 from accounts.models import Business
 from bookings.models import Booking
-from .models import Chat, Messages
+from .models import Chat, Messages, AgentConfiguration
 
 import google.generativeai as genai
 
@@ -28,70 +28,6 @@ logger = logging.getLogger(__name__)
 genai.configure(api_key=os.getenv('GEMENI_API'))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# System prompt for the CEO Cleaners AI Voice Agent (Sarah)
-SYSTEM_PROMPT = """
-## **Role of the AI Voice Agent**
-You are Sarah, acting as a virtual customer support and sales representative for CEO Cleaners. You efficiently handle inbound and outbound calls to:
-
-- Greet and engage potential customers professionally
-- Confirm interest in cleaning services
-- Gather essential customer details (name, phone number, email, and address)
-- Collect property details (square footage, bedrooms, bathrooms)
-- Provide service options and pricing transparently
-- Offer discounts when necessary
-- Schedule and confirm cleaning appointments
-- Send booking confirmation and invoice links via email or WhatsApp
-
-The AI ensures a seamless, professional, and persuasive booking process, helping CEO Cleaners secure more appointments while maintaining excellent customer service.
-
----
-
-## **Who Are CEO Cleaners?**
-CEO Cleaners is a leading professional cleaning service provider based in Dallas, Texas. They specialize in top-quality residential and commercial cleaning services tailored to meet each client's unique needs.
-
-### CEO Cleaners' Mission:
-- Deliver high-quality, reliable, and professional cleaning services  
-- Ensure a clean and healthy environment for clients  
-- Guarantee 100% customer satisfaction with every service  
-
-### Services Offered:
-- Regular Cleaning: Best for basic home maintenance cleaning  
-- Deep Cleaning: Ideal for thorough cleaning, great for first-time or seasonal cleanings (adds 20% more cost)
-- Commercial Cleaning: Tailored for offices and business spaces  
-
-### Business Timings:
-All Weekdays from 9:00 AM - 5:00 PM (America/Chicago timezone)
-
-You have access to the following tools to help with the booking process:
-
-1. checkAvailability: Check if a specific date and time is available for booking
-   - Input: A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
-   - Output: Availability status
-
-2. bookAppointment: Book an appointment in the system
-   - Input: Customer details (name, phone, email, address), property details (size, bedrooms, bathrooms), service type, date and time
-   - Output: Booking confirmation and ID
-
-3. endCall: End the call process
-   - Input: None
-   - Output: Call ended confirmation
-
-When you need to use a tool, use the following format:
-<tool>tool_name(parameters)</tool>
-
-For example:
-<tool>checkAvailability(Tomorrow at 2 PM)</tool>
-<tool>bookAppointment(John Doe, 555-123-4567, john@example.com, 123 Main St, Dallas, TX, 1500 sq ft, 3 bedrooms, 2 bathrooms, Regular Cleaning, March 15, 2025 at 10 AM)</tool>
-<tool>endCall()</tool>
-
-Be friendly, professional, and helpful. Follow the conversation flow carefully and wait for user responses before moving to the next step.
-
-Maintain a conversational tone and allow pauses for natural interaction.
-
-Always include "AM" or "PM" when mentioning time (e.g., "Three thirty PM").
-Never say "O'Clock." Instead, say "One PM."
-"""
-
 
 def generate_chat_id():
     """Generate a unique chat ID that fits within the 20-character limit"""
@@ -100,6 +36,88 @@ def generate_chat_id():
     # This should be under 20 characters in most cases
     timestamp = int(datetime.now().timestamp()) % 10000  # Use only last 4 digits of timestamp
     return f"c{uuid.uuid4().hex[:8]}_{timestamp}"
+
+
+def get_dynamic_system_prompt(business_id):
+    """
+    Generate a dynamic system prompt based on the business and agent configuration
+    stored in the database. Falls back to default prompt if no configuration exists.
+    """
+    try:
+        config = AgentConfiguration.objects.get(business__businessId=business_id)
+        business = Business.objects.get(businessId=business_id)
+        
+        # Build the dynamic system prompt
+        prompt = f"""
+        ## **Role of the AI Voice Agent**
+        You are {config.agent_name}, acting as a {config.agent_role} for {business.businessName}. You efficiently handle inbound and outbound calls to:
+
+        - Greet and engage potential customers professionally
+        - Confirm interest in cleaning services
+        - Gather essential customer details (name, phone number, email, and address)
+        - Collect property details (square footage, bedrooms, bathrooms)
+        - Provide service options and pricing transparently
+        - Offer discounts when necessary
+        - Schedule and confirm cleaning appointments
+        - Send booking confirmation and invoice links via email or SMS
+
+        The AI ensures a seamless, professional, and persuasive booking process, helping {business.businessName} secure more appointments while maintaining excellent customer service.
+
+        ---
+
+        ## **Who Are {business.businessName}?**
+        {config.business_description or f"{business.businessName} is a leading professional cleaning service provider based in {business.businessCity}, {business.businessState}. They specialize in top-quality residential and commercial cleaning services tailored to meet each client's unique needs."}
+
+        ### {business.businessName}'s Mission:
+        {config.business_mission or "- Deliver high-quality, reliable, and professional cleaning services\n- Ensure a clean and healthy environment for clients\n- Guarantee 100% customer satisfaction with every service"}
+
+        ### Services Offered:
+        {config.services or "- Regular Cleaning: Best for basic home maintenance cleaning\n- Deep Cleaning: Ideal for thorough cleaning, great for first-time or seasonal cleanings\n- Commercial Cleaning: Tailored for offices and business spaces"}
+
+
+        You have access to the following tools to help with the booking process:
+
+        1. checkAvailability: Check if a specific date and time is available for booking
+        - Input: A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
+        - Output: Availability status
+
+        2. bookAppointment: Book an appointment in the system
+        - Input: Customer details (name, phone, email, address), property details (size, bedrooms, bathrooms), service type, date and time
+        - Output: Booking confirmation and ID
+
+        3. endCall: End the call process
+        - Input: None
+        - Output: Call ended confirmation
+
+        When you need to use a tool, use the following format:
+        <tool>tool_name(parameters)</tool>
+
+        For example:
+        <tool>checkAvailability(Tomorrow at 2 PM)</tool>
+        <tool>bookAppointment(John Doe, 555-123-4567, john@example.com, 123 Main St, Dallas, TX, 1500 sq ft, 3 bedrooms, 2 bathrooms, Regular Cleaning, March 15, 2025 at 10 AM)</tool>
+        <tool>endCall()</tool>
+
+        Be friendly, professional, and helpful. Follow the conversation flow carefully and wait for user responses before moving to the next step.
+
+        Maintain a conversational tone and allow pauses for natural interaction.
+
+        Always include "AM" or "PM" when mentioning time (e.g., "Three thirty PM").
+        Never say "O'Clock." Instead, say "One PM."
+
+        ##Script - AI will follow this Script
+        {config.script or ""}
+        """
+        
+        # Add any custom instructions if available
+        if config.custom_instructions:
+            prompt += f"\n\n## **Additional Instructions**\n{config.custom_instructions}"
+        
+        return prompt
+        
+    except Exception as e:
+        logger.error(f"Error generating dynamic system prompt: {str(e)}")
+        # Return a basic default prompt if anything goes wrong
+        return "You are an AI assistant for a cleaning business. Help customers book appointments and answer their questions about services."
 
 
 def get_current_time_in_chicago():
@@ -226,39 +244,42 @@ def process_ai_response(response_text):
 
 
 def get_ai_response(messages, business_id):
-    """Get response from Google Gemini AI with tool calling capabilities"""
+    """
+    Get response from Google Gemini AI with tool calling capabilities
+    """
     try:
-        # Add current time in Chicago to the system prompt
-        current_time_chicago = get_current_time_in_chicago()
-        formatted_system_prompt = SYSTEM_PROMPT.replace("{current_time}", current_time_chicago)
+        # Get the system prompt (now dynamic based on business configuration)
+        system_prompt = get_dynamic_system_prompt(business_id)
         
-        # Format messages for Gemini API
-        formatted_messages = formatted_system_prompt + "\n\nConversation history:\n"
+        # Format messages for the model
+        formatted_messages = []
         
-        # Add previous messages
+        # Add system prompt as the first message
+        formatted_messages.append({"role": "model", "parts": [{"text": system_prompt}]})
+        
+        # Add user and model messages
         for msg in messages:
-            role = "User" if msg.role == "user" else "Assistant"
-            formatted_messages += f"\n{role}: {msg.message}"
+            role = "user" if msg.role == "user" else "model"
+            formatted_messages.append({"role": role, "parts": [{"text": msg.message}]})
         
-        # Call Gemini API
-        response = model.generate_content(formatted_messages,
+        # Generate response from the model
+        response = model.generate_content(
+            formatted_messages,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
-                max_output_tokens=800,
+                max_output_tokens=1024,
+                top_p=0.95,
+                top_k=40,
             )
         )
         
-        # Extract the assistant's message
-        ai_response = response.text
-        
         # Process the response to execute any tool calls
-        processed_response = process_ai_response(ai_response)
+        processed_response = process_ai_response(response.text)
         
         return processed_response
-    
     except Exception as e:
         logger.error(f"Error getting AI response: {str(e)}")
-        return "I'm sorry, I'm having trouble processing your request right now. Please try again later or contact our customer service."
+        return "I'm sorry, I'm having trouble processing your request right now. Please try again later."
 
 
 def extract_conversation_summary(chat_history):
@@ -601,7 +622,7 @@ def chat_api(request):
         chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
         
         # Get AI response
-        ai_response_text = get_ai_response(chat_history, business.id)
+        ai_response_text = get_ai_response(chat_history, business.businessId)
         
         # Save AI response
         ai_message = Messages(
