@@ -25,28 +25,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r'
-
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DJANGO_DEBUG', True)
 
-BASEURL = 'https://ai.cleaningbizai.com'
 
-ALLOWED_HOSTS = ['*', 'ai.cleaningbizai.com']
 
-# SSL Settings
-# Only redirect to HTTPS when not already on HTTPS
-SECURE_SSL_REDIRECT = True  # Disable automatic redirects as the proxy is likely handling this
+ALLOWED_HOSTS = ['*']
+
+# Trust Proxy Headers (Needed for Cloudflare)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Ensure Django Forces HTTPS
+SECURE_SSL_REDIRECT = not DEBUG  # Redirect HTTP → HTTPS in production
+CSRF_COOKIE_SECURE = not DEBUG  # Secure CSRF Cookies in production
+SESSION_COOKIE_SECURE = not DEBUG  # Secure Session Cookies in production
 
-SECURE_HSTS_SECONDS = 31536000  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Additional security settings for production
+if not DEBUG:
+    # HSTS settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Content security
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'  # Prevents your site from being framed
 
-# Application definition
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',  # Add WhiteNoise
     'django.contrib.staticfiles',
+    'django_extensions',
     'django_q',
     'automation',
     'rest_framework',
@@ -180,7 +189,7 @@ CORS_ALLOW_HEADERS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://ai.*']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com']
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

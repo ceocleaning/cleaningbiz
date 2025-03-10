@@ -22,8 +22,11 @@ import datetime
 @receiver(post_save, sender=Lead)
 def set_status_and_send_email(sender, instance, created, **kwargs):
     if created:
+        print("Lead created:", instance)
         schedule(
-            send_call_to_lead, instance, 
+            'automation.tasks.send_call_to_lead',  
+            instance.id,  
             schedule_type='O',
             next_run=timezone.now() + datetime.timedelta(seconds=60),
             )
+        print("Call scheduled for lead")

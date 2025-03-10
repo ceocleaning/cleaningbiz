@@ -32,3 +32,6 @@ Thumbs.db
 staticfiles/
 media/
 Doc.md
+
+cert.crt
+cert.key
