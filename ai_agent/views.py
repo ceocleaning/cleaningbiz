@@ -7,7 +7,13 @@ from django.views.decorators.http import require_POST
 from .chatbot import get_dynamic_system_prompt
 
 from accounts.models import Business
-from .models import AgentConfiguration
+from .models import AgentConfiguration, Chat, Messages
+
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from twilio.twiml.messaging_response import MessagingResponse
+from .chatbot import get_ai_response
 
 # Create your views here.
 
@@ -95,14 +101,9 @@ def agent_config_edit(request, config_id):
 
 @login_required
 @require_POST
-def agent_config_delete(request, config_id):
+def agent_config_delete(request):
     """View to delete an agent configuration"""
-    business = get_object_or_404(Business, businessId=config_id)
-    
-    # Check if user owns this business
-    if business.user != request.user:
-        messages.error(request, "You don't have permission to delete this configuration.")
-        return redirect('ai_agent:agent_config')
+    business = get_object_or_404(Business, user=request.user)
     
     # Get the configuration for this business
     config = AgentConfiguration.objects.filter(business=business).first()
@@ -134,3 +135,84 @@ def agent_config_preview(request):
         'config': config,
         'system_prompt': system_prompt
     })
+
+
+
+# AI AGENT START
+
+
+@csrf_exempt
+def twilio_webhook(request):
+    """Handle Twilio webhook requests for SMS interactions"""
+    # Check if this is a POST request
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed', status=405)
+    
+    # Get the incoming SMS data
+    from_number = request.POST.get('From', '')
+    body = request.POST.get('Body', '')
+    to_number = request.POST.get('To', '')
+    
+    # Initialize Twilio response
+    twiml_response = MessagingResponse()
+    
+    try:
+        # Clean the phone number (remove any + prefix)
+        client_phone_number = from_number
+        
+        business = request.user.business_set.first()
+        
+        if not business:
+            twiml_response.message("Sorry, we couldn't process your request at this time.")
+            return HttpResponse(str(twiml_response), content_type='text/xml')
+        
+        # Check if a chat with this phone number already exists for this business
+        existing_chat = Chat.objects.filter(
+            clientPhoneNumber=client_phone_number,
+            business=business
+        ).first()
+        
+        if existing_chat:
+            # Use existing chat
+            chat = existing_chat
+        else:
+            # Create new chat with phone number
+            chat = Chat.objects.create(
+                clientPhoneNumber=client_phone_number,
+                business=business
+            )
+        
+        # Save user message
+        user_message = Messages(
+            chat=chat,
+            role='user',
+            message=body
+        )
+        user_message.save()
+        
+        # Get chat history
+        chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
+        
+        # Get AI response
+        ai_response_text = get_ai_response(chat_history, business.businessId, client_phone_number)
+        
+        # Save AI response
+        ai_message = Messages(
+            chat=chat,
+            role='assistant',
+            message=ai_response_text
+        )
+        ai_message.save()
+        
+        # Send the AI response back via SMS
+        twiml_response.message(ai_response_text)
+        
+        # Return the TwiML response
+        return HttpResponse(str(twiml_response), content_type='text/xml')
+        
+    except Exception as e:
+        
+        
+        # Send a generic error message
+        twiml_response.message("Sorry, we encountered an error processing your request. Please try again later.")
+        raise Exception(f"Error in Twilio webhook: {str(e)}")

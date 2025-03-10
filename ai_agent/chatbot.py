@@ -16,6 +16,7 @@ from django.shortcuts import render, get_object_or_404
 from accounts.models import Business
 from bookings.models import Booking
 from .models import Chat, Messages, AgentConfiguration
+from .api_views import check_availability, book_appointment, get_current_time_in_chicago
 
 import google.generativeai as genai
 
@@ -29,13 +30,13 @@ genai.configure(api_key=os.getenv('GEMENI_API'))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 
-def generate_chat_id():
-    """Generate a unique chat ID that fits within the 20-character limit"""
-    # Use a shorter prefix and fewer characters from UUID
-    # Format: c_{8 chars from uuid}_{timestamp}
-    # This should be under 20 characters in most cases
-    timestamp = int(datetime.now().timestamp()) % 10000  # Use only last 4 digits of timestamp
-    return f"c{uuid.uuid4().hex[:8]}_{timestamp}"
+# Define available tools
+tools = {
+    'check_availability': check_availability,
+    'bookAppointment': book_appointment,
+    'current_time': get_current_time_in_chicago
+}
+
 
 
 def get_dynamic_system_prompt(business_id):
@@ -44,6 +45,7 @@ def get_dynamic_system_prompt(business_id):
     stored in the database. Falls back to default prompt if no configuration exists.
     """
     try:
+        # Get the business configuration
         config = AgentConfiguration.objects.get(business__businessId=business_id)
         business = Business.objects.get(businessId=business_id)
         
@@ -77,25 +79,42 @@ def get_dynamic_system_prompt(business_id):
 
         You have access to the following tools to help with the booking process:
 
-        1. checkAvailability: Check if a specific date and time is available for booking
-        - Input: A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
+        1. check_availability: Check if a specific date and time is available for booking
+        - Input: 
+                - A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
+                - Business Object
         - Output: Availability status
 
         2. bookAppointment: Book an appointment in the system
-        - Input: Customer details (name, phone, email, address), property details (size, bedrooms, bathrooms), service type, date and time
+        - Input: 
+                - Customer details as a dictionary
+                - Business Object
         - Output: Booking confirmation and ID
 
-        3. endCall: End the call process
+        3. current_time: Get the current time in Chicago timezone
         - Input: None
-        - Output: Call ended confirmation
+        - Output: Current time in Chicago timezone
 
-        When you need to use a tool, use the following format:
+        When you need to use a tool, use one of the following formats:
+        
+        Format 1 (preferred):
         <tool>tool_name(parameters)</tool>
 
+        Format 2 (alternative):
+        ```tool_code tool_name(parameters) ```
+
         For example:
-        <tool>checkAvailability(Tomorrow at 2 PM)</tool>
-        <tool>bookAppointment(John Doe, 555-123-4567, john@example.com, 123 Main St, Dallas, TX, 1500 sq ft, 3 bedrooms, 2 bathrooms, Regular Cleaning, March 15, 2025 at 10 AM)</tool>
-        <tool>endCall()</tool>
+        <tool>check_availability(Tomorrow at 2 PM)</tool>
+        OR
+        ```tool_code check_availability(Tomorrow at 2 PM) ```
+
+        <tool>bookAppointment()</tool>
+        OR
+        ```tool_code bookAppointment() ```
+
+        <tool>current_time()</tool>
+        OR
+        ```tool_code current_time() ```
 
         Be friendly, professional, and helpful. Follow the conversation flow carefully and wait for user responses before moving to the next step.
 
@@ -120,85 +139,8 @@ def get_dynamic_system_prompt(business_id):
         return "You are an AI assistant for a cleaning business. Help customers book appointments and answer their questions about services."
 
 
-def get_current_time_in_chicago():
-    """Get the current time in Chicago timezone"""
-    chicago_tz = pytz.timezone('America/Chicago')
-    current_time = datetime.now(chicago_tz)
-    return current_time.strftime('%Y-%m-%d %I:%M %p')
 
-
-def check_availability(datetime_str):
-    """Check if a specific date and time is available for booking"""
-    try:
-        # Parse the datetime string (simplified for this example)
-        lower_dt = datetime_str.lower()
-        
-        # Check for keywords indicating past dates
-        if any(word in lower_dt for word in ['yesterday', 'last week', 'ago']):
-            return "That time is in the past and not available for booking."
-        
-        # Check for keywords indicating very far future dates
-        if any(word in lower_dt for word in ['next year', 'months later']):
-            return "We can only book appointments up to 3 months in advance."
-        
-        # Check for times outside business hours (9 AM to 5 PM)
-        time_pattern = r'(\d+)\s*(?::|s)\s*(\d*)\s*(am|pm)'
-        time_match = re.search(time_pattern, lower_dt, re.IGNORECASE)
-        
-        if time_match:
-            hour = int(time_match.group(1))
-            am_pm = time_match.group(3).lower()
-            
-            if am_pm == 'pm' and hour < 12:
-                hour += 12
-            elif am_pm == 'am' and hour == 12:
-                hour = 0
-                
-            if hour < 9 or hour >= 17:
-                return "That time is outside our business hours (9 AM to 5 PM). Please choose a time between 9 AM and 5 PM."
-        
-        # Check for weekends
-        if any(day in lower_dt for day in ['saturday', 'sunday']):
-            return "We have limited availability on weekends. We have a few slots open at 10 AM and 2 PM."
-            
-        # Default response for most queries
-        return "Available! We have several time slots open on that day."
-        
-    except Exception as e:
-        logger.error(f"Error checking availability: {str(e)}")
-        return "I couldn't determine availability for that time. Please try a different format like 'Tomorrow at 2 PM' or contact our customer service."
-
-
-def book_appointment(appointment_details):
-    """Book an appointment in the system"""
-    try:
-        # In a real implementation, this would create a booking in the database
-        # and potentially integrate with Cal.com or another scheduling system
-        
-        # For this example, we'll parse the appointment details and generate a booking ID
-        booking_id = f"B{uuid.uuid4().hex[:6].upper()}"
-        
-        return f"Booking confirmed! Your booking ID is {booking_id}. A confirmation email with the invoice link will be sent to you shortly."
-        
-    except Exception as e:
-        logger.error(f"Error booking appointment: {str(e)}")
-        return "I'm having trouble booking your appointment right now. Please try again or contact our customer service directly at (555) 123-4567."
-
-
-def end_call():
-    """End the call process"""
-    return "Thank you for choosing CEO Cleaners! We look forward to serving you. Have a great day!"
-
-
-# Define available tools
-tools = {
-    'checkAvailability': check_availability,
-    'bookAppointment': book_appointment,
-    'endCall': end_call
-}
-
-
-def execute_tool_call(tool_call):
+def execute_tool_call(tool_call, client_phone_number):
     """Execute a tool call and return the result"""
     # Extract tool name and parameters using regex
     tool_match = re.match(r'<tool>(\w+)\((.*)\)</tool>', tool_call)
@@ -207,43 +149,100 @@ def execute_tool_call(tool_call):
         return "Error: Invalid tool call format"
     
     tool_name = tool_match.group(1)
-    tool_params = tool_match.group(2)
+    tool_params_str = tool_match.group(2)
     
     # Check if the tool exists
     if tool_name not in tools:
         return f"Error: Tool '{tool_name}' not found"
     
-    # Execute the tool with the provided parameters
+    # Get the business for this chat
     try:
-        tool_function = tools[tool_name]
-        result = tool_function(tool_params)
-        return result
+        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+        business = chat.business
+        
+        # Execute the tool with the provided parameters
+        if tool_name == 'check_availability':
+            # For check_availability, we need to pass the business and date string
+            result = tools['check_availability'](business, tool_params_str)
+            return json.dumps(result, default=str)
+            
+        elif tool_name == 'bookAppointment':
+            # For bookAppointment, we need to extract conversation data and pass with business
+            chat_messages = Messages.objects.filter(chat=chat).order_by('createdAt')
+            customer_data = extract_conversation_summary(chat_messages)
+            result = tools['bookAppointment'](business, customer_data)
+            return json.dumps(result, default=str)
+            
+        elif tool_name == 'current_time':
+            # current_time doesn't need parameters
+            result = tools['current_time']()
+            return result
+            
+        else:
+            # Default handling for unknown tools
+            return f"Error: Tool '{tool_name}' implementation not found"
+            
+    except Chat.DoesNotExist:
+        return "Error: Chat not found"
     except Exception as e:
         logger.error(f"Error executing tool {tool_name}: {str(e)}")
         return f"Error executing tool {tool_name}: {str(e)}"
 
 
-def process_ai_response(response_text):
+def process_ai_response(response_text, client_phone_number, formatted_messages=None):
     """Process the AI response to execute any tool calls"""
-    # Check if the response contains any tool calls
+    # Check if the response contains any tool calls in <tool> format
     tool_pattern = r'<tool>(.*?)</tool>'
     tool_calls = re.findall(tool_pattern, response_text)
     
-    if not tool_calls:
+    # Also check for tool_code format
+    tool_code_pattern = r'```tool_code\s+(\w+)\(([^)]*)\)\s+```'
+    tool_code_calls = re.findall(tool_code_pattern, response_text)
+    
+    # If no tool calls found in either format, return the original response
+    if not tool_calls and not tool_code_calls:
         return response_text
     
-    # Process each tool call and replace with the result
+    # Process each tool call in <tool> format and replace with the result
     for tool_call in tool_calls:
         full_tool_call = f"<tool>{tool_call}</tool>"
-        tool_result = execute_tool_call(full_tool_call)
+        tool_result = execute_tool_call(full_tool_call, client_phone_number)
         
         # Replace the tool call with the result
         response_text = response_text.replace(full_tool_call, f"\n\nTool Result: {tool_result}\n\n")
     
+    # Process each tool call in tool_code format and replace with the result
+    for tool_name, tool_params in tool_code_calls:
+        full_tool_call = f"```tool_code {tool_name}({tool_params}) ```"
+        # Convert to <tool> format for execute_tool_call
+        tool_call_converted = f"<tool>{tool_name}({tool_params})</tool>"
+        tool_result = execute_tool_call(tool_call_converted, client_phone_number)
+        
+        # Replace the tool call with the result
+        response_text = response_text.replace(full_tool_call, f"\n\nTool Result: {tool_result}\n\n")
+    
+    # If formatted_messages is provided, add the tool result and generate a new response
+    if formatted_messages and (tool_calls or tool_code_calls):
+        # Add all tool results to formatted_messages
+        formatted_messages.append({"role": "model", "parts": [{"text": f"Tool Result: {tool_result}"}]})
+
+        # Generate response from the model
+        response = model.generate_content(
+            formatted_messages,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=1024,
+                top_p=0.95,
+                top_k=40,
+            )
+        )
+        
+        return response.text
+    
     return response_text
 
 
-def get_ai_response(messages, business_id):
+def get_ai_response(messages, business_id, client_phone_number):
     """
     Get response from Google Gemini AI with tool calling capabilities
     """
@@ -274,7 +273,7 @@ def get_ai_response(messages, business_id):
         )
         
         # Process the response to execute any tool calls
-        processed_response = process_ai_response(response.text)
+        processed_response = process_ai_response(response.text, client_phone_number, formatted_messages)
         
         return processed_response
     except Exception as e:
@@ -302,10 +301,22 @@ def extract_conversation_summary(chat_history):
         'squareFeet': '',
         'bedrooms': '',
         'bathrooms': '',
+        'serviceType': '',
         'appointmentDateTime': '',
         'additionalNotes': '',
-        'addons': '',
-        'detailSummary': ''
+        'detailSummary': '',
+        "addonDishes": '',
+        "addonLaundryLoads": '',
+        "addonWindowCleaning": '',
+        "addonPetsCleaning": '',
+        "addonFridgeCleaning": '',
+        "addonOvenCleaning": '',
+        "addonBaseboard": '',
+        "addonBlinds": '',
+        "addonGreenCleaning": '',
+        "addonCabinetsCleaning": '',
+        "addonPatioSweeping": '',
+        "addonGarageSweeping": ''
     }
     
     # Join all messages into a single text for analysis
@@ -335,7 +346,18 @@ def extract_conversation_summary(chat_history):
     - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
     - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
     - additionalNotes: Any special requests or notes
-    - addons: Any add-on services requested, separated by commas
+    - addonDishes: Quantity of Dishes Addon
+    - addonLaundryLoads: Quantity of Laundry Loads Addon
+    - addonWindowCleaning: Quantity of Window Cleaning Addon
+    - addonPetsCleaning: Quantity of Pets Cleaning Addon
+    - addonFridgeCleaning: Quantity of Fridge Cleaning Addon
+    - addonOvenCleaning: Quantity of Oven Cleaning Addon
+    - addonBaseboard: Quantity of Baseboard Addon
+    - addonBlinds: Quantity of Blinds Addon
+    - addonGreenCleaning: Quantity of Green Cleaning Addon
+    - addonCabinetsCleaning: Quantity of Cabinets Cleaning Addon
+    - addonPatioSweeping: Quantity of Patio Sweeping Addon
+    - addonGarageSweeping: Quantity of Garage Sweeping Addon
     
     Use empty strings for any information that is not present in the conversation.
     
@@ -346,7 +368,7 @@ def extract_conversation_summary(chat_history):
     - Handle specific dates like "March 15th at 2 PM", "3/15/2025 at 14:00"
     - If only a day of week is mentioned (e.g., "Monday"), assume it's the next occurrence of that day
     - If only a time is mentioned (e.g., "3 PM"), assume it's for the next business day
-    - The current date is {datetime.now().strftime('%Y-%m-%d')}
+    - The current date and time is {get_current_time_in_chicago()}
     - Always include both the date and time in your extracted appointmentDateTime field
     - Do not convert to UTC - return the exact text as mentioned in the conversation
     """
@@ -563,7 +585,7 @@ def chat_view(request):
         # Get messages for this chat
         messages = Messages.objects.filter(chat=chat).order_by('createdAt')
         if messages.exists():
-            chats[chat.chatId] = list(messages)
+            chats[chat.clientPhoneNumber] = list(messages)
     
     context = {
         'business': business,
@@ -576,96 +598,95 @@ def chat_view(request):
 @csrf_exempt
 @login_required
 def chat_api(request):
-    """API endpoint for chat interactions"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-        message = data.get('message', '').strip()
-        chat_id = data.get('chat_id', '')
-        business = get_object_or_404(Business, user=request.user)
-        
-        # Validate input
-        if not message:
-            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
-        
-        # Create a new chat or get existing one
-        if not chat_id:
-            chat_id = generate_chat_id()
-            chat = Chat(chatId=chat_id, business=business)
-            chat.save()
-            is_first_message = True
-        else:
+    """
+    API endpoint for chat interactions
+    """
+    if request.method == 'POST':
+        try:
+            # Parse request data
+            data = json.loads(request.body)
+            message = data.get('message', '').strip()
+            business_id = data.get('business_id', '')
+            client_phone_number = data.get('client_phone_number', '')
+            
+            # Validate required fields
+            if not message:
+                return JsonResponse({'error': 'Message is required'}, status=400)
+            
+            # Get or create business
             try:
-                chat = Chat.objects.get(chatId=chat_id, business=business)
-                is_first_message = False
-            except Chat.DoesNotExist:
-                # Create a new chat if it doesn't exist
-                chat = Chat(chatId=chat_id, business=business)
-                chat.save()
-                is_first_message = True
-        
-        # Save user message
-        user_message = Messages(
-            chat=chat,
-            role='user',
-            message=message,
-            is_first_message=is_first_message
-        )
-        user_message.save()
-        
-        # Update chat's updatedAt timestamp
-        chat.save()
-        
-        # Get chat history for this chat ID
-        chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
-        
-        # Get AI response
-        ai_response_text = get_ai_response(chat_history, business.businessId)
-        
-        # Save AI response
-        ai_message = Messages(
-            chat=chat,
-            role='assistant',
-            message=ai_response_text
-        )
-        ai_message.save()
-        
-        # Extract conversation summary
-        print(f"\n===== PROCESSING CONVERSATION FOR CHAT ID: {chat_id} =====\n")
-        conversation_summary = extract_conversation_summary(chat_history)
-        
-        # Update chat's summary field
-        chat.summary = conversation_summary
-        chat.save()
-        print(f"Updated chat {chat_id} with summary data")
-        print(json.dumps(conversation_summary, indent=2))
-        
-        return JsonResponse({
-            'chat_id': chat_id,
-            'response': ai_response_text,
-            'conversation_summary': conversation_summary
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    except Exception as e:
-        logger.error(f"Error in chat API: {str(e)}")
-        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+                business = Business.objects.get(businessId=business_id) if business_id else Business.objects.first()
+            except Business.DoesNotExist:
+                return JsonResponse({'error': 'Business not found'}, status=404)
+            
+   
+            if client_phone_number:
+                # Check if a chat with this phone number already exists for this business
+                existing_chat = Chat.objects.filter(
+                    clientPhoneNumber=client_phone_number,
+                    business=business
+                ).first()
+                
+                if existing_chat:
+                    # Use existing chat
+                    chat = existing_chat
+                    chat_id = str(existing_chat.id)
+                else:
+                    # Create new chat with phone number
+                    chat = Chat.objects.create(
+                        clientPhoneNumber=client_phone_number,
+                        business=business
+                    )
+                    chat_id = str(chat.id)
+            else:
+                return JsonResponse({'error': 'Client phone number is required'}, status=400)
+            
+            # Save user message
+            user_message = Messages(
+                chat=chat,
+                role='user',
+                message=message
+            )
+            user_message.save()
+            
+            # Get chat history
+            chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
+            
+            # Get AI response
+            ai_response_text = get_ai_response(chat_history, business.businessId, client_phone_number)
+            
+            # Save AI response
+            ai_message = Messages(
+                chat=chat,
+                role='assistant',
+                message=ai_response_text
+            )
+            ai_message.save()
+            
+            # Return response
+            return JsonResponse({
+                'chat_id': chat_id,
+                'response': ai_response_text
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            logger.error(f"Error in chat API: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@csrf_exempt
 @login_required
-def delete_chat(request, chat_id):
+def delete_chat(request, client_phone_number):
     """Delete a chat conversation"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
-    
     try:
         business = get_object_or_404(Business, user=request.user)
         
         # Find the chat
-        chat = get_object_or_404(Chat, business=business, chatId=chat_id)
+        chat = get_object_or_404(Chat, business=business, clientPhoneNumber=client_phone_number)
         
         # Delete the chat (this will cascade delete all related messages)
         chat.delete()

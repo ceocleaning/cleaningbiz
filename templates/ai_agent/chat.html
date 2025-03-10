@@ -8,30 +8,34 @@
     <div class="row">
         <div class="col-md-4">
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Conversations</h5>
+                    <button class="btn btn-sm btn-light new-chat">
+                        <i class="fas fa-plus-circle me-1"></i> New
+                    </button>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush" id="chat-list">
-                        <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center new-chat">
-                            <span><i class="fas fa-plus-circle me-2"></i> New Conversation</span>
-                        </button>
                         {% for chat_id, messages in chats.items %}
-                            {% if messages.0.is_first_message %}
-                                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center chat-item" 
-                                        data-chat-id="{{ chat_id }}">
+                            <div class="list-group-item d-flex justify-content-between align-items-center chat-item" 
+                                 data-chat-id="{{ chat_id }}" 
+                                 data-phone-number="{{ messages.0.chat.clientPhoneNumber|default:'' }}">
+                                <div class="d-flex align-items-center chat-content">
                                     <span class="text-truncate">
+                                        {% if messages.0.chat.clientPhoneNumber %}
+                                            <strong>{{ messages.0.chat.clientPhoneNumber }}</strong>: 
+                                        {% endif %}
                                         {{ messages.0.message|truncatechars:30 }}
                                     </span>
-                                    <span>
-                                        <small class="text-muted">{{ messages.0.createdAt|date:"M d, Y" }}</small>
-                                        <button class="btn btn-sm btn-outline-danger delete-chat ms-2" 
-                                                data-chat-id="{{ chat_id }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </span>
-                                </button>
-                            {% endif %}
+                                    <small class="text-muted ms-2">{{ messages.0.createdAt|date:"M d, Y" }}</small>
+                                </div>
+                                <div class="chat-actions">
+                                    <button class="btn btn-sm btn-outline-danger delete-chat" 
+                                            data-chat-id="{{ chat_id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
                         {% endfor %}
                     </div>
                 </div>
@@ -44,10 +48,24 @@
                     <h5 class="mb-0">CEO Cleaners AI Assistant</h5>
                 </div>
                 <div class="card-body">
-                    <div id="chat-container" class="mb-3" style="height: 400px; overflow-y: auto;">
+                    <!-- Phone Number Input (initially hidden, shown for new chats) -->
+                    <div id="phone-number-container" class="mb-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <p class="mb-2">Please enter the client's phone number to start a conversation:</p>
+                            <div class="input-group">
+                                <input type="tel" id="client-phone-number" class="form-control" 
+                                       placeholder="Phone number (e.g., +1234567890)" required>
+                                <button id="start-chat-btn" class="btn btn-success">
+                                    <i class="fas fa-check me-1"></i> Start Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-container" class="mb-3" style="height: 500px; overflow-y: auto; padding: 15px; background-color: #f9f9f9; min-height: 500px;">
                         <div id="chat-messages">
-                            <div class="message assistant">
-                                <div class="message-content">
+                            <div class="message assistant" style="justify-content: flex-start; width: 100%; display: flex; margin-bottom: 20px;">
+                                <div class="message-content" style="background-color: #28a745; color: white; border-radius: 10px; max-width: 70%; float: left; padding: 8px 20px;">
                                     <p>Hello! I'm the CEO Cleaners AI assistant. How can I help you today?</p>
                                 </div>
                             </div>
@@ -56,6 +74,7 @@
                     
                     <form id="chat-form" class="d-flex">
                         <input type="hidden" id="chat-id" value="">
+                        <input type="hidden" id="client-phone-number-hidden" value="">
                         <input type="text" id="user-input" class="form-control me-2" placeholder="Type your message..." required>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-paper-plane"></i>
@@ -85,51 +104,85 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-color: #007bff;
+        --secondary-color: #6c757d;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+    }
+    
+    /* Chat container styling */
+    #chat-container {
+        height: 500px;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #f9f9f9;
+        min-height: 500px;
+    }
+    
+    /* Message styling */
     .message {
         margin-bottom: 15px;
         display: flex;
+        width: 100%;
+        clear: both;
     }
     
     .message.user {
         justify-content: flex-end;
     }
     
+    .message.assistant {
+        justify-content: flex-start;
+    }
+    
     .message-content {
-        max-width: 80%;
-        padding: 10px 15px;
-        border-radius: 10px;
+        max-width: 70%;
+        padding: 12px 15px;
+        border-radius: 18px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        position: relative;
     }
     
     .user .message-content {
-        background-color: #007bff;
-        color: white;
+        background-color: #e9e9e9;
+        color: #333;
+        border-top-right-radius: 5px;
+        float: right;
+        text-align: right;
     }
     
     .assistant .message-content {
-        background-color: #f0f0f0;
-        color: #333;
+        background-color: #9c28a7;
+        color: white;
+        border-top-left-radius: 5px;
+        float: left;
     }
     
     .message-content p {
         margin-bottom: 0;
     }
     
+    /* Typing indicator */
     .typing-indicator {
-        display: inline-block;
-        padding: 10px 15px;
-        background-color: #f0f0f0;
-        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        margin: 0;
     }
     
     .typing-indicator span {
-        height: 10px;
-        width: 10px;
-        float: left;
-        margin: 0 1px;
-        background-color: #9E9EA1;
-        display: block;
+        height: 8px;
+        width: 8px;
+        margin: 0 2px;
+        background-color: rgb(32, 22, 22);
         border-radius: 50%;
-        opacity: 0.4;
+        display: inline-block;
+        opacity: 0.7;
     }
     
     .typing-indicator span:nth-of-type(1) {
@@ -149,6 +202,46 @@
             opacity: 1;
         }
     }
+    
+    /* Delete button spinner */
+    .delete-chat.loading .fa-trash {
+        display: none;
+    }
+    
+    .delete-chat.loading::after {
+        content: '';
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Chat item styling */
+    .chat-item {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .chat-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .chat-item.active {
+        background-color: #e9ecef;
+        border-left: 3px solid #007bff;
+    }
+    
+    .chat-content {
+        flex: 1;
+        min-width: 0;
+    }
 </style>
 {% endblock %}
 
@@ -161,6 +254,10 @@
         const userInput = $('#user-input');
         const chatForm = $('#chat-form');
         const chatIdInput = $('#chat-id');
+        const clientPhoneNumberInput = $('#client-phone-number');
+        const clientPhoneNumberHidden = $('#client-phone-number-hidden');
+        const phoneNumberContainer = $('#phone-number-container');
+        const startChatBtn = $('#start-chat-btn');
         
         // Scroll to bottom of chat
         function scrollToBottom() {
@@ -170,8 +267,12 @@
         // Add message to chat
         function addMessage(message, isUser = false) {
             const messageHtml = 
-                "<div class=\"message " + (isUser ? 'user' : 'assistant') + "\">" +
-                "    <div class=\"message-content\">" +
+                "<div class=\"message " + (isUser ? 'user' : 'assistant') + "\" style=\"justify-content: " + (isUser ? 'flex-end' : 'flex-start') + "; width: 100%; display: flex; margin-bottom: 20px;\">" +
+                "    <div class=\"message-content\" style=\"" + 
+                (isUser ? 
+                    "background-color: #e9e9e9; color: #333; border-top-right-radius: 5px; max-width: 70%; float: right; text-align: right; padding: 15px 20px;" : 
+                    "background-color: #28a745; color: white; border-top-left-radius: 5px; max-width: 70%; float: left; padding: 15px 20px;"
+                ) + "\">" +
                 "        <p>" + message + "</p>" +
                 "    </div>" +
                 "</div>";
@@ -179,40 +280,80 @@
             scrollToBottom();
         }
         
-        // Show typing indicator
+        // Add message to chat with typewriter effect
+        function addMessageWithTypewriter(message, isUser = false) {
+            // Hide typing indicator first
+            hideTypingIndicator();
+            
+            const messageHtml = 
+                "<div class=\"message " + (isUser ? 'user' : 'assistant') + "\" style=\"justify-content: " + (isUser ? 'flex-end' : 'flex-start') + "; width: 100%; display: flex; margin-bottom: 20px;\">" +
+                "    <div class=\"message-content\" style=\"" + 
+                (isUser ? 
+                    "background-color: #e9e9e9; color: #333; border-top-right-radius: 5px; max-width: 70%; float: right; text-align: right; padding: 15px 20px;" : 
+                    "background-color: #28a745; color: white; border-top-left-radius: 5px; max-width: 70%; float: left; padding: 15px 20px;"
+                ) + "\">" +
+                "        <p id=\"typewriter-message\"></p>" +
+                "    </div>" +
+                "</div>";
+            chatMessages.append(messageHtml);
+            
+            const typewriterMessage = $('#typewriter-message');
+            let i = 0;
+            const speed = 15; // typing speed in milliseconds
+            
+            const typeNextChar = function() {
+                if (i < message.length) {
+                    typewriterMessage.text(typewriterMessage.text() + message.charAt(i));
+                    i++;
+                    scrollToBottom();
+                    setTimeout(typeNextChar, speed);
+                } else {
+                    // Remove the ID once typing is complete to avoid conflicts with future messages
+                    typewriterMessage.removeAttr('id');
+                }
+            };
+            
+            // Start the typewriter effect
+            setTimeout(typeNextChar, 100);
+        }
+            
+            // Show typing indicator
         function showTypingIndicator() {
+            console.log("Show Typing Indicator Called");
+            
             const indicator = 
-                "<div class=\"message assistant\" id=\"typing-indicator\">" +
-                "    <div class=\"typing-indicator\">" +
-                "        <span></span>" +
-                "        <span></span>" +
-                "        <span></span>" +
+                "<div class=\"message assistant\" style=\"justify-content: flex-start; width: 100%; display: flex; margin-bottom: 20px;\">" +
+                "    <div class=\"message-content\" style=\"background-color: #28a745; color: white; border-top-left-radius: 5px; max-width: 70%; float: left; padding: 15px 20px; \">" +
+                "        <div class=\"typing-indicator\">" +
+                "            <span>AI is thinking ...</span>"
+                "        </div>" +
                 "    </div>" +
                 "</div>";
             chatMessages.append(indicator);
             scrollToBottom();
         }
+
         
         // Hide typing indicator
         function hideTypingIndicator() {
-            $('#typing-indicator').remove();
+            $('.typing-indicator').parent().parent().remove();
         }
         
         // Load chat history
-        function loadChatHistory(chatId) {
+        function loadChatHistory(clientPhoneNumber) {
             // Clear current chat
             chatMessages.empty();
             
-            // If no chat ID, show welcome message
-            if (!chatId) {
+            // If no client phone number, show welcome message
+            if (!clientPhoneNumber) {
                 addMessage('Hello! I\'m the CEO Cleaners AI assistant. How can I help you today?', false);
                 return;
             }
             
             // Get chat history from the chatHistoryData variable
-            if (chatHistoryData[chatId]) {
-                for (let i = 0; i < chatHistoryData[chatId].length; i++) {
-                    const message = chatHistoryData[chatId][i];
+            if (chatHistoryData[clientPhoneNumber]) {
+                for (let i = 0; i < chatHistoryData[clientPhoneNumber].length; i++) {
+                    const message = chatHistoryData[clientPhoneNumber][i];
                     addMessage(message.message, message.role === "user");
                 }
             }
@@ -229,8 +370,11 @@
             addMessage(message, true);
             userInput.val('');
             
-            // Show typing indicator
+            // Show typing indicator with animation
             showTypingIndicator();
+            
+            // Disable input while waiting for response
+            userInput.prop('disabled', true);
             
             // Send message to server
             $.ajax({
@@ -239,11 +383,15 @@
                 contentType: 'application/json',
                 data: JSON.stringify({
                     message: message,
-                    chat_id: currentChatId
+                    client_phone_number: clientPhoneNumberHidden.val()
                 }),
                 success: function(data) {
                     // Hide typing indicator
                     hideTypingIndicator();
+                    
+                    // Re-enable input
+                    userInput.prop('disabled', false);
+                    userInput.focus();
                     
                     // Update chat ID if new conversation
                     if (!currentChatId) {
@@ -253,29 +401,36 @@
                         // Add to chat list if not already there
                         if ($("#chat-list .chat-item[data-chat-id=\"" + currentChatId + "\"]").length === 0) {
                             const newChatHtml = 
-                                "<button class=\"list-group-item list-group-item-action d-flex justify-content-between align-items-center chat-item\" " +
-                                "data-chat-id=\"" + currentChatId + "\">" +
+                                "<div class=\"list-group-item d-flex justify-content-between align-items-center chat-item\" " +
+                                "data-chat-id=\"" + currentChatId + "\" " +
+                                "data-phone-number=\"" + clientPhoneNumberHidden.val() + "\">" +
+                                "<div class=\"d-flex align-items-center chat-content\">" +
                                 "<span class=\"text-truncate\">" +
+                                (clientPhoneNumberHidden.val() ? "<strong>" + clientPhoneNumberHidden.val() + "</strong>: " : "") +
                                 message.substring(0, 30) + (message.length > 30 ? '...' : '') +
                                 "</span>" +
-                                "<span>" +
-                                "<small class=\"text-muted\">Just now</small>" +
-                                "<button class=\"btn btn-sm btn-outline-danger delete-chat ms-2\" " +
+                                "<small class=\"text-muted ms-2\">Just now</small>" +
+                                "</div>" +
+                                "<div class=\"chat-actions\">" +
+                                "<button class=\"btn btn-sm btn-outline-danger delete-chat\" " +
                                 "data-chat-id=\"" + currentChatId + "\">" +
                                 "<i class=\"fas fa-trash\"></i>" +
                                 "</button>" +
-                                "</span>" +
-                                "</button>";
-                            $(newChatHtml).insertAfter('#chat-list .new-chat');
+                                "</div>" +
+                                "</div>";
+                            $(newChatHtml).prependTo('#chat-list');
                         }
                     }
                     
-                    // Add assistant message to chat
-                    addMessage(data.response, false);
+                    // Add assistant message to chat with typewriter effect
+                    addMessageWithTypewriter(data.response, false);
                 },
                 error: function() {
                     // Hide typing indicator
                     hideTypingIndicator();
+                    
+                    // Re-enable input
+                    userInput.prop('disabled', false);
                     
                     // Show error message
                     addMessage('Sorry, there was an error processing your request. Please try again.', false);
@@ -285,12 +440,53 @@
         
         // Handle new chat button
         $(document).on('click', '.new-chat', function() {
-            currentChatId = '';
-            chatIdInput.val('');
-            loadChatHistory('');
+            
+            // Show phone number input
+            phoneNumberContainer.show();
+            chatContainer.hide();
+            chatForm.hide();
+            
+            // Clear phone number field
+            clientPhoneNumberInput.val('');
+            clientPhoneNumberHidden.val('');
+            
+            // Clear chat messages
+            $('#chat-messages').html('');
             
             // Update active chat
             $('#chat-list .chat-item').removeClass('active');
+            
+            // Focus on the phone number input field
+            clientPhoneNumberInput.focus();
+        });
+        
+        // Handle start chat button click
+        $(document).on('click', '#start-chat-btn', function() {
+            const phoneNumber = clientPhoneNumberInput.val().trim();
+            if (!phoneNumber) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+            
+            // Set the phone number
+            clientPhoneNumberHidden.val(phoneNumber);
+            
+            // Hide phone number input and show chat
+            phoneNumberContainer.hide();
+            chatContainer.show();
+            chatForm.show();
+            
+            // Check if a chat with this phone number already exists
+            const existingChatItem = $('#chat-list .chat-item[data-phone-number="' + phoneNumber + '"]');
+            if (existingChatItem.length > 0) {
+                // Use existing chat
+                existingChatItem.click();
+            } else {
+                // Reset chat for new conversation
+                $('#chat-messages').html('');
+                addMessage('Hello! I\'m the CEO Cleaners AI assistant. How can I help you today?', false);
+                userInput.focus();
+            }
         });
         
         // Handle chat item click
@@ -298,9 +494,18 @@
             // Don't trigger if delete button was clicked
             if ($(e.target).closest('.delete-chat').length) return;
             
-            currentChatId = $(this).data('chat-id');
+            currentChatId = $(this).attr('data-chat-id');
+            const phoneNumber = $(this).attr('data-phone-number');
+            
             chatIdInput.val(currentChatId);
-            loadChatHistory(currentChatId);
+            clientPhoneNumberHidden.val(phoneNumber);
+            
+            // Show chat container and form, hide phone input
+            phoneNumberContainer.hide();
+            chatContainer.show();
+            chatForm.show();
+            
+            loadChatHistory(phoneNumber);
             
             // Update active chat
             $('#chat-list .chat-item').removeClass('active');
@@ -310,24 +515,41 @@
         // Handle delete chat button
         $(document).on('click', '.delete-chat', function(e) {
             e.stopPropagation();
-            const chatId = $(this).data('chat-id');
+            e.preventDefault();
+            const deleteBtn = $(this);
+            const chatId = deleteBtn.attr('data-chat-id');
             
             if (confirm('Are you sure you want to delete this conversation?')) {
+                // Add loading spinner
+                deleteBtn.addClass('loading');
+                
                 $.ajax({
-                    url: '/ai_agent/api/chat/' + chatId + '/delete/',
+                    url: '{% url "ai_agent:delete_chat" "PLACEHOLDER" %}'.replace('PLACEHOLDER', chatId),
                     type: 'POST',
-                    success: function() {
-                        // Remove from chat list
-                        $("#chat-list .chat-item[data-chat-id=\"" + chatId + "\"]").remove();
-                        
-                        // If current chat was deleted, start a new one
-                        if (currentChatId === chatId) {
-                            currentChatId = '';
-                            chatIdInput.val('');
-                            loadChatHistory('');
-                        }
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
                     },
-                    error: function() {
+                    success: function() {
+                        // Show success message
+                        Toastify({
+                            text: "Conversation deleted successfully",
+                            duration: 3000,
+                            close: true,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "var(--success-color)",
+                        }).showToast();
+                        
+                        // Force page reload to refresh the chat list
+                        setTimeout(function() {
+                            location.reload();
+                        }, 500); // Short delay to show the spinner and toast
+                    },
+                    error: function(xhr, status, error) {
+                        // Remove loading spinner
+                        deleteBtn.removeClass('loading');
+                        
+                        console.error('Error deleting chat:', error);
                         alert('There was an error deleting the conversation. Please try again.');
                     }
                 });

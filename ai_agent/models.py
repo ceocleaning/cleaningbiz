@@ -14,13 +14,16 @@ class Messages(models.Model):
     role = models.CharField(max_length=20, choices=CHAT_ROLE_CHOICES)
     message = models.TextField()
     is_first_message = models.BooleanField(default=False)
+
     createdAt = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"{self.role}: {self.message}"
 
 class Chat(models.Model):
-    chatId = models.CharField(max_length=20, unique=True)
+    clientPhoneNumber = models.CharField(max_length=15, null=True, blank=True)
+    clientName = models.CharField(max_length=100, null=True, blank=True)
+    clientInterest = models.CharField(max_length=100, null=True, blank=True) #Service in which client is interested
     business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE)
 
     summary = models.JSONField(null=True, blank=True, default=dict)
@@ -29,7 +32,7 @@ class Chat(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return self.chatId
+        return f"{self.clientPhoneNumber} - {self.clientName} - {self.business.businessName}"
 
 
 class AgentConfiguration(models.Model):
