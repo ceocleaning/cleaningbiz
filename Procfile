@@ -1,2 +1,1 @@
-web: gunicorn leadsAutomation.wsgi
-worker: python manage.py qcluster
+web: (python manage.py qcluster &) && gunicorn leadsAutomation.wsgi
