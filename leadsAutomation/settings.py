@@ -217,22 +217,12 @@ Q_CLUSTER = {
     'name': 'cleaningbizai',
     'workers': 8,
     'recycle': 500,
-    'timeout': 60,
+    'timeout': 300,
     'compress': True,
     'save_limit': 250,
     'queue_limit': 500,
-    'cpu_affinity': 1,
+    'cpu_affinity': 4,
     'label': 'Django Q2',
     'orm': 'default',
-    'ALT_CLUSTERS': {
-        'long': {
-            'timeout': 3000,
-            'retry': 3600,
-            'max_attempts': 2,
-        },
-        'short': {
-            'timeout': 10,
-            'max_attempts': 1,
-        },
-    }
+    'max_attempts': 3,
 }
