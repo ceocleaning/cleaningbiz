@@ -37,10 +37,11 @@ ALLOWED_HOSTS = ['*', 'ai.cleaningbizai.com']
 # SSL Settings
 # Only redirect to HTTPS when not already on HTTPS
 SECURE_SSL_REDIRECT = False  # Disable automatic redirects as the proxy is likely handling this
+SECURE_PROXY_SSL_HEADER = None
+
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
