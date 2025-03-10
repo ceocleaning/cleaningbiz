@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Assistant - CEO Cleaners{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Conversations</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="chat-list">
+                        <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center new-chat">
+                            <span><i class="fas fa-plus-circle me-2"></i> New Conversation</span>
+                        </button>
+                        {% for chat_id, messages in chats.items %}
+                            {% if messages.0.is_first_message %}
+                                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center chat-item" 
+                                        data-chat-id="{{ chat_id }}">
+                                    <span class="text-truncate">
+                                        {{ messages.0.message|truncatechars:30 }}
+                                    </span>
+                                    <span>
+                                        <small class="text-muted">{{ messages.0.createdAt|date:"M d, Y" }}</small>
+                                        <button class="btn btn-sm btn-outline-danger delete-chat ms-2" 
+                                                data-chat-id="{{ chat_id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </span>
+                                </button>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">CEO Cleaners AI Assistant</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chat-container" class="mb-3" style="height: 400px; overflow-y: auto;">
+                        <div id="chat-messages">
+                            <div class="message assistant">
+                                <div class="message-content">
+                                    <p>Hello! I'm the CEO Cleaners AI assistant. How can I help you today?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form id="chat-form" class="d-flex">
+                        <input type="hidden" id="chat-id" value="">
+                        <input type="text" id="user-input" class="form-control me-2" placeholder="Type your message..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass Django data to JavaScript -->
+<script type="text/javascript">
+    // Initialize chat history data
+    var chatHistoryData = {};
+    {% for chat_id, messages in chats.items %}
+        chatHistoryData["{{ chat_id }}"] = [];
+        {% for message in messages %}
+            chatHistoryData["{{ chat_id }}"].push({
+                role: "{{ message.role }}",
+                message: "{{ message.message|escapejs }}"
+            });
+        {% endfor %}
+    {% endfor %}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+    }
+    
+    .message.user {
+        justify-content: flex-end;
+    }
+    
+    .message-content {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 10px;
+    }
+    
+    .user .message-content {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .assistant .message-content {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+    
+    .message-content p {
+        margin-bottom: 0;
+    }
+    
+    .typing-indicator {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+    }
+    
+    .typing-indicator span {
+        height: 10px;
+        width: 10px;
+        float: left;
+        margin: 0 1px;
+        background-color: #9E9EA1;
+        display: block;
+        border-radius: 50%;
+        opacity: 0.4;
+    }
+    
+    .typing-indicator span:nth-of-type(1) {
+        animation: 1s blink infinite 0.3333s;
+    }
+    
+    .typing-indicator span:nth-of-type(2) {
+        animation: 1s blink infinite 0.6666s;
+    }
+    
+    .typing-indicator span:nth-of-type(3) {
+        animation: 1s blink infinite 0.9999s;
+    }
+    
+    @keyframes blink {
+        50% {
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        let currentChatId = '';
+        const chatMessages = $('#chat-messages');
+        const chatContainer = $('#chat-container');
+        const userInput = $('#user-input');
+        const chatForm = $('#chat-form');
+        const chatIdInput = $('#chat-id');
+        
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            chatContainer.scrollTop(chatContainer[0].scrollHeight);
+        }
+        
+        // Add message to chat
+        function addMessage(message, isUser = false) {
+            const messageHtml = 
+                "<div class=\"message " + (isUser ? 'user' : 'assistant') + "\">" +
+                "    <div class=\"message-content\">" +
+                "        <p>" + message + "</p>" +
+                "    </div>" +
+                "</div>";
+            chatMessages.append(messageHtml);
+            scrollToBottom();
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            const indicator = 
+                "<div class=\"message assistant\" id=\"typing-indicator\">" +
+                "    <div class=\"typing-indicator\">" +
+                "        <span></span>" +
+                "        <span></span>" +
+                "        <span></span>" +
+                "    </div>" +
+                "</div>";
+            chatMessages.append(indicator);
+            scrollToBottom();
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            $('#typing-indicator').remove();
+        }
+        
+        // Load chat history
+        function loadChatHistory(chatId) {
+            // Clear current chat
+            chatMessages.empty();
+            
+            // If no chat ID, show welcome message
+            if (!chatId) {
+                addMessage('Hello! I\'m the CEO Cleaners AI assistant. How can I help you today?', false);
+                return;
+            }
+            
+            // Get chat history from the chatHistoryData variable
+            if (chatHistoryData[chatId]) {
+                for (let i = 0; i < chatHistoryData[chatId].length; i++) {
+                    const message = chatHistoryData[chatId][i];
+                    addMessage(message.message, message.role === "user");
+                }
+            }
+        }
+        
+        // Handle form submission
+        chatForm.on('submit', function(e) {
+            e.preventDefault();
+            
+            const message = userInput.val().trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage(message, true);
+            userInput.val('');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Send message to server
+            $.ajax({
+                url: '{% url "ai_agent:chat_api" %}',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    message: message,
+                    chat_id: currentChatId
+                }),
+                success: function(data) {
+                    // Hide typing indicator
+                    hideTypingIndicator();
+                    
+                    // Update chat ID if new conversation
+                    if (!currentChatId) {
+                        currentChatId = data.chat_id;
+                        chatIdInput.val(currentChatId);
+                        
+                        // Add to chat list if not already there
+                        if ($("#chat-list .chat-item[data-chat-id=\"" + currentChatId + "\"]").length === 0) {
+                            const newChatHtml = 
+                                "<button class=\"list-group-item list-group-item-action d-flex justify-content-between align-items-center chat-item\" " +
+                                "data-chat-id=\"" + currentChatId + "\">" +
+                                "<span class=\"text-truncate\">" +
+                                message.substring(0, 30) + (message.length > 30 ? '...' : '') +
+                                "</span>" +
+                                "<span>" +
+                                "<small class=\"text-muted\">Just now</small>" +
+                                "<button class=\"btn btn-sm btn-outline-danger delete-chat ms-2\" " +
+                                "data-chat-id=\"" + currentChatId + "\">" +
+                                "<i class=\"fas fa-trash\"></i>" +
+                                "</button>" +
+                                "</span>" +
+                                "</button>";
+                            $(newChatHtml).insertAfter('#chat-list .new-chat');
+                        }
+                    }
+                    
+                    // Add assistant message to chat
+                    addMessage(data.response, false);
+                },
+                error: function() {
+                    // Hide typing indicator
+                    hideTypingIndicator();
+                    
+                    // Show error message
+                    addMessage('Sorry, there was an error processing your request. Please try again.', false);
+                }
+            });
+        });
+        
+        // Handle new chat button
+        $(document).on('click', '.new-chat', function() {
+            currentChatId = '';
+            chatIdInput.val('');
+            loadChatHistory('');
+            
+            // Update active chat
+            $('#chat-list .chat-item').removeClass('active');
+        });
+        
+        // Handle chat item click
+        $(document).on('click', '.chat-item', function(e) {
+            // Don't trigger if delete button was clicked
+            if ($(e.target).closest('.delete-chat').length) return;
+            
+            currentChatId = $(this).data('chat-id');
+            chatIdInput.val(currentChatId);
+            loadChatHistory(currentChatId);
+            
+            // Update active chat
+            $('#chat-list .chat-item').removeClass('active');
+            $(this).addClass('active');
+        });
+        
+        // Handle delete chat button
+        $(document).on('click', '.delete-chat', function(e) {
+            e.stopPropagation();
+            const chatId = $(this).data('chat-id');
+            
+            if (confirm('Are you sure you want to delete this conversation?')) {
+                $.ajax({
+                    url: '/ai_agent/api/chat/' + chatId + '/delete/',
+                    type: 'POST',
+                    success: function() {
+                        // Remove from chat list
+                        $("#chat-list .chat-item[data-chat-id=\"" + chatId + "\"]").remove();
+                        
+                        // If current chat was deleted, start a new one
+                        if (currentChatId === chatId) {
+                            currentChatId = '';
+                            chatIdInput.val('');
+                            loadChatHistory('');
+                        }
+                    },
+                    error: function() {
+                        alert('There was an error deleting the conversation. Please try again.');
+                    }
+                });
+            }
+        });
+        
+        // Initialize with welcome message
+        loadChatHistory('');
+    });
+</script>
+{% endblock %}

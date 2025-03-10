@@ -28,6 +28,7 @@ urlpatterns = [
     path('invoice/', include('invoice.urls')),
     path('integration/', include('integrations.urls')),
     path('analytics/', include('analytics.urls')),
+    path('ai_agent/', include('ai_agent.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

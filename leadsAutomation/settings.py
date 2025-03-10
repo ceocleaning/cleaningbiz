@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'bookings',
     'invoice',
     'integrations',
+    'ai_agent',
 ]
 
 MIDDLEWARE = [
