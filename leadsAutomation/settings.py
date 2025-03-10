@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-BASEURL = 'https://04b5-223-123-91-197.ngrok-free.app'
+
 
 ALLOWED_HOSTS = ['*']
 
@@ -168,7 +168,7 @@ CORS_ALLOW_HEADERS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://ceocleaners.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'ai.cleaningbizai.com']
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
