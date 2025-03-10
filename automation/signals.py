@@ -9,6 +9,10 @@ import os
 import requests
 from django.core.mail import send_mail
 from accounts.models import ApiCredential
+from .tasks import send_call_to_lead
+from django_q.tasks import schedule
+
+import datetime
 
 
 
@@ -17,21 +21,9 @@ from accounts.models import ApiCredential
 
 @receiver(post_save, sender=Lead)
 def set_status_and_send_email(sender, instance, created, **kwargs):
-    apicreds = ApiCredential.objects.get(business=instance.business)
-    client = Retell(api_key=apicreds.retellAPIKey)
-    print("Signal received!")
     if created:
-        try:
-            apiCreds = ApiCredential.objects.get(business=instance.business)
-            call_response = client.call.create_phone_call(
-                from_number=apiCreds.voiceAgentNumber,
-                to_number=instance.phone_number,
-                retell_llm_dynamic_variables={
-                    'name': instance.name,
-                    'service': instance.content
-                },
+        schedule(
+            send_call_to_lead, instance, 
+            schedule_type='O',
+            next_run=timezone.now() + datetime.timedelta(seconds=60),
             )
-            print(call_response)
-
-        except Exception as e:
-            print(f"Error making call: {e}")

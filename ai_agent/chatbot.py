@@ -22,8 +22,6 @@ import google.generativeai as genai
 
 load_dotenv()
 
-# Configure logging
-logger = logging.getLogger(__name__)
 
 # Initialize Google Gemini AI
 genai.configure(api_key=os.getenv('GEMENI_API'))

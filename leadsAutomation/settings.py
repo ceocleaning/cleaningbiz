@@ -36,8 +36,9 @@ ALLOWED_HOSTS = ['*', 'ai.cleaningbizai.com']
 
 # SSL Settings
 # Only redirect to HTTPS when not already on HTTPS
-SECURE_SSL_REDIRECT = False  # Disable automatic redirects as the proxy is likely handling this
-SECURE_PROXY_SSL_HEADER = None
+SECURE_SSL_REDIRECT = True  # Disable automatic redirects as the proxy is likely handling this
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -55,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',  # Add WhiteNoise
     'django.contrib.staticfiles',
+    'django_q',
     'automation',
     'rest_framework',
     'corsheaders',
@@ -196,3 +198,32 @@ SQUARE_ACCESS_TOKEN = os.getenv('SQUARE_ACCESS_TOKEN', '')
 SQUARE_APP_ID = os.getenv('SQUARE_APP_ID', '')
 SQUARE_LOCATION_ID = os.getenv('SQUARE_LOCATION_ID', '')
 SQUARE_ENVIRONMENT = os.getenv('SQUARE_ENVIRONMENT', 'sandbox')
+
+
+
+
+
+# settings.py example
+Q_CLUSTER = {
+    'name': 'cleaningbizai',
+    'workers': 8,
+    'recycle': 500,
+    'timeout': 60,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 1,
+    'label': 'Django Q2',
+    'orm': 'default',
+    'ALT_CLUSTERS': {
+        'long': {
+            'timeout': 3000,
+            'retry': 3600,
+            'max_attempts': 2,
+        },
+        'short': {
+            'timeout': 10,
+            'max_attempts': 1,
+        },
+    }
+}
