@@ -21,9 +21,8 @@ class Messages(models.Model):
         return f"{self.role}: {self.message}"
 
 class Chat(models.Model):
-    clientPhoneNumber = models.CharField(max_length=15, null=True, blank=True)
-    clientName = models.CharField(max_length=100, null=True, blank=True)
-    clientInterest = models.CharField(max_length=100, null=True, blank=True) #Service in which client is interested
+    lead = models.ForeignKey('automation.Lead', on_delete=models.CASCADE, null=True, blank=True)
+    clientPhoneNumber = models.CharField(max_length=15, null=True, blank=True, unique=True)
     business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE)
 
     summary = models.JSONField(null=True, blank=True, default=dict)
@@ -32,7 +31,7 @@ class Chat(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.clientPhoneNumber} - {self.clientName} - {self.business.businessName}"
+        return f"{self.clientPhoneNumber} - {self.business.businessName}"
 
 
 class AgentConfiguration(models.Model):

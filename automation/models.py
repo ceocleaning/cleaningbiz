@@ -28,11 +28,11 @@ class Lead(models.Model):
     notes = models.TextField(blank=True, null=True)
     content = models.TextField(blank=True, null=True)
 
-    emailSentAt = models.DateTimeField(null=True, blank=True)
-    isConverted = models.BooleanField(default=False)
-    
-    
     source = models.CharField(max_length=255)
+
+    is_response_received = models.BooleanField(default=False)
+    is_call_sent = models.BooleanField(default=False)
+    call_sent_at = models.DateTimeField(null=True, blank=True)
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
@@ -47,7 +47,7 @@ class Lead(models.Model):
         super().save(*args, **kwargs)
     
     def generateLeadId(self):
-        prefix = "LD."
+        prefix = "ld-"
         id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
         return f"{prefix}{id}"
 
