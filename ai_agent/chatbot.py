@@ -6,6 +6,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 import pytz
+import traceback
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -17,6 +18,7 @@ from accounts.models import Business
 from bookings.models import Booking
 from .models import Chat, Messages, AgentConfiguration
 from .api_views import check_availability, book_appointment, get_current_time_in_chicago
+from .utils import convert_date_str_to_date
 
 import google.generativeai as genai
 
@@ -42,16 +44,25 @@ def get_dynamic_system_prompt(business_id):
     Generate a dynamic system prompt based on the business and agent configuration
     stored in the database. Falls back to default prompt if no configuration exists.
     """
+    # Get the business object
+    business = Business.objects.get(businessId=business_id)
+    
+    # Try to get agent configuration for this business
     try:
-        # Get the business configuration
-        config = AgentConfiguration.objects.get(business__businessId=business_id)
-        business = Business.objects.get(businessId=business_id)
-        
-        # Build the dynamic system prompt
-        prompt = f"""
-        ## **Role of the AI Voice Agent**
-        You are {config.agent_name}, acting as a {config.agent_role} for {business.businessName}. You efficiently handle inbound and outbound calls to:
+        config = AgentConfiguration.objects.get(business=business)
+    except AgentConfiguration.DoesNotExist:
+        print("Agent configuration not found for business")
+        return 0
+    
+    # Start with base prompt
+    prompt = f"""You are {config.agent_name}, {config.agent_role} for {business.businessName}. You are speaking with a potential customer.
 
+        Your primary goals are to:
+        1. Answer questions about cleaning services
+        2. Collect customer details
+        3. Book cleaning appointments
+
+        ##Rules:
         - Greet and engage potential customers professionally
         - Confirm interest in cleaning services
         - Gather essential customer details (name, phone number, email, and address)
@@ -60,40 +71,28 @@ def get_dynamic_system_prompt(business_id):
         - Offer discounts when necessary
         - Schedule and confirm cleaning appointments
         - Send booking confirmation and invoice links via email or SMS
+        - ALWAYS use tools when appropriate - NEVER skip using a tool when it's needed
 
-        The AI ensures a seamless, professional, and persuasive booking process, helping {business.businessName} secure more appointments while maintaining excellent customer service.
+        ##CRITICAL TOOL USAGE INSTRUCTIONS:
+        You have access to the following tools to help with the booking process. YOU MUST USE THESE TOOLS when appropriate:
 
-        ---
+        1. check_availability: ALWAYS USE THIS TOOL whenever a customer asks about availability or scheduling for a specific date/time
+           - Input: A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
+           - Business Object
+           - When to use: IMMEDIATELY when a customer mentions ANY specific date or time for booking
+           - Example trigger phrases: "Is next Monday available?", "Can I book for tomorrow?", "Do you have availability on Friday?"
 
-        ## **Who Are {business.businessName}?**
-        {config.business_description or f"{business.businessName} is a leading professional cleaning service provider based in {business.businessCity}, {business.businessState}. They specialize in top-quality residential and commercial cleaning services tailored to meet each client's unique needs."}
+        2. bookAppointment: Use this tool to book an appointment after collecting all required customer information
+           - Input: client_phone_number : String
+           - Business Object
+           - When to use: After confirming availability and collecting all required customer information
 
-        ### {business.businessName}'s Mission:
-        {config.business_mission or "- Deliver high-quality, reliable, and professional cleaning services\n- Ensure a clean and healthy environment for clients\n- Guarantee 100% customer satisfaction with every service"}
+        3. current_time: Use this tool to get the current time in Chicago timezone
+           - Input: None
+           - When to use: When a customer asks about current time or business hours
 
-        ### Services Offered:
-        {config.services or "- Regular Cleaning: Best for basic home maintenance cleaning\n- Deep Cleaning: Ideal for thorough cleaning, great for first-time or seasonal cleanings\n- Commercial Cleaning: Tailored for offices and business spaces"}
-
-
-        You have access to the following tools to help with the booking process:
-
-        1. check_availability: Check if a specific date and time is available for booking
-        - Input: 
-                - A date and time string (e.g., "Tomorrow at 2 PM", "March 15, 2025 at 10 AM")
-                - Business Object
-        - Output: Availability status
-
-        2. bookAppointment: Book an appointment in the system
-        - Input: 
-                - Customer details as a dictionary
-                - Business Object
-        - Output: Booking confirmation and ID
-
-        3. current_time: Get the current time in Chicago timezone
-        - Input: None
-        - Output: Current time in Chicago timezone
-
-        When you need to use a tool, use one of the following formats:
+        ##TOOL CALLING FORMAT:
+        When you need to use a tool, use one of the following formats EXACTLY as shown:
         
         Format 1 (preferred):
         <tool>tool_name(parameters)</tool>
@@ -101,18 +100,12 @@ def get_dynamic_system_prompt(business_id):
         Format 2 (alternative):
         ```tool_code tool_name(parameters) ```
 
-        For example:
-        <tool>check_availability(Tomorrow at 2 PM)</tool>
-        OR
-        ```tool_code check_availability(Tomorrow at 2 PM) ```
-
-        <tool>bookAppointment()</tool>
-        OR
-        ```tool_code bookAppointment() ```
-
+        EXAMPLES OF CORRECT TOOL USAGE:
+        <tool>check_availability(Tomorrow at 2 PM, business_obj)</tool>
         <tool>current_time()</tool>
-        OR
-        ```tool_code current_time() ```
+        <tool>bookAppointment(client_phone_number, business_obj)</tool>
+
+        IMPORTANT: DO NOT try to make up responses that should come from tools. When a customer asks about availability, ALWAYS use the check_availability tool.
 
         Be friendly, professional, and helpful. Follow the conversation flow carefully and wait for user responses before moving to the next step.
 
@@ -121,123 +114,419 @@ def get_dynamic_system_prompt(business_id):
         Always include "AM" or "PM" when mentioning time (e.g., "Three thirty PM").
         Never say "O'Clock." Instead, say "One PM."
 
-        ##Script - AI will follow this Script
-        {config.script or ""}
-        """
-        
-        # Add any custom instructions if available
-        if config.custom_instructions:
-            prompt += f"\n\n## **Additional Instructions**\n{config.custom_instructions}"
-        
-        return prompt
-        
-    except Exception as e:
-        logger.error(f"Error generating dynamic system prompt: {str(e)}")
-        # Return a basic default prompt if anything goes wrong
-        return "You are an AI assistant for a cleaning business. Help customers book appointments and answer their questions about services."
+        Always verify appointment availability before booking.
 
+        ##Business Information
+        {config.business_description}
+        
+        ##Business Mission
+        {config.business_mission}
+
+        ##Services
+        {config.services}
+
+        ##Custom Instructions
+        {config.custom_instructions}
+
+        ##Script - AI has to follow this script
+        {config.script}
+        """
+
+    
+    return prompt
+        
+  
 
 
 def execute_tool_call(tool_call, client_phone_number):
     """Execute a tool call and return the result"""
-    # Extract tool name and parameters using regex
-    tool_match = re.match(r'<tool>(\w+)\((.*)\)</tool>', tool_call)
-    
-    if not tool_match:
-        return "Error: Invalid tool call format"
-    
-    tool_name = tool_match.group(1)
-    tool_params_str = tool_match.group(2)
-    
-    # Check if the tool exists
-    if tool_name not in tools:
-        return f"Error: Tool '{tool_name}' not found"
-    
-    # Get the business for this chat
     try:
-        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-        business = chat.business
+        print("\n===== STARTING execute_tool_call =====")
+        print(f"Tool call: {tool_call}")
         
-        # Execute the tool with the provided parameters
-        if tool_name == 'check_availability':
-            # For check_availability, we need to pass the business and date string
-            result = tools['check_availability'](business, tool_params_str)
+        # Extract tool name and arguments
+        tool_name = tool_call.get('name')
+        tool_args = tool_call.get('args', {})
+        
+        if not tool_name:
+            print("Error: Missing tool name in tool call")
+            return "Error: Missing tool name in tool call"
+        
+        print(f"Tool name: {tool_name}")
+        print(f"Tool args: {tool_args}")
+        
+        # Check if the tool exists
+        if tool_name not in tools:
+            print(f"Tool not found: {tool_name}")
+            return f"Error: Tool '{tool_name}' not found"
+        
+        # Special case for current_time which doesn't need chat or business context
+        if tool_name == 'current_time':
+            print("Executing current_time tool")
+            try:
+                result = tools[tool_name]()
+                print(f"Current time result: {result}")
+                return result  # Return the string directly, no need for JSON serialization
+            except Exception as e:
+                print(f"Error executing current_time tool: {str(e)}")
+                print(f"Error details: {traceback.format_exc()}")
+                return f"Error getting current time: {str(e)}"
+        
+        # For other tools, we need the chat and business context
+        try:
+            # Get the chat object for this phone number
+            if not client_phone_number:
+                print("Error: Missing client phone number")
+                return "Error: Missing client phone number"
+                
+            chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+            print(f"Found chat: {chat.id}")
+            
+            # Get the business associated with this chat
+            business = chat.business
+            print(f"Business: {business.businessName}")
+            
+            # Execute the appropriate tool
+            if tool_name == 'check_availability':
+                print("Executing check_availability tool")
+                # Extract date parameter from tool args
+                date_string = tool_args
+                if isinstance(tool_args, dict):
+                    date_string = tool_args.get('date', '')
+                
+                if not date_string:
+                    print("Error: Missing date parameter for check_availability")
+                    return "Error: Missing date parameter for check_availability"
+                    
+                print(f"Date string: {date_string}")
+                try:
+                    result = tools[tool_name](business, date_string)
+                    print(f"check_availability result: {result}")
+                except Exception as e:
+                    print(f"Error executing check_availability: {str(e)}")
+                    print(f"Error details: {traceback.format_exc()}")
+                    return f"Error checking availability: {str(e)}"
+                
+            elif tool_name == 'bookAppointment':
+                print("Executing bookAppointment tool")
+                # No need to validate fields here as we're now passing client_phone_number
+                # and the validation will happen in the book_appointment function
+                
+                try:
+                    result = tools[tool_name](business, client_phone_number)
+                    print(f"bookAppointment result: {result}")
+                except Exception as e:
+                    print(f"Error executing bookAppointment: {str(e)}")
+                    print(f"Error details: {traceback.format_exc()}")
+                    return f"Error booking appointment: {str(e)}"
+                
+            else:
+                print(f"Unknown tool execution path: {tool_name}")
+                return f"Error: Unknown tool execution path for '{tool_name}'"
+            
+            print(f"Tool result: {result}")
+            print("===== COMPLETED execute_tool_call =====\n")
             return json.dumps(result, default=str)
             
-        elif tool_name == 'bookAppointment':
-            # For bookAppointment, we need to extract conversation data and pass with business
-            chat_messages = Messages.objects.filter(chat=chat).order_by('createdAt')
-            customer_data = extract_conversation_summary(chat_messages)
-            result = tools['bookAppointment'](business, customer_data)
-            return json.dumps(result, default=str)
+        except Chat.DoesNotExist:
+            print(f"\n===== ERROR in execute_tool_call =====")
+            print(f"Chat not found for phone number: {client_phone_number}")
+            print("===== END ERROR =====\n")
+            return "Error: Chat not found"
             
-        elif tool_name == 'current_time':
-            # current_time doesn't need parameters
-            result = tools['current_time']()
-            return result
-            
-        else:
-            # Default handling for unknown tools
-            return f"Error: Tool '{tool_name}' implementation not found"
-            
-    except Chat.DoesNotExist:
-        return "Error: Chat not found"
     except Exception as e:
-        logger.error(f"Error executing tool {tool_name}: {str(e)}")
-        return f"Error executing tool {tool_name}: {str(e)}"
+        print(f"\n===== ERROR in execute_tool_call =====")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print(f"Error details: {traceback.format_exc()}")
+        print("===== END ERROR =====\n")
+        return f"Error executing tool {tool_name if 'tool_name' in locals() else 'unknown'}: {str(e)}"
 
 
 def process_ai_response(response_text, client_phone_number, formatted_messages=None):
-    """Process the AI response to execute any tool calls"""
-    # Check if the response contains any tool calls in <tool> format
-    tool_pattern = r'<tool>(.*?)</tool>'
-    tool_calls = re.findall(tool_pattern, response_text)
-    
-    # Also check for tool_code format
-    tool_code_pattern = r'```tool_code\s+(\w+)\(([^)]*)\)\s+```'
-    tool_code_calls = re.findall(tool_code_pattern, response_text)
-    
-    # If no tool calls found in either format, return the original response
-    if not tool_calls and not tool_code_calls:
+    """
+    Process the AI response to execute tool calls and return the updated response
+    """
+    try:
+        print("\n===== STARTING process_ai_response =====")
+        print(f"Response text length: {len(response_text)}")
+        
+        # Check if the response contains tool calls
+        has_tool_tag = "<tool>" in response_text and "</tool>" in response_text
+        has_tool_code = "```tool_code" in response_text
+        
+        print(f"Has tool tag format: {has_tool_tag}")
+        print(f"Has tool_code format: {has_tool_code}")
+        
+        # Track all tool results to generate a final response
+        all_tool_results = []
+        original_response = response_text
+        
+        # Process tool calls in <tool>tool_name(parameters)</tool> format
+        if has_tool_tag:
+            print("Processing tool tag format calls")
+            
+            # Extract tool call using regex
+            tool_pattern = r"<tool>([^(]+)\(([^)]*)\)</tool>"
+            tool_matches = re.findall(tool_pattern, response_text, re.DOTALL)
+            
+            print(f"Number of tool tag matches found: {len(tool_matches)}")
+            
+            # Process each tool call
+            for tool_name, tool_args_str in tool_matches:
+                print(f"Processing tool: {tool_name}")
+                print(f"Tool args string: {tool_args_str}")
+                
+                try:
+                    # Clean up tool name and args
+                    tool_name = tool_name.strip()
+                    tool_args_str = tool_args_str.strip()
+                    tool_args = {}
+                    
+                    # Handle different tools
+                    if tool_name == 'current_time':
+                        # No arguments needed for current_time
+                        pass
+                    elif tool_name == 'check_availability':
+                        # For check_availability, use the string directly as the date parameter
+                        if tool_args_str:
+                            # If it's a direct string parameter
+                            tool_args = tool_args_str
+                    elif tool_name == 'bookAppointment':
+                        # For bookAppointment, we now just pass the client_phone_number directly
+                        # No need to parse any arguments as the phone number is already available
+                        tool_args = client_phone_number
+                    elif tool_name == 'current_time':
+                        # No arguments needed for current_time
+                        pass
+                    
+                    print(f"Parsed tool args: {tool_args}")
+                    
+                    # Create a tool call object
+                    tool_call = {
+                        "name": tool_name,
+                        "args": tool_args
+                    }
+                    
+                    # Execute the tool call
+                    print(f"Executing tool call: {tool_call['name']}")
+                    tool_result = execute_tool_call(tool_call, client_phone_number)
+                    print(f"Tool execution result: {tool_result}")
+                    
+                    # Store the tool result for later processing
+                    all_tool_results.append({
+                        "tool_name": tool_name,
+                        "tool_args": tool_args_str,
+                        "result": tool_result
+                    })
+                    
+                    # Replace the tool call in the response with a placeholder
+                    tool_call_text = f"<tool>{tool_name}({tool_args_str})</tool>"
+                    response_text = response_text.replace(tool_call_text, f"[TOOL_RESULT_{len(all_tool_results)-1}]")
+                    
+                except Exception as e:
+                    print(f"Error executing tool {tool_name}: {str(e)}")
+                    print(f"Error details: {traceback.format_exc()}")
+                    error_msg = f"Error executing tool {tool_name}: {str(e)}"
+                    tool_call_text = f"<tool>{tool_name}({tool_args_str})</tool>"
+                    response_text = response_text.replace(tool_call_text, 
+                                                      f"\n\nTool Error: {error_msg}\n\n")
+        
+        # Process tool calls in ```tool_code tool_name(parameters) ``` format
+        if has_tool_code:
+            print("Processing tool_code format calls")
+            
+            # Extract tool call using regex
+            code_pattern = r"```tool_code\s+([^(]+)\(([^)]*)\)\s*```"
+            code_matches = re.findall(code_pattern, response_text, re.DOTALL)
+            
+            print(f"Number of tool_code matches found: {len(code_matches)}")
+            
+            # Process each tool call
+            for tool_name, tool_args_str in code_matches:
+                print(f"Processing tool_code: {tool_name}")
+                print(f"Tool_code args string: {tool_args_str}")
+                
+                try:
+                    # Clean up tool name and args
+                    tool_name = tool_name.strip()
+                    tool_args_str = tool_args_str.strip()
+                    tool_args = {}
+                    
+                    # Handle different tools
+                    if tool_name == 'current_time':
+                        # No arguments needed for current_time
+                        pass
+                    elif tool_name == 'check_availability':
+                        # For check_availability, use the string directly as the date parameter
+                        if tool_args_str:
+                            # If it's a direct string parameter
+                            tool_args = tool_args_str
+                    elif tool_name == 'bookAppointment':
+                        # For bookAppointment, we now just pass the client_phone_number directly
+                        # No need to parse any arguments as the phone number is already available
+                        tool_args = client_phone_number
+                    elif tool_name == 'current_time':
+                        # No arguments needed for current_time
+                        pass
+                    
+                    print(f"Parsed tool_code args: {tool_args}")
+                    
+                    # Create a tool call object
+                    tool_call = {
+                        "name": tool_name,
+                        "args": tool_args
+                    }
+                    
+                    # Execute the tool call
+                    print(f"Executing tool_code call: {tool_call['name']}")
+                    tool_result = execute_tool_call(tool_call, client_phone_number)
+                    print(f"Tool_code execution result: {tool_result}")
+                    
+                    # Store the tool result for later processing
+                    all_tool_results.append({
+                        "tool_name": tool_name,
+                        "tool_args": tool_args_str,
+                        "result": tool_result
+                    })
+                    
+                    # Replace the tool call in the response with a placeholder
+                    tool_call_text = f"```tool_code {tool_name}({tool_args_str}) ```"
+                    response_text = response_text.replace(tool_call_text, f"[TOOL_RESULT_{len(all_tool_results)-1}]")
+                    
+                except Exception as e:
+                    print(f"Error executing tool_code {tool_name}: {str(e)}")
+                    print(f"Error details: {traceback.format_exc()}")
+                    error_msg = f"Error executing tool {tool_name}: {str(e)}"
+                    tool_call_text = f"```tool_code {tool_name}({tool_args_str}) ```"
+                    response_text = response_text.replace(tool_call_text, 
+                                                      f"\n\nTool Error: {error_msg}\n\n")
+        
+        # If we have tool results, generate a natural language response using LLM
+        if all_tool_results and formatted_messages:
+            print(f"Generating natural language response for {len(all_tool_results)} tool results")
+            
+            # Create a new prompt for the LLM to generate a natural response
+            tool_results_text = ""
+            for idx, result in enumerate(all_tool_results):
+                tool_name = result["tool_name"]
+                tool_args = result["tool_args"]
+                tool_result = result["result"]
+                
+                # Format the tool result based on the tool type
+                if tool_name == "check_availability":
+                    try:
+                        # Parse the JSON result
+                        if isinstance(tool_result, str):
+                            result_data = json.loads(tool_result)
+                        else:
+                            result_data = tool_result
+                            
+                        # Extract availability information
+                        is_available = result_data.get("available", False)
+                        parsed_datetime = result_data.get("parsed_datetime", "")
+                        cleaners = result_data.get("cleaners", [])
+                        
+                        if is_available:
+                            cleaner_names = ", ".join([c.get("name", "Unknown") for c in cleaners])
+                            tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: Available on {parsed_datetime}. Available cleaners: {cleaner_names}\n\n"
+                        else:
+                            alternative_slots = result_data.get("alternative_slots", [])
+                            alternatives_text = ", ".join(alternative_slots) if alternative_slots else "No alternative slots available"
+                            tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: Not available on {parsed_datetime}. Alternative slots: {alternatives_text}\n\n"
+                    except Exception as e:
+                        print(f"Error formatting check_availability result: {str(e)}")
+                        tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: {tool_result}\n\n"
+                elif tool_name == "current_time":
+                    tool_results_text += f"Tool: {tool_name}\nResult: {tool_result}\n\n"
+                elif tool_name == "bookAppointment":
+                    try:
+                        # Parse the JSON result
+                        if isinstance(tool_result, str):
+                            result_data = json.loads(tool_result)
+                        else:
+                            result_data = tool_result
+                            
+                        # Extract booking information
+                        success = result_data.get("success", False)
+                        booking_id = result_data.get("booking_id", "")
+                        message = result_data.get("message", "")
+                        
+                        if success:
+                            tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: Booking successful. Booking ID: {booking_id}. {message}\n\n"
+                        else:
+                            tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: Booking failed. {message}\n\n"
+                    except Exception as e:
+                        print(f"Error formatting bookAppointment result: {str(e)}")
+                        tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: {tool_result}\n\n"
+                else:
+                    # Generic formatting for other tools
+                    tool_results_text += f"Tool: {tool_name}\nArgs: {tool_args}\nResult: {tool_result}\n\n"
+            
+            # Create a new system prompt for generating natural response
+            natural_response_prompt = """You are an AI assistant for a cleaning company. 
+            You need to generate a natural, conversational response based on the original message and tool results.
+            
+            DO NOT mention that you're using tools or APIs. Just incorporate the information naturally.
+            DO NOT use phrases like 'the system shows' or 'I checked and found'.
+            DO NOT include any tool call syntax in your response.
+            
+            Respond as if you naturally know this information.
+            Keep your response friendly, professional, and conversational."""
+            
+            # Create a new message for the LLM
+            natural_response_messages = [
+                {"role": "model", "parts": [{"text": natural_response_prompt}]},
+                {"role": "user", "parts": [{"text": f"Original AI response:\n{original_response}\n\nTool Results:\n{tool_results_text}\n\nGenerate a natural, conversational response that incorporates the tool results:"}]}
+            ]
+            
+            # Generate the natural response
+            print("Calling model.generate_content for natural response...")
+            try:
+                natural_response = model.generate_content(
+                    natural_response_messages,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.7,
+                        max_output_tokens=1024,
+                        top_p=0.95,
+                        top_k=40,
+                    )
+                )
+                
+                # Use the natural response as the final response
+                final_response = natural_response.text
+                print(f"Generated natural response: {final_response}")
+                return final_response
+            except Exception as e:
+                print(f"Error generating natural response: {str(e)}")
+                # Fall back to the original response with placeholders replaced
+                
+                # Replace placeholders with actual tool results
+                for idx, result in enumerate(all_tool_results):
+                    placeholder = f"[TOOL_RESULT_{idx}]"
+                    result_str = json.dumps(result["result"]) if isinstance(result["result"], dict) else str(result["result"])
+                    response_text = response_text.replace(placeholder, f"\n\nTool Result: {result_str}\n\n")
+                
+                return response_text
+        elif all_tool_results:
+            # If we have tool results but no formatted_messages, replace placeholders with actual results
+            for idx, result in enumerate(all_tool_results):
+                placeholder = f"[TOOL_RESULT_{idx}]"
+                result_str = json.dumps(result["result"]) if isinstance(result["result"], dict) else str(result["result"])
+                response_text = response_text.replace(placeholder, f"\n\nTool Result: {result_str}\n\n")
+        
+        print(f"Has tool tag format: {has_tool_tag}")
+        print(f"Has tool_code format: {has_tool_code}")
+        print("===== COMPLETED process_ai_response =====\n")
         return response_text
-    
-    # Process each tool call in <tool> format and replace with the result
-    for tool_call in tool_calls:
-        full_tool_call = f"<tool>{tool_call}</tool>"
-        tool_result = execute_tool_call(full_tool_call, client_phone_number)
         
-        # Replace the tool call with the result
-        response_text = response_text.replace(full_tool_call, f"\n\nTool Result: {tool_result}\n\n")
-    
-    # Process each tool call in tool_code format and replace with the result
-    for tool_name, tool_params in tool_code_calls:
-        full_tool_call = f"```tool_code {tool_name}({tool_params}) ```"
-        # Convert to <tool> format for execute_tool_call
-        tool_call_converted = f"<tool>{tool_name}({tool_params})</tool>"
-        tool_result = execute_tool_call(tool_call_converted, client_phone_number)
-        
-        # Replace the tool call with the result
-        response_text = response_text.replace(full_tool_call, f"\n\nTool Result: {tool_result}\n\n")
-    
-    # If formatted_messages is provided, add the tool result and generate a new response
-    if formatted_messages and (tool_calls or tool_code_calls):
-        # Add all tool results to formatted_messages
-        formatted_messages.append({"role": "model", "parts": [{"text": f"Tool Result: {tool_result}"}]})
-
-        # Generate response from the model
-        response = model.generate_content(
-            formatted_messages,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7,
-                max_output_tokens=1024,
-                top_p=0.95,
-                top_k=40,
-            )
-        )
-        
-        return response.text
-    
-    return response_text
+    except Exception as e:
+        print(f"\n===== ERROR in process_ai_response =====")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print(f"Error details: {traceback.format_exc()}")
+        print("===== END ERROR =====\n")
+        return response_text
 
 
 def get_ai_response(messages, business_id, client_phone_number):
@@ -245,8 +534,14 @@ def get_ai_response(messages, business_id, client_phone_number):
     Get response from Google Gemini AI with tool calling capabilities
     """
     try:
+        print("\n===== STARTING get_ai_response =====")
+        print(f"Business ID: {business_id}")
+        print(f"Client Phone: {client_phone_number}")
+        print(f"Number of messages: {len(messages)}")
+        
         # Get the system prompt (now dynamic based on business configuration)
         system_prompt = get_dynamic_system_prompt(business_id)
+        print(f"System prompt length: {len(system_prompt)}")
         
         # Format messages for the model
         formatted_messages = []
@@ -259,7 +554,11 @@ def get_ai_response(messages, business_id, client_phone_number):
             role = "user" if msg.role == "user" else "model"
             formatted_messages.append({"role": role, "parts": [{"text": msg.message}]})
         
+        print(f"Total formatted messages: {len(formatted_messages)}")
+        print("Preparing to call Gemini API...")
+        
         # Generate response from the model
+        print("Calling model.generate_content...")
         response = model.generate_content(
             formatted_messages,
             generation_config=genai.types.GenerationConfig(
@@ -269,14 +568,22 @@ def get_ai_response(messages, business_id, client_phone_number):
                 top_k=40,
             )
         )
+        print("Gemini API call completed successfully")
         
         # Process the response to execute any tool calls
+        print("Processing AI response...")
         processed_response = process_ai_response(response.text, client_phone_number, formatted_messages)
         
+        print("===== COMPLETED get_ai_response =====\n")
         return processed_response
+        
     except Exception as e:
-        logger.error(f"Error getting AI response: {str(e)}")
-        return "I'm sorry, I'm having trouble processing your request right now. Please try again later."
+        print(f"\n===== ERROR in get_ai_response =====")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print(f"Error details: {traceback.format_exc()}")
+        print("===== END ERROR =====\n")
+        return f"I'm sorry, I encountered an error: {str(e)}"
 
 
 def extract_conversation_summary(chat_history):
@@ -292,7 +599,7 @@ def extract_conversation_summary(chat_history):
         'lastName': '',
         'email': '',
         'phoneNumber': '',
-        'address': '',
+        'address1': '',
         'city': '',
         'state': '',
         'zipCode': '',
@@ -323,53 +630,56 @@ def extract_conversation_summary(chat_history):
     
     # Create a prompt for Gemini to extract the information
     extraction_prompt = f"""
-    You are an AI assistant tasked with extracting specific information from a customer conversation with CEO Cleaners.
-    Please analyze the following conversation and extract the information in a structured JSON format.
-    
-    Conversation:
-    {full_conversation}
-    
-    Extract the following information and respond ONLY with a valid JSON object with these keys:
-    - firstName: Customer's first name
-    - lastName: Customer's last name
-    - email: Customer's email address
-    - phoneNumber: Customer's phone number
-    - address: Street address (just the street part, no city/state/zip)
-    - city: City name
-    - state: Two-letter state code (e.g., TX for Texas)
-    - zipCode: 5-digit or 9-digit zip code
-    - squareFeet: Square footage of the property as a numeric string
-    - bedrooms: Number of bedrooms as a numeric string
-    - bathrooms: Number of bathrooms as a numeric string
-    - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
-    - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
-    - additionalNotes: Any special requests or notes
-    - addonDishes: Quantity of Dishes Addon
-    - addonLaundryLoads: Quantity of Laundry Loads Addon
-    - addonWindowCleaning: Quantity of Window Cleaning Addon
-    - addonPetsCleaning: Quantity of Pets Cleaning Addon
-    - addonFridgeCleaning: Quantity of Fridge Cleaning Addon
-    - addonOvenCleaning: Quantity of Oven Cleaning Addon
-    - addonBaseboard: Quantity of Baseboard Addon
-    - addonBlinds: Quantity of Blinds Addon
-    - addonGreenCleaning: Quantity of Green Cleaning Addon
-    - addonCabinetsCleaning: Quantity of Cabinets Cleaning Addon
-    - addonPatioSweeping: Quantity of Patio Sweeping Addon
-    - addonGarageSweeping: Quantity of Garage Sweeping Addon
-    
-    Use empty strings for any information that is not present in the conversation.
-    
-    IMPORTANT INSTRUCTIONS FOR APPOINTMENT DATE AND TIME:
-    - Extract the appointment date and time in EXACTLY the format mentioned in the conversation
-    - Look for ANY mention of scheduling, booking, or appointments
-    - Handle relative times like "tomorrow at 10 AM", "next Tuesday at 2 PM", "this Friday afternoon"
-    - Handle specific dates like "March 15th at 2 PM", "3/15/2025 at 14:00"
-    - If only a day of week is mentioned (e.g., "Monday"), assume it's the next occurrence of that day
-    - If only a time is mentioned (e.g., "3 PM"), assume it's for the next business day
-    - The current date and time is {get_current_time_in_chicago()}
-    - Always include both the date and time in your extracted appointmentDateTime field
-    - Do not convert to UTC - return the exact text as mentioned in the conversation
-    """
+        You are an AI assistant tasked with extracting specific information from a customer conversation with CEO Cleaners.
+        Please analyze the following conversation and extract the information in a structured JSON format.
+        
+        Conversation:
+        {full_conversation}
+        
+        Extract the following information and respond ONLY with a valid JSON object with these keys:
+        - firstName: Customer's first name
+        - lastName: Customer's last name
+        - email: Customer's email address
+        - phoneNumber: Customer's phone number
+        - address1: Street address (just the street part, no city/state/zip)
+        - city: City name
+        - state: State
+        - zipCode: 5-digit or 9-digit zip code
+        - squareFeet: Square footage of the property as a numeric string
+        - bedrooms: Number of bedrooms as a numeric string
+        - bathrooms: Number of bathrooms as a numeric string
+        - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
+        - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
+        - additionalNotes: Any special requests or notes
+        - addonDishes: Quantity of Dishes Addon
+        - addonLaundryLoads: Quantity of Laundry Loads Addon
+        - addonWindowCleaning: Quantity of Window Cleaning Addon
+        - addonPetsCleaning: Quantity of Pets Cleaning Addon
+        - addonFridgeCleaning: Quantity of Fridge Cleaning Addon
+        - addonOvenCleaning: Quantity of Oven Cleaning Addon
+        - addonBaseboard: Quantity of Baseboard Addon
+        - addonBlinds: Quantity of Blinds Addon
+        - addonGreenCleaning: Quantity of Green Cleaning Addon
+        - addonCabinetsCleaning: Quantity of Cabinets Cleaning Addon
+        - addonPatioSweeping: Quantity of Patio Sweeping Addon
+        - addonGarageSweeping: Quantity of Garage Sweeping Addon
+        - summary: This is the summary of the conversation
+        
+        Use empty strings for any information that is not present in the conversation.
+        
+        IMPORTANT: DO NOT try to make up responses that should come from tools. When a customer asks about availability, ALWAYS use the check_availability tool.
+
+        IMPORTANT INSTRUCTIONS FOR APPOINTMENT DATE AND TIME:
+        - Extract the appointment date and time in EXACTLY the format mentioned in the conversation
+        - Look for ANY mention of scheduling, booking, or appointments
+        - Handle relative times like "tomorrow at 10 AM", "next Tuesday at 2 PM", "this Friday afternoon"
+        - Handle specific dates like "March 15th at 2 PM", "3/15/2025 at 14:00"
+        - If only a day of week is mentioned (e.g., "Monday"), assume it's the next occurrence of that day
+        - If only a time is mentioned (e.g., "3 PM"), assume it's for the next business day
+        - The current date and time is {get_current_time_in_chicago()}
+        - Always include both the date and time in your extracted appointmentDateTime field
+        - Do not convert to UTC - return the exact text as mentioned in the conversation
+        """
     
     try:
         # Call Gemini API to extract information
@@ -402,8 +712,7 @@ def extract_conversation_summary(chat_history):
                 if key in extracted_data and extracted_data[key]:
                     summary[key] = extracted_data[key]
                     print(f"Extracted {key}: {summary[key]}")
-                else:
-                    print(f"No {key} extracted")
+               
             
             # Convert appointment date and time to UTC if present
             if summary['appointmentDateTime']:
@@ -411,159 +720,22 @@ def extract_conversation_summary(chat_history):
                     local_datetime_str = summary['appointmentDateTime']
                     print(f"Extracted appointment text: {local_datetime_str}")
                     
-                    # Create a second prompt to parse the datetime string
-                    datetime_parsing_prompt = f"""
-                    You are an AI assistant that specializes in parsing date and time information.
-                    
-                    The current date is: {datetime.now().strftime('%Y-%m-%d')}
-                    The current time is: {datetime.now().strftime('%H:%M')}
-                    
-                    Please parse the following appointment text and convert it to a specific date and time:
-                    "{local_datetime_str}"
-                    
-                    If the text mentions a relative time like "tomorrow" or "next Tuesday", calculate the actual date.
-                    If only a day of week is mentioned, assume it's the next occurrence of that day.
-                    If only a time is mentioned, assume it's for today or the next business day.
-                    
-                    Respond ONLY with a valid JSON object with these keys:
-                    - year: The 4-digit year (e.g., 2025)
-                    - month: The month as a number (1-12)
-                    - day: The day of month (1-31)
-                    - hour: The hour in 24-hour format (0-23)
-                    - minute: The minute (0-59)
-                    - period: "AM" or "PM" if specified
-                    
-                    If any component is not specified or cannot be determined, make a reasonable assumption based on context.
-                    """
-                    
-                    # Call Gemini API to parse the datetime
-                    datetime_parsing_response = model.generate_content(
-                        datetime_parsing_prompt,
-                        generation_config=genai.types.GenerationConfig(
-                            temperature=0.1,
-                            max_output_tokens=512,
-                        )
-                    )
-                    
-                    # Extract JSON from the response text
-                    parsing_response_text = datetime_parsing_response.text.strip()
-                    
-                    # Handle case where response might have markdown code block formatting
-                    if parsing_response_text.startswith('```json'):
-                        parsing_response_text = parsing_response_text.split('```json', 1)[1]
-                    if parsing_response_text.endswith('```'):
-                        parsing_response_text = parsing_response_text.rsplit('```', 1)[0]
-                    
-                    parsing_response_text = parsing_response_text.strip()
-                    datetime_components = json.loads(parsing_response_text)
-                    
-                    print(f"Parsed datetime components: {datetime_components}")
-                    
-                    # Construct datetime object from components
-                    year = int(datetime_components.get('year', datetime.now().year))
-                    month = int(datetime_components.get('month', datetime.now().month))
-                    day = int(datetime_components.get('day', datetime.now().day))
-                    hour = int(datetime_components.get('hour', 12))
-                    minute = int(datetime_components.get('minute', 0))
-                    
-                    # Adjust for AM/PM if period is provided
-                    period = datetime_components.get('period', '')
-                    if period.upper() == 'PM' and hour < 12:
-                        hour += 12
-                    elif period.upper() == 'AM' and hour == 12:
-                        hour = 0
-                    
-                    # Create datetime object
-                    local_dt = datetime(year, month, day, hour, minute)
-                    print(f"Constructed local datetime: {local_dt}")
-                    
-                    # Set the timezone to Chicago
-                    chicago_tz = pytz.timezone('America/Chicago')
-                    local_dt_with_tz = chicago_tz.localize(local_dt)
-                    
-                    # Convert to UTC
-                    utc_dt = local_dt_with_tz.astimezone(pytz.UTC)
-                    
-                    # Format as ISO string
-                    summary['appointmentDateTime'] = utc_dt.isoformat()
-                    print(f"Converted to UTC: {summary['appointmentDateTime']}")
+                    # Use convert_date_str_to_date function
+                    summary['appointmentDateTime'] = convert_date_str_to_date(local_datetime_str)
+                    print(f"Converted appointment to UTC: {summary['appointmentDateTime']}")
                     
                 except Exception as e:
-                    logger.error(f"Error converting datetime to UTC: {str(e)}")
                     print(f"Error converting datetime: {str(e)}")
                     print(f"Will try fallback datetime parsing methods")
                     
-                    # Fallback method: Try to use dateutil parser
-                    try:
-                        from dateutil import parser as date_parser
-                        
-                        # Replace common relative time expressions
-                        today = datetime.now()
-                        text = local_datetime_str.lower()
-                        
-                        # Handle common relative time expressions
-                        if 'tomorrow' in text:
-                            base_date = today + timedelta(days=1)
-                        elif 'next week' in text:
-                            base_date = today + timedelta(days=7)
-                        elif any(day in text for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']):
-                            # Find the mentioned day of week
-                            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-                            for i, day in enumerate(days):
-                                if day in text:
-                                    # Calculate days until the next occurrence of this day
-                                    current_weekday = today.weekday()
-                                    days_ahead = i - current_weekday
-                                    if days_ahead <= 0:  # Target day already happened this week
-                                        days_ahead += 7
-                                    base_date = today + timedelta(days=days_ahead)
-                                    break
-                        else:
-                            base_date = today
-                        
-                        # Try to parse the time portion
-                        parsed_dt = date_parser.parse(text, default=base_date, fuzzy=True)
-                        
-                        # Set the timezone to Chicago
-                        chicago_tz = pytz.timezone('America/Chicago')
-                        local_dt_with_tz = chicago_tz.localize(parsed_dt)
-                        
-                        # Convert to UTC
-                        utc_dt = local_dt_with_tz.astimezone(pytz.UTC)
-                        
-                        # Format as ISO string
-                        summary['appointmentDateTime'] = utc_dt.isoformat()
-                        print(f"Converted to UTC using fallback method: {summary['appointmentDateTime']}")
-                        
-                    except Exception as e2:
-                        logger.error(f"Fallback datetime parsing also failed: {str(e2)}")
-                        print(f"Fallback datetime parsing also failed: {str(e2)}")
         except json.JSONDecodeError as e:
-            logger.error(f"Error parsing JSON from Gemini response: {str(e)}")
             print(f"Error parsing JSON: {str(e)}")
             print(f"Raw response: {extraction_response.text}")
     except Exception as e:
-        logger.error(f"Error calling Gemini API for extraction: {str(e)}")
+        print(f"Error calling Gemini API for extraction: {str(e)}")
         print(f"Error with Gemini extraction: {str(e)}")
     
-    # Generate a detail summary
-    detail_parts = []
-    if summary['firstName'] or summary['lastName']:
-        name = f"{summary['firstName']} {summary['lastName']}".strip()
-        detail_parts.append(f"Customer: {name}")
-    if summary['squareFeet']:
-        detail_parts.append(f"Property: {summary['squareFeet']} sq ft")
-    if summary['bedrooms'] and summary['bathrooms']:
-        detail_parts.append(f"{summary['bedrooms']} bed, {summary['bathrooms']} bath")
-    if summary['appointmentDateTime']:
-        try:
-            dt = datetime.fromisoformat(summary['appointmentDateTime'])
-            detail_parts.append(f"Appointment: {dt.strftime('%b %d, %Y at %I:%M %p')} UTC")
-        except:
-            pass
-    
-    summary['detailSummary'] = ' | '.join(detail_parts)
-    print(f"Generated detail summary: {summary['detailSummary']}")
+   
     print("\n===== EXTRACTION COMPLETE =====\n")
     
     return summary
@@ -599,22 +771,32 @@ def chat_api(request):
     """
     API endpoint for chat interactions
     """
+
+    print("\n===== CHAT API REQUEST =====")
     if request.method == 'POST':
         try:
+            print("Processing POST request")
             # Parse request data
             data = json.loads(request.body)
             message = data.get('message', '').strip()
             business_id = data.get('business_id', '')
             client_phone_number = data.get('client_phone_number', '')
             
+            print(f"Message: {message[:50]}..." if len(message) > 50 else f"Message: {message}")
+            print(f"Business ID: {business_id}")
+            print(f"Client phone: {client_phone_number}")
+            
             # Validate required fields
             if not message:
+                print("Error: Message is required")
                 return JsonResponse({'error': 'Message is required'}, status=400)
             
             # Get or create business
             try:
                 business = Business.objects.get(businessId=business_id) if business_id else Business.objects.first()
+                print(f"Business found: {business.businessName}")
             except Business.DoesNotExist:
+                print("Error: Business not found")
                 return JsonResponse({'error': 'Business not found'}, status=404)
             
    
@@ -628,15 +810,18 @@ def chat_api(request):
                 if existing_chat:
                     # Use existing chat
                     chat = existing_chat
-                    chat_id = str(existing_chat.id)
+                    client_phone_number = str(existing_chat.clientPhoneNumber)
+                    print(f"Using existing chat: {chat.id}")
                 else:
                     # Create new chat with phone number
                     chat = Chat.objects.create(
                         clientPhoneNumber=client_phone_number,
                         business=business
                     )
-                    chat_id = str(chat.id)
+                    client_phone_number = str(chat.clientPhoneNumber)
+                    print(f"Created new chat: {chat.id}")
             else:
+                print("Error: Client phone number is required")
                 return JsonResponse({'error': 'Client phone number is required'}, status=400)
             
             # Save user message
@@ -646,12 +831,17 @@ def chat_api(request):
                 message=message
             )
             user_message.save()
+            print("User message saved")
             
             # Get chat history
             chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
+            print(f"Retrieved {chat_history.count()} messages from chat history")
             
             # Get AI response
+            print("Calling get_ai_response...")
             ai_response_text = get_ai_response(chat_history, business.businessId, client_phone_number)
+            print("AI response received")
+            print(f"AI response length: {len(ai_response_text)}")
             
             # Save AI response
             ai_message = Messages(
@@ -660,19 +850,34 @@ def chat_api(request):
                 message=ai_response_text
             )
             ai_message.save()
+            print("AI message saved")
+
+            # Update conversation summary after AI response
+            chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
+            summary = extract_conversation_summary(chat_history)
+            chat.summary = summary
+            chat.save()
+            print("Chat summary updated after AI response")
             
             # Return response
+            print("Returning JSON response")
             return JsonResponse({
-                'chat_id': chat_id,
+                'client_phone_number': client_phone_number,
                 'response': ai_response_text
             })
             
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON - {str(e)}")
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
-            logger.error(f"Error in chat API: {str(e)}")
+            print(f"\n===== ERROR in chat_api =====")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            print(f"Error details: {traceback.format_exc()}")
+            print("===== END ERROR =====\n")
             return JsonResponse({'error': str(e)}, status=500)
     else:
+        print(f"Method not allowed: {request.method}")
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
@@ -691,5 +896,4 @@ def delete_chat(request, client_phone_number):
         
         return JsonResponse({'success': True}, safe=False)
     except Exception as e:
-        logger.error(f"Error deleting chat: {str(e)}")
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)

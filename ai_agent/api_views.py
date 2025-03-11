@@ -1,3 +1,4 @@
+from email.utils import parsedate
 from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business
 from bookings.models import Booking, BookingCustomAddons
 from datetime import datetime, timedelta
@@ -11,6 +12,8 @@ from automation.utils import calculateAmount, calculateAddonsAmount
 from automation.webhooks import send_booking_data
 import traceback
 import pytz
+from .utils import convert_date_str_to_date
+from .models import Chat
 
 
 
@@ -18,10 +21,16 @@ import pytz
 
 
 def get_current_time_in_chicago():
-    """Get the current time in Chicago timezone"""
-    chicago_tz = pytz.timezone('America/Chicago')
-    current_time = datetime.now(chicago_tz)
-    return current_time.strftime('%Y-%m-%d %I:%M %p')
+    """Get the current time in Chicago timezone with additional context"""
+    try:
+        chicago_tz = pytz.timezone('America/Chicago')
+        current_time = datetime.now(chicago_tz)
+        formatted_time = current_time.strftime('%Y-%m-%d %I:%M %p')
+        day_of_week = current_time.strftime('%A')
+        return f"{formatted_time} ({day_of_week}) Central Time"
+    except Exception as e:
+        print(f"Error getting current time: {str(e)}")
+        return "Unable to retrieve current time due to an error."
 
 
 def check_availability(business, date_string):
@@ -44,38 +53,13 @@ def check_availability(business, date_string):
             print("[DEBUG] Missing datetime parameter")
             return {"success": False, "error": "Missing datetime parameter"}
         
-        # Parse the human language date string using dateparser
-        try:
-            # First try to parse as ISO format
-            try:
-                parsed_datetime = datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S')
-                print(f"[DEBUG] Parsed as ISO format: {parsed_datetime}")
-            except ValueError:
-                # If ISO format fails, try dateparser
-                print(f"[DEBUG] ISO parsing failed, trying dateparser")
-                parsed_datetime = dateparser.parse(date_string)
-                print(f"[DEBUG] Dateparser result: {parsed_datetime}")
-            
-            if parsed_datetime is None:
-                print("[DEBUG] Could not parse the datetime string")
-                return {
-                    "success": False, 
-                    "error": "The date was not submitted correctly. Please provide a valid date and time."
-                }
-                
-            # Ensure datetime is in the future
-            current_time = dateparser.parse(get_current_time_in_chicago())
-            print(f"[DEBUG] Current time: {current_time}, Parsed time: {parsed_datetime}")
-            if parsed_datetime <= current_time:
-                print("[DEBUG] The requested time has already passed")
-                return {"success": False, "error": "The requested time has already passed"}
-                
-        except Exception as e:
-            print(f"[DEBUG] Error parsing datetime: {str(e)}")
-            return {
-                "success": False,
-                "error": f"The date was not submitted correctly. Please provide a valid date and time."
-            }
+        # Use convert_date_str_to_date function
+        converted_datetime = convert_date_str_to_date(date_string)
+        # Strip any whitespace including newlines and then parse
+        converted_datetime = converted_datetime.strip()
+        parsed_datetime = datetime.fromisoformat(converted_datetime)
+
+        print(f"[DEBUG] Converted datetime: {parsed_datetime}")
         
         # Get all active cleaners for the business
         cleaners = get_cleaners_for_business(business)
@@ -120,7 +104,7 @@ def check_availability(business, date_string):
 
 
 
-def book_appointment(business, data):
+def book_appointment(business, client_phone_number):
     """Function to book an appointment for the AI agent.
     Creates a booking in the system based on customer details collected by the AI agent.
     
@@ -135,11 +119,15 @@ def book_appointment(business, data):
     """
     try:
         print("\n[DEBUG] book_appointment called for business:", business.businessName)
-        print(f"[DEBUG] Received data: {data}")
+        print(f"[DEBUG] Args: {client_phone_number}")
+
+        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+        data = chat.summary
+        print(data)
         
         # Validate required fields
         required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 
-                          "serviceType", "appointmentDateTime", "bedrooms", "bathrooms", "area"]
+                          "serviceType", "appointmentDateTime", "bedrooms", "bathrooms", "squareFeet"]
         
         missing_fields = [field for field in required_fields if field not in data or not data.get(field)]
         if missing_fields:
@@ -165,7 +153,7 @@ def book_appointment(business, data):
         try:
             bedrooms = int(data["bedrooms"]) if data["bedrooms"] else 0
             bathrooms = int(data["bathrooms"]) if data["bathrooms"] else 0
-            area = int(data["area"]) if data["area"] else 0
+            area = int(data["squareFeet"]) if data["squareFeet"] else 0
         except ValueError:
             error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
             print(f"[DEBUG] {error_msg}")
@@ -228,19 +216,14 @@ def book_appointment(business, data):
         # Parse appointment datetime
         try:
             # Try different date formats
-            try:
-                # Try ISO format first
-                cleaningDatetime = datetime.fromisoformat(data["appointmentDateTime"])
-            except ValueError:
-                # If that fails, try dateparser
-                cleaningDatetime = dateparser.parse(data["appointmentDateTime"])
-                
-            if not cleaningDatetime:
-                raise ValueError("Could not parse date/time")
-                
-            cleaningDate = cleaningDatetime.date()
-            startTime = cleaningDatetime.time()
-            endTime = (cleaningDatetime + timedelta(hours=1)).time()
+            converted_datetime = convert_date_str_to_date(data["appointmentDateTime"])
+            # Strip any whitespace including newlines and then parse
+            converted_datetime = converted_datetime.strip()
+            cleaningDateTime = datetime.fromisoformat(converted_datetime)
+            
+            cleaningDate = cleaningDateTime.date()
+            startTime = cleaningDateTime.time()
+            endTime = (cleaningDateTime + timedelta(hours=1)).time()
         except Exception as e:
             error_msg = f"Invalid appointment date/time format: {str(e)}"
             print(f"[DEBUG] {error_msg}")
@@ -248,7 +231,7 @@ def book_appointment(business, data):
         
         # Find available cleaner for the booking
         cleaners = get_cleaners_for_business(business)
-        available_cleaner = find_available_cleaner(cleaners, cleaningDatetime)
+        available_cleaner = find_available_cleaner(cleaners, cleaningDateTime)
         
         if not available_cleaner:
             error_msg = "No cleaners available for the requested time"
