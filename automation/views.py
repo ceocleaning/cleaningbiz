@@ -36,7 +36,7 @@ def home(request):
     # Leads metrics
     leads = Lead.objects.filter(business=business)
     total_leads = leads.count()
-    converted_leads = leads.filter(isConverted=True).count()
+    converted_leads = leads.filter(is_response_received=True).count()
 
     # Bookings metrics
     bookings = Booking.objects.filter(business=business)
