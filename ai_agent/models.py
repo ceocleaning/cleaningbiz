@@ -4,7 +4,8 @@ from django.utils import timezone
 
 CHAT_ROLE_CHOICES = (
     ('user', 'User'),
-    ('assistant', 'Assistant')
+    ('assistant', 'Assistant'),
+    ('tool', 'Tool')
 )
 
 

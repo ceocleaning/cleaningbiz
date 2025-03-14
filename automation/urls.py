@@ -7,6 +7,8 @@ from .test_error import test_error_view
 
 urlpatterns = [
     path('', views.LandingPage, name='LandingPage'),
+    path('pricing/', views.PricingPage, name='PricingPage'),
+    path('features/', views.FeaturesPage, name='FeaturesPage'),
     path('dashboard/', views.home, name='home'),
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='retell_webhook'),
     path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),

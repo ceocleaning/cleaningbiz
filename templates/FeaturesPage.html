@@ -1,0 +1,1104 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}Features - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark opacity-80"></div>
+        <!-- Decorative elements -->
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Powerful Features</span>
+        <h1 class="display-3 fw-bold text-white mb-4" data-aos="fade-up">Transform Your Cleaning Business with <span class="text-gradient">AI-Powered Tools</span></h1>
+        <p class="fs-4 text-white opacity-80 mx-auto mb-5 col-lg-8" data-aos="fade-up" data-aos-delay="100">Discover how our comprehensive suite of features can help you automate tasks, increase efficiency, and grow your business</p>
+        <div class="d-flex justify-content-center">
+            <a href="#feature-categories" class="btn btn-accent btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="200">
+                <span class="me-2">Explore Features</span>
+                <i class="fas fa-arrow-down"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Categories Section -->
+<section id="feature-categories" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Categories</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Our Feature Categories</h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Explore our comprehensive suite of features designed specifically for cleaning businesses</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- AI Voice Agent Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                <a href="#ai-voice-agent" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-robot text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">AI Voice Agent</h3>
+                            <p class="text-white opacity-80 mb-4">Automate customer interactions with our intelligent voice assistant that handles calls, bookings, and inquiries.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Scheduling Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <a href="#scheduling" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-calendar-alt text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">Scheduling & Dispatching</h3>
+                            <p class="text-white opacity-80 mb-4">Efficiently manage appointments, optimize routes, and dispatch cleaning teams with our smart scheduling system.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Customer Management Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <a href="#customer-management" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-users text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">Customer Management</h3>
+                            <p class="text-white opacity-80 mb-4">Store and manage customer information, preferences, service history, and communications in one central location.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Team Management Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <a href="#team-management" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user-tie text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">Team Management</h3>
+                            <p class="text-white opacity-80 mb-4">Manage staff schedules, track performance, assign tasks, and streamline communication with your cleaning teams.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Analytics Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <a href="#analytics" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-chart-line text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">Analytics & Reporting</h3>
+                            <p class="text-white opacity-80 mb-4">Gain insights into your business performance with detailed analytics, custom reports, and actionable metrics.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Payments Category -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                <a href="#payments" class="text-decoration-none">
+                    <div class="card feature-card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="feature-icon-wrapper mb-4">
+                                <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-credit-card text-gradient fs-2"></i>
+                                </div>
+                            </div>
+                            <h3 class="fs-4 fw-bold text-white mb-3">Payments & Invoicing</h3>
+                            <p class="text-white opacity-80 mb-4">Process payments, generate invoices, track revenue, and manage recurring billing for your cleaning services.</p>
+                            <div class="d-flex align-items-center">
+                                <span class="text-primary">Learn more</span>
+                                <i class="fas fa-arrow-right ms-2 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Voice Agent Section -->
+<section id="ai-voice-agent" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">AI Voice Agent</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Meet <span class="text-gradient">Sarah</span>, Your AI Voice Assistant</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Sarah is an intelligent AI voice agent designed specifically for cleaning businesses. She handles customer calls, schedules appointments, and provides exceptional customer service 24/7.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-phone-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Handles Inbound & Outbound Calls</h4>
+                            <p class="text-white opacity-80">Sarah answers customer calls, collects information, and makes outbound calls for appointment reminders and follow-ups.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-user-plus text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Collects Customer Details</h4>
+                            <p class="text-white opacity-80">Gathers essential information like name, phone, email, address, and property details (square footage, bedrooms, bathrooms).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-dollar-sign text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Provides Service Options & Pricing</h4>
+                            <p class="text-white opacity-80">Explains your service offerings and provides accurate pricing information based on customer requirements.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-calendar-check text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Schedules Appointments</h4>
+                            <p class="text-white opacity-80">Books appointments within your business hours (9 AM - 5 PM) and sends confirmation details to customers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 start-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-primary-600 opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="ratio ratio-16x9 rounded-4 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&q=80" class="object-fit-cover" alt="AI Voice Agent">
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 end-0 p-4 bg-gradient-dark">
+                            <div class="d-flex align-items-center">
+                                <div class="ai-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="fas fa-robot text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white mb-0 fs-5 fw-medium">"Hello, I'm Sarah, your AI assistant. How can I help you today?"</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="position-absolute top-50 end-0 translate-middle-y" style="z-index: 0;">
+                        <div class="blob-shape bg-accent opacity-10"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Scheduling Section -->
+<section id="scheduling" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2 mb-5 mb-lg-0" data-aos="fade-left">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Scheduling</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Smart <span class="text-gradient">Scheduling</span> & Dispatching</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Our intelligent scheduling system helps you manage appointments, optimize routes, and dispatch cleaning teams efficiently.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-calendar-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Automated Booking</h4>
+                            <p class="text-white opacity-80">Allow customers to book appointments online or through the AI Voice Agent, with automatic confirmation and reminders.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-route text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Route Optimization</h4>
+                            <p class="text-white opacity-80">Minimize travel time and maximize efficiency with intelligent route planning for your cleaning teams.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-bell text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Automated Reminders</h4>
+                            <p class="text-white opacity-80">Send automatic reminders to customers and staff to reduce no-shows and improve scheduling reliability.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-repeat text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Recurring Appointments</h4>
+                            <p class="text-white opacity-80">Easily set up and manage recurring cleaning schedules for your regular customers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 end-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-accent opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="calendar-view bg-dark-surface-4 rounded-4 p-4">
+                            <div class="calendar-header d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="text-white mb-0">March 2025</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-dark-surface-3 rounded-circle me-2"><i class="fas fa-chevron-left text-white"></i></button>
+                                    <button class="btn btn-sm btn-dark-surface-3 rounded-circle"><i class="fas fa-chevron-right text-white"></i></button>
+                                </div>
+                            </div>
+                            <div class="calendar-days d-flex justify-content-between mb-3">
+                                <span class="text-white opacity-80">Mon</span>
+                                <span class="text-white opacity-80">Tue</span>
+                                <span class="text-white opacity-80">Wed</span>
+                                <span class="text-white opacity-80">Thu</span>
+                                <span class="text-white opacity-80">Fri</span>
+                                <span class="text-white opacity-80">Sat</span>
+                                <span class="text-white opacity-80">Sun</span>
+                            </div>
+                            <div class="calendar-grid">
+                                <div class="calendar-week d-flex justify-content-between mb-3">
+                                    <span class="calendar-date text-white opacity-50">24</span>
+                                    <span class="calendar-date text-white opacity-50">25</span>
+                                    <span class="calendar-date text-white opacity-50">26</span>
+                                    <span class="calendar-date text-white opacity-50">27</span>
+                                    <span class="calendar-date text-white opacity-50">28</span>
+                                    <span class="calendar-date text-white">1</span>
+                                    <span class="calendar-date text-white">2</span>
+                                </div>
+                                <div class="calendar-week d-flex justify-content-between mb-3">
+                                    <span class="calendar-date text-white">3</span>
+                                    <span class="calendar-date text-white">4</span>
+                                    <span class="calendar-date text-white">5</span>
+                                    <span class="calendar-date text-white">6</span>
+                                    <span class="calendar-date text-white">7</span>
+                                    <span class="calendar-date text-white">8</span>
+                                    <span class="calendar-date text-white">9</span>
+                                </div>
+                                <div class="calendar-week d-flex justify-content-between mb-3">
+                                    <span class="calendar-date text-white">10</span>
+                                    <span class="calendar-date text-white">11</span>
+                                    <span class="calendar-date text-white">12</span>
+                                    <span class="calendar-date text-white">13</span>
+                                    <span class="calendar-date text-white bg-primary-600 rounded-circle">14</span>
+                                    <span class="calendar-date text-white bg-accent rounded-circle">15</span>
+                                    <span class="calendar-date text-white">16</span>
+                                </div>
+                                <div class="calendar-week d-flex justify-content-between mb-3">
+                                    <span class="calendar-date text-white">17</span>
+                                    <span class="calendar-date text-white bg-primary-600 rounded-circle">18</span>
+                                    <span class="calendar-date text-white">19</span>
+                                    <span class="calendar-date text-white">20</span>
+                                    <span class="calendar-date text-white">21</span>
+                                    <span class="calendar-date text-white">22</span>
+                                    <span class="calendar-date text-white">23</span>
+                                </div>
+                                <div class="calendar-week d-flex justify-content-between">
+                                    <span class="calendar-date text-white">24</span>
+                                    <span class="calendar-date text-white">25</span>
+                                    <span class="calendar-date text-white bg-accent rounded-circle">26</span>
+                                    <span class="calendar-date text-white">27</span>
+                                    <span class="calendar-date text-white">28</span>
+                                    <span class="calendar-date text-white">29</span>
+                                    <span class="calendar-date text-white">30</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="upcoming-appointments mt-4 p-4 bg-dark-surface-4 rounded-4">
+                            <h5 class="text-white mb-3">Today's Appointments</h5>
+                            <div class="appointment-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-3">
+                                <div class="appointment-time bg-primary-600 rounded-3 p-2 text-center me-3">
+                                    <span class="d-block text-white fw-bold">9:00</span>
+                                    <span class="d-block text-white small">AM</span>
+                                </div>
+                                <div>
+                                    <h6 class="text-white mb-1">John Smith</h6>
+                                    <p class="text-white opacity-80 mb-0 small">Residential Cleaning - 3 BR, 2 BA</p>
+                                </div>
+                            </div>
+                            <div class="appointment-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3">
+                                <div class="appointment-time bg-accent rounded-3 p-2 text-center me-3">
+                                    <span class="d-block text-white fw-bold">2:30</span>
+                                    <span class="d-block text-white small">PM</span>
+                                </div>
+                                <div>
+                                    <h6 class="text-white mb-1">ABC Office Solutions</h6>
+                                    <p class="text-white opacity-80 mb-0 small">Commercial Cleaning - 2,500 sq ft</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Customer Management Section -->
+<section id="customer-management" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Customer Management</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Centralized <span class="text-gradient">Customer</span> Management</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Store and manage all your customer information in one place. Track service history, preferences, and communications to provide personalized service.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-address-card text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Customer Profiles</h4>
+                            <p class="text-white opacity-80">Create detailed customer profiles with contact information, property details, service preferences, and notes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-history text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Service History</h4>
+                            <p class="text-white opacity-80">Track all past services, including dates, services performed, team members, and customer feedback.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-comment-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Communication History</h4>
+                            <p class="text-white opacity-80">Keep a record of all customer communications, including calls, emails, and text messages.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-tags text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Customer Segmentation</h4>
+                            <p class="text-white opacity-80">Group customers by location, service type, frequency, or other custom criteria for targeted marketing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 start-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-primary-600 opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="customer-profile bg-dark-surface-4 rounded-4 p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="customer-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <span class="text-white fw-bold">JS</span>
+                                </div>
+                                <div>
+                                    <h5 class="text-white mb-1">John Smith</h5>
+                                    <p class="text-white opacity-80 mb-0">Customer since March 2024</p>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-success px-3 py-2">Active</span>
+                                </div>
+                            </div>
+                            
+                            <div class="customer-details mb-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Email</p>
+                                            <p class="text-white mb-0">john.smith@example.com</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Phone</p>
+                                            <p class="text-white mb-0">(555) 123-4567</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Address</p>
+                                            <p class="text-white mb-0">123 Main Street, Anytown, CA 90210</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Property Type</p>
+                                            <p class="text-white mb-0">Residential</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Square Footage</p>
+                                            <p class="text-white mb-0">2,200 sq ft</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="detail-item">
+                                            <p class="text-white opacity-80 mb-1 small">Bedrooms/Bathrooms</p>
+                                            <p class="text-white mb-0">3 BR / 2 BA</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="service-history">
+                                <h6 class="text-white mb-3">Recent Service History</h6>
+                                <div class="history-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-2">
+                                    <div class="history-date bg-primary-600 rounded-3 p-2 text-center me-3">
+                                        <span class="d-block text-white fw-bold">14</span>
+                                        <span class="d-block text-white small">Mar</span>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-white mb-1">Deep Cleaning</h6>
+                                        <p class="text-white opacity-80 mb-0 small">Team: Maria, Carlos • Rating: ★★★★★</p>
+                                    </div>
+                                </div>
+                                <div class="history-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3">
+                                    <div class="history-date bg-primary-600 rounded-3 p-2 text-center me-3">
+                                        <span class="d-block text-white fw-bold">28</span>
+                                        <span class="d-block text-white small">Feb</span>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-white mb-1">Regular Cleaning</h6>
+                                        <p class="text-white opacity-80 mb-0 small">Team: Maria, Carlos • Rating: ★★★★☆</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Management Section -->
+<section id="team-management" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2 mb-5 mb-lg-0" data-aos="fade-left">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Team Management</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Efficient <span class="text-gradient">Team</span> Management</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Manage your cleaning staff effectively with our comprehensive team management tools designed to improve productivity and coordination.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-user-clock text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Staff Scheduling</h4>
+                            <p class="text-white opacity-80">Create and manage staff schedules, track availability, and assign team members to specific jobs.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-tasks text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Task Assignment</h4>
+                            <p class="text-white opacity-80">Assign specific cleaning tasks to team members and track completion status in real-time.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-chart-bar text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Performance Tracking</h4>
+                            <p class="text-white opacity-80">Monitor team performance metrics, including job completion times, customer ratings, and attendance.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-comments text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Team Communication</h4>
+                            <p class="text-white opacity-80">Enable seamless communication between office staff and cleaning teams with built-in messaging.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 end-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-accent opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="team-dashboard bg-dark-surface-4 rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="text-white mb-0">Team Dashboard</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-dark-surface-3 rounded-3 px-3">
+                                        <span class="text-white">This Week</span>
+                                        <i class="fas fa-chevron-down ms-2 text-white opacity-50"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="team-members mb-4">
+                                <h6 class="text-white mb-3">Cleaning Teams</h6>
+                                <div class="team-member-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-2">
+                                    <div class="team-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <span class="text-white fw-bold">MC</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="text-white mb-1">Maria Cruz</h6>
+                                        <p class="text-white opacity-80 mb-0 small">Team Lead • 4 jobs today</p>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-success px-3 py-2">On Duty</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="team-member-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-2">
+                                    <div class="team-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <span class="text-white fw-bold">JR</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="text-white mb-1">James Rodriguez</h6>
+                                        <p class="text-white opacity-80 mb-0 small">Cleaner • 3 jobs today</p>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-warning px-3 py-2">In Transit</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="team-member-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3">
+                                    <div class="team-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <span class="text-white fw-bold">AL</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="text-white mb-1">Amy Lee</h6>
+                                        <p class="text-white opacity-80 mb-0 small">Cleaner • 2 jobs today</p>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-primary px-3 py-2">On Break</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="performance-metrics">
+                                <h6 class="text-white mb-3">Team Performance</h6>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="metric-card p-3 bg-dark-surface-3 rounded-3 text-center">
+                                            <h3 class="text-gradient fw-bold mb-1">98%</h3>
+                                            <p class="text-white opacity-80 mb-0 small">On-Time Arrival</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-card p-3 bg-dark-surface-3 rounded-3 text-center">
+                                            <h3 class="text-gradient fw-bold mb-1">4.9</h3>
+                                            <p class="text-white opacity-80 mb-0 small">Customer Rating</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Analytics & Reporting Section -->
+<section id="analytics" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Analytics</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Data-Driven <span class="text-gradient">Insights</span> & Reporting</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Gain valuable insights into your cleaning business performance with our comprehensive analytics and reporting tools.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Business Performance</h4>
+                            <p class="text-white opacity-80">Track revenue, growth, customer acquisition, and retention metrics to measure business success.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-user-check text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Customer Satisfaction</h4>
+                            <p class="text-white opacity-80">Monitor customer feedback, ratings, and reviews to ensure service quality and identify areas for improvement.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-file-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Custom Reports</h4>
+                            <p class="text-white opacity-80">Generate customized reports for different aspects of your business, from financial performance to team productivity.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-bullseye text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Goal Tracking</h4>
+                            <p class="text-white opacity-80">Set business goals and track progress with visual dashboards and automated alerts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 start-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-primary-600 opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="analytics-dashboard bg-dark-surface-4 rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="text-white mb-0">Business Dashboard</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-dark-surface-3 rounded-3 px-3">
+                                        <span class="text-white">Last 30 Days</span>
+                                        <i class="fas fa-chevron-down ms-2 text-white opacity-50"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                        <p class="text-white opacity-80 mb-1 small">Total Revenue</p>
+                                        <h3 class="text-gradient fw-bold mb-0">$24,850</h3>
+                                        <p class="text-success mb-0 small"><i class="fas fa-arrow-up me-1"></i> 12% vs last month</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                        <p class="text-white opacity-80 mb-1 small">New Customers</p>
+                                        <h3 class="text-gradient fw-bold mb-0">38</h3>
+                                        <p class="text-success mb-0 small"><i class="fas fa-arrow-up me-1"></i> 8% vs last month</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                        <p class="text-white opacity-80 mb-1 small">Jobs Completed</p>
+                                        <h3 class="text-gradient fw-bold mb-0">142</h3>
+                                        <p class="text-success mb-0 small"><i class="fas fa-arrow-up me-1"></i> 5% vs last month</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                        <p class="text-white opacity-80 mb-1 small">Customer Rating</p>
+                                        <h3 class="text-gradient fw-bold mb-0">4.8/5</h3>
+                                        <p class="text-success mb-0 small"><i class="fas fa-arrow-up me-1"></i> 0.2 vs last month</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="revenue-chart mb-4">
+                                <h6 class="text-white mb-3">Revenue Trend</h6>
+                                <div class="chart-container p-3 bg-dark-surface-3 rounded-3" style="height: 180px;">
+                                    <div class="chart-placeholder w-100 h-100 d-flex align-items-center justify-content-center">
+                                        <div class="chart-bars d-flex align-items-end h-100 w-100 justify-content-between px-2">
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 30%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 45%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 60%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 40%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 55%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 75%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 65%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 70%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 60%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 80%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600 opacity-70" style="height: 75%; width: 6px;"></div>
+                                            <div class="chart-bar bg-primary-600" style="height: 90%; width: 6px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="top-services">
+                                <h6 class="text-white mb-3">Top Services</h6>
+                                <div class="service-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-2">
+                                    <div class="service-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-broom text-white small"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="text-white mb-0">Deep Cleaning</h6>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="text-white fw-bold">42%</span>
+                                    </div>
+                                </div>
+                                <div class="service-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3">
+                                    <div class="service-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-spray-can text-white small"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="text-white mb-0">Regular Cleaning</h6>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="text-white fw-bold">35%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Payments & Invoicing Section -->
+<section id="payments" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2 mb-5 mb-lg-0" data-aos="fade-left">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Payments</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Seamless <span class="text-gradient">Payments</span> & Invoicing</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Manage your financial operations efficiently with our integrated payment processing and invoicing system.</p>
+                
+                <div class="feature-list">
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-credit-card text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Multiple Payment Methods</h4>
+                            <p class="text-white opacity-80">Accept various payment methods including credit cards, ACH transfers, and digital wallets for customer convenience.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-file-invoice-dollar text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Automated Invoicing</h4>
+                            <p class="text-white opacity-80">Generate and send professional invoices automatically after service completion or on a recurring schedule.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start mb-4">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-sync text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Recurring Billing</h4>
+                            <p class="text-white opacity-80">Set up automatic recurring billing for regular customers to ensure consistent cash flow.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item d-flex align-items-start">
+                        <div class="feature-icon-small bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3">
+                            <i class="fas fa-chart-pie text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="fs-5 fw-bold text-white mb-2">Financial Reporting</h4>
+                            <p class="text-white opacity-80">Access detailed financial reports including revenue, outstanding payments, and transaction history.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 end-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-accent opacity-10"></div>
+                    </div>
+                    <div class="position-relative p-3 rounded-4 bg-dark-surface-3 shadow-lg" style="z-index: 2;">
+                        <div class="payments-dashboard bg-dark-surface-4 rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="text-white mb-0">Payments Dashboard</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-dark-surface-3 rounded-3 px-3">
+                                        <span class="text-white">March 2025</span>
+                                        <i class="fas fa-chevron-down ms-2 text-white opacity-50"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="payment-summary mb-4">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                            <p class="text-white opacity-80 mb-1 small">Payments Received</p>
+                                            <h3 class="text-gradient fw-bold mb-0">$18,540</h3>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-card p-3 bg-dark-surface-3 rounded-3">
+                                            <p class="text-white opacity-80 mb-1 small">Outstanding</p>
+                                            <h3 class="text-gradient fw-bold mb-0">$2,850</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="invoice-preview mb-4">
+                                <h6 class="text-white mb-3">Recent Invoice</h6>
+                                <div class="invoice-card p-3 bg-dark-surface-3 rounded-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <p class="text-white mb-0 fw-bold">Invoice #INV-2025-0142</p>
+                                            <p class="text-white opacity-80 mb-0 small">March 15, 2025</p>
+                                        </div>
+                                        <span class="badge bg-success px-3 py-2">Paid</span>
+                                    </div>
+                                    
+                                    <div class="invoice-details mb-3">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <p class="text-white opacity-80 mb-1 small">Customer</p>
+                                                <p class="text-white mb-0">John Smith</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="text-white opacity-80 mb-1 small">Amount</p>
+                                                <p class="text-white mb-0">$185.00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="invoice-services">
+                                        <p class="text-white opacity-80 mb-1 small">Services</p>
+                                        <p class="text-white mb-0">Deep Cleaning - 3BR/2BA Home</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="payment-methods">
+                                <h6 class="text-white mb-3">Payment Methods</h6>
+                                <div class="payment-method-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3 mb-2">
+                                    <div class="payment-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <i class="fab fa-cc-visa text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-white mb-0">Credit/Debit Cards</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="payment-method-item d-flex align-items-center p-3 bg-dark-surface-3 rounded-3">
+                                    <div class="payment-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-university text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-white mb-0">ACH Bank Transfer</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <div class="position-absolute" style="top: -100px; right: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.05); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -50px; left: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.05); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your <span class="text-gradient">Cleaning Business?</span></h2>
+                <p class="fs-5 text-white opacity-80 mb-5">Join thousands of cleaning businesses that are growing with our AI-powered platform</p>
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                    <a href="/pricing" class="btn btn-accent btn-lg px-4 py-3 rounded-pill shadow-glow">
+                        <span class="me-2">View Pricing</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="/contact" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+                        <span class="me-2">Contact Sales</span>
+                        <i class="fas fa-headset"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Feature card styling */
+    .feature-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-color);
+    }
+    
+    .feature-card:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0) 50%);
+        z-index: 0;
+    }
+    
+    .feature-icon-wrapper {
+        position: relative;
+        width: 70px;
+        height: 70px;
+    }
+    
+    .feature-icon-bg {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.2) 0%, rgba(33, 150, 243, 0.1) 100%);
+    }
+    
+    .feature-icon-small {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Blob shapes */
+    .blob-shape {
+        width: 300px;
+        height: 300px;
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        filter: blur(40px);
+    }
+    
+    /* Calendar styling */
+    .calendar-date {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    
+    .appointment-time {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .customer-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .ai-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .history-date {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Gradient backgrounds */
+    .bg-gradient-dark {
+        background: linear-gradient(to top, rgba(18, 18, 18, 0.9) 0%, rgba(18, 18, 18, 0) 100%);
+    }
+    
+    /* Text gradient */
+    .text-gradient {
+        background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+    }
+</style>
+{% endblock %}

@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 def LandingPage(request):
     return render(request, 'LandingPage.html')
 
+def PricingPage(request):
+    return render(request, 'PricingPage.html')
+
+def FeaturesPage(request):
+    return render(request, 'FeaturesPage.html')
+
 
 @login_required(login_url='accounts:login')
 def home(request):

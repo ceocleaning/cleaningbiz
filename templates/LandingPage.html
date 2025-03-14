@@ -3,117 +3,365 @@
 {% block title %}CleaningBiz AI - Smart Automation for Cleaning Businesses{% endblock %}
 
 {% block content %}
-<!-- Hero Section with Animated Background -->
-<section class="relative min-h-screen hero-pattern">
-    <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80" alt="Clean Office" class="object-cover w-full h-full opacity-20">
-        <div class="absolute inset-0 bg-gradient-to-br from-primary-900/90 to-primary-600/80"></div>
+<!-- Hero Section -->
+<section class="position-relative overflow-hidden bg-dark-surface">
+    <!-- Animated Gradient Background -->
+    <div class="position-absolute top-0 start-0 end-0 bottom-0" style="z-index: 1; background: radial-gradient(circle at 30% 50%, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0) 50%), radial-gradient(circle at 70% 20%, rgba(255, 193, 7, 0.08) 0%, rgba(255, 193, 7, 0) 50%);"></div>
+    
+    <!-- Decorative elements -->
+    <div class="position-absolute top-0 end-0 d-none d-lg-block" style="z-index: 1;">
+        <svg width="450" height="450" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="rgba(33, 150, 243, 0.05)" d="M39.9,-65.7C51.5,-58.4,60.8,-47.8,67.2,-35.4C73.6,-23,77.1,-8.7,75.3,5C73.5,18.7,66.4,31.8,56.8,42.7C47.2,53.6,35.1,62.3,21.8,67.2C8.4,72.1,-6.2,73.2,-19.6,69.5C-33,65.8,-45.2,57.3,-54.9,46.2C-64.6,35.1,-71.8,21.4,-74.6,6.5C-77.4,-8.4,-75.8,-24.6,-68.2,-37.4C-60.6,-50.2,-47,-59.7,-33.5,-66C-20,-72.3,-6.5,-75.4,6.1,-75.1C18.8,-74.7,28.3,-73,39.9,-65.7Z" transform="translate(100 100)" class="float" />
+        </svg>
     </div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div class="space-y-8" data-aos="fade-right">
-                <h1 class="text-5xl lg:text-6xl font-bold text-white leading-tight">
-                    Transform Your <br>
-                    <span class="text-accent-400">Cleaning Business</span><br>
-                    with AI Power
-                </h1>
-                <p class="text-xl text-gray-200 leading-relaxed">
-                    Automate everything from lead generation to payments. Let AI handle the routine while you focus on growth.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    
-                    <a href="/signup" class="bg-accent-500 px-8 py-4 rounded-xl text-white hover:bg-accent-600 transition flex items-center justify-center group accent-glow">
-                        <span class="mr-2">Start Free Trial</span>
-                        <i class="fas fa-arrow-right transform group-hover:translate-x-1 transition"></i>
-                    </a>
-                    <a href="/demo" class="glass-card px-8 py-4 rounded-xl text-dark hover:bg-white/20 transition flex items-center justify-center group">
-                      <span class="mr-2">Watch Demo</span>
-                      <i class="fas fa-play-circle transform group-hover:scale-110 transition"></i>
-                  </a>
+    <div class="position-absolute bottom-0 start-0 d-none d-lg-block" style="z-index: 1;">
+        <svg width="350" height="350" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="rgba(255, 193, 7, 0.05)" d="M44.2,-76.3C58.3,-69.9,71.8,-60.1,79.6,-46.6C87.4,-33.1,89.5,-16.5,88.2,-0.7C86.9,15,82.3,30.1,73.5,42.1C64.7,54.1,51.8,63.1,38,69.7C24.2,76.3,9.6,80.5,-5.5,79.5C-20.5,78.5,-36,72.3,-48.2,62.7C-60.3,53.1,-69.2,40.1,-75.4,25.6C-81.6,11.1,-85.1,-5,-83.1,-20.8C-81.1,-36.7,-73.6,-52.3,-61.6,-64.2C-49.6,-76.1,-33,-84.2,-16.5,-84.4C0,-84.6,16.5,-76.8,29.9,-72.5C43.3,-68.1,53.6,-67.2,44.2,-76.3Z" transform="translate(100 100)" class="float float-delay-1" />
+        </svg>
+    </div>
+    
+    <div class="container position-relative py-5" style="z-index: 2;">
+        <div class="row align-items-center py-5">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <!-- Badge -->
+                <div class="d-inline-block bg-dark-surface-2 rounded-pill px-3 py-2 shadow-sm mb-4 border-gradient">
+                    <span class="badge bg-primary rounded-pill px-3 py-2 me-2">New</span>
+                    <span class="text-gradient fw-medium">AI Voice Agent Technology</span>
                 </div>
-                <div class="flex items-center space-x-8 pt-8">
-                    <div class="text-white">
-                        <div class="text-3xl font-bold">500+</div>
-                        <div class="text-gray-300">Active Businesses</div>
+                
+                <!-- Main Heading -->
+                <h1 class="display-4 fw-bold text-white mb-4">
+                    Transform Your <br>
+                    <span class="position-relative text-gradient">
+                        Cleaning Business
+                        <svg class="position-absolute w-100" style="bottom: -10px; left: 0; z-index: -1; height: 10px;">
+                            <path d="M0,0 Q25,10 50,0 T100,0" fill="none" stroke="url(#gradient)" stroke-width="3" />
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="var(--primary-400)" />
+                                <stop offset="100%" stop-color="var(--accent-400)" />
+                            </linearGradient>
+                        </svg>
+                    </span>
+                </h1>
+                
+                <!-- Description -->
+                <p class="lead text-dark-text-secondary mb-4">Automate customer interactions, streamline scheduling, and boost revenue with our AI-powered voice agent that handles calls 24/7.</p>
+                
+                <!-- Stats -->
+                <div class="d-flex flex-wrap gap-4 mb-5">
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle me-3" style="width: 48px; height: 48px; background-color: rgba(33, 150, 243, 0.1);">
+                            <i class="fas fa-phone-alt text-primary-color"></i>
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-white">98%</h3>
+                            <p class="small mb-0 text-dark-text-secondary">Call Handling</p>
+                        </div>
                     </div>
-                    <div class="text-white">
-                        <div class="text-3xl font-bold">98%</div>
-                        <div class="text-gray-300">Client Satisfaction</div>
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle me-3" style="width: 48px; height: 48px; background-color: rgba(255, 193, 7, 0.1);">
+                            <i class="fas fa-calendar-check text-accent-color"></i>
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-white">85%</h3>
+                            <p class="small mb-0 text-dark-text-secondary">Booking Rate</p>
+                        </div>
                     </div>
-                    <div class="text-white">
-                        <div class="text-3xl font-bold">45%</div>
-                        <div class="text-gray-300">Time Saved</div>
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle me-3" style="width: 48px; height: 48px; background-color: rgba(76, 175, 80, 0.1);">
+                            <i class="fas fa-chart-line" style="color: var(--success-500);"></i>
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-white">40%</h3>
+                            <p class="small mb-0 text-dark-text-secondary">Revenue Boost</p>
+                        </div>
                     </div>
+                </div>
+                
+                <!-- CTA Buttons -->
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/signup" class="btn btn-accent shadow-glow-accent">
+                        <i class="fas fa-rocket me-2"></i>Get Started Free
+                    </a>
+                    <a href="/demo" class="btn btn-outline-light">
+                        <i class="fas fa-headphones me-2"></i>Listen to Demo
+                    </a>
                 </div>
             </div>
-            <div class="relative" data-aos="fade-left">
-                <div class="absolute inset-0 bg-accent-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80" alt="Platform Preview" class="relative rounded-2xl shadow-2xl animate-float">
+            
+            <!-- Right Column with Image and Floating Elements -->
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <!-- Main image with shadow and border -->
+                    <div class="rounded-xxl overflow-hidden shadow-lg border-gradient">
+                        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80" alt="Dashboard" class="img-fluid">
+                    </div>
+                    
+                    <!-- Floating notification - Booking Confirmed -->
+                    <div class="position-absolute bg-dark-surface-2 rounded-xl p-3 shadow-lg d-flex align-items-center" style="top: 20px; right: -20px; max-width: 280px; z-index: 3;" data-aos="fade-left" data-aos-delay="300">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle me-3 bg-success-500" style="width: 40px; height: 40px;">
+                            <i class="fas fa-check text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-white">Booking Confirmed</h6>
+                            <p class="small mb-0 text-dark-text-secondary">Office cleaning scheduled for tomorrow at 3:00 PM</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Floating card - Business Growth -->
+                    <div class="position-absolute bg-dark-surface-2 rounded-xl p-3 shadow-lg" style="bottom: 20px; left: -20px; max-width: 240px; z-index: 3;" data-aos="fade-right" data-aos-delay="600">
+                        <h6 class="mb-2 text-white">Business Growth</h6>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small text-dark-text-secondary">This month</span>
+                            <span class="small text-primary-color">+24%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="absolute bottom-0 left-0 right-0">
-        <svg class="w-full text-white fill-current" viewBox="0 0 1440 100">
-            <path d="M0,50 C150,100 350,0 700,50 C1050,100 1250,0 1440,50 L1440 100 L0 100 Z"></path>
+    
+    <!-- Wave separator -->
+    <div class="position-absolute bottom-0 start-0 end-0" style="z-index: 3;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100">
+            <path fill="var(--dark-bg)" fill-opacity="1" d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,80C840,85,960,75,1080,64C1200,53,1320,43,1380,37.3L1440,32L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z"></path>
         </svg>
     </div>
 </section>
 
-<!-- Features Grid -->
-<section class="py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Scale</h2>
-            <p class="text-xl text-gray-600">One platform, unlimited possibilities for your cleaning business</p>
+<!-- Features Section -->
+<section class="py-5 bg-dark-bg">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white rounded-pill px-3 py-2 mb-3">Features</span>
+            <h2 class="display-5 fw-bold text-white mb-3">AI-Powered Features for Your <span class="text-gradient">Cleaning Business</span></h2>
+            <p class="lead text-dark-text-secondary mx-auto" style="max-width: 700px;">Our AI Voice Agent handles everything from answering calls to scheduling appointments, giving you more time to focus on growing your business.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- AI Communication -->
-            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="100">
-                <div class="absolute inset-0 z-0">
-                    <img src="https://images.unsplash.com/photo-1531746790731-6c087fecd65a?auto=format&fit=crop&q=80" alt="AI Communication" class="object-cover w-full h-full opacity-5">
-                </div>
-                <div class="relative z-10">
-                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
-                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+        
+        <div class="row g-4 g-lg-5">
+            <!-- Feature 1 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                        <i class="fas fa-phone-alt fs-4 text-primary-color"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">AI Communication</h3>
-                    <p class="text-gray-600 mb-6">Smart chatbot handles inquiries, schedules appointments, and follows up with customers automatically.</p>
-                    <div class="flex items-center text-primary-600 font-medium">
-                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    <h3 class="h5 fw-bold text-white mb-3">24/7 Call Handling</h3>
+                    <p class="text-dark-text-secondary mb-0">Never miss a potential customer again. Our AI Voice Agent answers calls day and night, handling inquiries professionally.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.2) 100%);">
+                        <i class="fas fa-calendar-check fs-4 text-accent-color"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-white mb-3">Smart Scheduling</h3>
+                    <p class="text-dark-text-secondary mb-0">The AI automatically books appointments, checks availability, and sends confirmations to both you and your customers.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.2) 100%);">
+                        <i class="fas fa-user-friends fs-4 text-white"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-white mb-3">Customer Information Collection</h3>
+                    <p class="text-dark-text-secondary mb-0">Collects and stores customer details, property information, and service preferences for personalized service.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.2) 100%);">
+                        <i class="fas fa-comments-dollar text-white fs-4"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-white mb-3">Price Quoting</h3>
+                    <p class="text-dark-text-secondary mb-0">Provides accurate price quotes based on property details and service requirements, increasing conversion rates.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 5 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(156, 39, 176, 0.2) 100%);">
+                        <i class="fas fa-brain fs-4" style="color: #9c27b0;"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-white mb-3">Natural Conversations</h3>
+                    <p class="text-dark-text-secondary mb-0">Engages in natural, human-like conversations that make customers feel valued and understood.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 6 -->
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="600">
+                <div class="card feature-card h-100 p-4 bg-dark-surface">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" style="width: 64px; height: 64px; background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(0, 188, 212, 0.2) 100%);">
+                        <i class="fas fa-chart-pie fs-4" style="color: #00bcd4;"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-white mb-3">Analytics & Insights</h3>
+                    <p class="text-dark-text-secondary mb-0">Gain valuable insights into customer preferences, peak call times, and conversion rates to optimize your business.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="/features" class="btn btn-outline-light px-4">
+                <span class="me-2">Explore All Features</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-dark-surface position-relative overflow-hidden">
+    <!-- Animated background elements -->
+    <div class="position-absolute top-0 start-0 end-0 bottom-0 opacity-20">
+        <div class="position-absolute" style="width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, var(--primary-400) 0%, rgba(33, 150, 243, 0) 70%); top: 10%; left: 5%; filter: blur(50px);"></div>
+        <div class="position-absolute" style="width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, var(--accent-400) 0%, rgba(255, 193, 7, 0) 70%); bottom: 10%; right: 5%; filter: blur(50px);"></div>
+    </div>
+    
+    <div class="container position-relative py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-accent rounded-pill px-3 py-2 mb-3">How It Works</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Meet <span class="text-gradient">Sarah</span>, Your AI Voice Agent</h2>
+            <p class="lead text-dark-text-secondary mx-auto" style="max-width: 700px;">Sarah handles all your customer calls, collects information, provides quotes, and schedules appointments - all while sounding completely human.</p>
+        </div>
+        
+        <div class="row align-items-center py-4">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <div class="position-relative rounded-xxl overflow-hidden shadow-lg border-gradient">
+                    <img src="https://images.unsplash.com/photo-1556745753-b2904692b3cd?auto=format&fit=crop&q=80" alt="AI Voice Agent" class="img-fluid">
+                    <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center">
+                        <a href="#" class="btn btn-accent rounded-circle shadow-lg p-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="fas fa-play fs-3"></i>
+                        </a>
                     </div>
                 </div>
             </div>
-
-            <!-- Smart Scheduling -->
-            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="200">
-                <div class="absolute inset-0 z-0">
-                    <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80" alt="Smart Scheduling" class="object-cover w-full h-full opacity-5">
-                </div>
-                <div class="relative z-10">
-                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
-                        <i class="fas fa-calendar-check text-2xl text-primary-600"></i>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="ps-lg-4">
+                    <div class="d-flex mb-4">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <span class="fw-bold text-primary-color">1</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 fw-bold text-white mb-2">Customer Calls Your Business</h3>
+                            <p class="text-dark-text-secondary">When a customer calls, Sarah answers professionally with your business name and begins the conversation.</p>
+                        </div>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Smart Scheduling</h3>
-                    <p class="text-gray-600 mb-6">AI-powered scheduling optimizes routes and assigns the best cleaners based on skills and location.</p>
-                    <div class="flex items-center text-primary-600 font-medium">
-                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    
+                    <div class="d-flex mb-4">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <span class="fw-bold text-primary-color">2</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 fw-bold text-white mb-2">Collects Customer Information</h3>
+                            <p class="text-dark-text-secondary">Sarah gathers customer details (name, contact info) and property information (size, rooms) to provide accurate quotes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mb-4">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <span class="fw-bold text-primary-color">3</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 fw-bold text-white mb-2">Provides Service Options and Pricing</h3>
+                            <p class="text-dark-text-secondary">Based on gathered information, Sarah explains your service options and provides transparent pricing.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mb-4">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <span class="fw-bold text-primary-color">4</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 fw-bold text-white mb-2">Schedules Appointments</h3>
+                            <p class="text-dark-text-secondary">Sarah checks your availability and books appointments within your business hours (9 AM - 5 PM Central Time).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <span class="fw-bold text-primary-color">5</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 fw-bold text-white mb-2">Sends Confirmations</h3>
+                            <p class="text-dark-text-secondary">After booking, Sarah sends confirmation details to both you and your customer, ensuring everyone is informed.</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="/demo" class="btn btn-primary shadow-glow px-4">
+                <i class="fas fa-headphones me-2"></i>Listen to a Demo Call
+            </a>
+        </div>
+    </div>
+</section>
 
-            <!-- Payment Automation -->
-            <div class="card-hover glass-card p-8 rounded-2xl relative overflow-hidden" data-aos="fade-up" data-aos-delay="300">
-                <div class="absolute inset-0 z-0">
-                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80" alt="Payment Automation" class="object-cover w-full h-full opacity-5">
-                </div>
-                <div class="relative z-10">
-                    <div class="h-14 w-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
-                        <i class="fas fa-credit-card text-2xl text-primary-600"></i>
+<!-- About Section -->
+<section class="py-5 bg-dark-surface position-relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="position-absolute top-0 start-0" style="z-index: 1; opacity: 0.05;">
+        <svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--primary-400)" d="M44.5,-76.3C59.3,-69.7,74.1,-60.5,83.2,-46.7C92.3,-33,95.7,-14.7,93.2,2.5C90.7,19.6,82.3,35.7,71.4,49.4C60.5,63.1,47.1,74.4,32.1,79.8C17.1,85.3,0.5,84.9,-15.6,81.1C-31.7,77.3,-47.4,70.1,-59.2,58.5C-71,46.9,-78.9,31,-82.8,14C-86.7,-3,-86.5,-21.1,-79.6,-36.2C-72.7,-51.3,-59,-63.3,-44.3,-70C-29.6,-76.7,-14.8,-78.1,0.5,-79C15.8,-79.9,29.7,-82.9,44.5,-76.3Z" transform="translate(100 100)" />
+        </svg>
+    </div>
+    
+    <div class="container position-relative py-5" style="z-index: 2;">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white rounded-pill px-3 py-2 mb-3">About Us</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Transforming <span class="text-gradient">Cleaning Businesses</span> with AI</h2>
+                <p class="lead text-white opacity-80 mb-4">CEO Cleaners is revolutionizing the cleaning industry with AI-powered solutions that help businesses scale efficiently and provide exceptional customer service.</p>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-rocket fs-4 text-primary-color"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold text-white mb-2">Our Mission</h3>
+                                <p class="text-white opacity-80">To empower cleaning businesses with cutting-edge AI technology.</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Payment Automation</h3>
-                    <p class="text-gray-600 mb-6">Automated invoicing, online payments, and financial reporting streamline your cash flow.</p>
-                    <div class="flex items-center text-primary-600 font-medium">
-                        Learn more <i class="fas fa-arrow-right ml-2"></i>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.2) 100%);">
+                                <i class="fas fa-lightbulb fs-4 text-accent-color"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold text-white mb-2">Our Vision</h3>
+                                <p class="text-white opacity-80">A world where every cleaning business can compete and thrive.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="/about" class="btn btn-outline-light px-4 py-2">
+                    <span class="me-2">Learn More About Us</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative rounded-xxl overflow-hidden shadow-lg border-gradient">
+                    <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80" alt="Our Team" class="img-fluid">
+                    <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark opacity-30"></div>
+                    <div class="position-absolute bottom-0 start-0 end-0 p-4">
+                        <h3 class="h4 fw-bold text-white mb-2">Our Expert Team</h3>
+                        <p class="text-white mb-0">A dedicated group of AI specialists and cleaning industry experts.</p>
                     </div>
                 </div>
             </div>
@@ -121,112 +369,281 @@
     </div>
 </section>
 
-<!-- How It Works -->
-<section class="py-24 bg-gray-50 relative overflow-hidden">
-    <div class="absolute inset-0 z-0">
-        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80" alt="Background" class="object-cover w-full h-full opacity-5">
+<!-- Testimonials Section -->
+<section class="py-5 bg-dark-surface-2 position-relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="position-absolute top-0 end-0" style="z-index: 1; opacity: 0.05;">
+        <svg width="500" height="500" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--accent-400)" d="M39.9,-65.7C54.1,-59.6,69.3,-52.8,77.7,-41C86.1,-29.2,87.7,-12.6,85.1,2.6C82.6,17.8,75.9,31.6,67.4,44.4C58.9,57.2,48.5,69,35.6,75.3C22.8,81.7,7.4,82.7,-6.9,79.5C-21.3,76.3,-34.6,68.9,-45.9,59.5C-57.2,50.1,-66.5,38.7,-71.9,25.6C-77.4,12.3,-79,2.3,-77.7,-7.3C-76.4,-16.9,-72.3,-26.1,-65.8,-34C-59.3,-41.9,-50.5,-48.5,-40.5,-56.8C-30.5,-65.1,-19.2,-75.1,-6.2,-76.3C6.8,-77.5,25.7,-71.9,39.9,-65.7Z" transform="translate(100 100)" />
+        </svg>
     </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p class="text-xl text-gray-600">Get started in minutes, see results instantly</p>
+    
+    <div class="container position-relative py-5" style="z-index: 2;">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white rounded-pill px-3 py-2 mb-3">Testimonials</span>
+            <h2 class="display-5 fw-bold text-white mb-4">What Our <span class="text-gradient">Customers</span> Say</h2>
+            <p class="lead text-white opacity-80 mx-auto" style="max-width: 700px;">Hear from cleaning business owners who have transformed their operations with our AI Voice Agent.</p>
         </div>
-        <div class="relative">
-            <div class="absolute top-1/2 left-0 right-0 h-1 bg-primary-200 transform -translate-y-1/2"></div>
-            <div class="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Step 1 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="100">
-                    <div class="relative mb-6">
-                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">1</div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 bg-dark-surface p-4 border-gradient">
+                    <div class="card-body">
+                        <div class="d-flex mb-4">
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color"></i>
+                        </div>
+                        <p class="text-white opacity-80 mb-4">"Sarah, the AI Voice Agent, has completely transformed how we handle customer calls. We've increased our booking rate by 35% and our customers love the instant response time."</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Customer" class="rounded-circle me-3" width="50" height="50">
+                            <div>
+                                <h5 class="text-white mb-1">Jennifer Wilson</h5>
+                                <p class="text-dark-text-secondary mb-0">Clean Sweep Services</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Connect Your Business</h3>
-                    <p class="text-gray-600">Sign up and integrate your existing tools and customer data in minutes.</p>
                 </div>
-
-                <!-- Step 2 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="200">
-                    <div class="relative mb-6">
-                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">2</div>
+            </div>
+            
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 bg-dark-surface p-4 border-gradient">
+                    <div class="card-body">
+                        <div class="d-flex mb-4">
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color"></i>
+                        </div>
+                        <p class="text-white opacity-80 mb-4">"As a small cleaning business, I couldn't afford a full-time receptionist. Sarah has been a game-changer - handling calls 24/7 and scheduling appointments perfectly every time."</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Customer" class="rounded-circle me-3" width="50" height="50">
+                            <div>
+                                <h5 class="text-white mb-1">Michael Rodriguez</h5>
+                                <p class="text-dark-text-secondary mb-0">Sparkle Cleaning Co.</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Customize Your Flow</h3>
-                    <p class="text-gray-600">Set up your automation rules and communication preferences.</p>
                 </div>
-
-                <!-- Step 3 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg" data-aos="fade-up" data-aos-delay="300">
-                    <div class="relative mb-6">
-                        <div class="h-12 w-12 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-bold">3</div>
+            </div>
+            
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 bg-dark-surface p-4 border-gradient">
+                    <div class="card-body">
+                        <div class="d-flex mb-4">
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color me-1"></i>
+                            <i class="fas fa-star text-accent-color"></i>
+                        </div>
+                        <p class="text-white opacity-80 mb-4">"The AI Voice Agent has reduced our missed calls to zero and helped us expand our business without hiring additional staff. It's like having a perfect employee who never sleeps."</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Customer" class="rounded-circle me-3" width="50" height="50">
+                            <div>
+                                <h5 class="text-white mb-1">Sarah Johnson</h5>
+                                <p class="text-dark-text-secondary mb-0">Elite Cleaning Services</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Watch It Grow</h3>
-                    <p class="text-gray-600">Monitor your business growth with real-time analytics and insights.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-5 g-4">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="text-center p-4">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                        <i class="fas fa-building fs-3 text-primary-color"></i>
+                    </div>
+                    <h3 class="h2 fw-bold text-white mb-2">500+</h3>
+                    <p class="text-dark-text-secondary">Businesses Using Our AI</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="text-center p-4">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.2) 100%);">
+                        <i class="fas fa-phone-alt fs-3 text-accent-color"></i>
+                    </div>
+                    <h3 class="h2 fw-bold text-white mb-2">25,000+</h3>
+                    <p class="text-dark-text-secondary">Calls Handled Monthly</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="text-center p-4">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.2) 100%);">
+                        <i class="fas fa-calendar-check fs-3 text-success"></i>
+                    </div>
+                    <h3 class="h2 fw-bold text-white mb-2">15,000+</h3>
+                    <p class="text-dark-text-secondary">Appointments Booked</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="text-center p-4">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(233, 30, 99, 0.2) 100%);">
+                        <i class="fas fa-smile fs-3 text-pink"></i>
+                    </div>
+                    <h3 class="h2 fw-bold text-white mb-2">98%</h3>
+                    <p class="text-dark-text-secondary">Customer Satisfaction</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Testimonials -->
-<section class="py-24 bg-white overflow-hidden">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Loved by Cleaning Businesses</h2>
-            <p class="text-xl text-gray-600">Join hundreds of satisfied customers who transformed their business</p>
+<!-- Pricing Section -->
+<section class="py-5 bg-dark-surface position-relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="position-absolute top-50 start-0" style="z-index: 1; opacity: 0.05; transform: translateY(-50%)">
+        <svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--primary-400)" d="M44.5,-76.3C59.3,-69.7,74.1,-60.5,83.2,-46.7C92.3,-33,95.7,-14.7,93.2,2.5C90.7,19.6,82.3,35.7,71.4,49.4C60.5,63.1,47.1,74.4,32.1,79.8C17.1,85.3,0.5,84.9,-15.6,81.1C-31.7,77.3,-47.4,70.1,-59.2,58.5C-71,46.9,-78.9,31,-82.8,14C-86.7,-3,-86.5,-21.1,-79.6,-36.2C-72.7,-51.3,-59,-63.3,-44.3,-70C-29.6,-76.7,-14.8,-78.1,0.5,-79C15.8,-79.9,29.7,-82.9,44.5,-76.3Z" transform="translate(100 100)" />
+        </svg>
+    </div>
+    <div class="position-absolute top-50 end-0" style="z-index: 1; opacity: 0.05; transform: translateY(-50%)">
+        <svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--accent-400)" d="M39.9,-65.7C51.5,-58.4,60.8,-47.8,67.2,-35.4C73.6,-23,77.1,-8.7,75.3,5C73.5,18.7,66.4,31.8,56.8,42.7C47.2,53.6,35.1,62.3,21.8,67.2C8.4,72.1,-6.2,73.2,-19.6,69.5C-33,65.8,-45.2,57.3,-54.9,46.2C-64.6,35.1,-71.8,21.4,-74.6,6.5C-77.4,-8.4,-75.8,-24.6,-68.2,-37.4C-60.6,-50.2,-47,-59.7,-33.5,-66C-20,-72.3,-6.5,-75.4,6.1,-75.1C18.8,-74.7,28.3,-73,39.9,-65.7Z" transform="translate(100 100)" />
+        </svg>
+    </div>
+    
+    <div class="container position-relative py-5" style="z-index: 2;">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-accent rounded-pill px-3 py-2 mb-3">Pricing</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Simple, <span class="text-gradient">Transparent Pricing</span></h2>
+            <p class="lead text-dark-text-secondary mx-auto" style="max-width: 700px;">Choose the plan that works best for your cleaning business. All plans include our AI Voice Agent technology.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Testimonial 1 -->
-            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="100">
-                <div class="flex items-center mb-6">
-                    <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80" alt="Sarah Wilson" class="h-14 w-14 rounded-full object-cover">
-                    <div class="ml-4">
-                        <h4 class="text-lg font-semibold text-gray-900">Sarah Wilson</h4>
-                        <p class="text-gray-600">Sparkle Clean Co.</p>
+        
+        <div class="row g-4">
+            <!-- Basic Plan -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 bg-dark-surface-2 rounded-xl p-4 border-gradient">
+                    <div class="card-body p-2">
+                        <h3 class="text-white fw-bold mb-3">Starter</h3>
+                        <div class="d-flex align-items-baseline mb-4">
+                            <span class="display-4 fw-bold text-white">$99</span>
+                            <span class="text-dark-text-secondary ms-2">/month</span>
+                        </div>
+                        <p class="text-dark-text-secondary mb-4">Perfect for small cleaning businesses just getting started.</p>
+                        <ul class="list-unstyled mb-4">
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">AI Voice Agent (Sarah)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Up to 100 calls/month</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Appointment scheduling</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Email confirmations</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-times-circle text-muted me-2"></i>
+                                <span class="text-muted">Custom voice configuration</span>
+                            </li>
+                        </ul>
+                        <a href="/signup" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
                     </div>
-                </div>
-                <p class="text-gray-600 italic">"Since implementing CleaningBiz AI, we've reduced our administrative work by 70% and increased our customer satisfaction scores significantly."</p>
-                <div class="mt-6 text-accent-500">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
                 </div>
             </div>
-
-            <!-- Testimonial 2 -->
-            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="200">
-                <div class="flex items-center mb-6">
-                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80" alt="John Martinez" class="h-14 w-14 rounded-full object-cover">
-                    <div class="ml-4">
-                        <h4 class="text-lg font-semibold text-gray-900">John Martinez</h4>
-                        <p class="text-gray-600">Elite Cleaning Services</p>
+            
+            <!-- Pro Plan -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 bg-gradient-primary rounded-xl p-4 border-gradient-accent" style="background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);">
+                    <div class="position-absolute top-0 start-50 translate-middle">
+                        <span class="badge bg-accent rounded-pill px-3 py-2">Most Popular</span>
                     </div>
-                </div>
-                <p class="text-gray-600 italic">"The AI-powered scheduling has revolutionized our operations. We're handling 40% more clients with the same team size."</p>
-                <div class="mt-6 text-accent-500">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
+                    <div class="card-body p-2">
+                        <h3 class="text-white fw-bold mb-3">Professional</h3>
+                        <div class="d-flex align-items-baseline mb-4">
+                            <span class="display-4 fw-bold text-white">$199</span>
+                            <span class="text-white opacity-75 ms-2">/month</span>
+                        </div>
+                        <p class="text-white opacity-75 mb-4">Ideal for growing cleaning businesses with regular call volume.</p>
+                        <ul class="list-unstyled mb-4">
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-accent-color me-2"></i>
+                                <span class="text-white opacity-75">AI Voice Agent (Sarah)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-accent-color me-2"></i>
+                                <span class="text-white opacity-75">Up to 500 calls/month</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-accent-color me-2"></i>
+                                <span class="text-white opacity-75">Advanced scheduling</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-accent-color me-2"></i>
+                                <span class="text-white opacity-75">SMS & Email confirmations</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-accent-color me-2"></i>
+                                <span class="text-white opacity-75">Custom voice configuration</span>
+                            </li>
+                        </ul>
+                        <a href="/signup" class="btn btn-accent w-100 py-3 rounded-pill shadow-glow">Get Started</a>
+                    </div>
                 </div>
             </div>
-
-            <!-- Testimonial 3 -->
-            <div class="card-hover glass-card p-8 rounded-2xl" data-aos="fade-up" data-aos-delay="300">
-                <div class="flex items-center mb-6">
-                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80" alt="Emily Chen" class="h-14 w-14 rounded-full object-cover">
-                    <div class="ml-4">
-                        <h4 class="text-lg font-semibold text-gray-900">Emily Chen</h4>
-                        <p class="text-gray-600">Fresh & Clean Co.</p>
+            
+            <!-- Enterprise Plan -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 bg-dark-surface-2 rounded-xl p-4 border-gradient">
+                    <div class="card-body p-2">
+                        <h3 class="text-white fw-bold mb-3">Enterprise</h3>
+                        <div class="d-flex align-items-baseline mb-4">
+                            <span class="display-4 fw-bold text-white">$399</span>
+                            <span class="text-dark-text-secondary ms-2">/month</span>
+                        </div>
+                        <p class="text-dark-text-secondary mb-4">For established cleaning businesses with high call volume.</p>
+                        <ul class="list-unstyled mb-4">
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">AI Voice Agent (Sarah)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Unlimited calls</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Priority scheduling</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">All communication channels</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <i class="fas fa-check-circle text-primary-color me-2"></i>
+                                <span class="text-dark-text-secondary">Advanced analytics & reporting</span>
+                            </li>
+                        </ul>
+                        <a href="/signup" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
                     </div>
                 </div>
-                <p class="text-gray-600 italic">"The automated payment system has eliminated our cash flow issues. Plus, the customer communication is seamless!"</p>
-                <div class="mt-6 text-accent-500">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
+            </div>
+        </div>
+        
+        <div class="bg-dark-surface-2 rounded-xl p-4 mt-5" data-aos="fade-up">
+            <div class="row align-items-center">
+                <div class="col-lg-8 mb-4 mb-lg-0">
+                    <h3 class="h4 fw-bold text-white mb-2">Need a custom solution?</h3>
+                    <p class="text-dark-text-secondary mb-0">Contact our team for a tailored plan that meets your specific business requirements.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="/contact" class="btn btn-primary shadow-glow px-4 py-2">
+                        <i class="fas fa-envelope me-2"></i>Contact Sales
+                    </a>
                 </div>
             </div>
         </div>
@@ -234,27 +651,187 @@
 </section>
 
 <!-- CTA Section -->
-<section class="relative py-24 overflow-hidden bg-primary-900">
-    <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1587614382346-4ec70e388b28?auto=format&fit=crop&q=80" alt="Background" class="object-cover w-full h-full opacity-10">
-        <div class="absolute inset-0 bg-primary-900 opacity-90"></div>
-        <div class="absolute inset-0 hero-pattern opacity-10"></div>
+<section class="py-5 bg-gradient-primary position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);">
+    <!-- Animated background elements -->
+    <div class="position-absolute top-0 start-0 end-0 bottom-0 opacity-20">
+        <div class="position-absolute" style="width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, var(--primary-400) 0%, rgba(33, 150, 243, 0) 70%); top: -10%; right: -5%; filter: blur(70px);"></div>
+        <div class="position-absolute" style="width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, var(--accent-400) 0%, rgba(255, 193, 7, 0) 70%); bottom: -10%; left: -5%; filter: blur(70px);"></div>
     </div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div class="max-w-3xl mx-auto">
-            <h2 class="text-4xl font-bold text-white mb-6" data-aos="fade-up">Ready to Transform Your Business?</h2>
-            <p class="text-xl text-gray-300 mb-8" data-aos="fade-up" data-aos-delay="100">Join hundreds of cleaning businesses already growing with CleaningBiz AI.</p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="200">
-                <a href="/signup" class="bg-accent-500 px-8 py-4 rounded-xl text-white hover:bg-accent-600 transition flex items-center justify-center group accent-glow">
-                    <span class="mr-2">Start Free Trial</span>
-                    <i class="fas fa-rocket transform group-hover:translate-x-1 transition"></i>
-                </a>
-                <a href="/contact" class="glass-card px-8 py-4 rounded-xl text-dark hover:bg-white/20 transition flex items-center justify-center group">
-                    <span class="mr-2">Contact Sales</span>
-                    <i class="fas fa-arrow-right transform group-hover:translate-x-1 transition"></i>
-                </a>
+    
+    <div class="container position-relative py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-5 mb-lg-0" data-aos="fade-right">
+                <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your <span class="text-gradient-light">Cleaning Business?</span></h2>
+                <p class="lead text-white opacity-80 mb-4">Join hundreds of cleaning businesses already using our AI Voice Agent to handle calls, schedule appointments, and grow their revenue.</p>
+                
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/signup" class="btn btn-accent btn-lg shadow-glow px-4">
+                        <i class="fas fa-rocket me-2"></i>Get Started Now
+                    </a>
+                    <a href="/demo" class="btn btn-outline-light btn-lg px-4">
+                        <i class="fas fa-headphones me-2"></i>Listen to Demo
+                    </a>
+                </div>
+                
+                <div class="mt-4 d-flex align-items-center">
+                    <span class="badge bg-success rounded-pill px-3 py-2 me-3">
+                        <i class="fas fa-check me-1"></i>No Credit Card Required
+                    </span>
+                    <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                        <i class="fas fa-calendar-alt me-1"></i>14-Day Free Trial
+                    </span>
+                </div>
+            </div>
+            
+            <div class="col-lg-5" data-aos="fade-left">
+                <div class="card bg-dark-surface rounded-xxl p-4 border-gradient shadow-lg">
+                    <div class="card-body">
+                        <h3 class="h4 fw-bold text-white mb-4">Schedule a Free Demo</h3>
+                        <form>
+                            <div class="mb-3">
+                                <label for="name" class="form-label text-dark-text-secondary">Full Name</label>
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="name" placeholder="Your name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label text-dark-text-secondary">Email Address</label>
+                                <input type="email" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="email" placeholder="your@email.com">
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label text-dark-text-secondary">Phone Number</label>
+                                <input type="tel" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="phone" placeholder="(123) 456-7890">
+                            </div>
+                            <div class="mb-4">
+                                <label for="company" class="form-label text-dark-text-secondary">Company Name</label>
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="company" placeholder="Your company">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-glow">
+                                <i class="fas fa-calendar-check me-2"></i>Book Your Demo
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize toggle functionality
+        const pricingToggle = document.getElementById('pricing-toggle');
+        if (pricingToggle) {
+            pricingToggle.addEventListener('change', togglePricing);
+        }
+    });
+    
+    function togglePricing() {
+        const isYearly = document.getElementById('pricing-toggle').checked;
+        const monthlyPrices = document.querySelectorAll('.monthly-price');
+        const yearlyPrices = document.querySelectorAll('.yearly-price');
+        const monthlyPeriods = document.querySelectorAll('.monthly-period');
+        const yearlyPeriods = document.querySelectorAll('.yearly-period');
+        
+        if (isYearly) {
+            // Show yearly prices
+            monthlyPrices.forEach(el => el.style.display = 'none');
+            yearlyPrices.forEach(el => el.style.display = 'inline-block');
+            monthlyPeriods.forEach(el => el.style.display = 'none');
+            yearlyPeriods.forEach(el => el.style.display = 'inline-block');
+        } else {
+            // Show monthly prices
+            monthlyPrices.forEach(el => el.style.display = 'inline-block');
+            yearlyPrices.forEach(el => el.style.display = 'none');
+            monthlyPeriods.forEach(el => el.style.display = 'inline-block');
+            yearlyPeriods.forEach(el => el.style.display = 'none');
+        }
+        
+        console.log('Pricing toggled to ' + (isYearly ? 'yearly' : 'monthly'));
+    }
+</script>
+
+<style>
+/* Custom styles for improved contrast and design */
+:root {
+    --bs-accent: #FF6B35;
+    --bs-primary-color: #2D5BFF;
+}
+
+/* Pricing toggle styling */
+.pricing-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.pricing-toggle .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.pricing-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    transition: 0.4s;
+}
+
+.pricing-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.4s;
+}
+
+.pricing-toggle input:checked + .pricing-slider {
+    background-color: var(--bs-accent);
+}
+
+.pricing-toggle input:checked + .pricing-slider:before {
+    transform: translateX(30px);
+}
+
+/* Button styling */
+.btn-accent {
+    background-color: var(--bs-accent);
+    border-color: var(--bs-accent);
+    color: white;
+}
+
+.btn-accent:hover {
+    background-color: #e55a2a;
+    border-color: #e55a2a;
+    color: white;
+}
+
+/* Feature card hover effect */
+.feature-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+</style>
 {% endblock %}
