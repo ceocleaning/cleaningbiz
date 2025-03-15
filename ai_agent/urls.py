@@ -17,9 +17,10 @@ urlpatterns = [
     # Twilio webhook URL
     path('api/twilio/webhook/<str:secretKey>/', views.twilio_webhook, name='twilio_webhook'),
 
-    path('agent-config/create/', views.agent_config_create, name='agent_config_create'),
-    path('agent-config/', views.agent_config_detail, name='agent_config'),
-    path('agent-config/<str:config_id>/edit/', views.agent_config_edit, name='agent_config_edit'),
-    path('agent-config/delete/', views.agent_config_delete, name='agent_config_delete'),
-    path('agent-config/preview/', views.agent_config_preview, name='agent_config_preview'),
+    # New unified agent configuration pages
+    path('agent-config/', views.agent_config_unified, name='agent_config'),
+    path('agent-config/save/', views.agent_config_save, name='agent_config_save'),
+    
+    # Business credentials API
+    path('api/business/credentials/', views.business_credentials_api, name='business_credentials_api'),
 ]

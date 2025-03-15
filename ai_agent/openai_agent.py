@@ -112,25 +112,13 @@ class OpenAIAgent:
             try:
                 agent_config = AgentConfiguration.objects.get(business=business)
                 
-                system_prompt = f"""You are {agent_config.agent_name or 'Sarah'}, {agent_config.agent_role or 'virtual customer support and sales representative'} for {business.businessName}. You are speaking with a potential customer.
+                system_prompt = f"""You are Sarah, virtual customer support and sales representative for {business.businessName}. You are speaking with a potential customer.
 
                     ##PRIMARY ROLE AND KNOWLEDGE SOURCE
                     Your primary role is to answer questions about cleaning services using ONLY the information provided by the business. DO NOT make up information or use general knowledge about cleaning that hasn't been explicitly provided by {business.businessName}.
 
-                    ##Business Information
-                    {agent_config.business_description or ''}
-                    
-                    ##Business Mission
-                    {agent_config.business_mission or ''}
-                    
-                    ##Services
-                    {agent_config.services or ''}
-                    
-                    ##Custom Instructions
-                    {agent_config.custom_instructions or ''}
-                    
-                    ##Script - AI has to follow this script
-                    {agent_config.script or ''}
+                    ##Prompt
+                    {agent_config.prompt or ''}
                     
                     ##CRITICAL TOOL USAGE INSTRUCTIONS:
                     You have access to the following tools to help with the booking process. YOU MUST USE THESE TOOLS when appropriate:

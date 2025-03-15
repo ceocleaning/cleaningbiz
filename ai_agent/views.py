@@ -27,88 +27,6 @@ from twilio.rest import Client
 
 
 @login_required
-def agent_config_detail(request):
-    """View to see details of a specific agent configuration"""
-    config = AgentConfiguration.objects.filter(business__user=request.user).first()
-    business = Business.objects.filter(user=request.user).first()
-    
-    return render(request, 'ai_agent/agent_config_detail.html', {
-        'config': config,
-        'business': business
-    })
-
-@login_required
-def agent_config_create(request):
-    """View to create a new agent configuration"""
-    # Get businesses the user owns
-    business = request.user.business_set.first()
-    
-    if not business:
-        messages.error(request, "You need to have a business registered before creating an AI Agent configuration.")
-        return redirect('ai_agent:agent_config_list')
-    
-    # Check if configuration already exists for this business
-    if AgentConfiguration.objects.filter(business=business).exists():
-        messages.info(request, f"A configuration already exists for {business.businessName}. Redirecting to edit page.")
-        return redirect('ai_agent:agent_config_edit', config_id=business.businessId)
-    
-    if request.method == 'POST':
-        # Create new configuration
-        config = AgentConfiguration.objects.create(
-            business=business,
-            agent_name=request.POST.get('agent_name', 'Sarah'),
-            agent_role=request.POST.get('agent_role', 'virtual customer support and sales representative'),
-            business_description=request.POST.get('business_description', ''),
-            business_mission=request.POST.get('business_mission', ''),
-            services=request.POST.get('services', ''),
-            custom_instructions=request.POST.get('custom_instructions', ''),
-            script=request.POST.get('script', '')
-        )
-        
-        messages.success(request, f"Configuration for {business.businessName} created successfully.")
-        return redirect('ai_agent:agent_config_detail', config_id=business.businessId)
-    
-    return render(request, 'ai_agent/agent_config_form.html', {
-        'mode': 'create',
-        'business': business
-    })
-
-@login_required
-def agent_config_edit(request, config_id):
-    """View to edit an existing agent configuration"""
-    business = get_object_or_404(Business, businessId=config_id)
-    
-    # Check if user owns this business
-    if business.user != request.user:
-        messages.error(request, "You don't have permission to edit this configuration.")
-        return redirect('ai_agent:agent_config')
-
-    try:
-        config = AgentConfiguration.objects.get(business=business)
-    except AgentConfiguration.DoesNotExist:
-        messages.error(request, "Configuration not found.")
-        return redirect('ai_agent:agent_config')
-    
-    if request.method == 'POST':
-        # Update configuration
-        config.agent_name = request.POST.get('agent_name', config.agent_name)
-        config.agent_role = request.POST.get('agent_role', config.agent_role)
-        config.business_description = request.POST.get('business_description', config.business_description)
-        config.business_mission = request.POST.get('business_mission', config.business_mission)
-        config.services = request.POST.get('services', config.services)
-        config.custom_instructions = request.POST.get('custom_instructions', config.custom_instructions)
-        config.script = request.POST.get('script', config.script)
-        config.save()
-        
-        messages.success(request, f"Configuration for {business.businessName} updated successfully.")
-        return redirect('ai_agent:agent_config')
-    
-    return render(request, 'ai_agent/agent_config_form.html', {
-        'config': config,
-        'mode': 'edit'
-    })
-
-@login_required
 @require_POST
 def agent_config_delete(request):
     """View to delete an agent configuration"""
@@ -126,25 +44,74 @@ def agent_config_delete(request):
     
     return redirect('ai_agent:agent_config')
 
+
 @login_required
-def agent_config_preview(request):
-    """View to preview the system prompt generated from a configuration"""
-    config = AgentConfiguration.objects.filter(business__user=request.user).first()
+def agent_config_unified(request):
+    """Unified view to create or edit agent configuration on a single page"""
+    business = Business.objects.filter(user=request.user).first()
     
-    # Check if user owns this business
-    if not config:
-        messages.error(request, "You don't have a configuration to preview.")
-        return redirect('ai_agent:agent_config')
+    if not business:
+        messages.error(request, "You need to have a business registered before configuring the AI Agent.")
+        return redirect('home')
     
-    # Generate the system prompt
-    system_prompt = OpenAIAgent.get_dynamic_system_prompt(config.business.businessId)
-   
+    # Get or create configuration for this business
+    config, created = AgentConfiguration.objects.get_or_create(
+        business=business,
+        defaults={
+            'prompt': ''
+        }
+    )
     
-    return render(request, 'ai_agent/agent_config_preview.html', {
+    if request.method == 'POST':
+        # Update configuration
+        config.prompt = request.POST.get('prompt', config.prompt)
+        config.save()
+        
+        messages.success(request, f"Configuration for {business.businessName} updated successfully.")
+        
+        # Generate the system prompt for preview
+        system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
+        
+        return render(request, 'ai_agent/agent_config_unified.html', {
+            'config': config,
+            'business': business,
+            'system_prompt': system_prompt,
+            'show_preview': True
+        })
+    
+    return render(request, 'ai_agent/agent_config_unified.html', {
         'config': config,
-        'system_prompt': system_prompt
+        'business': business,
+        'created': created
     })
 
+@login_required
+def agent_config_save(request):
+    """AJAX view to save agent configuration"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    
+    business = Business.objects.filter(user=request.user).first()
+    if not business:
+        return JsonResponse({'success': False, 'message': 'No business found for this user'})
+    
+    
+    config = AgentConfiguration.objects.get(business=business)
+    
+    # Update configuration
+    config.prompt = request.POST.get('prompt', config.prompt)
+    config.save()
+    
+    # Generate the system prompt for preview
+    system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
+    
+    return JsonResponse({
+        'success': True, 
+        'message': f"Configuration for {business.businessName} updated successfully.",
+        'system_prompt': system_prompt
+    })
+        
+  
 
 
 # AI AGENT START
@@ -338,3 +305,45 @@ def send_sms_response(to_number, message, secretKey):
     except Exception as e:
         print(f"[DEBUG] Error sending SMS response: {str(e)}")
         traceback.print_exc()
+
+
+@login_required
+def business_credentials_api(request):
+    """
+    API endpoint to get business credentials for the current user's business
+    
+    Args:
+        request: Django request object
+        
+    Returns:
+        JsonResponse with the business credentials
+    """
+    try:
+        # Get the current user's business
+        business = Business.objects.get(user=request.user)
+        
+        # Get the API credentials for the business
+        try:
+            credentials = ApiCredential.objects.get(business=business)
+            return JsonResponse({
+                'success': True,
+                'credentials': {
+                    'twilioSmsNumber': credentials.twilioSmsNumber,
+                }
+            })
+        except ApiCredential.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'No API credentials found for this business'
+            })
+            
+    except Business.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'No business found for this user'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
