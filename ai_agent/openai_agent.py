@@ -341,8 +341,18 @@ class OpenAIAgent:
                     return json.dumps(result)
                     
                 elif tool_name == 'bookAppointment':
-                    # Extract booking data from conversation
-                    summary = chat.summary
+                    # Only extract booking data from conversation when bookAppointment is called
+                    print(f"[DEBUG] bookAppointment called - extracting conversation summary")
+                    
+                    # Get messages for this chat
+                    messages = OpenAIAgent.get_chat_messages(client_phone_number)
+                    
+                    # Extract summary from conversation
+                    summary = OpenAIAgent.extract_conversation_summary(messages)
+                    
+                    # Update the chat with the summary
+                    chat.summary = json.dumps(summary)
+                    chat.save()
                     
                     # Check if we have enough information to create a booking
                     if not summary:
@@ -469,9 +479,15 @@ class OpenAIAgent:
             
             # Process tool calls
             all_tool_results = []
+            bookAppointment_called = False
+            
             for tool_call in message.tool_calls:
                 print(f"[DEBUG] Processing tool call: {tool_call.function.name}")
                 print(f"[DEBUG] Tool arguments: {tool_call.function.arguments}")
+                
+                # Check if this is a bookAppointment call
+                if tool_call.function.name == 'bookAppointment':
+                    bookAppointment_called = True
                 
                 # Execute the tool call
                 tool_result = OpenAIAgent.execute_tool_call(
@@ -497,7 +513,7 @@ class OpenAIAgent:
                 {"role": "system", "content": "You are Sarah, an AI assistant for a cleaning company. Generate a natural, conversational response based on the tool results. DO NOT mention that you're using tools or APIs. Just incorporate the information naturally. DO NOT use phrases like 'the system shows' or 'I checked and found'. Respond as if you naturally know this information. Keep your response friendly, professional, and conversational. IMPORTANT: ALWAYS ANSWER THE USER'S QUESTION DIRECTLY FIRST, then provide additional context or information if needed.\n\nFor the current_time tool, ALWAYS respond with the exact time information and nothing else. For example, if the tool returns '2025-03-14 12:49 PM (Friday) Central Time', your response should be 'It's currently 12:49 PM on Friday, March 14th, Central Time.' DO NOT add any other information about booking or services when responding to time queries."}
             ]
             
-            # Add the original user message for context if available
+            # Add the original user message for context if available - retrieve all messages without limit
             try:
                 chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
                 messages_qs = Messages.objects.filter(chat=chat).order_by('-createdAt')
@@ -535,13 +551,17 @@ class OpenAIAgent:
                     "content": tool_content
                 })
 
-                Messages.objects.create(
-                    chat=chat,
-                    role="tool",
-                    message=tool_content
-                )
+                # Only save tool messages to database if needed for debugging
+                try:
+                    Messages.objects.create(
+                        chat=chat,
+                        role="tool",
+                        message=tool_content
+                    )
+                except Exception as e:
+                    print(f"[DEBUG] Error saving tool message: {str(e)}")
             
-            # Generate the natural response
+            # Generate the natural response with full tokens for comprehensive processing
             try:
                 print(f"[DEBUG] Calling OpenAI to generate natural response")
                 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
@@ -549,7 +569,7 @@ class OpenAIAgent:
                     model="gpt-4o",
                     messages=messages,
                     temperature=0.5,
-                    max_tokens=1024
+                    max_tokens=1024  # Using full token count for comprehensive responses
                 )
                 
                 # Use the natural response as the final response
@@ -636,24 +656,34 @@ class OpenAIAgent:
         }
         
         try:
-            # Join all messages into a single text for analysis
-            full_conversation = ' '.join([msg.get('content', '') for msg in chat_history if msg.get('content')])
+            print(f"[DEBUG] Starting conversation summary extraction at {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+            
+            # Filter to only include user and assistant messages - process all messages without limit
+            filtered_messages = []
+            for msg in chat_history:  # Process all messages
+                if msg.get('role') in ['user', 'assistant'] and msg.get('message'):
+                    filtered_messages.append({'role': msg.get('role'), 'content': msg.get('message')})
             
             # Skip if conversation is too short
-            if len(full_conversation) < 10:
-                print(f"[DEBUG] Conversation too short to extract summary: {len(full_conversation)} chars")
+            if len(filtered_messages) < 2:
+                print(f"[DEBUG] Conversation too short to extract summary: {len(filtered_messages)} messages")
                 return summary
                 
-            print(f"[DEBUG] Extracting summary from conversation: {len(full_conversation)} chars")
+            # Join messages into a single text for analysis, but with clear role indicators
+            conversation_text = ""
+            for msg in filtered_messages:
+                role = "Customer" if msg['role'] == 'user' else "Agent"
+                conversation_text += f"{role}: {msg['content']}\n"
             
-            # Create a system prompt for OpenAI to extract the information
+            print(f"[DEBUG] Extracting summary from conversation: {len(conversation_text)} chars, {len(filtered_messages)} messages")
+            
+            # Create a detailed system prompt for OpenAI to extract comprehensive information
             system_prompt = f"""
-            You are an AI assistant tasked with extracting specific information from a customer conversation with CEO Cleaners.
-            Please analyze the following conversation and extract the information in a structured JSON format.
+            You are an AI assistant for CEO Cleaners, a professional cleaning service. Your task is to extract specific customer booking information from this conversation.
+            Analyze the entire conversation history carefully and extract all relevant details.
             
-            Extract the following information and respond ONLY with a valid JSON object with these keys:
-            - firstName: Customer's first name
-            - lastName: Customer's last name
+            Respond ONLY with a valid JSON object containing these keys (leave empty if not found):
+            - firstName, lastName: Customer's full name
             - email: Customer's email address
             - phoneNumber: Customer's phone number without any spaces or dashes
             - address1: Street address (just the street part, no city/state/zip)
@@ -679,24 +709,26 @@ class OpenAIAgent:
             - addonPatioSweeping: Quantity of Patio Sweeping Addon
             - addonGarageSweeping: Quantity of Garage Sweeping Addon
             
-            Respond ONLY with a valid JSON object. Do not include any explanations or additional text.
+            ONLY return a valid JSON object. No explanations or additional text.
             If you cannot determine a value, leave it as an empty string.
             """
             
             # Initialize OpenAI client
             client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
             
-            # Call OpenAI API for extraction
+            # Call OpenAI API for extraction with full token allocation for comprehensive extraction
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o",  # Using the most capable model for accurate extraction
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_conversation}
+                    {"role": "user", "content": conversation_text}
                 ],
                 temperature=0.1,  # Low temperature for more deterministic extraction
-                max_tokens=1000,
+                max_tokens=1000,  # Using full token allocation for comprehensive extraction
                 response_format={"type": "json_object"}
             )
+            
+            print(f"[DEBUG] Extraction API call completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
             
             # Extract the response content
             extracted_info = response.choices[0].message.content
