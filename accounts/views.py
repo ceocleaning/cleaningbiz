@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
+from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
 import random
 from django.http import JsonResponse
 from email.mime.multipart import MIMEMultipart

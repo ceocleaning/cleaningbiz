@@ -11,7 +11,7 @@ from reportlab.lib.pagesizes import letter
 from io import BytesIO
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
+from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons
 import uuid
 from django.utils import timezone
 from django.template.loader import render_to_string

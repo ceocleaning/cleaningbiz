@@ -102,7 +102,8 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'ai_agent:agent_config_edit' config_id=config.business.businessId %}" class="btn btn-primary">
+                        {% if config %}
+                        <a href="{% url 'ai_agent:agent_config_edit' business.businessId %}" class="btn btn-primary">
                             <i class="fas fa-edit"></i> Edit Configuration
                         </a>
                         <a href="{% url 'ai_agent:agent_config_preview' %}" class="btn btn-info">
@@ -111,6 +112,13 @@
                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
                             <i class="fas fa-trash"></i> Delete Configuration
                         </button>
+                        {% else %}
+                        <a href="{% url 'ai_agent:agent_config_create' %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i>Create Configuration
+                        </a>
+                        {% endif %}
+
+                        
                     </div>
                 </div>
             </div>

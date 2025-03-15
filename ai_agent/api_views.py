@@ -224,15 +224,16 @@ def check_availability(business, date_string):
         return {"success": False, "error": str(e)}
 
 
-def book_appointment(business, client_phone_number):
+def book_appointment(business, client_phone_number, booking_data=None):
     """Function to book an appointment for the AI agent.
     Creates a booking in the system based on customer details collected by the AI agent.
     
     Args:
         business: The Business object for which to create the booking
-        data: Dictionary containing customer details and addon selections extracted from conversation
+        client_phone_number: The phone number of the client
+        booking_data: Optional dictionary containing customer details and addon selections extracted from conversation
             Required fields: firstName, lastName, phoneNumber, address1, city, state, 
-            serviceType, appointmentDateTime, bedrooms, bathrooms, area
+            serviceType, appointmentDateTime, bedrooms, bathrooms, squareFeet
     
     Returns:
         Dictionary with booking details or error information
@@ -242,8 +243,10 @@ def book_appointment(business, client_phone_number):
         print(f"[DEBUG] Args: {client_phone_number}")
 
         chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-        data = chat.summary
-        print(data)
+        
+        # Use provided booking_data if available, otherwise use chat.summary
+        data = booking_data if booking_data else chat.summary
+        print(f"[DEBUG] Booking data: {json.dumps(data, indent=2)}")
         
         # Validate required fields
         required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 

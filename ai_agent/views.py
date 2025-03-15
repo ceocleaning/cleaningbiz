@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
-from .chatbot import get_dynamic_system_prompt
+# Replace Gemini imports with OpenAI imports
+from .openai_agent import OpenAIAgent
 
 from accounts.models import Business
 from .models import AgentConfiguration, Chat, Messages
@@ -13,7 +14,10 @@ from .models import AgentConfiguration, Chat, Messages
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from twilio.twiml.messaging_response import MessagingResponse
-from .chatbot import get_ai_response
+from .openai_agent import OpenAIAgent
+import os
+import traceback
+from openai import OpenAI
 
 # Create your views here.
 
@@ -23,9 +27,11 @@ from .chatbot import get_ai_response
 def agent_config_detail(request):
     """View to see details of a specific agent configuration"""
     config = AgentConfiguration.objects.filter(business__user=request.user).first()
+    business = Business.objects.filter(user=request.user).first()
     
     return render(request, 'ai_agent/agent_config_detail.html', {
-        'config': config
+        'config': config,
+        'business': business
     })
 
 @login_required
@@ -128,7 +134,7 @@ def agent_config_preview(request):
         return redirect('ai_agent:agent_config')
     
     # Generate the system prompt
-    system_prompt = get_dynamic_system_prompt(config.business.businessId)
+    system_prompt = OpenAIAgent.get_dynamic_system_prompt(config.business.businessId)
    
     
     return render(request, 'ai_agent/agent_config_preview.html', {
@@ -142,7 +148,8 @@ def agent_config_preview(request):
 
 
 @csrf_exempt
-def twilio_webhook(request):
+def twilio_webhook(request, secretKey):
+    print("Twilio webhook received")
     """Handle Twilio webhook requests for SMS interactions"""
     # Check if this is a POST request
     if request.method != 'POST':
@@ -152,6 +159,8 @@ def twilio_webhook(request):
     from_number = request.POST.get('From', '')
     body = request.POST.get('Body', '')
     to_number = request.POST.get('To', '')
+
+    print(f"From: {from_number}, Body: {body}, To: {to_number}")
     
     # Initialize Twilio response
     twiml_response = MessagingResponse()
@@ -160,59 +169,95 @@ def twilio_webhook(request):
         # Clean the phone number (remove any + prefix)
         client_phone_number = from_number
         
-        business = request.user.business_set.first()
+        apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
         
-        if not business:
+        if not apiCred:
             twiml_response.message("Sorry, we couldn't process your request at this time.")
             return HttpResponse(str(twiml_response), content_type='text/xml')
         
-        # Check if a chat with this phone number already exists for this business
-        existing_chat = Chat.objects.filter(
-            clientPhoneNumber=client_phone_number,
-            business=business
-        ).first()
+        business = apiCred.business
         
-        if existing_chat:
-            # Use existing chat
-            chat = existing_chat
-        else:
-            # Create new chat with phone number
-            chat = Chat.objects.create(
-                clientPhoneNumber=client_phone_number,
-                business=business
-            )
+        # Get or create a chat for this phone number
+        chat = OpenAIAgent.get_or_create_chat(business.businessId, client_phone_number)
+        
+        if not chat:
+            twiml_response.message("Sorry, we couldn't process your request at this time.")
+            return HttpResponse(str(twiml_response), content_type='text/xml')
         
         # Save user message
-        user_message = Messages(
+        user_message = Messages.objects.create(
             chat=chat,
             role='user',
             message=body
         )
-        user_message.save()
         
-        # Get chat history
-        chat_history = Messages.objects.filter(chat=chat).order_by('createdAt')
+        # Get the system prompt
+        system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
+        if system_prompt == 0:
+            # Use a default prompt if no configuration exists
+            system_prompt = f"""You are Sarah, a virtual customer support and sales representative for {business.businessName}. You are speaking with a potential customer via SMS.
+            Keep your responses concise and clear since this is an SMS conversation.
+            Your primary goals are to:
+            1. Answer questions about cleaning services
+            2. Collect customer details (name, phone, email, address)
+            3. Gather property details (square footage, bedrooms, bathrooms)
+            4. Provide service options and pricing
+            5. Schedule appointments within business hours (9 AM - 5 PM Central Time)
+            6. Send booking confirmations
+            
+            Follow this conversation flow: greeting → gathering details → service selection → scheduling → confirmation
+            
+            Use tools when appropriate for checking availability and booking appointments.
+            
+            Always be friendly, professional, and helpful."""
         
-        # Get AI response
-        ai_response_text = get_ai_response(chat_history, business.businessId, client_phone_number)
+        # Get all messages for this chat
+        messages = OpenAIAgent.get_chat_messages(client_phone_number)
         
-        # Save AI response
-        ai_message = Messages(
-            chat=chat,
-            role='assistant',
-            message=ai_response_text
-        )
-        ai_message.save()
+        # Format messages for OpenAI
+        formatted_messages = OpenAIAgent.format_messages_for_openai(messages, system_prompt)
         
-        # Send the AI response back via SMS
-        twiml_response.message(ai_response_text)
+        # Call OpenAI API
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=formatted_messages,
+                temperature=0.5,
+                max_tokens=512,  # Shorter for SMS
+                tools=OpenAIAgent.get_openai_tools()
+            )
+            
+            # Process the response
+            ai_response_text = OpenAIAgent.process_ai_response(response.choices[0].message, client_phone_number)
+            
+            # Save the assistant message
+            assistant_message = Messages.objects.create(
+                chat=chat,
+                role='assistant',
+                message=ai_response_text
+            )
+            
+            # Send the AI response back via SMS
+            # Truncate if necessary to fit SMS length limits
+            if len(ai_response_text) > 1500:
+                ai_response_text = ai_response_text[:1497] + "..."
+                
+            twiml_response.message(ai_response_text)
+            
+        except Exception as e:
+            print(f"Error calling OpenAI API: {str(e)}")
+            traceback.print_exc()
+            twiml_response.message("Sorry, we're experiencing technical difficulties. Please try again later.")
         
         # Return the TwiML response
         return HttpResponse(str(twiml_response), content_type='text/xml')
         
     except Exception as e:
-        
+        print(f"Error in Twilio webhook: {str(e)}")
+        traceback.print_exc()
         
         # Send a generic error message
         twiml_response.message("Sorry, we encountered an error processing your request. Please try again later.")
-        raise Exception(f"Error in Twilio webhook: {str(e)}")
+        return HttpResponse(str(twiml_response), content_type='text/xml')
