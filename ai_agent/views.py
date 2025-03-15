@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 # Replace Gemini imports with OpenAI imports
 from .openai_agent import OpenAIAgent
 
-from accounts.models import Business
+from accounts.models import Business, ApiCredential
 from .models import AgentConfiguration, Chat, Messages
 
 
