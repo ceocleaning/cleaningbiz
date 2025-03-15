@@ -238,26 +238,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
         # Get the system prompt
         print("[DEBUG] Retrieving dynamic system prompt")
         system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
-        if system_prompt == 0:
-            print("[DEBUG] Using default system prompt (no configuration found)")
-            # Use a default prompt if no configuration exists
-            system_prompt = f"""You are Sarah, a virtual customer support and sales representative for {business.businessName}. You are speaking with a potential customer via SMS.
-            Keep your responses concise and clear since this is an SMS conversation.
-            Your primary goals are to:
-            1. Answer questions about cleaning services
-            2. Collect customer details (name, phone, email, address)
-            3. Gather property details (square footage, bedrooms, bathrooms)
-            4. Provide service options and pricing
-            5. Schedule appointments within business hours (9 AM - 5 PM Central Time)
-            6. Send booking confirmations
-            
-            Follow this conversation flow: greeting → gathering details → service selection → scheduling → confirmation
-            
-            Use tools when appropriate for checking availability and booking appointments.
-            
-            Always be friendly, professional, and helpful."""
-        else:
-            print("[DEBUG] Using custom system prompt from database")
+      
         
         # Get all messages for this chat
         print("[DEBUG] Retrieving chat history")
@@ -305,7 +286,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
                 ai_response_text = ai_response_text[:1497] + "..."
             
             print("[DEBUG] Sending final response to user")
-            send_sms_response(from_number, ai_response_text)
+            send_sms_response(from_number, ai_response_text, secretKey)
             print(f"[DEBUG] Async processing completed for {from_number} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
         except Exception as e:
@@ -318,18 +299,31 @@ def process_sms_async(secretKey, from_number, body, to_number):
         traceback.print_exc()
         send_sms_response(from_number, "Sorry, we encountered an error processing your request. Please try again later.")
 
-def send_sms_response(to_number, message):
+
+def send_sms_response(to_number, message, secretKey):
     """Send SMS response using Twilio client"""
     print(f"\n[DEBUG] Preparing to send SMS to {to_number}")
     print(f"[DEBUG] SMS sending timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     try:
         # Initialize Twilio client
+        apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
+        if not apiCred:
+            print("[DEBUG] API credentials not found")
+            return
         print("[DEBUG] Initializing Twilio client")
-        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
-        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
-        from_number = os.getenv('TWILIO_PHONE_NUMBER')
+        account_sid = apiCred.twilioAccountSid
+        auth_token = apiCred.twilioAuthToken
+        from_number = apiCred.twilioSmsNumber
         
-        print(f"[DEBUG] Using Twilio credentials - SID: {account_sid[:4]}...{account_sid[-4:]} From: {from_number}")
+        # Check if credentials are available
+        if not account_sid or not auth_token or not from_number:
+            print(f"[DEBUG] Missing Twilio credentials - SID: {account_sid is not None}, Auth: {auth_token is not None}, From: {from_number}")
+            return
+        
+        # Safely log partial credentials
+        sid_display = f"{account_sid[:4]}...{account_sid[-4:]}" if account_sid and len(account_sid) > 8 else "[MISSING]"
+        print(f"[DEBUG] Using Twilio credentials - SID: {sid_display} From: {from_number}")
+        
         client = Client(account_sid, auth_token)
         
         # Send message
