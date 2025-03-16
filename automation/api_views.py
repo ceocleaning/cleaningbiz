@@ -5,8 +5,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential, BusinessSettings
-from bookings.models import Booking
+from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons
+from bookings.models import Booking, BookingCustomAddons
 from .models import Cleaners, CleanerAvailability
 from .utils import calculateAddonsAmount, calculateAmount
 import dateparser
