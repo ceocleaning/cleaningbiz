@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
 from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking
-from .test_error import test_error_view
+
 
 
 urlpatterns = [
@@ -33,7 +33,7 @@ urlpatterns = [
     # Test pages
     path('test/', views.test_features, name='test_features'),
     path('test/availability/', views.test_availability_api, name='test_availability_api'),
-    path('test/error/', test_error_view, name='test_error'),  # Test route for error handling
+
    
     # Cleaners URLs
     path('cleaners/', views.cleaners_list, name='cleaners_list'),
