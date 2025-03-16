@@ -352,7 +352,9 @@
         .then(response => response.json())
         .then(data => {
             // Remove loading indicator
-            chatMessages.removeChild(loadingDiv);
+            if (loadingDiv && loadingDiv.parentNode === chatMessages) {
+                chatMessages.removeChild(loadingDiv);
+            }
             
             if (data.error) {
                 window.showToast('Error', data.error, 'error');
@@ -364,7 +366,7 @@
         })
         .catch(error => {
             // Remove loading indicator
-            if (loadingDiv.parentNode) {
+            if (loadingDiv && loadingDiv.parentNode) {
                 chatMessages.removeChild(loadingDiv);
             }
             

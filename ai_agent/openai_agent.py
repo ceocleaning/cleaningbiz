@@ -893,32 +893,8 @@ def chat_api(request):
                     'role': 'assistant',
                     'content': ai_response
                 })
-            
-            # Extract conversation summary
-            summary = OpenAIAgent.extract_conversation_summary(messages_for_summary)
-            
-            # Update chat summary - ensure it's properly handled as JSON
-            print(f"[DEBUG] Updating chat summary with: {json.dumps(summary, indent=2)}")
-            
-            # Make sure we're handling the JSON field correctly
-            if not isinstance(summary, dict):
-                print(f"[WARNING] Summary is not a dictionary, converting: {type(summary)}")
-                try:
-                    if isinstance(summary, str):
-                        summary = json.loads(summary)
-                    else:
-                        summary = dict(summary)
-                except Exception as e:
-                    print(f"[ERROR] Failed to convert summary to dictionary: {str(e)}")
-                    summary = {}
-            
-            # Update the chat object
-            chat.summary = summary
-            chat.save()
-            
-            # Verify the save worked
-            refreshed_chat = Chat.objects.get(id=chat.id)
-            print(f"[DEBUG] Saved chat summary: {json.dumps(refreshed_chat.summary, indent=2) if refreshed_chat.summary else 'None'}")
+          
+   
             
             # Return the response
             return JsonResponse({

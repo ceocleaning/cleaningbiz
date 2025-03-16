@@ -5,10 +5,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential
+from accounts.models import Business, ApiCredential, BusinessSettings
 from bookings.models import Booking
 from .models import Cleaners, CleanerAvailability
 import dateparser
+import traceback
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
@@ -235,18 +236,6 @@ def check_availability_retell(request, secretKey):
         # Parse request body
         post_data = json.loads(request.body)
 
-        retell = Retell(api_key=apiCreds.retellAPIKey)
-
-        # Verify request signature
-        valid_signature = retell.verify(
-            json.dumps(post_data, separators=(",", ":"), ensure_ascii=False),
-            api_key=str(apiCreds.retellAPIKey),
-            signature=str(request.headers.get("X-Retell-Signature")),
-        )
-
-        if not valid_signature:
-            return JsonResponse({"error": "Unauthorized request"}, status=401)
-
         # Extract parameters
         args = post_data.get("args", {})
         cleaningDateTime = args.get("cleaningDateTime")
@@ -386,3 +375,208 @@ def check_availability_for_booking(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+# API endpoint to create a new booking
+@csrf_exempt
+@api_view(['POST', 'GET'])
+def create_booking(request):
+    try:
+        data = json.loads(request.body)
+        print(data)
+
+        try:
+            business = Business.objects.get(businessId=data['args']['business_id'])
+            businessSettingsObj = BusinessSettings.objects.get(business=business)
+        except Business.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Business not found'
+            }, status=404)
+        
+        # Parse appointment date and time
+        try:
+            # Parse the appointment datetime
+            cleaning_datetime = dateparser.parse(data['appointment_date_time'])
+            cleaning_date = cleaning_datetime.date()
+            start_time = cleaning_datetime.time()
+            # Calculate end time (default to 1 hour after start time)
+            end_datetime = cleaning_datetime + timedelta(hours=1)
+            end_time = end_datetime.time()
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid date or time format: {str(e)}'
+            }, status=400)
+        
+        # Find an available cleaner
+        cleaners = get_cleaners_for_business(business)
+        available_cleaner = find_available_cleaner(cleaners, cleaning_datetime)
+        
+        if not available_cleaner:
+            # Find alternate slots
+            alternate_slots, _ = find_alternate_slots(cleaners, cleaning_datetime)
+            return JsonResponse({
+                'success': False,
+                'message': 'No cleaners available for the requested time',
+                'alternateSlots': alternate_slots
+            }, status=409)  # Conflict status code
+        
+        # Normalize service type
+        service_type = data["service_type"].lower().replace(" ", "")
+        if 'regular' in service_type or 'standard' in service_type:
+            service_type = 'standard'
+        elif 'deep' in service_type:
+            service_type = 'deep'
+        elif 'moveinmoveout' in service_type or 'move-in' in service_type or 'moveout' in service_type:
+            service_type = 'moveinmoveout'
+        elif 'airbnb' in service_type:
+            service_type = 'airbnb'
+        
+
+        # Create booking object with mapped fields
+        booking = Booking(
+            business=business,
+            cleaner=available_cleaner,
+            firstName=data['first_name'],
+            lastName=data['last_name'],
+            email=data['email'],
+            phoneNumber=data['phone_number'],
+            address1=data['address'],
+            city=data['city'],
+            stateOrProvince=data['state'],
+            zipCode=data['zip_code'],
+            bedrooms=int(data['bedrooms']),
+            bathrooms=int(data['bathrooms']),
+            squareFeet=int(data['area']),
+            cleaningDate=cleaning_date,
+            startTime=start_time,
+            endTime=end_time,
+            serviceType=service_type,
+            recurring=data.get('recurring', 'one-time'),
+            otherRequests=data.get('otherRequests', '')
+        )
+        
+        # Process addons
+        addons = {
+            'dishes': int(data.get('dishes', 0) or 0),
+            'laundry': int(data.get('laundry', 0) or 0),
+            'windows': int(data.get('windows', 0) or 0),
+            'pets': int(data.get('pets', 0) or 0),
+            'fridge': int(data.get('fridge', 0) or 0),
+            'oven': int(data.get('oven', 0) or 0),
+            'baseboards': int(data.get('baseboard', 0) or 0),
+            'blinds': int(data.get('blinds', 0) or 0),
+            'green': int(data.get('green', 0) or 0),
+            'cabinets': int(data.get('cabinets', 0) or 0),
+            'patio': int(data.get('patio', 0) or 0),
+            'garage': int(data.get('garage', 0) or 0)
+        }
+        
+        # Set addon values on booking object
+        booking.addonDishes = addons['dishes']
+        booking.addonLaundryLoads = addons['laundry']
+        booking.addonWindowCleaning = addons['windows']
+        booking.addonPetsCleaning = addons['pets']
+        booking.addonFridgeCleaning = addons['fridge']
+        booking.addonOvenCleaning = addons['oven']
+        booking.addonBaseboard = addons['baseboards']
+        booking.addonBlinds = addons['blinds']
+        booking.addonGreenCleaning = addons['green']
+        booking.addonCabinetsCleaning = addons['cabinets']
+        booking.addonPatioSweeping = addons['patio']
+        booking.addonGarageSweeping = addons['garage']
+        
+        # Calculate price using business settings
+        # Calculate base price
+        base_price = calculateAmount(
+            booking.bedrooms,
+            booking.bathrooms,
+            booking.squareFeet,
+            booking.serviceType,
+            businessSettingsObj
+        )
+        
+        # Process addons for pricing
+        addon_prices = {
+            'dishes': businessSettingsObj.addonPriceDishes,
+            'laundry': businessSettingsObj.addonPriceLaundry,
+            'windows': businessSettingsObj.addonPriceWindow,
+            'pets': businessSettingsObj.addonPricePets,
+            'fridge': businessSettingsObj.addonPriceFridge,
+            'oven': businessSettingsObj.addonPriceOven,
+            'baseboards': businessSettingsObj.addonPriceBaseboard,
+            'blinds': businessSettingsObj.addonPriceBlinds,
+            'green': businessSettingsObj.addonPriceGreen,
+            'cabinets': businessSettingsObj.addonPriceCabinets,
+            'patio': businessSettingsObj.addonPricePatio,
+            'garage': businessSettingsObj.addonPriceGarage
+        }
+        
+        # Calculate addons total
+        addons_total = calculateAddonsAmount(addons, addon_prices)
+        
+        # Calculate custom addons (if needed)
+        customAddonsObj = CustomAddons.objects.filter(business=business)
+        customAddonTotal = 0
+        bookingCustomAddons = []
+        
+        # Process custom addons if present in data
+        for custom_addon in customAddonsObj:
+            addon_data_name = custom_addon.addonDataName
+            if addon_data_name and addon_data_name in data:
+                quantity = int(data.get(addon_data_name, 0) or 0)
+                if quantity > 0:
+                    addon_price = custom_addon.addonPrice
+                    addon_total = quantity * addon_price
+                    customAddonTotal += addon_total
+                    
+                    # Create BookingCustomAddons object
+                    custom_addon_obj = BookingCustomAddons.objects.create(
+                        addon=custom_addon,
+                        qty=quantity
+                    )
+                    bookingCustomAddons.append(custom_addon_obj)
+        
+        # Calculate final amounts
+        sub_total = base_price + addons_total + customAddonTotal
+        tax = sub_total * (businessSettingsObj.taxPercent / 100)
+        total = sub_total + tax
+        
+        booking.totalPrice = total
+        booking.tax = tax
+        
+        # Save the booking
+        booking.save()
+        
+        # Add custom addons if any
+        if bookingCustomAddons:
+            booking.customAddons.set(bookingCustomAddons)
+            booking.save()
+        
+        # Send booking data to integration if needed
+        send_booking_data(booking)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Booking created successfully',
+            'booking': {
+                'bookingId': booking.bookingId,
+                'cleaningDate': booking.cleaningDate.strftime('%Y-%m-%d'),
+                'startTime': booking.startTime.strftime('%H:%M'),
+                'endTime': booking.endTime.strftime('%H:%M'),
+                'cleaner': booking.cleaner.name,
+                'totalPrice': float(booking.totalPrice)
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        print(f"[DEBUG] Error creating booking: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error creating booking: {str(e)}'
+        }, status=500)

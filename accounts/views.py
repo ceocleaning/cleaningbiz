@@ -81,13 +81,13 @@ def profile_view(request):
     # Get related models
     business_settings = business.settings
     api_credentials = business.apicredential
-    booking_integrations = business.bookingIntegrations.all()
+    
     
     context = {
         'business': business,
         'settings': business_settings,
         'credentials': api_credentials,
-        'integrations': booking_integrations,
+        
     }
     
     return render(request, 'accounts/profile.html', context)

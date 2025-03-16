@@ -281,6 +281,24 @@
                 margin-top: 0.5rem;
             }
         }
+        
+        /* Active link styling */
+        .navbar-nav .nav-link.active {
+            color: var(--primary-color) !important;
+            position: relative;
+        }
+        
+        .navbar-nav .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -297,19 +315,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link text-white fw-medium px-3" href="/">Home</a>
+                        <a class="nav-link {% if request.path == '/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white fw-medium px-3" href="/features">Features</a>
+                        <a class="nav-link {% if request.path == '/features/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/features">Features</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white fw-medium px-3" href="/pricing">Pricing</a>
+                        <a class="nav-link {% if request.path == '/pricing/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/pricing">Pricing</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white fw-medium px-3" href="/about">About</a>
+                        <a class="nav-link {% if request.path == '/about-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/about-us">About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white fw-medium px-3" href="/contact">Contact</a>
+                        <a class="nav-link {% if request.path == '/contact-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/contact-us">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/docs/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/docs">Docs</a>
                     </li>
                 </ul>
                 <div class="d-flex ms-lg-4">
