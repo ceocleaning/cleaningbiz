@@ -415,11 +415,11 @@ def create_booking(request):
         
         # Find an available cleaner
         cleaners = get_cleaners_for_business(business)
-        available_cleaner = find_available_cleaner(cleaners, cleaning_date, start_time)
+        available_cleaner = find_available_cleaner(cleaners, dt_with_utc)
         
         if not available_cleaner:
             # Find alternate slots
-            alternate_slots, _ = find_alternate_slots(cleaners, cleaning_date, start_time)
+            alternate_slots, _ = find_alternate_slots(cleaners, dt_with_utc)
             return JsonResponse({
                 'success': False,
                 'message': 'No cleaners available for the requested time',
