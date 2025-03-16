@@ -380,11 +380,11 @@ def check_availability_for_booking(request):
 @api_view(['POST', 'GET'])
 def create_booking(request):
     try:
-        data = json.loads(request.body)
-        print(data)
+        post_data = json.loads(request.body)
+        data = post_data.get('args', {})
 
         try:
-            business = Business.objects.get(businessId=data['args']['business_id'])
+            business = Business.objects.get(businessId=data['business_id'])
             businessSettingsObj = BusinessSettings.objects.get(business=business)
         except Business.DoesNotExist:
             return JsonResponse({
