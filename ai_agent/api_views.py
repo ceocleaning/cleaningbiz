@@ -17,7 +17,129 @@ from .models import Chat
 
 
 
-
+def calculate_total(business, client_phone_number):
+    """Function to calculate total price based on user information and business settings.
+    
+    Args:
+        business: The Business object for which to calculate the total
+        data: Dictionary containing customer details and addon selections
+            Required fields: serviceType, bedrooms, bathrooms, squareFeet
+            Optional fields: addonDishes, addonLaundryLoads, addonWindowCleaning, etc.
+    
+    Returns:
+        Dictionary with pricing details including base price, addons total, subtotal, tax, and total
+    """
+    try:
+        print("\n[DEBUG] calculate_total called for business:", business.businessName)
+        
+        chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
+        
+        # Get business settings
+        businessSettingsObj = BusinessSettings.objects.get(business=business)
+        
+        # Normalize service type
+        serviceType = chat.summary["serviceType"].lower().replace(" ", "")
+        if 'regular' in serviceType or 'standard' in serviceType:
+            serviceType = 'standard'
+        elif 'deep' in serviceType:
+            serviceType = 'deep'
+        elif 'moveinmoveout' in serviceType or 'move-in' in serviceType or 'moveout' in serviceType:
+            serviceType = 'moveinmoveout'
+        elif 'airbnb' in serviceType:
+            serviceType = 'airbnb'
+        
+        # Convert numeric fields if they're strings
+        try:
+            bedrooms = int(chat.summary["bedrooms"]) if chat.summary["bedrooms"] else 0
+            bathrooms = int(chat.summary["bathrooms"]) if chat.summary["bathrooms"] else 0
+            area = int(chat.summary["squareFeet"]) if chat.summary["squareFeet"] else 0
+        except ValueError:
+            error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
+            print(f"[DEBUG] {error_msg}")
+            return {"success": False, "error": error_msg}
+        
+        # Calculate base price
+        base_price = calculateAmount(
+            bedrooms,
+            bathrooms,
+            area,
+            serviceType,
+            businessSettingsObj
+        )
+        
+        # Process addons - extract from the data structure
+        addons = {
+            "dishes": int(chat.summary.get("addonDishes", 0) or 0),
+            "laundry": int(chat.summary.get("addonLaundryLoads", 0) or 0),
+            "windows": int(chat.summary.get("addonWindowCleaning", 0) or 0),
+            "pets": int(chat.summary.get("addonPetsCleaning", 0) or 0),
+            "fridge": int(chat.summary.get("addonFridgeCleaning", 0) or 0),
+            "oven": int(chat.summary.get("addonOvenCleaning", 0) or 0),
+            "baseboards": int(chat.summary.get("addonBaseboard", 0) or 0),
+            "blinds": int(chat.summary.get("addonBlinds", 0) or 0),
+            "green": int(chat.summary.get("addonGreenCleaning", 0) or 0),
+            "cabinets": int(chat.summary.get("addonCabinetsCleaning", 0) or 0),
+            "patio": int(chat.summary.get("addonPatioSweeping", 0) or 0),
+            "garage": int(chat.summary.get("addonGarageSweeping", 0) or 0)
+        }
+        
+        addonsPrices = {
+            "dishes": businessSettingsObj.addonPriceDishes,
+            "laundry": businessSettingsObj.addonPriceLaundry,
+            "windows": businessSettingsObj.addonPriceWindow,
+            "pets": businessSettingsObj.addonPricePets,
+            "fridge": businessSettingsObj.addonPriceFridge,
+            "oven": businessSettingsObj.addonPriceOven,
+            "baseboards": businessSettingsObj.addonPriceBaseboard,
+            "blinds": businessSettingsObj.addonPriceBlinds,
+            "green": businessSettingsObj.addonPriceGreen,
+            "cabinets": businessSettingsObj.addonPriceCabinets,
+            "patio": businessSettingsObj.addonPricePatio,
+            "garage": businessSettingsObj.addonPriceGarage
+        }
+        
+        # Calculate addons total
+        addons_total = calculateAddonsAmount(addons, addonsPrices)
+        
+        # Calculate custom addons (if needed)
+        customAddonsObj = CustomAddons.objects.filter(business=business)
+        customAddonTotal = 0
+        
+        # Process custom addons from chat summary
+        for custom_addon in customAddonsObj:
+            addon_data_name = custom_addon.addonDataName
+            if addon_data_name and addon_data_name in chat.summary:
+                quantity = int(chat.summary.get(addon_data_name, 0) or 0)
+                if quantity > 0:
+                    addon_price = custom_addon.addonPrice
+                    addon_total = quantity * addon_price
+                    customAddonTotal += addon_total
+        
+        # Calculate final amounts
+        sub_total = base_price + addons_total + customAddonTotal
+        tax = sub_total * (businessSettingsObj.taxPercent / 100)
+        total = sub_total + tax
+        
+        # Return pricing details
+        return {
+            "success": True,
+            "base_price": float(base_price),
+            "addons_total": float(addons_total),
+            "custom_addons_total": float(customAddonTotal),
+            "sub_total": float(sub_total),
+            "tax_percent": float(businessSettingsObj.taxPercent),
+            "tax_amount": float(tax),
+            "total": float(total),
+        }
+        
+    except BusinessSettings.DoesNotExist:
+        error_msg = f"Business settings not found for business: {business.businessName}"
+        print(f"[DEBUG] {error_msg}")
+        return {"success": False, "error": error_msg}
+    except Exception as e:
+        print(f"[DEBUG] Unexpected error in calculate_total: {str(e)}")
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}
 
 
 def get_current_time_in_chicago():
@@ -102,17 +224,16 @@ def check_availability(business, date_string):
         return {"success": False, "error": str(e)}
 
 
-
-
-def book_appointment(business, client_phone_number):
+def book_appointment(business, client_phone_number, booking_data=None):
     """Function to book an appointment for the AI agent.
     Creates a booking in the system based on customer details collected by the AI agent.
     
     Args:
         business: The Business object for which to create the booking
-        data: Dictionary containing customer details and addon selections extracted from conversation
+        client_phone_number: The phone number of the client
+        booking_data: Optional dictionary containing customer details and addon selections extracted from conversation
             Required fields: firstName, lastName, phoneNumber, address1, city, state, 
-            serviceType, appointmentDateTime, bedrooms, bathrooms, area
+            serviceType, appointmentDateTime, bedrooms, bathrooms, squareFeet
     
     Returns:
         Dictionary with booking details or error information
@@ -122,8 +243,10 @@ def book_appointment(business, client_phone_number):
         print(f"[DEBUG] Args: {client_phone_number}")
 
         chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-        data = chat.summary
-        print(data)
+        
+        # Use provided booking_data if available, otherwise use chat.summary
+        data = booking_data if booking_data else chat.summary
+        print(f"[DEBUG] Booking data: {json.dumps(data, indent=2)}")
         
         # Validate required fields
         required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 

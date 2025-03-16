@@ -1,0 +1,745 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}Contact Us - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <img src="https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?auto=format&fit=crop&q=80" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark opacity-80"></div>
+        <!-- Decorative elements -->
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Get In Touch</span>
+        <h1 class="display-3 fw-bold text-white mb-4" data-aos="fade-up">We're Here to <span class="text-gradient">Help You</span></h1>
+        <p class="fs-4 text-white opacity-80 mx-auto mb-5 col-lg-8" data-aos="fade-up" data-aos-delay="100">Have questions about our platform? Our team is ready to assist you</p>
+        <div class="d-flex justify-content-center">
+            <a href="#contact-form" class="btn btn-accent btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="200">
+                <span class="me-2">Contact Us Now</span>
+                <i class="fas fa-arrow-down"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Information Section -->
+<section class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="row g-4">
+            <!-- Contact Card 1 -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                    <div class="card-body p-4 text-center">
+                        <div class="contact-icon-wrapper mb-4 mx-auto">
+                            <div class="contact-icon-bg rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-phone-alt text-gradient fs-2"></i>
+                            </div>
+                        </div>
+                        <h3 class="fs-4 fw-bold text-white mb-3">Call Us</h3>
+                        <p class="text-white opacity-80 mb-3">Our support team is available Monday through Friday, 9am to 5pm (EST)</p>
+                        <a href="tel:+18005551234" class="text-primary fs-5 fw-bold text-decoration-none">+1 (800) 555-1234</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Card 2 -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                    <div class="card-body p-4 text-center">
+                        <div class="contact-icon-wrapper mb-4 mx-auto">
+                            <div class="contact-icon-bg rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-envelope text-gradient fs-2"></i>
+                            </div>
+                        </div>
+                        <h3 class="fs-4 fw-bold text-white mb-3">Email Us</h3>
+                        <p class="text-white opacity-80 mb-3">Send us an email and we'll respond within 24 hours</p>
+                        <a href="mailto:support@cleaningbizai.com" class="text-primary fs-5 fw-bold text-decoration-none">support@cleaningbizai.com</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Card 3 -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="card bg-dark-surface-2 border-0 rounded-4 h-100 p-1 overflow-hidden">
+                    <div class="card-body p-4 text-center">
+                        <div class="contact-icon-wrapper mb-4 mx-auto">
+                            <div class="contact-icon-bg rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-map-marker-alt text-gradient fs-2"></i>
+                            </div>
+                        </div>
+                        <h3 class="fs-4 fw-bold text-white mb-3">Visit Us</h3>
+                        <p class="text-white opacity-80 mb-3">Our headquarters is located in downtown Chicago</p>
+                        <p class="text-primary fs-5 fw-bold">123 Tech Plaza, Suite 400<br>Chicago, IL 60601</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Form Section -->
+<section id="contact-form" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Contact Form</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Send Us a <span class="text-gradient">Message</span></h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Whether you have a question about features, pricing, or anything else, our team is ready to answer all your questions.</p>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="me-4">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 fw-bold text-gradient me-2">1hr</div>
+                            <div class="text-white">Average<br>Response Time</div>
+                        </div>
+                    </div>
+                    <div class="me-4">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 fw-bold text-gradient me-2">24/7</div>
+                            <div class="text-white">Email<br>Support</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-info mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <i class="fas fa-headset text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white mb-0">Customer Support</h5>
+                            <p class="text-white opacity-80 mb-0">support@cleaningbizai.com</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <i class="fas fa-briefcase text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white mb-0">Business Inquiries</h5>
+                            <p class="text-white opacity-80 mb-0">sales@cleaningbizai.com</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="contact-icon me-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                            <i class="fas fa-handshake text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white mb-0">Partnerships</h5>
+                            <p class="text-white opacity-80 mb-0">partners@cleaningbizai.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="card bg-dark-surface-3 border-0 rounded-4 shadow-lg overflow-hidden">
+                    <div class="card-body p-4 p-lg-5">
+                        <form id="contactForm" method="POST" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="nameInput" class="text-white mb-2">Your Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control bg-dark-surface-4 text-white border-0 py-3 px-4 rounded-3" id="nameInput" name="name" placeholder="John Doe" required>
+                                        <div class="invalid-feedback text-danger">
+                                            Please provide your name.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="emailInput" class="text-white mb-2">Your Email <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control bg-dark-surface-4 text-white border-0 py-3 px-4 rounded-3" id="emailInput" name="email" placeholder="email@example.com" required>
+                                        <div class="invalid-feedback text-danger">
+                                            Please provide a valid email address.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-group mb-3">
+                                        <label for="subjectInput" class="text-white mb-2">Subject <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control bg-dark-surface-4 text-white border-0 py-3 px-4 rounded-3" id="subjectInput" name="subject" placeholder="How can we help you?" required>
+                                        <div class="invalid-feedback text-danger">
+                                            Please provide a subject for your message.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-group mb-3">
+                                        <label for="messageInput" class="text-white mb-2">Your Message <span class="text-danger">*</span></label>
+                                        <textarea class="form-control bg-dark-surface-4 text-white border-0 py-3 px-4 rounded-3" id="messageInput" name="message" rows="5" placeholder="Type your message here..." required></textarea>
+                                        <div class="invalid-feedback text-danger">
+                                            Please provide your message.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check mb-4">
+                                        <input class="form-check-input bg-dark-surface-4 border-0" type="checkbox" id="privacyCheck" name="privacy_accepted" required>
+                                        <label class="form-check-label text-white" for="privacyCheck">
+                                            I agree to the <a href="#" class="text-primary">Privacy Policy</a> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="invalid-feedback text-danger">
+                                            You must agree to our Privacy Policy.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold">
+                                        <i class="fas fa-paper-plane me-2"></i> Send Message
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <!-- Alert Messages -->
+                        <div id="formSuccess" style="display: none;">
+                            <div class="success-animation-container text-center py-5">
+                                <div class="success-checkmark">
+                                    <div class="check-icon">
+                                        <span class="icon-line line-tip"></span>
+                                        <span class="icon-line line-long"></span>
+                                        <div class="icon-circle"></div>
+                                        <div class="icon-fix"></div>
+                                    </div>
+                                </div>
+                                <h3 class="mt-4 text-white fw-bold">Message Sent Successfully!</h3>
+                                <p class="text-white opacity-80">Thank you for your message! We'll get back to you shortly.</p>
+                                <button type="button" class="btn btn-accent mt-3 rounded-3" onclick="resetContactForm()">
+                                    <i class="fas fa-redo-alt me-2"></i> Send Another Message
+                                </button>
+                            </div>
+                        </div>
+                        <div class="alert alert-danger mt-4 fw-bold" id="formError" style="display: none; background-color: #dc3545; color: white; border: none; padding: 15px; border-radius: 10px;">
+                            <i class="fas fa-exclamation-circle me-2"></i> <span id="errorMessage">There was an error sending your message. Please try again.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">FAQs</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Frequently Asked <span class="text-gradient">Questions</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Find quick answers to common questions about our platform</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="contactFAQ">
+                    <!-- Question 1 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="100">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="true" aria-controls="faqOne">
+                                How quickly can I expect a response to my inquiry?
+                            </button>
+                        </h2>
+                        <div id="faqOne" class="accordion-collapse collapse show" data-bs-parent="#contactFAQ">
+                            <div class="accordion-body py-4 px-4 bg-dark-surface-3 text-white opacity-80">
+                                We strive to respond to all inquiries within 1 business hour during our regular support hours (9am to 5pm EST, Monday through Friday). For inquiries received outside of business hours, we'll respond on the next business day. For urgent matters, we recommend calling our support line directly.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="200">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwo" aria-expanded="false" aria-controls="faqTwo">
+                                Do you offer technical support for your platform?
+                            </button>
+                        </h2>
+                        <div id="faqTwo" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                            <div class="accordion-body py-4 px-4 bg-dark-surface-3 text-white opacity-80">
+                                Yes, we offer comprehensive technical support for all our customers. Our Professional and Enterprise plans include priority support with faster response times. You can reach our technical support team via email, phone, or through the in-app chat feature. We also have an extensive knowledge base with tutorials and troubleshooting guides.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="300">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree" aria-expanded="false" aria-controls="faqThree">
+                                Can I schedule a demo of your platform?
+                            </button>
+                        </h2>
+                        <div id="faqThree" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                            <div class="accordion-body py-4 px-4 bg-dark-surface-3 text-white opacity-80">
+                                Absolutely! We offer personalized demos for businesses interested in our platform. During the demo, one of our product specialists will walk you through the features most relevant to your business needs and answer any questions you may have. To schedule a demo, simply fill out the contact form on this page or email us at sales@cleaningbizai.com.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 4 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="400">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour" aria-expanded="false" aria-controls="faqFour">
+                                Do you offer custom solutions for larger cleaning businesses?
+                            </button>
+                        </h2>
+                        <div id="faqFour" class="accordion-collapse collapse" data-bs-parent="#contactFAQ">
+                            <div class="accordion-body py-4 px-4 bg-dark-surface-3 text-white opacity-80">
+                                Yes, we offer custom solutions for larger cleaning businesses with specific needs. Our Enterprise plan includes custom integrations, dedicated account management, and tailored features to meet your unique requirements. Contact our sales team to discuss your specific needs and how we can customize our platform for your business.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="py-5 bg-dark-surface-2">
+    <div class="container py-3">
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-8 text-center">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Our Location</span>
+                <h2 class="display-5 fw-bold text-white mb-3" data-aos="fade-up">Visit Our <span class="text-gradient">Headquarters</span></h2>
+                <p class="fs-5 text-white opacity-80 mx-auto mb-5" data-aos="fade-up" data-aos-delay="100">We're located in the heart of downtown Chicago, easily accessible by public transportation</p>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid p-0">
+        <div class="map-container dark-surface-2 rounded-4 overflow-hidden shadow-lg mx-3 mx-md-5" style="height: 500px;" data-aos="zoom-in">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2970.3231986314!2d-87.6290059!3d41.8781136!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x880e2ca3e2d9b695%3A0x4c7a4a20850b10e7!2sChicago%2C%20IL%2C%20USA!5e0!3m2!1sen!2sus!4v1647882655393!5m2!1sen!2sus" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" class="w-100 h-100 object-fit-cover"></iframe>
+        </div>
+    </div>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card bg-dark-surface-3 border-0 rounded-4 shadow-lg overflow-hidden p-4" data-aos="fade-up">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <h3 class="fs-4 fw-bold text-white mb-3">Visit Our Office</h3>
+                            <p class="text-white opacity-80 mb-4">We'd love to meet you in person! Our office is open Monday through Friday, 9am to 5pm (EST).</p>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="fs-1 fw-bold text-gradient me-2">1hr</div>
+                                        <div class="text-white">Average<br>Response Time</div>
+                                    </div>
+                                </div>
+                                <div class="me-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="fs-1 fw-bold text-gradient me-2">24/7</div>
+                                        <div class="text-white">Email<br>Support</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-4 d-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-map-marker-alt text-white"></i>
+                                </div>
+                                <p class="text-white mb-0">123 Tech Plaza, Suite 400<br>Chicago, IL 60601</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="me-4 d-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-subway text-white"></i>
+                                </div>
+                                <p class="text-white mb-0">Nearest transit: State/Lake Station<br>Parking available on premises</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Office Interior" class="img-fluid rounded-3 shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="display-4 fw-bold text-white mb-4" data-aos="fade-up">Ready to <span class="text-gradient">Get Started</span>?</h2>
+                <p class="fs-5 text-white opacity-80 mb-5" data-aos="fade-up" data-aos-delay="100">Join hundreds of cleaning businesses that are growing with CleaningBiz AI</p>
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                    <a href="/signup" class="btn btn-primary btn-lg px-4 py-3 rounded-pill">Start Free Trial</a>
+                    <a href="/features" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">Explore Features</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Form styling for dark mode -->
+<style>
+    .form-control,
+    .form-select,
+    .form-check-input,
+    .input-group-text {
+        background-color: #1e2124 !important;
+        color: #fff !important;
+        border: none !important;
+    }
+    
+    .input-group-text {
+        border-right: none !important;
+    }
+    
+    .form-control:focus,
+    .form-select:focus,
+    .form-check-input:focus {
+        background-color: #2a2e32 !important;
+        box-shadow: 0 0 0 0.25rem rgba(45, 91, 255, 0.25) !important;
+    }
+    
+    /* Fix for autofill */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #1e2124 inset !important;
+        -webkit-text-fill-color: #fff !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+    
+    /* Checkbox styling */
+    .form-check-input:checked {
+        background-color: #2d5bff !important;
+        border-color: #2d5bff !important;
+    }
+    
+    /* Input group focus state */
+    .input-group:focus-within .input-group-text {
+        border-color: #2d5bff !important;
+    }
+    
+    /* Placeholder text color */
+    ::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+        opacity: 1;
+    }
+    
+    /* Form validation styling */
+    .was-validated .form-control:invalid,
+    .form-control.is-invalid {
+        border-color: #dc3545 !important;
+        background-image: none !important;
+    }
+    
+    .was-validated .form-control:valid,
+    .form-control.is-valid {
+        border-color: #198754 !important;
+        background-image: none !important;
+    }
+</style>
+
+<script>
+    // Form submission with AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('contactForm');
+        const successAlert = document.getElementById('formSuccess');
+        const errorAlert = document.getElementById('formError');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                if (!form.checkValidity()) {
+                    event.stopPropagation();
+                    form.classList.add('was-validated');
+                    return;
+                }
+                
+                // Hide any existing alerts
+                successAlert.style.display = 'none';
+                errorAlert.style.display = 'none';
+                
+                // Show loading state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Sending...';
+                submitBtn.disabled = true;
+                
+                // Collect form data
+                const formData = new FormData(form);
+                
+                // Send AJAX request
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                    
+                    if (data.success) {
+                        // Hide form and show success animation
+                        form.classList.add('d-none');
+                        successAlert.style.display = 'block';
+                        
+                        // Scroll to the success message
+                        successAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        // Show error message
+                        errorMessage.textContent = data.message;
+                        errorAlert.style.display = 'block';
+                        
+                        // Scroll to the error message
+                        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                })
+                .catch(error => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                    
+                    // Show error message
+                    errorMessage.textContent = 'There was a network error. Please try again later.';
+                    errorAlert.style.display = 'block';
+                    
+                    // Scroll to the error message
+                    errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    console.error('Error:', error);
+                });
+            });
+        }
+    });
+    
+    // Function to reset the contact form
+    function resetContactForm() {
+        const form = document.getElementById('contactForm');
+        const successAlert = document.getElementById('formSuccess');
+        
+        // Hide success message and show form
+        successAlert.style.display = 'none';
+        form.classList.remove('d-none');
+        
+        // Reset form fields
+        form.reset();
+        form.classList.remove('was-validated');
+    }
+</script>
+
+<style>
+    /* Success Animation Styles */
+    .success-animation-container {
+        margin: 0 auto;
+    }
+    
+    .success-checkmark {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        position: relative;
+        animation: checkmark-appear 0.5s ease-in-out;
+    }
+    
+    .success-checkmark .check-icon {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        border-radius: 50%;
+        box-sizing: content-box;
+        border: 4px solid #4CAF50;
+    }
+    
+    .success-checkmark .check-icon::before {
+        top: 3px;
+        left: -2px;
+        width: 30px;
+        transform-origin: 100% 50%;
+        border-radius: 100px 0 0 100px;
+    }
+    
+    .success-checkmark .check-icon::after {
+        top: 0;
+        left: 30px;
+        width: 60px;
+        transform-origin: 0 50%;
+        border-radius: 0 100px 100px 0;
+        animation: rotate-circle 4.25s ease-in;
+    }
+    
+    .success-checkmark .check-icon::before, .success-checkmark .check-icon::after {
+        content: '';
+        height: 100px;
+        position: absolute;
+        background: transparent;
+        transform: rotate(-45deg);
+    }
+    
+    .success-checkmark .check-icon .icon-line {
+        height: 5px;
+        background-color: #4CAF50;
+        display: block;
+        border-radius: 2px;
+        position: absolute;
+        z-index: 10;
+    }
+    
+    .success-checkmark .check-icon .icon-line.line-tip {
+        top: 46px;
+        left: 14px;
+        width: 25px;
+        transform: rotate(45deg);
+        animation: icon-line-tip 0.75s;
+    }
+    
+    .success-checkmark .check-icon .icon-line.line-long {
+        top: 38px;
+        right: 8px;
+        width: 47px;
+        transform: rotate(-45deg);
+        animation: icon-line-long 0.75s;
+    }
+    
+    .success-checkmark .check-icon .icon-circle {
+        top: -4px;
+        left: -4px;
+        z-index: 10;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        position: absolute;
+        box-sizing: content-box;
+        border: 4px solid rgba(76, 175, 80, 0.5);
+    }
+    
+    .success-checkmark .check-icon .icon-fix {
+        top: 8px;
+        width: 5px;
+        left: 26px;
+        z-index: 1;
+        height: 85px;
+        position: absolute;
+        transform: rotate(-45deg);
+        background-color: transparent;
+    }
+    
+    @keyframes rotate-circle {
+        0% {
+            transform: rotate(-45deg);
+        }
+        5% {
+            transform: rotate(-45deg);
+        }
+        12% {
+            transform: rotate(-405deg);
+        }
+        100% {
+            transform: rotate(-405deg);
+        }
+    }
+    
+    @keyframes icon-line-tip {
+        0% {
+            width: 0;
+            left: 1px;
+            top: 19px;
+        }
+        54% {
+            width: 0;
+            left: 1px;
+            top: 19px;
+        }
+        70% {
+            width: 50px;
+            left: -8px;
+            top: 37px;
+        }
+        84% {
+            width: 17px;
+            left: 21px;
+            top: 48px;
+        }
+        100% {
+            width: 25px;
+            left: 14px;
+            top: 46px;
+        }
+    }
+    
+    @keyframes icon-line-long {
+        0% {
+            width: 0;
+            right: 46px;
+            top: 54px;
+        }
+        65% {
+            width: 0;
+            right: 46px;
+            top: 54px;
+        }
+        84% {
+            width: 55px;
+            right: 0px;
+            top: 35px;
+        }
+        100% {
+            width: 47px;
+            right: 8px;
+            top: 38px;
+        }
+    }
+    
+    @keyframes checkmark-appear {
+        0% {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+</style>
+
+<!-- Clean form styling for dark mode -->
+<style>
+    .form-control {
+        background-color: #1e2124 !important;
+        color: #fff !important;
+        border: none !important;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        background-color: #2a2e32 !important;
+        box-shadow: 0 0 0 0.25rem rgba(45, 91, 255, 0.25) !important;
+    }
+    
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+    }
+    
+    .form-check-input {
+        background-color: #1e2124 !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    .form-check-input:checked {
+        background-color: #2d5bff !important;
+        border-color: #2d5bff !important;
+    }
+    
+    /* Fix for autofill */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #1e2124 inset !important;
+        -webkit-text-fill-color: #fff !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+</style>
+
+{% endblock %}

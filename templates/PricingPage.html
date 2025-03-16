@@ -1,0 +1,934 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}Pricing - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <img src="https://images.unsplash.com/photo-1587614382346-4ec70e388b28?auto=format&fit=crop&q=80" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark opacity-80"></div>
+        <!-- Decorative elements -->
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Flexible Plans</span>
+        <h1 class="display-3 fw-bold text-white mb-4" data-aos="fade-up">Transparent Pricing for <span class="text-gradient">Every Business Size</span></h1>
+        <p class="fs-4 text-white opacity-80 mx-auto mb-5 col-lg-8" data-aos="fade-up" data-aos-delay="100">Choose the plan that best fits your cleaning business needs and scale as you grow</p>
+        <div class="d-flex justify-content-center">
+            <a href="#pricing-plans" class="btn btn-accent btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="200">
+                <span class="me-2">View Plans</span>
+                <i class="fas fa-arrow-down"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Toggle Section -->
+<section class="py-5 bg-dark-surface" id="pricing-plans">
+    <div class="container">
+        <!-- Pricing Toggle -->
+        <div class="d-flex flex-column align-items-center justify-content-center mb-5">
+            <div class="pricing-switch-container p-2 bg-dark-surface-2 rounded-pill d-inline-flex align-items-center mb-3" data-aos="fade-up">
+                <span class="pricing-switch-label px-4 py-2 rounded-pill text-white" id="monthly-label">Monthly</span>
+                <label class="pricing-toggle mx-2">
+                    <input type="checkbox" id="pricing-toggle" class="sr-only">
+                    <span class="pricing-slider"></span>
+                </label>
+                <span class="pricing-switch-label px-4 py-2 rounded-pill text-white" id="yearly-label">Yearly</span>
+            </div>
+            <div class="yearly-savings badge bg-accent text-white px-3 py-2 mt-2" data-aos="fade-up" data-aos-delay="100">Save 20% with annual billing</div>
+        </div>
+        
+        <!-- Pricing Cards -->
+        <div class="row g-4 justify-content-center">
+            <!-- Starter Plan -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient">
+                    <div class="card-body p-5">
+                        <div class="plan-header mb-4">
+                            <div class="plan-icon mb-4 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-rocket text-primary-color fs-3"></i>
+                            </div>
+                            <h3 class="card-title h4 fw-bold mb-2 text-white">Starter</h3>
+                            <p class="card-text text-dark-text-secondary">Perfect for small cleaning businesses just getting started</p>
+                        </div>
+                        <div class="pricing-amount d-flex align-items-baseline mb-4">
+                            <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
+                            <span class="display-4 fw-bold text-primary-color monthly-price">49</span>
+                            <span class="display-4 fw-bold text-primary-color yearly-price" style="display: none;">39</span>
+                            <span class="text-dark-text-secondary ms-2 monthly-period">/month</span>
+                            <span class="text-dark-text-secondary ms-2 yearly-period" style="display: none;">/month, billed annually</span>
+                        </div>
+                        <ul class="list-unstyled mb-4 feature-list">
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">AI Voice Agent (100 mins/mo)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Basic Scheduling</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Customer Management</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Email Support</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">1 Team Member</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Basic Reporting</span>
+                            </li>
+                        </ul>
+                        <a href="/signup?plan=starter" class="btn btn-outline-primary w-100 py-3 rounded-pill">
+                            Start Free Trial
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Professional Plan -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 rounded-4 shadow-lg position-relative pricing-card featured bg-dark-surface-2 border-gradient-accent">
+                    <div class="position-absolute top-0 start-50 translate-middle">
+                        <span class="badge bg-accent py-2 px-4 rounded-pill">Most Popular</span>
+                    </div>
+                    <div class="card-body p-5 pt-5 mt-3">
+                        <div class="plan-header mb-4">
+                            <div class="plan-icon mb-4 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-building text-primary-color fs-3"></i>
+                            </div>
+                            <h3 class="card-title h4 fw-bold mb-2 text-white">Professional</h3>
+                            <p class="card-text text-dark-text-secondary">Ideal for growing cleaning businesses with multiple teams</p>
+                        </div>
+                        <div class="pricing-amount d-flex align-items-baseline mb-4">
+                            <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
+                            <span class="display-4 fw-bold text-primary-color monthly-price">99</span>
+                            <span class="display-4 fw-bold text-primary-color yearly-price" style="display: none;">79</span>
+                            <span class="text-dark-text-secondary ms-2 monthly-period">/month</span>
+                            <span class="text-dark-text-secondary ms-2 yearly-period" style="display: none;">/month, billed annually</span>
+                        </div>
+                        <ul class="list-unstyled mb-4 feature-list">
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">AI Voice Agent (300 mins/mo)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Advanced Scheduling</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Payment Processing</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Team Management</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Priority Support</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">5 Team Members</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Advanced Analytics</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">SMS Notifications</span>
+                            </li>
+                        </ul>
+                        <a href="/signup?plan=professional" class="btn btn-primary w-100 py-3 rounded-pill">
+                            Start Free Trial
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enterprise Plan -->
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient">
+                    <div class="card-body p-5">
+                        <div class="plan-header mb-4">
+                            <div class="plan-icon mb-4 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-crown text-primary-color fs-3"></i>
+                            </div>
+                            <h3 class="card-title h4 fw-bold mb-2 text-white">Enterprise</h3>
+                            <p class="card-text text-dark-text-secondary">For established cleaning businesses with complex needs</p>
+                        </div>
+                        <div class="pricing-amount d-flex align-items-baseline mb-4">
+                            <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
+                            <span class="display-4 fw-bold text-primary-color monthly-price">199</span>
+                            <span class="display-4 fw-bold text-primary-color yearly-price" style="display: none;">159</span>
+                            <span class="text-dark-text-secondary ms-2 monthly-period">/month</span>
+                            <span class="text-dark-text-secondary ms-2 yearly-period" style="display: none;">/month, billed annually</span>
+                        </div>
+                        <ul class="list-unstyled mb-4 feature-list">
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">AI Voice Agent (Unlimited)</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Smart Route Optimization</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Custom Integrations</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Dedicated Account Manager</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Unlimited Team Members</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Custom Analytics</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">White-label Options</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-3">
+                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-check text-success fs-6"></i>
+                                </div>
+                                <span class="text-white opacity-80">Priority Support</span>
+                            </li>
+                        </ul>
+                        <a href="/signup?plan=enterprise" class="btn btn-outline-primary w-100 py-3 rounded-pill">
+                            Start Free Trial
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Comparison Table -->
+<section class="py-5 bg-dark-surface">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Features</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Compare Features</h2>
+            <p class="fs-5 text-white opacity-80">See which plan is right for your business</p>
+        </div>
+        
+        <div class="comparison-table-wrapper" data-aos="fade-up">
+            <div class="comparison-table">
+                <!-- Header Row -->
+                <div class="comparison-row header">
+                    <div class="comparison-cell feature-name">Feature</div>
+                    <div class="comparison-cell text-center">Starter</div>
+                    <div class="comparison-cell text-center highlight">Professional</div>
+                    <div class="comparison-cell text-center">Enterprise</div>
+                </div>
+                
+                <!-- AI Voice Agent -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">AI Voice Agent</div>
+                    <div class="comparison-cell text-center">100 mins/mo</div>
+                    <div class="comparison-cell text-center highlight">300 mins/mo</div>
+                    <div class="comparison-cell text-center">Unlimited</div>
+                </div>
+                
+                <!-- Scheduling -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Scheduling</div>
+                    <div class="comparison-cell text-center">Basic</div>
+                    <div class="comparison-cell text-center highlight">Advanced</div>
+                    <div class="comparison-cell text-center">Advanced + Route Optimization</div>
+                </div>
+                
+                <!-- Customer Management -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Customer Management</div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                    <div class="comparison-cell text-center highlight"><i class="fas fa-check text-success"></i></div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                </div>
+                
+                <!-- Team Members -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Team Members</div>
+                    <div class="comparison-cell text-center">1</div>
+                    <div class="comparison-cell text-center highlight">5</div>
+                    <div class="comparison-cell text-center">Unlimited</div>
+                </div>
+                
+                <!-- Analytics -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Analytics</div>
+                    <div class="comparison-cell text-center">Basic</div>
+                    <div class="comparison-cell text-center highlight">Advanced</div>
+                    <div class="comparison-cell text-center">Custom</div>
+                </div>
+                
+                <!-- Payment Processing -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Payment Processing</div>
+                    <div class="comparison-cell text-center"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center highlight"><i class="fas fa-check text-success"></i></div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                </div>
+                
+                <!-- SMS Notifications -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">SMS Notifications</div>
+                    <div class="comparison-cell text-center"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center highlight"><i class="fas fa-check text-success"></i></div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                </div>
+                
+                <!-- Support -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Support</div>
+                    <div class="comparison-cell text-center">Email</div>
+                    <div class="comparison-cell text-center highlight">Priority</div>
+                    <div class="comparison-cell text-center">Dedicated Manager</div>
+                </div>
+                
+                <!-- Custom Integrations -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Custom Integrations</div>
+                    <div class="comparison-cell text-center"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center highlight"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                </div>
+                
+                <!-- White Label -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">White Label</div>
+                    <div class="comparison-cell text-center"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center highlight"><i class="fas fa-times text-dark-text-secondary"></i></div>
+                    <div class="comparison-cell text-center"><i class="fas fa-check text-success"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-dark-surface">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Support</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Frequently Asked Questions</h2>
+            <p class="fs-5 text-white opacity-80">Everything you need to know about our pricing and plans</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="pricingFAQ">
+                    <!-- Question 1 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="100">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="true" aria-controls="faqOne">
+                                What is an AI Voice Agent?
+                            </button>
+                        </h2>
+                        <div id="faqOne" class="accordion-collapse collapse show" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body py-4 px-4 text-white opacity-80">
+                                Our AI Voice Agent is an advanced virtual assistant that handles phone calls for your cleaning business. It can answer customer inquiries, collect information, provide quotes, schedule appointments, and more. It sounds like a real person and can handle complex conversations naturally, freeing up your time to focus on running your business.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 2 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="200">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwo" aria-expanded="false" aria-controls="faqTwo">
+                                How do the voice minutes work?
+                            </button>
+                        </h2>
+                        <div id="faqTwo" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body py-4 px-4 text-white opacity-80">
+                                Voice minutes refer to the total time your AI Voice Agent spends on calls with customers. For example, if a customer call lasts 5 minutes, that counts as 5 minutes toward your monthly allowance. The Starter plan includes 100 minutes per month, Professional includes 300 minutes, and Enterprise offers unlimited minutes. You can always upgrade your plan if you need more minutes.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 3 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="300">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree" aria-expanded="false" aria-controls="faqThree">
+                                Can I customize what the AI Voice Agent says?
+                            </button>
+                        </h2>
+                        <div id="faqThree" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body py-4 px-4 text-white opacity-80">
+                                Yes, absolutely! You can customize your AI Voice Agent's name, greeting, script, services offered, pricing, and more. The Professional and Enterprise plans offer more advanced customization options. Our system allows you to store templates with placeholders that are dynamically filled with your business details at runtime, making the AI Voice Agent fully adaptable to your specific business needs.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Question 4 -->
+                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="400">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour" aria-expanded="false" aria-controls="faqFour">
+                                Do you offer a free trial?
+                            </button>
+                        </h2>
+                        <div id="faqFour" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body py-4 px-4 text-white opacity-80">
+                                Yes, we offer a 14-day free trial for all plans. During the trial, you'll have access to all the features of your chosen plan so you can experience the full benefits of our AI Voice Agent. No credit card is required to start your trial, and you can upgrade, downgrade, or cancel at any time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Get Started Today</span>
+                <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your Cleaning Business?</h2>
+                <p class="fs-5 text-white opacity-80 mb-4">Join hundreds of cleaning businesses that have increased their bookings and streamlined their operations with our AI Voice Agent.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/signup" class="btn btn-accent btn-lg px-4 py-3 rounded-pill shadow-glow">Start Free Trial</a>
+                    <a href="/contact" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">Contact Sales</a>
+                </div>
+            </div>
+            <div class="col-lg-5" data-aos="fade-left">
+                <div class="card bg-dark-surface p-4 border-gradient rounded-4 shadow-lg">
+                    <div class="card-body p-3">
+                        <h3 class="h4 fw-bold text-white mb-4">Schedule a Demo</h3>
+                        <form>
+                            <div class="mb-3">
+                                <label for="demoName" class="form-label text-white opacity-80">Full Name</label>
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-3 border-0 text-white" id="demoName" placeholder="Your name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="demoEmail" class="form-label text-white opacity-80">Email Address</label>
+                                <input type="email" class="form-control form-control-lg bg-dark-surface-3 border-0 text-white" id="demoEmail" placeholder="you@company.com">
+                            </div>
+                            <div class="mb-3">
+                                <label for="demoCompany" class="form-label text-white opacity-80">Company Name</label>
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-3 border-0 text-white" id="demoCompany" placeholder="Your company">
+                            </div>
+                            <div class="mb-4">
+                                <label for="demoPhone" class="form-label text-white opacity-80">Phone Number</label>
+                                <input type="tel" class="form-control form-control-lg bg-dark-surface-3 border-0 text-white" id="demoPhone" placeholder="(123) 456-7890">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill">Request Demo</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Custom pricing toggle styling */
+    .pricing-toggle {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .pricing-toggle .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    
+    .pricing-toggle .pricing-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .pricing-toggle .pricing-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    #pricing-toggle:checked + .pricing-slider {
+        background-color: var(--primary-color);
+    }
+    
+    #pricing-toggle:checked + .pricing-slider:before {
+        transform: translateX(26px);
+    }
+    
+    .pricing-switch-container {
+        background-color: var(--dark-surface-2) !important;
+    }
+    
+    .pricing-switch-label {
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    #monthly-label.active, #yearly-label.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    /* Pricing card styling */
+    .pricing-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+    }
+    
+    .pricing-card.featured {
+        border-color: var(--accent-color);
+        z-index: 1;
+    }
+    
+    .feature-icon {
+        min-width: 24px;
+    }
+    
+    /* Custom Comparison Table Styling */
+    .comparison-table-wrapper {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        margin-bottom: 3rem;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        display: table;
+        border-collapse: collapse;
+        background-color: var(--dark-surface-2);
+        color: var(--dark-text-primary);
+    }
+    
+    .comparison-row {
+        display: table-row;
+        transition: background-color 0.3s ease;
+    }
+    
+    .comparison-row:not(.header):hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .comparison-row.header {
+        background-color: var(--dark-surface-3);
+        font-weight: bold;
+    }
+    
+    .comparison-cell {
+        display: table-cell;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        vertical-align: middle;
+    }
+    
+    .comparison-cell.feature-name {
+        font-weight: 500;
+        color: var(--dark-text-primary);
+    }
+    
+    .comparison-cell.highlight {
+        background-color: rgba(33, 150, 243, 0.05);
+        border-top: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .comparison-row:first-child .comparison-cell.highlight {
+        border-top: none;
+    }
+    
+    .comparison-row:last-child .comparison-cell.highlight {
+        border-bottom: none;
+    }
+    
+    .comparison-row.header .comparison-cell.highlight {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    @media (max-width: 991.98px) {
+        .comparison-table-wrapper {
+            overflow-x: auto;
+        }
+        
+        .comparison-table {
+            min-width: 800px;
+        }
+    }
+    
+    /* Accordion styling */
+    .accordion-button:not(.collapsed) {
+        color: var(--white);
+        background-color: var(--dark-surface-3);
+        box-shadow: none;
+    }
+    
+    .accordion-button:not(.collapsed)::after {
+        filter: brightness(10);
+    }
+    
+    .accordion-button::after {
+        filter: brightness(10);
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: transparent;
+    }
+</style>
+
+<script>
+    window.onload = function() {
+        const toggle = document.getElementById('pricing-toggle');
+        const monthlyPrices = document.querySelectorAll('.monthly-price');
+        const yearlyPrices = document.querySelectorAll('.yearly-price');
+        const monthlyPeriods = document.querySelectorAll('.monthly-period');
+        const yearlyPeriods = document.querySelectorAll('.yearly-period');
+        const monthlyLabel = document.getElementById('monthly-label');
+        const yearlyLabel = document.getElementById('yearly-label');
+        const yearlySavings = document.querySelector('.yearly-savings');
+        
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                // Yearly
+                monthlyPrices.forEach(price => price.style.display = 'none');
+                yearlyPrices.forEach(price => price.style.display = 'inline');
+                monthlyPeriods.forEach(period => period.style.display = 'none');
+                yearlyPeriods.forEach(period => period.style.display = 'inline');
+                monthlyLabel.classList.remove('active');
+                yearlyLabel.classList.add('active');
+                yearlySavings.style.display = 'inline-block';
+            } else {
+                // Monthly
+                monthlyPrices.forEach(price => price.style.display = 'inline');
+                yearlyPrices.forEach(price => price.style.display = 'none');
+                monthlyPeriods.forEach(period => period.style.display = 'inline');
+                yearlyPeriods.forEach(period => period.style.display = 'none');
+                monthlyLabel.classList.add('active');
+                yearlyLabel.classList.remove('active');
+                yearlySavings.style.display = 'none';
+            }
+        });
+        
+        // Initialize
+        monthlyPrices.forEach(price => price.style.display = 'inline');
+        yearlyPrices.forEach(price => price.style.display = 'none');
+        monthlyPeriods.forEach(period => period.style.display = 'inline');
+        yearlyPeriods.forEach(period => period.style.display = 'none');
+        monthlyLabel.classList.add('active');
+        yearlySavings.style.display = 'none';
+    }
+</script>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Custom pricing toggle styling */
+    .pricing-toggle {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+    
+    .pricing-toggle .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    
+    .pricing-toggle .pricing-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #e0e0e0;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .pricing-toggle .pricing-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .pricing-toggle input:checked + .pricing-slider {
+        background-color: var(--bs-primary);
+    }
+    
+    .pricing-toggle input:focus + .pricing-slider {
+        box-shadow: 0 0 1px var(--bs-primary);
+    }
+    
+    .pricing-toggle input:checked + .pricing-slider:before {
+        transform: translateX(26px);
+    }
+    
+    /* Pricing switch container */
+    .pricing-switch-container {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .pricing-switch-label {
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    #monthly-label.active, #yearly-label.active {
+        background-color: var(--bs-primary);
+        color: white;
+    }
+    
+    /* Custom card styling */
+    .pricing-card {
+        transition: all 0.3s ease;
+        border-radius: 1rem;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+    }
+    
+    .pricing-card.featured {
+        border: 2px solid var(--bs-primary);
+        z-index: 1;
+    }
+    
+    .rounded-4 {
+        border-radius: 1rem;
+    }
+    
+    /* Accent color for badges and buttons */
+    .bg-accent {
+        background-color: #FF6B35;
+    }
+    
+    .text-accent {
+        color: #FF6B35;
+    }
+    
+    .btn-accent {
+        background-color: #FF6B35;
+        border-color: #FF6B35;
+        color: white;
+    }
+    
+    .btn-accent:hover {
+        background-color: #e55a2a;
+        border-color: #e55a2a;
+        color: white;
+    }
+    
+    /* Primary color for text */
+    .text-primary-color {
+        color: #2D5BFF;
+    }
+    
+    /* Feature list styling */
+    .feature-list li {
+        transition: all 0.2s ease;
+    }
+    
+    .feature-list li:hover {
+        transform: translateX(5px);
+    }
+    
+    /* Accordion styling */
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(45, 91, 255, 0.05);
+        color: var(--bs-primary);
+        box-shadow: none;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(45, 91, 255, 0.1);
+    }
+    
+    /* Background gradient */
+    .bg-gradient {
+        background: linear-gradient(135deg, #2D5BFF 0%, #1a237e 100%);
+    }
+    
+    /* Opacity classes */
+    .opacity-10 {
+        opacity: 0.1;
+    }
+    
+    .opacity-70 {
+        opacity: 0.7;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize toggle functionality
+        const pricingToggle = document.getElementById('pricing-toggle');
+        const monthlyLabel = document.getElementById('monthly-label');
+        const yearlyLabel = document.getElementById('yearly-label');
+        
+        if (pricingToggle) {
+            // Set initial state
+            monthlyLabel.classList.add('active');
+            
+            pricingToggle.addEventListener('change', function() {
+                togglePricing();
+                
+                // Toggle active class for labels
+                if (this.checked) {
+                    monthlyLabel.classList.remove('active');
+                    yearlyLabel.classList.add('active');
+                } else {
+                    yearlyLabel.classList.remove('active');
+                    monthlyLabel.classList.add('active');
+                }
+            });
+        }
+        
+        // Add animation to pricing cards
+        const pricingCards = document.querySelectorAll('.pricing-card');
+        pricingCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.classList.add('shadow-lg');
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('featured')) {
+                    this.classList.remove('shadow-lg');
+                }
+            });
+        });
+    });
+    
+    function togglePricing() {
+        const isYearly = document.getElementById('pricing-toggle').checked;
+        const monthlyPrices = document.querySelectorAll('.monthly-price');
+        const yearlyPrices = document.querySelectorAll('.yearly-price');
+        const monthlyPeriods = document.querySelectorAll('.monthly-period');
+        const yearlyPeriods = document.querySelectorAll('.yearly-period');
+        const yearlySavings = document.querySelector('.yearly-savings');
+        
+        if (isYearly) {
+            // Show yearly prices
+            monthlyPrices.forEach(el => el.style.display = 'none');
+            yearlyPrices.forEach(el => el.style.display = 'inline-block');
+            monthlyPeriods.forEach(el => el.style.display = 'none');
+            yearlyPeriods.forEach(el => el.style.display = 'inline-block');
+            yearlySavings.style.display = 'inline-block';
+        } else {
+            // Show monthly prices
+            monthlyPrices.forEach(el => el.style.display = 'inline-block');
+            yearlyPrices.forEach(el => el.style.display = 'none');
+            monthlyPeriods.forEach(el => el.style.display = 'inline-block');
+            yearlyPeriods.forEach(el => el.style.display = 'none');
+            yearlySavings.style.display = 'none';
+        }
+        
+        console.log('Pricing toggled to ' + (isYearly ? 'yearly' : 'monthly'));
+    }
+</script>
+{% endblock %}

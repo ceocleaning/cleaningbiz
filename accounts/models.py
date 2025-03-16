@@ -15,8 +15,6 @@ class Business(models.Model):
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
 
-    bookingIntegrations = models.ManyToManyField('BookingIntegration', blank=True, related_name='integrated_businesses')
-
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
@@ -64,16 +62,6 @@ class SMTPConfig(models.Model):
         return self.business.businessName
     
 
-class BookingIntegration(models.Model):
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='primary_integration')
-    serviceName = models.CharField(max_length=50, null=True, blank=True)
-    apiKey = models.CharField(max_length=255, null=True, blank=True)
-    webhookUrl = models.URLField(null=True, blank=True)
-
-    
-
-    def __str__(self):
-        return self.business.businessName
 
 
 class BusinessSettings(models.Model):

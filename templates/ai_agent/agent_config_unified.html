@@ -1,0 +1,541 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Voice Agent Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>AI Voice Agent Configuration</h1>
+            <p class="text-muted">Configure your AI Voice Agent for {{ business.businessName }}</p>
+        </div>
+    </div>
+
+    <div id="systemPromptPreview" class="row mb-4" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">System Prompt Preview</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="promptPreviewText" class="bg-light p-3 rounded">{{ system_prompt }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-8">
+            <div class="card">
+                <div class="card-body">
+                    <form id="agentConfigForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="prompt" class="form-label mb-0">System Prompt</label>
+                                    <div>
+                                        <button type="button" id="testAgentButton" class="btn btn-success btn-sm me-2" onclick="toggleChatContainer(true)">
+                                            <i class="fas fa-robot"></i> Test Agent
+                                        </button>
+                                        <button type="button" id="saveButton" class="btn btn-primary btn-sm" style="display: none;" onclick="saveConfiguration()">
+                                            <i class="fas fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                                <textarea class="form-control form-input" id="prompt" name="prompt" rows="20" style="resize: none;">{{ config.prompt }}</textarea>
+                                <div class="form-text">Configure the system prompt for your AI Voice Agent</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-4" id="chatContainer" style="display: none;">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Test AI Agent</h5>
+                    <div>
+                        <button type="button" class="btn btn-sm" onclick="resetChat()" title="Reset Chat">
+                            <i class="fas fa-trash text-warning"></i>
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="toggleChatContainer(false)"></button>
+                    </div>
+                </div>
+                <div class="card-body d-flex flex-column" style="height: 60vh;">
+                    <div id="chatMessages" class="flex-grow-1 overflow-auto mb-3">
+                        <div class="text-center text-muted my-3">
+                            <small>Start a conversation with your AI agent</small>
+                        </div>
+                    </div>
+                    <form id="chatForm" class="mt-auto">
+                        <div class="input-group">
+                            <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container for notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto" id="toastTitle">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Global variable for client phone number
+    var clientPhoneNumber = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store original form values
+        const originalValues = {};
+        const formInputs = document.querySelectorAll('.form-input');
+        
+        formInputs.forEach(input => {
+            originalValues[input.id] = input.value;
+            
+            // Add event listeners to detect changes
+            input.addEventListener('input', checkFormChanges);
+        });
+        
+        // Show system prompt preview if available
+        {% if system_prompt %}
+        document.getElementById('systemPromptPreview').style.display = 'block';
+        {% endif %}
+        
+        // Initialize toast
+        const toastElement = document.getElementById('toast');
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        window.showToast = function(title, message, type = 'success') {
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            // Set toast color based on type
+            toastElement.className = 'toast';
+            if (type === 'success') {
+                toastElement.classList.add('bg-success', 'text-white');
+            } else if (type === 'error') {
+                toastElement.classList.add('bg-danger', 'text-white');
+            } else if (type === 'warning') {
+                toastElement.classList.add('bg-warning');
+            } else if (type === 'info') {
+                toastElement.classList.add('bg-info');
+            }
+            
+            toast.show();
+        };
+        
+        // Initialize chat form
+        document.getElementById('chatForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+        
+        // Initialize client phone number
+        initializeChat();
+    });
+    
+    function checkFormChanges() {
+        let hasChanges = false;
+        const formInputs = document.querySelectorAll('.form-input');
+        const originalValues = {};
+        
+        // Re-collect original values
+        formInputs.forEach(input => {
+            if (!originalValues[input.id]) {
+                originalValues[input.id] = input.defaultValue;
+            }
+            
+            if (input.value !== originalValues[input.id]) {
+                hasChanges = true;
+            }
+        });
+        
+        // Show or hide the save button based on changes
+        const saveButton = document.getElementById('saveButton');
+        if (hasChanges) {
+            saveButton.style.display = 'inline-block';
+        } else {
+            saveButton.style.display = 'none';
+        }
+    }
+    
+    function saveConfiguration() {
+        // Show loading state
+        const saveButton = document.getElementById('saveButton');
+        const originalButtonText = saveButton.innerHTML;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveButton.disabled = true;
+        
+        // Get form data
+        const form = document.getElementById('agentConfigForm');
+        const formData = new FormData(form);
+        
+        // Send AJAX request
+        fetch('{% url "ai_agent:agent_config_save" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Reset button state
+            saveButton.innerHTML = originalButtonText;
+            saveButton.disabled = false;
+            
+            if (data.success) {
+                // Show success toast
+                window.showToast('Success', data.message, 'success');
+                
+                // Update system prompt preview
+                if (data.system_prompt) {
+                    document.getElementById('promptPreviewText').textContent = data.system_prompt;
+                    document.getElementById('systemPromptPreview').style.display = 'block';
+                }
+                
+                // Update original values to match current values
+                const formInputs = document.querySelectorAll('.form-input');
+                formInputs.forEach(input => {
+                    input.defaultValue = input.value;
+                });
+                
+                // Hide save button
+                saveButton.style.display = 'none';
+            } else {
+                // Show error toast
+                window.showToast('Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            // Reset button state
+            saveButton.innerHTML = originalButtonText;
+            saveButton.disabled = false;
+            
+            // Show error toast
+            window.showToast('Error', 'An unexpected error occurred. Please try again.', 'error');
+            console.error('Error:', error);
+        });
+    }
+    
+    function toggleChatContainer(show) {
+        const chatContainer = document.getElementById('chatContainer');
+        if (show) {
+            chatContainer.style.display = 'block';
+            document.getElementById('testAgentButton').style.display = 'none';
+            // Focus on the message input
+            document.getElementById('messageInput').focus();
+        } else {
+            chatContainer.style.display = 'none';
+            document.getElementById('testAgentButton').style.display = 'inline-block';
+        }
+    }
+    
+    function initializeChat() {
+        // Get the Twilio SMS number for the business
+        fetch('/ai_agent/api/business/credentials/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.credentials && data.credentials.twilioSmsNumber) {
+                clientPhoneNumber = data.credentials.twilioSmsNumber;
+                // Load existing messages if any
+                loadMessages();
+            } else {
+                window.showToast('Warning', 'No Twilio SMS number found for this business. Using a default test number.', 'warning');
+                clientPhoneNumber = '+1234567890'; // Default test number
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching business credentials:', error);
+            window.showToast('Warning', 'Failed to fetch business credentials. Using a default test number.', 'warning');
+            clientPhoneNumber = '+1234567890'; // Default test number
+        });
+    }
+    
+    function loadMessages() {
+        if (!clientPhoneNumber) return;
+        
+        fetch(`/ai_agent/api/chat/?client_phone_number=${encodeURIComponent(clientPhoneNumber)}&action=get_messages`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = ''; // Clear existing messages
+                
+                data.messages.forEach(message => {
+                    appendMessage(message.role, message.message);
+                });
+                
+                // Scroll to bottom
+                scrollToBottom();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading messages:', error);
+        });
+    }
+    
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+        
+        // Clear input
+        messageInput.value = '';
+        
+        // Add user message to chat
+        appendMessage('user', message);
+        
+        // Show loading indicator
+        const chatMessages = document.getElementById('chatMessages');
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'typing-indicator mb-3';
+        loadingDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="bg-light p-2 rounded-3">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(loadingDiv);
+        scrollToBottom();
+        
+        // Send message to API
+        fetch('{% url "ai_agent:chat_api" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                business_id: '{{ business.businessId }}',
+                client_phone_number: clientPhoneNumber,
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remove loading indicator
+            if (loadingDiv && loadingDiv.parentNode === chatMessages) {
+                chatMessages.removeChild(loadingDiv);
+            }
+            
+            if (data.error) {
+                window.showToast('Error', data.error, 'error');
+                return;
+            }
+            
+            // Add AI response to chat
+            appendMessage('assistant', data.response);
+        })
+        .catch(error => {
+            // Remove loading indicator
+            if (loadingDiv && loadingDiv.parentNode) {
+                chatMessages.removeChild(loadingDiv);
+            }
+            
+            console.error('Error sending message:', error);
+            window.showToast('Error', 'Failed to send message. Please try again.', 'error');
+        });
+    }
+    
+    function appendMessage(role, content) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'mb-3';
+        
+        if (role === 'user') {
+            messageDiv.innerHTML = `
+                <div class="d-flex justify-content-end">
+                    <div class="bg-primary text-white p-2 rounded-3 mw-75">
+                        <div class="small">${content}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="d-flex">
+                    <div class="bg-light p-2 rounded-3 mw-75">
+                        <div class="small">${content}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function resetChat() {
+        if (!clientPhoneNumber) return;
+        
+        if (confirm('Are you sure you want to reset the chat? This will delete all messages.')) {
+            // Show loading indicator in chat area
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-muted">Resetting chat...</div>
+                    </div>
+                </div>
+            `;
+            
+            // Disable reset button and show spinner
+            const resetButton = document.querySelector('button[onclick="resetChat()"]');
+            const originalButtonContent = resetButton.innerHTML;
+            resetButton.disabled = true;
+            resetButton.innerHTML = '<i class="fas fa-spinner fa-spin text-warning"></i>';
+            
+            fetch(`/ai_agent/api/chat/${encodeURIComponent(clientPhoneNumber)}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Re-enable reset button
+                resetButton.disabled = false;
+                resetButton.innerHTML = originalButtonContent;
+                
+                if (data.success) {
+                    // Clear chat messages
+                    chatMessages.innerHTML = `
+                        <div class="text-center text-muted my-3">
+                            <small>Start a conversation with your AI agent</small>
+                        </div>
+                    `;
+                    window.showToast('Success', 'Chat reset successfully', 'success');
+                } else {
+                    window.showToast('Error', data.error || 'Failed to reset chat', 'error');
+                }
+            })
+            .catch(error => {
+                // Re-enable reset button
+                resetButton.disabled = false;
+                resetButton.innerHTML = originalButtonContent;
+                
+                console.error('Error resetting chat:', error);
+                window.showToast('Error', 'Failed to reset chat. Please try again.', 'error');
+                
+                // Restore chat messages placeholder
+                chatMessages.innerHTML = `
+                    <div class="text-center text-muted my-3">
+                        <small>Start a conversation with your AI agent</small>
+                    </div>
+                `;
+            });
+        }
+    }
+</script>
+
+<style>
+    /* Typing indicator animation */
+    .typing-dots {
+        display: flex;
+        align-items: center;
+        height: 20px;
+    }
+    
+    .typing-dots span {
+        height: 8px;
+        width: 8px;
+        margin: 0 2px;
+        background-color: #6c757d;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing-dot 1.4s infinite ease-in-out both;
+    }
+    
+    .typing-dots span:nth-child(1) {
+        animation-delay: 0s;
+    }
+    
+    .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing-dot {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.6; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Message width limit */
+    .mw-75 {
+        max-width: 75%;
+        word-break: break-word;
+    }
+    
+    /* Fix for textarea blurriness during scrolling */
+    textarea {
+        -webkit-transform: translateZ(0);
+        -moz-transform: translateZ(0);
+        -ms-transform: translateZ(0);
+        -o-transform: translateZ(0);
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        -webkit-font-smoothing: subpixel-antialiased;
+    }
+    
+    /* Prevent any blur during scrolling for all elements */
+    * {
+        image-rendering: -webkit-optimize-contrast;
+    }
+    
+    /* Improve scrolling performance */
+    #prompt {
+        will-change: transform;
+    }
+</style>
+{% endblock %}
+{% endblock %}

@@ -1,12 +1,17 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
-from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking
-from .test_error import test_error_view
+from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking, sendCommercialFormLink
+
 
 
 urlpatterns = [
     path('', views.LandingPage, name='LandingPage'),
+    path('pricing/', views.PricingPage, name='PricingPage'),
+    path('features/', views.FeaturesPage, name='FeaturesPage'),
+    path('about-us/', views.AboutUsPage, name='AboutUsPage'),
+    path('contact-us/', views.ContactUsPage, name='ContactUsPage'),
+    path('docs/', views.DocsPage, name='DocsPage'),
     path('dashboard/', views.home, name='home'),
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='retell_webhook'),
     path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
@@ -22,12 +27,14 @@ urlpatterns = [
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
     path('api/availability/<str:secretKey>/test/', test_check_availability, name='test_check_availability'),
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
+    path('api/create-booking/', create_booking, name='create_booking'),
+    path('api/send-commercial-form-link/', sendCommercialFormLink, name='send_commercial_form_link'),
    
     
     # Test pages
     path('test/', views.test_features, name='test_features'),
     path('test/availability/', views.test_availability_api, name='test_availability_api'),
-    path('test/error/', test_error_view, name='test_error'),  # Test route for error handling
+
    
     # Cleaners URLs
     path('cleaners/', views.cleaners_list, name='cleaners_list'),

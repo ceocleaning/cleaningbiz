@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
+from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
 import random
 from django.http import JsonResponse
 from email.mime.multipart import MIMEMultipart
@@ -81,13 +81,13 @@ def profile_view(request):
     # Get related models
     business_settings = business.settings
     api_credentials = business.apicredential
-    booking_integrations = business.bookingIntegrations.all()
+    
     
     context = {
         'business': business,
         'settings': business_settings,
         'credentials': api_credentials,
-        'integrations': booking_integrations,
+        
     }
     
     return render(request, 'accounts/profile.html', context)

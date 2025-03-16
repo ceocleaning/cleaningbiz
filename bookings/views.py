@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from .models import Booking, BookingCustomAddons
 from invoice.models import Invoice, Payment
-from accounts.models import Business, BusinessSettings, BookingIntegration, ApiCredential, CustomAddons
+from accounts.models import Business, BusinessSettings, CustomAddons
 from automation.models import CleanerAvailability, Cleaners
 from decimal import Decimal
 import json

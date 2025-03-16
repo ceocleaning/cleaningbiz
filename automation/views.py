@@ -5,6 +5,7 @@ from django.contrib import messages
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db import models
+from django.core.mail import send_mail
 import logging
 from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
@@ -20,6 +21,53 @@ logger = logging.getLogger(__name__)
 
 def LandingPage(request):
     return render(request, 'LandingPage.html')
+
+def PricingPage(request):
+    return render(request, 'PricingPage.html')
+
+def FeaturesPage(request):
+    return render(request, 'FeaturesPage.html')
+
+
+def AboutUsPage(request):
+    return render(request, 'AboutUsPage.html')
+
+def ContactUsPage(request):
+    if request.method == 'POST':
+        # Get form data
+        name = request.POST.get('name', '')
+        email = request.POST.get('email', '')
+        subject = request.POST.get('subject', '')
+        message = request.POST.get('message', '')
+        privacy_accepted = request.POST.get('privacy_accepted', False)
+        
+        # Validate form data
+        if name and email and subject and message and privacy_accepted:
+            # Prepare email content
+            email_subject = f"Contact Form: {subject}"
+            email_message = f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}"
+            from_email = email  # Use the user's email as the from address
+            recipient_list = ['kashifmehmood926@gmail.com']  # Replace with your actual email
+                
+            # Send email
+            send_mail(
+                subject=email_subject,
+                message=email_message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+                
+            # Return success response
+            return JsonResponse({'success': True, 'message': 'Your message has been sent successfully!'})
+        else:
+            # Return validation error response
+            return JsonResponse({'success': False, 'message': 'Please fill out all required fields.'})
+    
+    return render(request, 'ContactUsPage.html')
+
+def DocsPage(request):
+    return render(request, 'DocsPage.html')
 
 
 @login_required(login_url='accounts:login')

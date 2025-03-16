@@ -4,222 +4,522 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CleaningBiz AI - Automate your Cleaning Business{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f7ff',
-                            100: '#e0eefe',
-                            200: '#b9ddfd',
-                            300: '#7cc2fc',
-                            400: '#36a6f8',
-                            500: '#0c87eb',
-                            600: '#0068c9',
-                            700: '#0054a3',
-                            800: '#004687',
-                            900: '#003d71'
-                        },
-                        accent: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12'
-                        }
-                    },
-                    fontFamily: {
-                        'modern': ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Primary Colors */
+            --primary-50: #e3f2fd;
+            --primary-100: #bbdefb;
+            --primary-200: #90caf9;
+            --primary-300: #64b5f6;
+            --primary-400: #42a5f5;
+            --primary-500: #2196f3;
+            --primary-600: #1e88e5;
+            --primary-700: #1976d2;
+            --primary-800: #1565c0;
+            --primary-900: #0d47a1;
+            --primary-color: var(--primary-500);
+            
+            /* Accent Colors */
+            --accent-50: #fff8e1;
+            --accent-100: #ffecb3;
+            --accent-200: #ffe082;
+            --accent-300: #ffd54f;
+            --accent-400: #ffca28;
+            --accent-500: #ffc107;
+            --accent-600: #ffb300;
+            --accent-700: #ffa000;
+            --accent-800: #ff8f00;
+            --accent-900: #ff6f00;
+            --accent-color: var(--accent-500);
+            
+            /* Dark Mode Colors */
+            --dark-surface: #121212;
+            --dark-surface-2: #1e1e1e;
+            --dark-surface-3: #252525;
+            --dark-surface-4: #2c2c2c;
+            --dark-surface-5: #333333;
+            --dark-text-primary: rgba(255, 255, 255, 0.95);
+            --dark-text-secondary: rgba(255, 255, 255, 0.7);
+            --dark-text-disabled: rgba(255, 255, 255, 0.5);
+            --dark-text-hint: rgba(255, 255, 255, 0.5);
+            --dark-divider: rgba(255, 255, 255, 0.12);
+            --dark-border: rgba(255, 255, 255, 0.15);
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+            --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.2);
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-xxl: 24px;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--dark-surface);
+            color: var(--dark-text-primary);
         }
-        .hero-pattern {
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230068c9' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        
+        /* Text Styles */
+        .text-gradient {
+            background: linear-gradient(90deg, var(--primary-400) 0%, var(--accent-400) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
+        
+        .text-gradient-light {
+            background: linear-gradient(90deg, #ffffff 0%, var(--accent-300) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
+        
+        .text-primary-color {
+            color: var(--primary-color) !important;
         }
-        .gradient-mask {
-            -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+        
+        .text-accent-color {
+            color: var(--accent-color) !important;
         }
-        .card-hover {
+        
+        .text-dark-text-primary {
+            color: var(--dark-text-primary) !important;
+        }
+        
+        .text-dark-text-secondary {
+            color: var(--dark-text-secondary) !important;
+        }
+        
+        /* Hover Effects */
+        .hover-text-white:hover {
+            color: var(--dark-text-primary) !important;
+            transition: color 0.3s ease;
+        }
+        
+        /* Background Colors */
+        .bg-dark-surface {
+            background-color: var(--dark-surface) !important;
+        }
+        
+        .bg-dark-surface-2 {
+            background-color: var(--dark-surface-2) !important;
+        }
+        
+        .bg-dark-surface-3 {
+            background-color: var(--dark-surface-3) !important;
+        }
+        
+        .bg-primary-color {
+            background-color: var(--primary-color) !important;
+        }
+        
+        .bg-accent-color {
+            background-color: var(--accent-color) !important;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-900) 100%);
+        }
+        
+        /* Button Styles */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-600);
+            border-color: var(--primary-600);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #212529;
+            font-weight: 500;
+        }
+        
+        .btn-accent:hover {
+            background-color: var(--accent-600);
+            border-color: var(--accent-600);
+            color: #212529;
+        }
+        
+        /* Shadow Effects */
+        .shadow-glow {
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
             transition: all 0.3s ease;
         }
-        .card-hover:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        
+        .shadow-glow:hover {
+            box-shadow: 0 0 20px rgba(33, 150, 243, 0.7);
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        
+        /* Card Styles */
+        .card {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
         }
-        .nav-blur {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        
+        .border-gradient {
+            position: relative;
+            border-radius: var(--radius-xxl);
         }
-        .accent-glow {
-            box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+        
+        .border-gradient::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary-500), var(--accent-500));
+            z-index: -1;
+            border-radius: inherit;
         }
-        .accent-glow:hover {
-            box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
+        
+        /* Navbar Styles */
+        .navbar {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-scrolled {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            background-color: var(--dark-surface) !important;
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Opacity Helpers */
+        .opacity-80 {
+            opacity: 0.8;
+        }
+        
+        .opacity-70 {
+            opacity: 0.7;
+        }
+        
+        .opacity-60 {
+            opacity: 0.6;
+        }
+        
+        .opacity-50 {
+            opacity: 0.5;
+        }
+        
+        .opacity-40 {
+            opacity: 0.4;
+        }
+        
+        .opacity-30 {
+            opacity: 0.3;
+        }
+        
+        .opacity-20 {
+            opacity: 0.2;
+        }
+        
+        .opacity-10 {
+            opacity: 0.1;
+        }
+        
+        /* Section Styles */
+        section {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animation Styles */
+        [data-aos] {
+            pointer-events: none;
+        }
+        
+        [data-aos].aos-animate {
+            pointer-events: auto;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--dark-surface-2);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--dark-surface-4);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-surface-5);
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .navbar-collapse {
+                background-color: var(--dark-surface);
+                padding: 1rem;
+                border-radius: var(--radius-lg);
+                margin-top: 0.5rem;
+            }
+        }
+        
+        /* Active link styling */
+        .navbar-nav .nav-link.active {
+            color: var(--primary-color) !important;
+            position: relative;
+        }
+        
+        .navbar-nav .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 3px;
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
-<body class="flex flex-col min-h-screen bg-gray-50">
+<body>
     <!-- Navbar -->
-    <nav class="nav-blur fixed w-full z-50 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-primary-600 flex items-center">
-                            <i class="fas fa-sparkles mr-2 text-accent-500"></i>
-                            <span class="font-modern">CleaningBiz AI</span>
-                        </span>
-                    </div>
-                </div>
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="/" class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition">Home</a>
-                    <a href="/features" class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition">Features</a>
-                    <a href="/pricing" class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition">Pricing</a>
-                    <a href="/about" class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition">About</a>
-                    <a href="/contact" class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition">Contact</a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'home' %}" class="bg-accent-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-accent-600 transition accent-glow">
-                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
-                    </a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-surface fixed-top shadow-lg">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <span class="text-white fw-bold fs-4">CleaningBiz AI</span>
+            </a>
+            <button class="navbar-toggler" type="button"    data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/features/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/pricing/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/pricing">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/about-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/about-us">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/contact-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/contact-us">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/docs/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/docs">Docs</a>
+                    </li>
+                </ul>
+                <div class="d-flex ms-lg-4">
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-light me-2">Log In</a>
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-accent shadow-glow">Sign Up</a>
                     {% else %}
-                    <a href="{% url 'accounts:signup' %}" class="bg-accent-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-accent-600 transition accent-glow">
-                        <i class="fas fa-rocket mr-1"></i> Get Started
-                    </a>
+                    <a href="{% url 'home' %}" class="btn btn-accent me-2">Dashboard</a>
                     {% endif %}
                 </div>
-                <div class="md:hidden flex items-center">
-                    <button type="button" class="mobile-menu-button p-2 rounded-md text-gray-700 hover:text-primary-600 focus:outline-none">
-                        <span class="sr-only">Open main menu</span>
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="md:hidden hidden mobile-menu glass-card">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="/" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-md">Home</a>
-                <a href="/features" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-md">Features</a>
-                <a href="/pricing" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-md">Pricing</a>
-                <a href="/about" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-md">About</a>
-                <a href="/contact" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-md">Contact</a>
-                {% if user.is_authenticated %}
-                <a href="/" class="block px-3 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600">
-                    <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
-                </a>
-                {% else %}
-                <a href="{% url 'accounts:signup' %}" class="block px-3 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600">
-                    <i class="fas fa-rocket mr-1"></i> Get Started
-                </a>
-                {% endif %}
             </div>
         </div>
     </nav>
 
-    <div class="h-20"></div>
+    <!-- Spacer for fixed navbar -->
+    <div style="padding-top: 90px;"></div>
 
+    <!-- Main Content -->
     <main class="flex-grow">
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="space-y-4">
-                    <h3 class="text-xl font-bold text-white">CleaningBiz AI</h3>
-                    <p class="text-gray-400">Transforming cleaning businesses with intelligent automation</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-accent-500 transition"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-accent-500 transition"><i class="fab fa-linkedin"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-accent-500 transition"><i class="fab fa-facebook"></i></a>
+    <footer class="bg-dark-surface py-5">
+        <div class="container py-4">
+            <div class="row g-4">
+                <!-- Logo and Description -->
+                <div class="col-lg-4">
+                    <a class="navbar-brand d-flex align-items-center mb-4" href="/">
+                        <span class="text-white fw-bold fs-4">CleaningBiz AI</span>
+                    </a>
+                    <p class="text-dark-text-secondary mb-4">Revolutionizing cleaning businesses with AI-powered voice agents that handle calls, schedule appointments, and help grow your business.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="fab fa-instagram"></i>
+                        </a>
                     </div>
                 </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-white mb-4">Product</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/features" class="text-gray-400 hover:text-accent-500 transition">Features</a></li>
-                        <li><a href="/pricing" class="text-gray-400 hover:text-accent-500 transition">Pricing</a></li>
-                        <li><a href="/integrations" class="text-gray-400 hover:text-accent-500 transition">Integrations</a></li>
+                
+                <!-- Quick Links -->
+                <div class="col-lg-2 col-md-4">
+                    <h5 class="text-white fw-bold mb-4">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <a href="/" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Home
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/features" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Features
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/pricing" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Pricing
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/demo" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Demo
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/blog" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Blog
+                            </a>
+                        </li>
                     </ul>
                 </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-white mb-4">Support</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/help" class="text-gray-400 hover:text-accent-500 transition">Help Center</a></li>
-                        <li><a href="/contact" class="text-gray-400 hover:text-accent-500 transition">Contact</a></li>
-                        <li><a href="/status" class="text-gray-400 hover:text-accent-500 transition">System Status</a></li>
+                
+                <!-- Services -->
+                <div class="col-lg-2 col-md-4">
+                    <h5 class="text-white fw-bold mb-4">Services</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <a href="/services/ai-voice-agent" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>AI Voice Agent
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/services/scheduling" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Smart Scheduling
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/services/customer-management" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Customer Management
+                            </a>
+                        </li>
+                        <li class="mb-3">
+                            <a href="/services/analytics" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-chevron-right me-2 small"></i>Business Analytics
+                            </a>
+                        </li>
                     </ul>
                 </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-white mb-4">Company</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/about" class="text-gray-400 hover:text-accent-500 transition">About</a></li>
-                        <li><a href="/blog" class="text-gray-400 hover:text-accent-500 transition">Blog</a></li>
-                        <li><a href="/careers" class="text-gray-400 hover:text-accent-500 transition">Careers</a></li>
+                
+                <!-- Contact -->
+                <div class="col-lg-4 col-md-4">
+                    <h5 class="text-white fw-bold mb-4">Contact Us</h5>
+                    <ul class="list-unstyled">
+                        <li class="d-flex mb-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-map-marker-alt text-primary-color"></i>
+                            </div>
+                            <div class="text-dark-text-secondary">
+                                123 Business Avenue<br>
+                                Suite 456<br>
+                                New York, NY 10001
+                            </div>
+                        </li>
+                        <li class="d-flex mb-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-envelope text-primary-color"></i>
+                            </div>
+                            <div>
+                                <a href="mailto:info@ceocleaners.com" class="text-dark-text-secondary hover-text-white text-decoration-none">info@ceocleaners.com</a>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                <i class="fas fa-phone-alt text-primary-color"></i>
+                            </div>
+                            <div>
+                                <a href="tel:+1-800-123-4567" class="text-dark-text-secondary hover-text-white text-decoration-none">+1 (800) 123-4567</a>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </div>
-            <div class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-                <p>&copy; {% now "Y" %} CleaningBiz AI. All rights reserved.</p>
+            
+            <hr class="border-dark-border my-4">
+            
+            <!-- Copyright -->
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <p class="text-dark-text-secondary mb-0">&copy; 2023 CleaningBiz AI. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <ul class="list-inline mb-0">
+                        <li class="list-inline-item">
+                            <a href="/privacy" class="text-dark-text-secondary hover-text-white text-decoration-none">Privacy Policy</a>
+                        </li>
+                        <li class="list-inline-item ms-3">
+                            <a href="/terms" class="text-dark-text-secondary hover-text-white text-decoration-none">Terms of Service</a>
+                        </li>
+                        <li class="list-inline-item ms-3">
+                            <a href="/sitemap" class="text-dark-text-secondary hover-text-white text-decoration-none">Sitemap</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </footer>
 
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Initialize AOS -->
     <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 800,
-            easing: 'ease-out-cubic',
-            once: true
-        });
-
-        // Mobile menu toggle
-        document.querySelector('.mobile-menu-button').addEventListener('click', function() {
-            document.querySelector('.mobile-menu').classList.toggle('hidden');
-        });
-
-        // Navbar scroll behavior
-        window.addEventListener('scroll', function() {
-            const nav = document.querySelector('nav');
-            if (window.scrollY > 0) {
-                nav.classList.add('shadow-md');
-            } else {
-                nav.classList.remove('shadow-md');
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+            
+            // Navbar scroll effect
+            const navbar = document.querySelector('.navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('nav-scrolled');
+                } else {
+                    navbar.classList.remove('nav-scrolled');
+                }
+            });
         });
     </script>
+    
+    {% block scripts %}{% endblock %}
 </body>
 </html>

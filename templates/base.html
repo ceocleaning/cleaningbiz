@@ -411,7 +411,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/booking/' %}active{% endif %}" 
@@ -446,22 +446,16 @@
                     <li class="nav-item">
                         <a class="nav-link {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
                            href="{% url 'ai_agent:agent_config' %}">
-                            <i class="fas fa-robot me-1"></i>AI Voice Agent
+                            <i class="fas fa-robot me-1"></i>AI SMS Agent
                         </a>
                     </li>
-                   {% if request.user.is_superuser %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/automation/test/' in request.path %}active{% endif %}" 
-                           href="{% url 'test_features' %}">
-                            <i class="fas fa-flask me-1"></i>Test Features
-                        </a>
-                    </li>
-                    {% endif %}
+                   
                    {% endif %}
                 </ul>
-                <div class="d-flex align-items-center">
+                
+                <div class="d-flex align-items-end">
                     {% if user.is_authenticated %}
-                        <li style="list-style-type: none;" class="nav-item dropdown">
+                        <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="avatar-circle me-2">
                                     <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
@@ -484,6 +478,14 @@
                                         <i class="fas fa-key me-2 text-warning"></i>SMTP Config
                                     </a>
                                 </li>
+                                {% if request.user.is_superuser %}
+                                <li class="nav-item">
+                                    <a class="dropdown-item" 
+                                    href="{% url 'test_features' %}">
+                                        <i class="fas fa-flask me-1"></i>Test Features
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
@@ -491,7 +493,7 @@
                                     </a>
                                 </li>
                             </ul>
-                        </li>
+                        </div>
                     {% else %}
                         <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
                             <i class="fas fa-sign-in-alt me-1"></i>Login

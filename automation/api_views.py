@@ -5,10 +5,16 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential
-from bookings.models import Booking
+from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons, SMTPConfig
+from bookings.models import Booking, BookingCustomAddons
+from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
+from django.conf import settings
+
+from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
 import dateparser
+import pytz
+import traceback
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
@@ -235,18 +241,6 @@ def check_availability_retell(request, secretKey):
         # Parse request body
         post_data = json.loads(request.body)
 
-        retell = Retell(api_key=apiCreds.retellAPIKey)
-
-        # Verify request signature
-        valid_signature = retell.verify(
-            json.dumps(post_data, separators=(",", ":"), ensure_ascii=False),
-            api_key=str(apiCreds.retellAPIKey),
-            signature=str(request.headers.get("X-Retell-Signature")),
-        )
-
-        if not valid_signature:
-            return JsonResponse({"error": "Unauthorized request"}, status=401)
-
         # Extract parameters
         args = post_data.get("args", {})
         cleaningDateTime = args.get("cleaningDateTime")
@@ -386,3 +380,372 @@ def check_availability_for_booking(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+# API endpoint to create a new booking
+@csrf_exempt
+@api_view(['POST', 'GET'])
+def create_booking(request):
+    try:
+        post_data = json.loads(request.body)
+        data = post_data.get('args', {})
+
+        try:
+            business = Business.objects.get(businessId=data['business_id'])
+            businessSettingsObj = BusinessSettings.objects.get(business=business)
+        except Business.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Business not found'
+            }, status=404)
+        
+        # Parse appointment date and time
+        try:
+            dt_with_timezone = datetime.fromisoformat(data['appointment_date_time'])
+            utc_timezone = pytz.utc
+            dt_with_utc = dt_with_timezone.replace(tzinfo=utc_timezone)
+          
+            cleaning_date = dt_with_utc.date()
+            start_time = dt_with_utc.time()
+      
+            # Calculate end time (default to 1 hour after start time)
+            end_datetime = dt_with_utc + timedelta(hours=1)
+            end_time = end_datetime.time()
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid date or time format: {str(e)}'
+            }, status=400)
+        
+        # Find an available cleaner
+        cleaners = get_cleaners_for_business(business)
+        available_cleaner = find_available_cleaner(cleaners, dt_with_utc)
+        
+        if not available_cleaner:
+            # Find alternate slots
+            alternate_slots, _ = find_alternate_slots(cleaners, dt_with_utc)
+            return JsonResponse({
+                'success': False,
+                'message': 'No cleaners available for the requested time',
+                'alternateSlots': alternate_slots
+            }, status=409)  # Conflict status code
+        
+        # Normalize service type
+        service_type = data["service_type"].lower().replace(" ", "")
+        if 'regular' in service_type or 'standard' in service_type:
+            service_type = 'standard'
+        elif 'deep' in service_type:
+            service_type = 'deep'
+        elif 'moveinmoveout' in service_type or 'move-in' in service_type or 'moveout' in service_type:
+            service_type = 'moveinmoveout'
+        elif 'airbnb' in service_type:
+            service_type = 'airbnb'
+        
+
+        # Create booking object with mapped fields
+        booking = Booking(
+            business=business,
+            cleaner=available_cleaner,
+            firstName=data['first_name'],
+            lastName=data['last_name'],
+            email=data['email'],
+            phoneNumber=data['phone_number'],
+            address1=data['address'],
+            city=data['city'],
+            stateOrProvince=data['state'],
+            zipCode=data['zip_code'],
+            bedrooms=int(data['bedrooms']),
+            bathrooms=int(data['bathrooms']),
+            squareFeet=int(data['area']),
+            cleaningDate=cleaning_date,
+            startTime=start_time,
+            endTime=end_time,
+            serviceType=service_type,
+            recurring=data.get('recurring', 'one-time'),
+            otherRequests=data.get('otherRequests', '')
+        )
+        
+        # Process addons
+        addons = {
+            'dishes': int(data.get('dishes', 0) or 0),
+            'laundry': int(data.get('laundry', 0) or 0),
+            'windows': int(data.get('windows', 0) or 0),
+            'pets': int(data.get('pets', 0) or 0),
+            'fridge': int(data.get('fridge', 0) or 0),
+            'oven': int(data.get('oven', 0) or 0),
+            'baseboards': int(data.get('baseboard', 0) or 0),
+            'blinds': int(data.get('blinds', 0) or 0),
+            'green': int(data.get('green', 0) or 0),
+            'cabinets': int(data.get('cabinets', 0) or 0),
+            'patio': int(data.get('patio', 0) or 0),
+            'garage': int(data.get('garage', 0) or 0)
+        }
+        
+        # Set addon values on booking object
+        booking.addonDishes = addons['dishes']
+        booking.addonLaundryLoads = addons['laundry']
+        booking.addonWindowCleaning = addons['windows']
+        booking.addonPetsCleaning = addons['pets']
+        booking.addonFridgeCleaning = addons['fridge']
+        booking.addonOvenCleaning = addons['oven']
+        booking.addonBaseboard = addons['baseboards']
+        booking.addonBlinds = addons['blinds']
+        booking.addonGreenCleaning = addons['green']
+        booking.addonCabinetsCleaning = addons['cabinets']
+        booking.addonPatioSweeping = addons['patio']
+        booking.addonGarageSweeping = addons['garage']
+        
+        # Calculate price using business settings
+        # Calculate base price
+        base_price = calculateAmount(
+            booking.bedrooms,
+            booking.bathrooms,
+            booking.squareFeet,
+            booking.serviceType,
+            businessSettingsObj
+        )
+        
+        # Process addons for pricing
+        addon_prices = {
+            'dishes': businessSettingsObj.addonPriceDishes,
+            'laundry': businessSettingsObj.addonPriceLaundry,
+            'windows': businessSettingsObj.addonPriceWindow,
+            'pets': businessSettingsObj.addonPricePets,
+            'fridge': businessSettingsObj.addonPriceFridge,
+            'oven': businessSettingsObj.addonPriceOven,
+            'baseboards': businessSettingsObj.addonPriceBaseboard,
+            'blinds': businessSettingsObj.addonPriceBlinds,
+            'green': businessSettingsObj.addonPriceGreen,
+            'cabinets': businessSettingsObj.addonPriceCabinets,
+            'patio': businessSettingsObj.addonPricePatio,
+            'garage': businessSettingsObj.addonPriceGarage
+        }
+        
+        # Calculate addons total
+        addons_total = calculateAddonsAmount(addons, addon_prices)
+        
+        # Calculate custom addons (if needed)
+        customAddonsObj = CustomAddons.objects.filter(business=business)
+        customAddonTotal = 0
+        bookingCustomAddons = []
+        
+        # Process custom addons if present in data
+        for custom_addon in customAddonsObj:
+            addon_data_name = custom_addon.addonDataName
+            if addon_data_name and addon_data_name in data:
+                quantity = int(data.get(addon_data_name, 0) or 0)
+                if quantity > 0:
+                    addon_price = custom_addon.addonPrice
+                    addon_total = quantity * addon_price
+                    customAddonTotal += addon_total
+                    
+                    # Create BookingCustomAddons object
+                    custom_addon_obj = BookingCustomAddons.objects.create(
+                        addon=custom_addon,
+                        qty=quantity
+                    )
+                    bookingCustomAddons.append(custom_addon_obj)
+        
+        # Calculate final amounts
+        sub_total = base_price + addons_total + customAddonTotal
+        tax = sub_total * (businessSettingsObj.taxPercent / 100)
+        total = sub_total + tax
+        
+        booking.totalPrice = total
+        booking.tax = tax
+        
+        # Save the booking
+        booking.save()
+        
+        # Add custom addons if any
+        if bookingCustomAddons:
+            booking.customAddons.set(bookingCustomAddons)
+            booking.save()
+        
+        # Create Invoice
+        invoice = Invoice.objects.create(
+            booking=booking,
+            amount=total
+        )
+
+        # We'll let the signals handle notification sending
+        # This ensures consistent notification behavior regardless of how the booking is created
+        
+        # Send booking data to integration if needed
+        from .webhooks import send_booking_data
+        send_booking_data(booking)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Booking created successfully',
+            'booking': {
+                'bookingId': booking.bookingId,
+                'cleaningDate': booking.cleaningDate.strftime('%Y-%m-%d'),
+                'startTime': booking.startTime.strftime('%H:%M'),
+                'endTime': booking.endTime.strftime('%H:%M'),
+                'cleaner': booking.cleaner.name,
+                'totalPrice': float(booking.totalPrice)
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        print(f"[DEBUG] Error creating booking: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error creating booking: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@api_view(['POST', 'GET'])
+def sendCommercialFormLink(request):
+    try:
+        # Parse request data
+        if request.method == 'POST':
+            data = json.loads(request.body)
+        else:  # GET
+            data = request.GET.dict()
+        
+        args = data.get('args')
+
+        name = args.get('name')
+        email = args.get('email')
+        business_id = args.get('business_id')
+        
+        # Validate required fields
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email address is required'
+            }, status=400)
+        
+        # Get business
+        try:
+            business = Business.objects.get(businessId=business_id)
+        except Business.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Business not found'
+            }, status=404)
+        
+        # Check for SMTP configuration
+        smtp_config = SMTPConfig.objects.filter(business=business).first()
+        use_business_smtp = smtp_config and smtp_config.host and smtp_config.username and smtp_config.password
+        
+        # Generate the commercial form link
+        form_link = f"{settings.BASE_URL}/commercial-form/{business.businessId}/"
+        
+        # Email content
+        subject = f"Commercial Cleaning Quote Request - {business.businessName}"
+        
+        # HTML content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Commercial Cleaning Quote</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
+                .content {{ padding: 20px; background-color: #f9f9f9; }}
+                .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
+                .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Commercial Cleaning Quote</h1>
+            </div>
+            <div class="content">
+                <p>Hello, {name}</p>
+                <p>Thank you for your interest in commercial cleaning services from {business.businessName}.</p>
+                <p>To provide you with an accurate quote for your commercial space, we need some additional information about your requirements.</p>
+                <p>Please click the button below to fill out our commercial cleaning questionnaire:</p>
+                <a href="{form_link}" class="button">Complete Commercial Form</a>
+                <p>Once we receive your information, our team will review your requirements and provide you with a customized quote.</p>
+                <p>If you have any questions, please don't hesitate to contact us.</p>
+                <p>Best regards,</p>
+                <p>The {business.businessName} Team</p>
+            </div>
+            <div class="footer">
+                <p>&copy; {business.businessName} | {business.user.email}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text content
+        text_content = f"""Hello {name},
+
+            Thank you for your interest in commercial cleaning services from {business.businessName}.
+
+            To provide you with an accurate quote for your commercial space, we need some additional information about your requirements.
+
+            Please visit the following link to fill out our commercial cleaning questionnaire:
+            {form_link}
+
+            Once we receive your information, our team will review your requirements and provide you with a customized quote.
+
+            If you have any questions, please don't hesitate to contact us.
+
+            Best regards,
+            The {business.businessName} Team
+        """
+        
+        # Send email based on available configuration
+        if use_business_smtp:
+            # Use business-specific SMTP configuration
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            
+            # Create message container
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = smtp_config.username
+            msg['To'] = email
+            
+            # Attach parts
+            part1 = MIMEText(text_content, 'plain')
+            part2 = MIMEText(html_content, 'html')
+            msg.attach(part1)
+            msg.attach(part2)
+            
+            # Send the message via custom SMTP server
+            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
+            if smtp_config.useTLS:
+                server.starttls()
+            server.login(smtp_config.username, smtp_config.password)
+            server.send_message(msg)
+            server.quit()
+        else:
+            # Use platform SMTP settings (Django's send_mail)
+            from django.core.mail import EmailMultiAlternatives
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email]
+            )
+            email_message.attach_alternative(html_content, "text/html")
+            email_message.send()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Commercial form link sent successfully',
+            'email': email,
+            'form_link': form_link
+        })
+        
+    except Exception as e:
+        print(f"Error sending commercial form link: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error sending email: {str(e)}'
+        }, status=500)

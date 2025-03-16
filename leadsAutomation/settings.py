@@ -30,14 +30,14 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-syzuy1&t#m7pny%j2x7
 DEBUG = os.getenv('DJANGO_DEBUG', True)
 
 
-
+BASE_URL = 'https://cleaningbizai.up.railway.app'
 ALLOWED_HOSTS = ['*']
 
 # Trust Proxy Headers (Needed for Cloudflare)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Ensure Django Forces HTTPS
-SECURE_SSL_REDIRECT = not DEBUG  # Redirect HTTP → HTTPS in production
+SECURE_SSL_REDIRECT = False
 CSRF_COOKIE_SECURE = not DEBUG  # Secure CSRF Cookies in production
 SESSION_COOKIE_SECURE = not DEBUG  # Secure Session Cookies in production
 
@@ -189,7 +189,7 @@ CORS_ALLOW_HEADERS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://cleaningbizai.up.railway.app']
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

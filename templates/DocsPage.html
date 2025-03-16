@@ -1,0 +1,1302 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}Documentation - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0">
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80" alt="Background" class="w-100 h-100 object-fit-cover opacity-10">
+        <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark opacity-80"></div>
+        <!-- Decorative elements -->
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background-color: rgba(255, 107, 53, 0.1); border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 300px; height: 300px; background-color: rgba(45, 91, 255, 0.1); border-radius: 50%;"></div>
+    </div>
+    <div class="container position-relative py-5 text-center">
+        <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Documentation</span>
+        <h1 class="display-3 fw-bold text-white mb-4" data-aos="fade-up">How <span class="text-gradient">CleaningBiz AI</span> Works</h1>
+        <p class="fs-4 text-white opacity-80 mx-auto mb-5 col-lg-8" data-aos="fade-up" data-aos-delay="100">A comprehensive guide to our AI-powered solution for cleaning businesses</p>
+        <div class="d-flex justify-content-center">
+            <a href="#overview" class="btn btn-accent btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="200">
+                <span class="me-2">Explore Documentation</span>
+                <i class="fas fa-arrow-down"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Documentation Navigation -->
+<section class="py-4 bg-dark-surface-3 sticky-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <nav class="docs-nav d-flex justify-content-between overflow-auto py-2">
+                    <a href="#overview" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 me-2 text-white">Overview</a>
+                    <a href="#integrations" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 me-2 text-white">Integrations</a>
+                    <a href="#how-it-works" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 me-2 text-white">How It Works</a>
+                    <a href="#setup-guide" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 me-2 text-white">Setup Guide</a>
+                    <a href="#features" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 me-2 text-white">Features</a>
+                    <a href="#faq" class="btn btn-sm btn-dark-surface-2 rounded-pill px-3 py-2 text-white">FAQ</a>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Overview Section -->
+<section id="overview" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Overview</span>
+                <h2 class="display-5 fw-bold text-white mb-4">Platform <span class="text-gradient">Overview</span></h2>
+                <p class="fs-5 text-white opacity-80 mb-4">CleaningBiz AI is a comprehensive automation platform designed specifically for cleaning businesses. Our solution combines artificial intelligence, powerful integrations, and industry-specific tools to help cleaning businesses automate customer acquisition, booking management, and payment processing.</p>
+                <p class="fs-5 text-white opacity-80 mb-4">The platform seamlessly integrates with Retell AI for voice agents, Thumbtack for lead generation, and Square for payment processing, creating an end-to-end solution that handles everything from initial customer contact to payment collection.</p>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="me-4">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 fw-bold text-gradient me-2">24/7</div>
+                            <div class="text-white">Customer<br>Engagement</div>
+                        </div>
+                    </div>
+                    <div class="me-4">
+                        <div class="d-flex align-items-center">
+                            <div class="fs-1 fw-bold text-gradient me-2">95%</div>
+                            <div class="text-white">Automation<br>Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <div class="position-absolute top-0 start-0 translate-middle-y" style="z-index: 1;">
+                        <div class="blob-shape bg-primary-600 opacity-10"></div>
+                    </div>
+                    <div class="position-relative rounded-4 overflow-hidden shadow-lg" style="z-index: 2;">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80" alt="Platform Overview" class="img-fluid rounded-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Integrations Section -->
+<section id="integrations" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Integrations</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Powerful <span class="text-gradient">Integrations</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">CleaningBiz AI seamlessly connects with industry-leading platforms to automate your entire business workflow</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Retell AI Integration -->
+            <div class="col-lg-4" data-aos="fade-up">
+                <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
+                    <div class="integration-icon-wrapper mb-4">
+                        <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
+                            <i class="fas fa-phone-alt text-white fs-3"></i>
+                        </div>
+                    </div>
+                    <h3 class="fs-4 fw-bold text-white mb-3">Retell AI</h3>
+                    <p class="text-white opacity-80 mb-4">Our AI Voice Agent integration powered by Retell AI handles both inbound and outbound calls with natural conversation.</p>
+                    <div class="integration-features">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Natural voice conversations</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Automated outbound calling</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Customer data collection</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Appointment scheduling</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Thumbtack Integration -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
+                    <div class="integration-icon-wrapper mb-4">
+                        <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user-plus text-white fs-3"></i>
+                        </div>
+                    </div>
+                    <h3 class="fs-4 fw-bold text-white mb-3">Thumbtack</h3>
+                    <p class="text-white opacity-80 mb-4">Automatically capture and process leads from Thumbtack through our webhook integration.</p>
+                    <div class="integration-features">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Automated lead capture</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Real-time lead processing</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Webhook integration</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Lead qualification</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Square Integration -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
+                    <div class="integration-icon-wrapper mb-4">
+                        <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
+                            <i class="fas fa-credit-card text-white fs-3"></i>
+                        </div>
+                    </div>
+                    <h3 class="fs-4 fw-bold text-white mb-3">Square</h3>
+                    <p class="text-white opacity-80 mb-4">Process payments seamlessly with our Square payment gateway integration.</p>
+                    <div class="integration-features">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Secure payment processing</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Automatic invoicing</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Pre-authorization support</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Payment status tracking</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-5 bg-dark-surface">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Workflow</span>
+            <h2 class="display-5 fw-bold text-white mb-3">How It <span class="text-gradient">Works</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Understand the automated workflow that powers your cleaning business</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="workflow-timeline position-relative">
+                    <!-- Timeline Line -->
+                    <div class="timeline-line position-absolute" style="top: 0; bottom: 0; left: 24px; width: 2px; background-color: rgba(255, 255, 255, 0.1);"></div>
+                    
+                    <!-- Step 1: Lead Generation -->
+                    <div class="timeline-item d-flex mb-5" data-aos="fade-up">
+                        <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white" style="width: 50px; height: 50px; z-index: 2;">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="timeline-content ms-4 p-4 bg-dark-surface-3 rounded-4 shadow-sm">
+                            <h3 class="fs-4 fw-bold text-white mb-3">1. Lead Generation</h3>
+                            <p class="text-white opacity-80 mb-3">Leads are automatically captured from Thumbtack via webhook integration or can be manually added to the system.</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Automatic lead data collection from Thumbtack</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Manual lead entry option available</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Initial Contact -->
+                    <div class="timeline-item d-flex mb-5" data-aos="fade-up" data-aos-delay="100">
+                        <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white" style="width: 50px; height: 50px; z-index: 2;">
+                            <i class="fas fa-comment-dots"></i>
+                        </div>
+                        <div class="timeline-content ms-4 p-4 bg-dark-surface-3 rounded-4 shadow-sm">
+                            <h3 class="fs-4 fw-bold text-white mb-3">2. Initial Contact</h3>
+                            <p class="text-white opacity-80 mb-3">The system automatically sends an SMS to the lead's phone number to initiate contact.</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Automated SMS sent immediately to new leads</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">SMS AI Agent handles text conversations</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Follow-up Call -->
+                    <div class="timeline-item d-flex mb-5" data-aos="fade-up" data-aos-delay="200">
+                        <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white" style="width: 50px; height: 50px; z-index: 2;">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div class="timeline-content ms-4 p-4 bg-dark-surface-3 rounded-4 shadow-sm">
+                            <h3 class="fs-4 fw-bold text-white mb-3">3. Follow-up Call</h3>
+                            <p class="text-white opacity-80 mb-3">If the lead doesn't respond to the SMS within 5 minutes, the system automatically triggers an outbound call using Retell AI.</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Automated outbound calling via Retell</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Natural voice conversation with potential clients</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Booking Process -->
+                    <div class="timeline-item d-flex mb-5" data-aos="fade-up" data-aos-delay="300">
+                        <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white" style="width: 50px; height: 50px; z-index: 2;">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="timeline-content ms-4 p-4 bg-dark-surface-3 rounded-4 shadow-sm">
+                            <h3 class="fs-4 fw-bold text-white mb-3">4. Booking Process</h3>
+                            <p class="text-white opacity-80 mb-3">When a lead shows interest, the AI agent collects all necessary details and creates a booking in the system.</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Collection of property details (square footage, bedrooms, bathrooms)</p>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Service selection based on your configured pricing</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Scheduling based on cleaner availability</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Payment Processing -->
+                    <div class="timeline-item d-flex" data-aos="fade-up" data-aos-delay="400">
+                        <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white" style="width: 50px; height: 50px; z-index: 2;">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="timeline-content ms-4 p-4 bg-dark-surface-3 rounded-4 shadow-sm">
+                            <h3 class="fs-4 fw-bold text-white mb-3">5. Payment Processing</h3>
+                            <p class="text-white opacity-80 mb-3">After booking confirmation, an invoice is automatically generated and shared with the client for payment.</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Automatic invoice generation</p>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Secure payment processing via Square</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-primary-400 me-2"></i>
+                                <p class="text-white opacity-80 mb-0">Option for instant payment or pre-authorization</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Setup Guide Section -->
+<section id="setup-guide" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Setup</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Launch Your <span class="text-gradient">AI Assistant</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">From zero to hero in 7 simple steps</p>
+        </div>
+        
+        <!-- Interactive Setup Timeline -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-10">
+                <div class="setup-timeline position-relative">
+                    <!-- Timeline Line -->
+                    <div class="timeline-line position-absolute bg-primary-400" style="width: 4px; height: 100%; left: 50%; transform: translateX(-50%); z-index: 1;"></div>
+                    
+                    <!-- Step 1: Create Account -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5 text-md-end pe-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; right: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Create Your Account</h3>
+                                <p class="text-white opacity-80 mb-3">Sign up in less than 60 seconds and unlock the power of AI for your cleaning business.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-bolt"></i></span>
+                                        <span class="text-white opacity-80">Quick email verification</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-shield-alt"></i></span>
+                                        <span class="text-white opacity-80">Secure authentication</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-user-plus fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Account Creation" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Business Profile -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Business Profile" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-building fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5 ps-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; left: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Set Up Your Business</h3>
+                                <p class="text-white opacity-80 mb-3">Customize your business profile with your brand identity and service area.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-map-marker-alt"></i></span>
+                                        <span class="text-white opacity-80">Define your service territory</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-image"></i></span>
+                                        <span class="text-white opacity-80">Upload your logo and branding</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Learn More <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Connect Retell AI -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5 text-md-end pe-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; right: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Connect Retell AI</h3>
+                                <p class="text-white opacity-80 mb-3">Integrate with Retell AI to give your virtual assistant a voice that sounds human.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-phone-alt"></i></span>
+                                        <span class="text-white opacity-80">Set up your business phone</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-robot"></i></span>
+                                        <span class="text-white opacity-80">Configure your AI voice agent</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Connect Now <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-microphone-alt fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Retell AI Integration" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Thumbtack Integration -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Thumbtack Integration" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-thumbtack fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5 ps-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; left: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Connect Thumbtack</h3>
+                                <p class="text-white opacity-80 mb-3">Automatically capture and process leads from Thumbtack in real-time.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-bolt"></i></span>
+                                        <span class="text-white opacity-80">Instant lead notifications</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-sync-alt"></i></span>
+                                        <span class="text-white opacity-80">Automated follow-up system</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Connect Now <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Square Integration -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5 text-md-end pe-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; right: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Connect Square</h3>
+                                <p class="text-white opacity-80 mb-3">Set up secure payment processing and automated invoicing with Square.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-credit-card"></i></span>
+                                        <span class="text-white opacity-80">Secure payment processing</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-file-invoice-dollar"></i></span>
+                                        <span class="text-white opacity-80">Automated invoicing system</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Connect Now <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fab fa-square fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Square Integration" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 6: Configure Sarah -->
+                    <div class="timeline-item row mb-5" data-aos="fade-up">
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Configure Sarah" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-cog fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5 ps-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; left: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Customize Sarah</h3>
+                                <p class="text-white opacity-80 mb-3">Personalize your AI assistant's personality, services, and conversation flow.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-sliders-h"></i></span>
+                                        <span class="text-white opacity-80">Adjust voice and personality</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-dollar-sign"></i></span>
+                                        <span class="text-white opacity-80">Set up your service pricing</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Customize Now <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 7: Launch -->
+                    <div class="timeline-item row" data-aos="fade-up">
+                        <div class="col-md-5 text-md-end pe-md-5">
+                            <div class="content-box bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                                <div class="position-absolute bg-primary-600 opacity-10" style="width: 120px; height: 120px; border-radius: 50%; top: -30px; right: -30px;"></div>
+                                <h3 class="fs-4 fw-bold text-white mb-3">Launch Your AI</h3>
+                                <p class="text-white opacity-80 mb-3">Test your setup and activate your AI assistant to start handling calls and bookings.</p>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-vial"></i></span>
+                                        <span class="text-white opacity-80">Run a complete system test</span>
+                                    </li>
+                                    <li class="d-flex align-items-center">
+                                        <span class="badge bg-primary-600 me-2"><i class="fas fa-rocket"></i></span>
+                                        <span class="text-white opacity-80">Activate and go live</span>
+                                    </li>
+                                </ul>
+                                <a href="#" class="btn btn-sm btn-primary-600 mt-3">Launch Now <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="timeline-icon d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white mx-auto" style="width: 60px; height: 60px; z-index: 2; position: relative;">
+                                <i class="fas fa-rocket fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="image-box p-3 bg-dark-surface-4 rounded-4 shadow-lg">
+                                <img src="https://via.placeholder.com/400x250" alt="Launch" class="img-fluid rounded-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Setup Guide CTA -->
+        <div class="row justify-content-center" data-aos="fade-up">
+            <div class="col-lg-8 text-center">
+                <div class="cta-box bg-gradient-primary p-5 rounded-4 shadow-lg">
+                    <h3 class="fs-3 fw-bold text-white mb-3">Ready to Transform Your Business?</h3>
+                    <p class="text-white opacity-90 mb-4">Get started today and let Sarah handle your customer calls while you focus on growing your business.</p>
+                    <div class="d-flex justify-content-center">
+                        <a href="#" class="btn btn-light me-2">Watch Demo <i class="fas fa-play ms-1"></i></a>
+                        <a href="#" class="btn btn-outline-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Section -->
+<section id="demo" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Experience</span>
+            <h2 class="display-5 fw-bold text-white mb-3">See Sarah <span class="text-gradient">In Action</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Watch how our AI assistant handles real customer interactions</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Interactive Demo -->
+                <div class="demo-container position-relative mb-5" data-aos="fade-up">
+                    <!-- Phone Mockup -->
+                    <div class="phone-mockup bg-dark-surface-3 p-4 rounded-4 shadow-lg position-relative overflow-hidden">
+                        <!-- Decorative Elements -->
+                        <div class="position-absolute bg-primary-600 opacity-10" style="width: 200px; height: 200px; border-radius: 50%; top: -100px; right: -50px;"></div>
+                        <div class="position-absolute bg-primary-600 opacity-10" style="width: 150px; height: 150px; border-radius: 50%; bottom: -50px; left: -50px;"></div>
+                        
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <!-- Phone Interface -->
+                                <div class="phone-interface bg-dark rounded-4 overflow-hidden shadow-lg mx-auto" style="max-width: 300px;">
+                                    <!-- Phone Header -->
+                                    <div class="phone-header bg-dark-surface-4 p-3 d-flex align-items-center">
+                                        <div class="caller-avatar bg-primary-600 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-robot text-white"></i>
+                                        </div>
+                                        <div class="caller-info ms-3">
+                                            <h6 class="text-white mb-0">Sarah - CEO Cleaners</h6>
+                                            <small class="text-white opacity-70">AI Assistant</small>
+                                        </div>
+                                        <div class="call-duration ms-auto">
+                                            <span class="badge bg-success">Live Demo</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Conversation Area -->
+                                    <div class="conversation-area p-3" style="height: 400px; overflow-y: auto;">
+                                        <!-- Message: Sarah -->
+                                        <div class="message-bubble ai mb-3">
+                                            <div class="message-content bg-primary-600 bg-opacity-20 p-3 rounded-3 text-white">
+                                                <p class="mb-0">Hello! Thank you for calling CEO Cleaners. This is Sarah, your virtual assistant. How can I help you today?</p>
+                                            </div>
+                                            <div class="message-time text-white opacity-50 small mt-1">Just now</div>
+                                        </div>
+                                        
+                                        <!-- Message: Customer -->
+                                        <div class="message-bubble customer mb-3 text-end">
+                                            <div class="message-content bg-light p-3 rounded-3 text-dark ms-auto" style="max-width: 80%;">
+                                                <p class="mb-0">Hi, I need a quote for cleaning my house.</p>
+                                            </div>
+                                            <div class="message-time text-white opacity-50 small mt-1">Just now</div>
+                                        </div>
+                                        
+                                        <!-- Message: Sarah -->
+                                        <div class="message-bubble ai mb-3">
+                                            <div class="message-content bg-primary-600 bg-opacity-20 p-3 rounded-3 text-white">
+                                                <p class="mb-0">I'd be happy to help you with that! To provide an accurate quote, I'll need some information about your home. First, could you tell me your name?</p>
+                                            </div>
+                                            <div class="message-time text-white opacity-50 small mt-1">Just now</div>
+                                        </div>
+                                        
+                                        <!-- Message: Customer -->
+                                        <div class="message-bubble customer mb-3 text-end">
+                                            <div class="message-content bg-light p-3 rounded-3 text-dark ms-auto" style="max-width: 80%;">
+                                                <p class="mb-0">My name is John Smith.</p>
+                                            </div>
+                                            <div class="message-time text-white opacity-50 small mt-1">Just now</div>
+                                        </div>
+                                        
+                                        <!-- Message: Sarah -->
+                                        <div class="message-bubble ai mb-3">
+                                            <div class="message-content bg-primary-600 bg-opacity-20 p-3 rounded-3 text-white">
+                                                <p class="mb-0">Nice to meet you, John! Could you please tell me the approximate square footage of your home?</p>
+                                            </div>
+                                            <div class="message-time text-white opacity-50 small mt-1">Just now</div>
+                                        </div>
+                                        
+                                        <!-- Interactive Demo Controls -->
+                                        <div class="demo-controls mt-4">
+                                            <div class="input-group">
+                                                <input type="text" class="form-control bg-dark-surface-4 text-white border-0" placeholder="Type your response...">
+                                                <button class="btn btn-primary" type="button">Send</button>
+                                            </div>
+                                            <div class="text-center mt-2">
+                                                <small class="text-white opacity-50">Try typing: "About 2,000 square feet"</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6 mt-4 mt-lg-0">
+                                <!-- Demo Features -->
+                                <div class="demo-features">
+                                    <h4 class="text-white mb-4">Watch Sarah in Action</h4>
+                                    
+                                    <div class="feature-list">
+                                        <!-- Feature 1 -->
+                                        <div class="feature-item d-flex align-items-start mb-4">
+                                            <div class="feature-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-comments text-white"></i>
+                                            </div>
+                                            <div class="feature-content ms-3">
+                                                <h5 class="text-white mb-2">Natural Conversation</h5>
+                                                <p class="text-white opacity-70 mb-0">Sarah engages in natural, flowing conversation that sounds completely human.</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Feature 2 -->
+                                        <div class="feature-item d-flex align-items-start mb-4">
+                                            <div class="feature-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-calculator text-white"></i>
+                                            </div>
+                                            <div class="feature-content ms-3">
+                                                <h5 class="text-white mb-2">Accurate Quotes</h5>
+                                                <p class="text-white opacity-70 mb-0">Sarah collects property details to provide precise, personalized cleaning quotes.</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Feature 3 -->
+                                        <div class="feature-item d-flex align-items-start">
+                                            <div class="feature-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-calendar-check text-white"></i>
+                                            </div>
+                                            <div class="feature-content ms-3">
+                                                <h5 class="text-white mb-2">Instant Booking</h5>
+                                                <p class="text-white opacity-70 mb-0">Sarah can schedule appointments and process payments in real-time.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="demo-cta mt-4">
+                                        <a href="#" class="btn btn-primary">Try Full Demo <i class="fas fa-headset ms-1"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Demo Video -->
+                <div class="row" data-aos="fade-up">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="video-container bg-dark-surface-3 p-4 rounded-4 shadow-lg">
+                            <div class="ratio ratio-16x9 rounded-3 overflow-hidden">
+                                <!-- Replace with actual video embed -->
+                                <div class="bg-dark-surface-4 d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <div class="play-button bg-primary-600 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-play text-white fs-4"></i>
+                                        </div>
+                                        <h5 class="text-white mb-2">Watch Full Demo</h5>
+                                        <p class="text-white opacity-70 mb-0">See a complete customer interaction from start to finish</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section id="faq" class="py-5 bg-dark-surface-1">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Help</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Frequently Asked <span class="text-gradient">Questions</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Everything you need to know about CleaningBiz AI</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- FAQ Tabs -->
+                <div class="faq-tabs mb-5">
+                    <ul class="nav nav-pills nav-fill mb-4" id="faqTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab" aria-selected="true">
+                                <i class="fas fa-info-circle me-2"></i> General
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="billing-tab" data-bs-toggle="pill" data-bs-target="#billing" type="button" role="tab" aria-selected="false">
+                                <i class="fas fa-credit-card me-2"></i> Billing
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="integrations-tab" data-bs-toggle="pill" data-bs-target="#integrations" type="button" role="tab" aria-selected="false">
+                                <i class="fas fa-plug me-2"></i> Integrations
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ai-tab" data-bs-toggle="pill" data-bs-target="#ai" type="button" role="tab" aria-selected="false">
+                                <i class="fas fa-robot me-2"></i> AI Assistant
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="faqTabContent">
+                        <!-- General Questions -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                            <div class="accordion" id="accordionGeneral">
+                                <!-- Question 1 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                            What is CleaningBiz AI?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionGeneral">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>CleaningBiz AI is an intelligent virtual assistant platform specifically designed for cleaning businesses. It combines advanced AI technology with industry-specific knowledge to automate customer interactions, lead capture, appointment scheduling, and payment processing.</p>
+                                            <p>Our AI assistant, Sarah, can handle phone calls, answer customer questions, provide quotes, and book appointments - all while sounding completely human and representing your brand professionally.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 2 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                            How long does it take to set up?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionGeneral">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>Most cleaning businesses can complete the entire setup process in under 2 hours. The basic account creation takes just minutes, while integrating with third-party services and configuring your AI assistant's personality and services might take a bit longer.</p>
+                                            <p>Our step-by-step guide walks you through each part of the process, and our support team is available to help if you encounter any issues.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 3 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                            Do I need technical skills to use CleaningBiz AI?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionGeneral">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>No technical skills are required! CleaningBiz AI is designed to be user-friendly for cleaning business owners regardless of technical background. Our setup wizard guides you through each step with clear instructions and visual aids.</p>
+                                            <p>For the integrations with services like Square and Thumbtack, we provide direct links and step-by-step instructions. If you ever need help, our support team can assist you via chat or schedule a screen-sharing session to walk you through any challenging steps.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Billing Questions -->
+                        <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+                            <div class="accordion" id="accordionBilling">
+                                <!-- Question 1 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#billingOne">
+                                            How much does CleaningBiz AI cost?
+                                        </button>
+                                    </h2>
+                                    <div id="billingOne" class="accordion-collapse collapse" data-bs-parent="#accordionBilling">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>CleaningBiz AI offers flexible pricing plans starting at $99/month for our Basic plan, which includes up to 100 AI-handled calls per month. Our Professional plan at $199/month includes up to 300 calls and additional features like priority support and advanced analytics.</p>
+                                            <p>For larger cleaning businesses, our Enterprise plan offers custom pricing with unlimited calls and dedicated account management. All plans include a 14-day free trial so you can experience the full benefits before committing.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 2 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#billingTwo">
+                                            Are there any additional costs?
+                                        </button>
+                                    </h2>
+                                    <div id="billingTwo" class="accordion-collapse collapse" data-bs-parent="#accordionBilling">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>The CleaningBiz AI subscription covers all core platform features. However, there may be additional costs from third-party services:</p>
+                                            <ul>
+                                                <li>Retell AI: Requires a separate subscription (starting at $49/month) for voice AI capabilities</li>
+                                                <li>Square: Standard payment processing fees apply (typically 2.9% + $0.30 per transaction)</li>
+                                                <li>Thumbtack: Standard lead fees apply based on your Thumbtack plan</li>
+                                                <li>Phone number: If you choose to get a new dedicated number rather than using your existing business line</li>
+                                            </ul>
+                                            <p>We're transparent about these costs during the setup process, and many businesses find that the time saved and increased booking rates more than offset these expenses.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 3 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#billingThree">
+                                            Can I cancel my subscription anytime?
+                                        </button>
+                                    </h2>
+                                    <div id="billingThree" class="accordion-collapse collapse" data-bs-parent="#accordionBilling">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>Yes, you can cancel your CleaningBiz AI subscription at any time with no cancellation fees. Your service will continue until the end of your current billing cycle.</p>
+                                            <p>If you cancel during your 14-day free trial, you won't be charged at all. We believe in earning your business every month through the value we provide, not through restrictive contracts.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Integrations Questions -->
+                        <div class="tab-pane fade" id="integrations" role="tabpanel" aria-labelledby="integrations-tab">
+                            <div class="accordion" id="accordionIntegrations">
+                                <!-- Question 1 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#integrationsOne">
+                                            Which third-party services integrate with CleaningBiz AI?
+                                        </button>
+                                    </h2>
+                                    <div id="integrationsOne" class="accordion-collapse collapse" data-bs-parent="#accordionIntegrations">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>CleaningBiz AI currently integrates with the following services:</p>
+                                            <ul>
+                                                <li><strong>Retell AI:</strong> For voice AI and phone call handling</li>
+                                                <li><strong>Square:</strong> For payment processing and invoicing</li>
+                                                <li><strong>Thumbtack:</strong> For lead capture and management</li>
+                                                <li><strong>Google Calendar:</strong> For appointment scheduling</li>
+                                                <li><strong>Twilio:</strong> For SMS notifications</li>
+                                                <li><strong>Mailchimp:</strong> For email marketing</li>
+                                            </ul>
+                                            <p>We're constantly adding new integrations based on customer feedback. If there's a specific service you'd like to see integrated, please let us know!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 2 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#integrationsTwo">
+                                            Do I need to use all the integrations?
+                                        </button>
+                                    </h2>
+                                    <div id="integrationsTwo" class="accordion-collapse collapse" data-bs-parent="#accordionIntegrations">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>No, the integrations are modular and optional. You can choose which ones make sense for your business:</p>
+                                            <ul>
+                                                <li>Retell AI is strongly recommended as it powers the voice capabilities</li>
+                                                <li>Square is recommended if you want to accept payments through the platform</li>
+                                                <li>Thumbtack is only necessary if you use Thumbtack for lead generation</li>
+                                                <li>Other integrations can be added as needed</li>
+                                            </ul>
+                                            <p>Many businesses start with just the core Retell AI integration and add others as they become comfortable with the system.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 3 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#integrationsThree">
+                                            Can I use my existing phone number?
+                                        </button>
+                                    </h2>
+                                    <div id="integrationsThree" class="accordion-collapse collapse" data-bs-parent="#accordionIntegrations">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>Yes, you can use your existing business phone number with CleaningBiz AI through Retell's call forwarding feature. This allows you to maintain your established business identity while leveraging our AI capabilities.</p>
+                                            <p>Alternatively, you can get a new dedicated number through Retell specifically for your AI assistant. Some businesses prefer this approach to keep their personal line separate or to track AI-generated leads more easily.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Assistant Questions -->
+                        <div class="tab-pane fade" id="ai" role="tabpanel" aria-labelledby="ai-tab">
+                            <div class="accordion" id="accordionAI">
+                                <!-- Question 1 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiOne">
+                                            How natural does the AI voice sound?
+                                        </button>
+                                    </h2>
+                                    <div id="aiOne" class="accordion-collapse collapse" data-bs-parent="#accordionAI">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>The Retell AI voices used by CleaningBiz AI are remarkably natural and human-like. Most callers cannot distinguish them from a real person. The voices include natural speech patterns, appropriate pauses, and conversational fillers that make them sound authentic.</p>
+                                            <p>You can listen to sample conversations on our demo page to hear the quality for yourself. The voices can be customized with different accents, tones, and speaking styles to match your brand identity.</p>
+                                            <div class="mt-3">
+                                                <a href="#" class="btn btn-sm btn-primary">Listen to Voice Samples <i class="fas fa-headphones ms-1"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 2 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiTwo">
+                                            What can the AI assistant handle?
+                                        </button>
+                                    </h2>
+                                    <div id="aiTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAI">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>Sarah, our AI assistant, can handle a wide range of customer interactions:</p>
+                                            <ul>
+                                                <li>Answer common questions about your services</li>
+                                                <li>Collect customer information (name, address, contact details)</li>
+                                                <li>Gather property details (square footage, number of rooms, etc.)</li>
+                                                <li>Provide accurate quotes based on your pricing structure</li>
+                                                <li>Schedule appointments within your business hours</li>
+                                                <li>Process payments and send confirmation details</li>
+                                                <li>Follow up with leads who haven't booked</li>
+                                                <li>Handle appointment rescheduling and cancellations</li>
+                                            </ul>
+                                            <p>Sarah is trained specifically for the cleaning industry and understands common terminology, service types, and customer concerns.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Question 3 -->
+                                <div class="accordion-item bg-dark-surface-3 border-0 mb-3 rounded-4 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark-surface-3 text-white collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiThree">
+                                            What happens if the AI can't handle a situation?
+                                        </button>
+                                    </h2>
+                                    <div id="aiThree" class="accordion-collapse collapse" data-bs-parent="#accordionAI">
+                                        <div class="accordion-body text-white opacity-80">
+                                            <p>While our AI assistant is highly capable, there may be complex situations it can't handle. In these cases:</p>
+                                            <ul>
+                                                <li>The AI will politely explain that it needs to transfer the call to a human team member</li>
+                                                <li>You'll receive an immediate notification via your preferred method (SMS, email, or app alert)</li>
+                                                <li>If you're available, you can take over the call directly</li>
+                                                <li>If you're unavailable, the AI will take a detailed message and schedule a callback</li>
+                                                <li>All information collected before the transfer is saved and accessible to you</li>
+                                            </ul>
+                                            <p>Over time, the AI learns from these situations and improves its handling of similar scenarios in the future.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Still Have Questions -->
+                <div class="text-center" data-aos="fade-up">
+                    <div class="bg-dark-surface-3 p-4 rounded-4 shadow-lg">
+                        <h3 class="fs-4 fw-bold text-white mb-3">Still Have Questions?</h3>
+                        <p class="text-white opacity-80 mb-4">Our support team is ready to help you with any questions about setting up or using CleaningBiz AI.</p>
+                        <div class="d-flex justify-content-center">
+                            <a href="#contact" class="btn btn-primary me-2">Contact Support <i class="fas fa-headset ms-1"></i></a>
+                            <a href="#" class="btn btn-outline-light">Schedule Demo <i class="fas fa-calendar-alt ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Support</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Need <span class="text-gradient">Help?</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Our support team is ready to assist you with any questions or issues</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="bg-dark-surface-3 p-5 rounded-4 shadow-sm" data-aos="fade-up">
+                    <div class="row">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <h3 class="fs-4 fw-bold text-white mb-4">Contact Information</h3>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-envelope text-primary-400 me-3 fs-5"></i>
+                                <p class="text-white opacity-80 mb-0">support@cleaningbiz.ai</p>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-phone-alt text-primary-400 me-3 fs-5"></i>
+                                <p class="text-white opacity-80 mb-0">(555) 123-4567</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock text-primary-400 me-3 fs-5"></i>
+                                <p class="text-white opacity-80 mb-0">Monday - Friday, 9am - 5pm CT</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h3 class="fs-4 fw-bold text-white mb-4">Documentation Resources</h3>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-file-alt text-primary-400 me-3 fs-5"></i>
+                                <a href="#" class="text-white opacity-80 mb-0 text-decoration-none hover-opacity-100">API Documentation</a>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-video text-primary-400 me-3 fs-5"></i>
+                                <a href="#" class="text-white opacity-80 mb-0 text-decoration-none hover-opacity-100">Video Tutorials</a>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-book text-primary-400 me-3 fs-5"></i>
+                                <a href="#" class="text-white opacity-80 mb-0 text-decoration-none hover-opacity-100">User Guide</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Technical Capabilities Section -->
+<section id="capabilities" class="py-5 bg-dark-surface-2">
+    <div class="container py-5">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Technology</span>
+            <h2 class="display-5 fw-bold text-white mb-3">Advanced <span class="text-gradient">AI Capabilities</span></h2>
+            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Powered by cutting-edge technology that adapts to your business</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Capabilities Cards -->
+                <div class="row g-4">
+                    <!-- Dynamic System Prompts -->
+                    <div class="col-md-6" data-aos="fade-up">
+                        <div class="capability-card bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                            <div class="position-absolute bg-primary-600 opacity-10" style="width: 150px; height: 150px; border-radius: 50%; top: -50px; right: -50px;"></div>
+                            
+                            <div class="capability-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 60px; height: 60px;">
+                                <i class="fas fa-code text-white fs-4"></i>
+                            </div>
+                            
+                            <h3 class="fs-4 fw-bold text-white mb-3">Dynamic System Prompts</h3>
+                            
+                            <p class="text-white opacity-80 mb-4">Our AI Voice Agent uses a sophisticated template system that automatically customizes conversations for your business:</p>
+                            
+                            <ul class="list-unstyled mb-0">
+                                <li class="d-flex align-items-start mb-3">
+                                    <span class="badge bg-primary-600 mt-1 me-3"><i class="fas fa-check"></i></span>
+                                    <span class="text-white opacity-80">Templates stored in database with placeholders for business details</span>
+                                </li>
+                                <li class="d-flex align-items-start mb-3">
+                                    <span class="badge bg-primary-600 mt-1 me-3"><i class="fas fa-check"></i></span>
+                                    <span class="text-white opacity-80">Runtime substitution of company name, services, hours, and pricing</span>
+                                </li>
+                                <li class="d-flex align-items-start">
+                                    <span class="badge bg-primary-600 mt-1 me-3"><i class="fas fa-check"></i></span>
+                                    <span class="text-white opacity-80">Intelligent fallbacks to defaults when specific settings aren't available</span>
+                                </li>
+                            </ul>
+                            
+                            <div class="code-snippet mt-4 p-3 bg-dark rounded-3">
+                                <pre class="text-white opacity-80 mb-0" style="font-size: 0.8rem;"><code>// Dynamic prompt generation
+function generatePrompt(business) {
+  return template.replace(
+    "{{company_name}}", 
+    business.name || "our cleaning service"
+  );
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conversation Flow -->
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="capability-card bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                            <div class="position-absolute bg-primary-600 opacity-10" style="width: 150px; height: 150px; border-radius: 50%; top: -50px; left: -50px;"></div>
+                            
+                            <div class="capability-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 60px; height: 60px;">
+                                <i class="fas fa-sitemap text-white fs-4"></i>
+                            </div>
+                            
+                            <h3 class="fs-4 fw-bold text-white mb-3">Intelligent Conversation Flow</h3>
+                            
+                            <p class="text-white opacity-80 mb-4">Sarah follows a structured conversation flow optimized for cleaning service inquiries:</p>
+                            
+                            <div class="conversation-flow">
+                                <!-- Flow Step 1 -->
+                                <div class="flow-step d-flex align-items-start mb-3">
+                                    <div class="step-number d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white fw-bold flex-shrink-0 me-3" style="width: 30px; height: 30px;">1</div>
+                                    <div class="step-content">
+                                        <h6 class="text-white mb-1">Greeting & Introduction</h6>
+                                        <p class="text-white opacity-70 small mb-0">Sarah introduces herself and identifies your business</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Flow Step 2 -->
+                                <div class="flow-step d-flex align-items-start mb-3">
+                                    <div class="step-number d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white fw-bold flex-shrink-0 me-3" style="width: 30px; height: 30px;">2</div>
+                                    <div class="step-content">
+                                        <h6 class="text-white mb-1">Customer Information</h6>
+                                        <p class="text-white opacity-70 small mb-0">Collects name, phone, email, and address</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Flow Step 3 -->
+                                <div class="flow-step d-flex align-items-start mb-3">
+                                    <div class="step-number d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white fw-bold flex-shrink-0 me-3" style="width: 30px; height: 30px;">3</div>
+                                    <div class="step-content">
+                                        <h6 class="text-white mb-1">Property Details</h6>
+                                        <p class="text-white opacity-70 small mb-0">Gathers square footage, bedrooms, bathrooms</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Flow Step 4 -->
+                                <div class="flow-step d-flex align-items-start mb-3">
+                                    <div class="step-number d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white fw-bold flex-shrink-0 me-3" style="width: 30px; height: 30px;">4</div>
+                                    <div class="step-content">
+                                        <h6 class="text-white mb-1">Service Selection</h6>
+                                        <p class="text-white opacity-70 small mb-0">Presents options and provides pricing</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Flow Step 5 -->
+                                <div class="flow-step d-flex align-items-start">
+                                    <div class="step-number d-flex align-items-center justify-content-center rounded-circle bg-primary-600 text-white fw-bold flex-shrink-0 me-3" style="width: 30px; height: 30px;">5</div>
+                                    <div class="step-content">
+                                        <h6 class="text-white mb-1">Scheduling & Confirmation</h6>
+                                        <p class="text-white opacity-70 small mb-0">Books appointment and sends confirmation</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conversation Summary -->
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+                        <div class="capability-card bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                            <div class="position-absolute bg-primary-600 opacity-10" style="width: 150px; height: 150px; border-radius: 50%; bottom: -50px; right: -50px;"></div>
+                            
+                            <div class="capability-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 60px; height: 60px;">
+                                <i class="fas fa-file-alt text-white fs-4"></i>
+                            </div>
+                            
+                            <h3 class="fs-4 fw-bold text-white mb-3">Smart Conversation Summaries</h3>
+                            
+                            <p class="text-white opacity-80 mb-4">Sarah automatically extracts key information from conversations for booking and follow-up:</p>
+                            
+                            <div class="summary-example bg-dark p-3 rounded-3">
+                                <h6 class="text-white mb-3">Example Summary:</h6>
+                                <div class="summary-item d-flex mb-2">
+                                    <span class="text-primary-400 fw-bold me-2">Customer:</span>
+                                    <span class="text-white opacity-80">John Smith (555-123-4567)</span>
+                                </div>
+                                <div class="summary-item d-flex mb-2">
+                                    <span class="text-primary-400 fw-bold me-2">Property:</span>
+                                    <span class="text-white opacity-80">2,000 sq ft, 3 bed, 2 bath</span>
+                                </div>
+                                <div class="summary-item d-flex mb-2">
+                                    <span class="text-primary-400 fw-bold me-2">Service:</span>
+                                    <span class="text-white opacity-80">Deep Cleaning ($250)</span>
+                                </div>
+                                <div class="summary-item d-flex">
+                                    <span class="text-primary-400 fw-bold me-2">Appointment:</span>
+                                    <span class="text-white opacity-80">March 20, 2025 at 10:00 AM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools & Integration -->
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="300">
+                        <div class="capability-card bg-dark-surface-3 p-4 rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+                            <div class="position-absolute bg-primary-600 opacity-10" style="width: 150px; height: 150px; border-radius: 50%; bottom: -50px; left: -50px;"></div>
+                            
+                            <div class="capability-icon bg-primary-600 rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 60px; height: 60px;">
+                                <i class="fas fa-tools text-white fs-4"></i>
+                            </div>
+                            
+                            <h3 class="fs-4 fw-bold text-white mb-3">Powerful Tools & Integrations</h3>
+                            
+                            <p class="text-white opacity-80 mb-4">Sarah leverages a suite of integrated tools to deliver a seamless experience:</p>
+                            
+                            <div class="tools-grid">
+                                <div class="row g-3">
+                                    <!-- Tool 1 -->
+                                    <div class="col-6">
+                                        <div class="tool-item bg-dark p-3 rounded-3 text-center">
+                                            <i class="fas fa-calendar-alt text-primary-400 fs-4 mb-2"></i>
+                                            <h6 class="text-white mb-0 small">Availability Checker</h6>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tool 2 -->
+                                    <div class="col-6">
+                                        <div class="tool-item bg-dark p-3 rounded-3 text-center">
+                                            <i class="fas fa-calculator text-primary-400 fs-4 mb-2"></i>
+                                            <h6 class="text-white mb-0 small">Price Calculator</h6>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tool 3 -->
+                                    <div class="col-6">
+                                        <div class="tool-item bg-dark p-3 rounded-3 text-center">
+                                            <i class="fas fa-book text-primary-400 fs-4 mb-2"></i>
+                                            <h6 class="text-white mb-0 small">Booking System</h6>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tool 4 -->
+                                    <div class="col-6">
+                                        <div class="tool-item bg-dark p-3 rounded-3 text-center">
+                                            <i class="fas fa-envelope text-primary-400 fs-4 mb-2"></i>
+                                            <h6 class="text-white mb-0 small">Notification System</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CTA -->
+                <div class="row mt-5" data-aos="fade-up">
+                    <div class="col-lg-10 mx-auto">
+                        <div class="cta-box bg-gradient-primary p-5 rounded-4 shadow-lg text-center">
+                            <h3 class="fs-3 fw-bold text-white mb-3">Ready to Experience AI-Powered Customer Service?</h3>
+                            <p class="text-white opacity-90 mb-4">Join the growing number of cleaning businesses transforming their operations with CleaningBiz AI.</p>
+                            <div class="d-flex justify-content-center flex-wrap gap-2">
+                                <a href="#" class="btn btn-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
+                                <a href="#" class="btn btn-outline-light">Schedule a Demo <i class="fas fa-calendar-alt ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
