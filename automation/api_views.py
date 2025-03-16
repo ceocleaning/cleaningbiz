@@ -9,6 +9,7 @@ from accounts.models import Business, ApiCredential, BusinessSettings, CustomAdd
 from bookings.models import Booking, BookingCustomAddons
 from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
+
 from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
 import dateparser
 import pytz
@@ -578,6 +579,7 @@ def create_booking(request):
             # Continue with the booking process even if notifications fail
         
         # Send booking data to integration if needed
+        from .webhooks import send_booking_data
         send_booking_data(booking)
         
         return JsonResponse({

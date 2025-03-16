@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 from django.core.mail import send_mail
 from accounts.models import Business, ApiCredential, SMTPConfig
 import os
+from django.core.mail import EmailMultiAlternatives
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from django.conf import settings
 load_dotenv()
 
@@ -14,7 +18,7 @@ def sendInvoicetoClient(recepientNumber, invoice, business):
 
         apiCreds = ApiCredential.objects.get(business=business)
         
-        client = Client(account_sid=apiCreds.twilioAccountSid, auth_token=apiCreds.twilioAuthToken)
+        client = Client(apiCreds.twilioAccountSid, apiCreds.twilioAuthToken)
 
         invoice_link = f"{settings.BASE_URL}/invoice/invoices/{invoice.invoiceId}/preview/"
 
@@ -65,7 +69,7 @@ def sendEmailtoClientInvoice(invoice, business):
                 <h1>Appointment Confirmed!</h1>
             </div>
             <div class="content">
-                <p>Hello {booking.firstName},</p>
+                <p>Hello {booking.firstName} {booking.lastName},</p>
                 <p>Your appointment with {business.businessName} has been confirmed. Thank you for choosing our services!</p>
                 
                 <div class="details">
@@ -101,7 +105,7 @@ def sendEmailtoClientInvoice(invoice, business):
                 <p>We look forward to serving you!</p>
             </div>
             <div class="footer">
-                <p>&copy; {business.businessName} | {business.phoneNumber} | {business.email}</p>
+                <p>&copy; {business.businessName}  | {business.user.email}</p>
             </div>
         </body>
         </html>
@@ -110,16 +114,16 @@ def sendEmailtoClientInvoice(invoice, business):
         # Plain text alternative
         text_body = f"""Hello {booking.firstName},
 
-Your appointment with {business.businessName} has been confirmed for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')}.
+            Your appointment with {business.businessName} has been confirmed for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')}.
 
-Service: {booking.serviceType.title()} Cleaning
-Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
-Total Amount: ${invoice.amount:.2f}
+            Service: {booking.serviceType.title()} Cleaning
+            Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
+            Total Amount: ${invoice.amount:.2f}
 
-To view your invoice and make a payment, please visit: {invoice_link}
+            To view your invoice and make a payment, please visit: {invoice_link}
 
-Thank you for choosing {business.businessName}!
-"""
+            Thank you for choosing {business.businessName}!
+            """
         
         # Determine which email configuration to use
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -128,15 +132,12 @@ Thank you for choosing {business.businessName}!
         if smtpConfig.exists() and smtpConfig.first().host and smtpConfig.first().username and smtpConfig.first().password:
             # Use business-specific SMTP configuration
             config = smtpConfig.first()
-            from django.core.mail import EmailMultiAlternatives
-            import smtplib
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
+            
             
             # Create message container
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = config.fromEmail or from_email
+            msg['From'] = config.username or from_email
             msg['To'] = recipient_email
             
             # Attach parts
