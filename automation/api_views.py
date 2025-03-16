@@ -400,7 +400,7 @@ def create_booking(request):
             print(cleaning_datetime)
             cleaning_date = cleaning_datetime.date()
             start_time = cleaning_datetime.time()
-            print(start_time+start_time)
+            print(cleaning_date+start_time)
             # Calculate end time (default to 1 hour after start time)
             end_datetime = cleaning_datetime + timedelta(hours=1)
             end_time = end_datetime.time()
