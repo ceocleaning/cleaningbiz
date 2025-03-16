@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', False)
+DEBUG = os.getenv('DJANGO_DEBUG', True)
 
 
 BASE_URL = 'https://cleaningbizai.up.railway.app'
@@ -37,7 +37,7 @@ ALLOWED_HOSTS = ['*']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Ensure Django Forces HTTPS
-SECURE_SSL_REDIRECT = not DEBUG  # Redirect HTTP → HTTPS in production
+SECURE_SSL_REDIRECT = False
 CSRF_COOKIE_SECURE = not DEBUG  # Secure CSRF Cookies in production
 SESSION_COOKIE_SECURE = not DEBUG  # Secure Session Cookies in production
 
