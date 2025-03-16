@@ -7,8 +7,9 @@ from django.utils.timezone import make_aware, is_naive
 from retell import Retell
 from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
+from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
-from .utils import calculateAddonsAmount, calculateAmount
+from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
 import dateparser
 import pytz
 import traceback
@@ -396,9 +397,7 @@ def create_booking(request):
         
         # Parse appointment date and time
         try:
-            # Parse the appointment datetime
-            cleaning_datetime = dateparser.parse(data['appointment_date_time'])
-            dt_with_timezone = datetime.fromisoformat(cleaning_datetime)
+            dt_with_timezone = datetime.fromisoformat(data['appointment_date_time'])
             utc_timezone = pytz.utc
             dt_with_utc = dt_with_timezone.replace(tzinfo=utc_timezone)
           
@@ -406,7 +405,7 @@ def create_booking(request):
             start_time = dt_with_utc.time()
       
             # Calculate end time (default to 1 hour after start time)
-            end_datetime = cleaning_datetime + timedelta(hours=1)
+            end_datetime = dt_with_utc + timedelta(hours=1)
             end_time = end_datetime.time()
         except Exception as e:
             return JsonResponse({
@@ -416,11 +415,11 @@ def create_booking(request):
         
         # Find an available cleaner
         cleaners = get_cleaners_for_business(business)
-        available_cleaner = find_available_cleaner(cleaners, cleaning_datetime)
+        available_cleaner = find_available_cleaner(cleaners, cleaning_date, start_time)
         
         if not available_cleaner:
             # Find alternate slots
-            alternate_slots, _ = find_alternate_slots(cleaners, cleaning_datetime)
+            alternate_slots, _ = find_alternate_slots(cleaners, cleaning_date, start_time)
             return JsonResponse({
                 'success': False,
                 'message': 'No cleaners available for the requested time',
@@ -558,6 +557,25 @@ def create_booking(request):
         if bookingCustomAddons:
             booking.customAddons.set(bookingCustomAddons)
             booking.save()
+        
+        # Create Invoice
+        invoice = Invoice.objects.create(
+            booking=booking,
+            amount=total
+        )
+
+        # Send confirmation email and SMS
+        try:
+            # Send SMS notification
+            if booking.phoneNumber:
+                sendInvoicetoClient(booking.phoneNumber, invoice, business)
+            
+            # Send email confirmation
+            if booking.email:
+                sendEmailtoClientInvoice(invoice, business)
+        except Exception as e:
+            print(f"Error sending notifications: {str(e)}")
+            # Continue with the booking process even if notifications fail
         
         # Send booking data to integration if needed
         send_booking_data(booking)
