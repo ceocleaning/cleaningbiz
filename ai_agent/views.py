@@ -119,11 +119,6 @@ def agent_config_save(request):
 
 @csrf_exempt
 def twilio_webhook(request, secretKey):
-<<<<<<< HEAD
-=======
-    print("\n[DEBUG] Twilio webhook received")
-    print(f"[DEBUG] Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
->>>>>>> 5201af81a726d2c2d1e4cc8e0060aa014632cef1
     """Handle Twilio webhook requests for SMS interactions"""
     # Check if this is a POST request
     if request.method != 'POST':
@@ -172,19 +167,10 @@ def process_sms_async(secretKey, from_number, body, to_number):
         # Clean the phone number (remove any + prefix)
         client_phone_number = from_number
         
-<<<<<<< HEAD
-        apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
-        business = apiCred.business
-        
-        if not apiCred:
-            twiml_response.message("Sorry, we couldn't process your request at this time.")
-            return HttpResponse(str(twiml_response), content_type='text/xml')
-=======
         print(f"[DEBUG] Using client phone number: {client_phone_number}")
         
         print(f"[DEBUG] Fetching API credentials with secretKey: {secretKey}")
         apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
->>>>>>> 5201af81a726d2c2d1e4cc8e0060aa014632cef1
         
         if not apiCred:
             print("[DEBUG] API credentials not found")
@@ -312,6 +298,12 @@ def send_sms_response(to_number, message, secretKey):
             from_=from_number,
             to=to_number
         )
+
+        lead = Lead.objects.filter(phone_number=to_number, is_response_received=False).first()
+        if lead:
+            lead.is_response_received = True
+            lead.save()
+
         
         print(f"[DEBUG] SMS sent successfully. Twilio SID: {message_obj.sid}")
     except Exception as e:
