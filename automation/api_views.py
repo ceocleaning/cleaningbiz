@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons
+from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons, SMTPConfig
 from bookings.models import Booking, BookingCustomAddons
 from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
@@ -596,4 +596,155 @@ def create_booking(request):
         return JsonResponse({
             'success': False,
             'message': f'Error creating booking: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@api_view(['POST', 'GET'])
+def sendCommercialFormLink(request):
+    try:
+        # Parse request data
+        if request.method == 'POST':
+            data = json.loads(request.body)
+        else:  # GET
+            data = request.GET.dict()
+        
+        args = data.get('args')
+
+        name = args.get('name')
+        email = args.get('email')
+        business_id = args.get('business_id')
+        
+        # Validate required fields
+        if not recipient_email:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email address is required'
+            }, status=400)
+        
+        # Get business
+        try:
+            business = Business.objects.get(businessId=business_id)
+        except Business.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Business not found'
+            }, status=404)
+        
+        # Check for SMTP configuration
+        smtp_config = SMTPConfig.objects.filter(business=business).first()
+        use_business_smtp = smtp_config and smtp_config.host and smtp_config.username and smtp_config.password
+        
+        # Generate the commercial form link
+        form_link = f"{settings.BASE_URL}/commercial-form/{business.businessId}/"
+        
+        # Email content
+        subject = f"Commercial Cleaning Quote Request - {business.businessName}"
+        
+        # HTML content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Commercial Cleaning Quote</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
+                .content {{ padding: 20px; background-color: #f9f9f9; }}
+                .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
+                .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Commercial Cleaning Quote</h1>
+            </div>
+            <div class="content">
+                <p>Hello, {name}</p>
+                <p>Thank you for your interest in commercial cleaning services from {business.businessName}.</p>
+                <p>To provide you with an accurate quote for your commercial space, we need some additional information about your requirements.</p>
+                <p>Please click the button below to fill out our commercial cleaning questionnaire:</p>
+                <a href="{form_link}" class="button">Complete Commercial Form</a>
+                <p>Once we receive your information, our team will review your requirements and provide you with a customized quote.</p>
+                <p>If you have any questions, please don't hesitate to contact us.</p>
+                <p>Best regards,</p>
+                <p>The {business.businessName} Team</p>
+            </div>
+            <div class="footer">
+                <p>&copy; {business.businessName} | {business.user.email}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text content
+        text_content = f"""Hello {name},
+
+            Thank you for your interest in commercial cleaning services from {business.businessName}.
+
+            To provide you with an accurate quote for your commercial space, we need some additional information about your requirements.
+
+            Please visit the following link to fill out our commercial cleaning questionnaire:
+            {form_link}
+
+            Once we receive your information, our team will review your requirements and provide you with a customized quote.
+
+            If you have any questions, please don't hesitate to contact us.
+
+            Best regards,
+            The {business.businessName} Team
+        """
+        
+        # Send email based on available configuration
+        if use_business_smtp:
+            # Use business-specific SMTP configuration
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            
+            # Create message container
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = smtp_config.username
+            msg['To'] = recipient_email
+            
+            # Attach parts
+            part1 = MIMEText(text_content, 'plain')
+            part2 = MIMEText(html_content, 'html')
+            msg.attach(part1)
+            msg.attach(part2)
+            
+            # Send the message via custom SMTP server
+            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
+            if smtp_config.useTLS:
+                server.starttls()
+            server.login(smtp_config.username, smtp_config.password)
+            server.send_message(msg)
+            server.quit()
+        else:
+            # Use platform SMTP settings (Django's send_mail)
+            from django.core.mail import EmailMultiAlternatives
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient_email]
+            )
+            email_message.attach_alternative(html_content, "text/html")
+            email_message.send()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Commercial form link sent successfully',
+            'email': recipient_email,
+            'form_link': form_link
+        })
+        
+    except Exception as e:
+        print(f"Error sending commercial form link: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error sending email: {str(e)}'
         }, status=500)
