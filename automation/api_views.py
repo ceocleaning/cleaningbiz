@@ -565,7 +565,8 @@ def create_booking(request):
             amount=total
         )
 
-    
+        # We'll let the signals handle notification sending
+        # This ensures consistent notification behavior regardless of how the booking is created
         
         # Send booking data to integration if needed
         from .webhooks import send_booking_data
