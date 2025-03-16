@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cleaningDateTime = `${cleaningDate}T${cleaningTime}:00Z`;
         
         try {
-            const response = await fetch(`/api/availability/${secretKey}/test`, {
+            const response = await fetch(`/api/availability/${secretKey}/test/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
