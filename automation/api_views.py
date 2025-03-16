@@ -616,7 +616,7 @@ def sendCommercialFormLink(request):
         business_id = args.get('business_id')
         
         # Validate required fields
-        if not recipient_email:
+        if not email:
             return JsonResponse({
                 'success': False,
                 'message': 'Email address is required'
