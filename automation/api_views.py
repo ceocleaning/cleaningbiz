@@ -9,6 +9,7 @@ from accounts.models import Business, ApiCredential, BusinessSettings, CustomAdd
 from bookings.models import Booking, BookingCustomAddons
 from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
+from django.conf import settings
 
 from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
 import dateparser
