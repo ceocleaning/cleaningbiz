@@ -708,7 +708,7 @@ def sendCommercialFormLink(request):
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = smtp_config.username
-            msg['To'] = recipient_email
+            msg['To'] = email
             
             # Attach parts
             part1 = MIMEText(text_content, 'plain')
@@ -730,7 +730,7 @@ def sendCommercialFormLink(request):
                 subject=subject,
                 body=text_content,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[recipient_email]
+                to=[email]
             )
             email_message.attach_alternative(html_content, "text/html")
             email_message.send()
@@ -738,7 +738,7 @@ def sendCommercialFormLink(request):
         return JsonResponse({
             'success': True,
             'message': 'Commercial form link sent successfully',
-            'email': recipient_email,
+            'email': email,
             'form_link': form_link
         })
         
