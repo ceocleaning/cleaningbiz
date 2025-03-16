@@ -10,6 +10,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from twilio.rest import Client
 
 @receiver(post_save, sender=Booking)
 def send_booking_confirmation_email(sender, instance, created, **kwargs):
@@ -19,14 +20,14 @@ def send_booking_confirmation_email(sender, instance, created, **kwargs):
             # Get the business's email credentials
             api_credentials = ApiCredential.objects.get(business=instance.business)
             
-            if not api_credentials.gmail_host_user or not api_credentials.gmail_host_password:
+            if not api_credentials.username or not api_credentials.password:
                 print("Email credentials not configured for business")
                 return
 
             # Create the email
             msg = MIMEMultipart('alternative')
             msg['Subject'] = f'Booking Confirmation - {instance.business.businessName}'
-            msg['From'] = api_credentials.gmail_host_user
+            msg['From'] = api_credentials.username
             msg['To'] = instance.email
 
             # Create HTML email content
@@ -92,9 +93,9 @@ def send_booking_confirmation_email(sender, instance, created, **kwargs):
             msg.attach(part2)
 
             # Set up SMTP connection
-            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_server = smtplib.SMTP(api_credentials.host, api_credentials.port)
             smtp_server.starttls()
-            smtp_server.login(api_credentials.gmail_host_user, api_credentials.gmail_host_password)
+            smtp_server.login(api_credentials.user, api_credentials.password)
             
             # Send email
             smtp_server.send_message(msg)
@@ -106,3 +107,49 @@ def send_booking_confirmation_email(sender, instance, created, **kwargs):
             print("API credentials not found for business")
         except Exception as e:
             print(f"Error sending booking confirmation email: {str(e)}")
+
+
+def send_booking_confirmation_sms(sender, instance, created, **kwargs):
+    """Send confirmation SMS when a new booking is created"""
+    if created:  # Only send SMS for new bookings
+        try:
+            # Get the business's API credentials
+            apiCreds = ApiCredential.objects.get(business=instance.business)
+            
+            # Check if Twilio credentials are configured
+            if not apiCreds.twilioAccountSid or not apiCreds.twilioAuthToken or not apiCreds.twilioSmsNumber:
+                print("Twilio credentials not configured for business")
+                return False
+            
+            # Initialize Twilio client
+            client = Client(apiCreds.twilioAccountSid, apiCreds.twilioAuthToken)
+            
+            # Get the invoice associated with this booking
+            # Since Invoice has a OneToOneField to Booking, we can access it through the reverse relation
+            try:
+                # The related name is automatically created by Django as 'invoice'
+                invoice = instance.invoice
+                
+                # Generate invoice link
+                invoice_link = f"{settings.BASE_URL}/invoice/invoices/{invoice.invoiceId}/preview/"
+                
+                # Create and send SMS
+                message = client.messages.create(
+                    to=instance.phoneNumber,  # Use the booking's phone number
+                    from_=apiCreds.twilioSmsNumber,
+                    body=f"Hello {instance.firstName}, your appointment with {instance.business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
+                )
+                
+                print(f"SMS sent successfully to {instance.phoneNumber}")
+                return True
+                
+            except Exception as e:
+                print(f"Error accessing invoice or sending SMS: {str(e)}")
+                return False
+                
+        except Exception as e:
+            print(f"Error in SMS notification: {str(e)}")
+            return False
+
+# Connect the signal
+post_save.connect(send_booking_confirmation_sms, sender=Booking)

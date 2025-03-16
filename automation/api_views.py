@@ -565,18 +565,7 @@ def create_booking(request):
             amount=total
         )
 
-        # Send confirmation email and SMS
-        try:
-            # Send SMS notification
-            if booking.phoneNumber:
-                sendInvoicetoClient(booking.phoneNumber, invoice, business)
-            
-            # Send email confirmation
-            if booking.email:
-                sendEmailtoClientInvoice(invoice, business)
-        except Exception as e:
-            print(f"Error sending notifications: {str(e)}")
-            # Continue with the booking process even if notifications fail
+    
         
         # Send booking data to integration if needed
         from .webhooks import send_booking_data

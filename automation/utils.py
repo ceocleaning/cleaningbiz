@@ -15,22 +15,34 @@ load_dotenv()
 
 def sendInvoicetoClient(recepientNumber, invoice, business):
     try:
+        # Import needed modules
+        from twilio.rest import Client
 
+        # Get API credentials for the business
         apiCreds = ApiCredential.objects.get(business=business)
         
+        # Check if Twilio credentials are configured
+        if not apiCreds.twilioAccountSid or not apiCreds.twilioAuthToken or not apiCreds.twilioSmsNumber:
+            print("Twilio credentials not configured for business")
+            return False
+        
+        # Initialize Twilio client
         client = Client(apiCreds.twilioAccountSid, apiCreds.twilioAuthToken)
 
+        # Generate invoice link
         invoice_link = f"{settings.BASE_URL}/invoice/invoices/{invoice.invoiceId}/preview/"
 
+        # Create and send SMS
         message = client.messages.create(
-        to=recepientNumber,
-        from_=apiCreds.twilioSmsNumber,
-        body=f"Hey {invoice.booking.firstName}, Your Appointment is Confirmed with {business.businessName}!. Thank you for choosing {business.businessName}. Total amount to be paid is: {invoice.amount}. Here is the Link: {invoice_link} . Please Click on this to Pay Instantly or PreAuthorize it and get charged When Order is complete.")
-
+            to=recepientNumber,
+            from_=apiCreds.twilioSmsNumber,
+            body=f"Hello {invoice.booking.firstName}, your appointment with {business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
+        )
         
+        print(f"SMS sent successfully to {recepientNumber}")
         return True
     except Exception as e:
-        print(e)
+        print(f"SMS sending error: {str(e)}")
         return False
 
 
