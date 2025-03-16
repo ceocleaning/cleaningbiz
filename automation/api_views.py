@@ -10,6 +10,7 @@ from bookings.models import Booking, BookingCustomAddons
 from .models import Cleaners, CleanerAvailability
 from .utils import calculateAddonsAmount, calculateAmount
 import dateparser
+import pytz
 import traceback
 
 # Function to get available cleaners for a business
@@ -397,10 +398,13 @@ def create_booking(request):
         try:
             # Parse the appointment datetime
             cleaning_datetime = dateparser.parse(data['appointment_date_time'])
-            print(cleaning_datetime)
-            cleaning_date = cleaning_datetime.date()
-            start_time = cleaning_datetime.time()
-            print(cleaning_date+start_time)
+            dt_with_timezone = datetime.fromisoformat(cleaning_datetime)
+            utc_timezone = pytz.utc
+            dt_with_utc = dt_with_timezone.replace(tzinfo=utc_timezone)
+          
+            cleaning_date = dt_with_utc.date()
+            start_time = dt_with_utc.time()
+      
             # Calculate end time (default to 1 hour after start time)
             end_datetime = cleaning_datetime + timedelta(hours=1)
             end_time = end_datetime.time()
