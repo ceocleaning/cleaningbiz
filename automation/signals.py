@@ -26,7 +26,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         apiCred = ApiCredential.objects.get(business=instance.business)
         agentConfig = AgentConfiguration.objects.get(business=instance.business)
         client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
-        message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
+        message_body = f"Hello {instance.name}, this is Sarah from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
         message = client.messages.create(
             body=message_body,
             from_=apiCred.twilioSmsNumber,

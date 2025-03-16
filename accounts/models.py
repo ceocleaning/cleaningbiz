@@ -37,6 +37,9 @@ class ApiCredential(models.Model):
     retellWebhookURL = models.URLField(null=True, blank=True)
     voiceAgentNumber = models.CharField(max_length=20, null=True, blank=True)
     twilioSmsNumber = models.CharField(max_length=20, null=True, blank=True)
+    twilioAccountSid = models.CharField(max_length=255, null=True, blank=True)
+    twilioAuthToken = models.CharField(max_length=255, null=True, blank=True)
+    twimlAppSid = models.CharField(max_length=255, null=True, blank=True)
     
     secretKey = models.CharField(max_length=255, null=True, blank=True, unique=True) # Business Secret Key to Verify Incoming Webhook Data
 

@@ -9,7 +9,7 @@ urlpatterns = [
     path('api/chat/<str:client_phone_number>/delete/', chatbot.delete_chat, name='delete_chat'),
     
     # Twilio webhook URL
-    path('api/twilio/webhook/', views.twilio_webhook, name='twilio_webhook'),
+    path('api/twilio/webhook/<str:secretKey>/', views.twilio_webhook, name='twilio_webhook'),
 
     path('agent-config/create/', views.agent_config_create, name='agent_config_create'),
     path('agent-config/', views.agent_config_detail, name='agent_config'),

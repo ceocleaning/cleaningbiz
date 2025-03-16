@@ -142,7 +142,7 @@ def agent_config_preview(request):
 
 
 @csrf_exempt
-def twilio_webhook(request):
+def twilio_webhook(request, secretKey):
     """Handle Twilio webhook requests for SMS interactions"""
     # Check if this is a POST request
     if request.method != 'POST':
@@ -160,9 +160,10 @@ def twilio_webhook(request):
         # Clean the phone number (remove any + prefix)
         client_phone_number = from_number
         
-        business = request.user.business_set.first()
+        apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
+        business = apiCred.business
         
-        if not business:
+        if not apiCred:
             twiml_response.message("Sorry, we couldn't process your request at this time.")
             return HttpResponse(str(twiml_response), content_type='text/xml')
         
