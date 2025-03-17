@@ -119,8 +119,6 @@ def agent_config_save(request):
 
 @csrf_exempt
 def twilio_webhook(request, secretKey):
-    print("\n[DEBUG] Twilio webhook received")
-    print(f"[DEBUG] Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     """Handle Twilio webhook requests for SMS interactions"""
     # Check if this is a POST request
     if request.method != 'POST':
