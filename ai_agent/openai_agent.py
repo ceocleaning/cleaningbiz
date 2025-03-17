@@ -544,7 +544,7 @@ class OpenAIAgent:
                     Messages.objects.create(
                         chat=chat,
                         role="tool",
-                        message=tool_content
+                        message=tool_content or ''  # Save empty string if no content
                     )
                 except Exception as e:
                     print(f"[DEBUG] Error saving tool message: {str(e)}")
