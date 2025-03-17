@@ -104,6 +104,7 @@ def create_booking(request):
                     )
                     booking.customAddons.add(newCustomBookingAddon)
 
+
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             
@@ -222,6 +223,12 @@ def edit_booking(request, bookingId):
                     booking.customAddons.add(newCustomBookingAddon)
 
             booking.save()
+
+            #Update Invoice
+            invoice = Invoice.objects.filter(booking=booking).first()
+            invoice.amount = totalPrice
+            invoice.save()
+
             messages.success(request, 'Booking updated successfully!')
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             

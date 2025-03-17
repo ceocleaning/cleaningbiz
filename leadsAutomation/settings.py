@@ -190,7 +190,7 @@ CORS_ALLOW_HEADERS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://cleaningbizai.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://cleaningbizai.up.railway.app', 'https://127.0.0.1:8000', 'http://127.0.0.1:8000']
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

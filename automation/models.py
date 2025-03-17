@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 import random
 import string
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
@@ -60,6 +60,8 @@ class Cleaners(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(null=True, blank=True)
     phoneNumber = models.CharField(max_length=20)
+
+    rating = models.IntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(5)])
 
     bookings = models.ManyToManyField('bookings.Booking', blank=True, related_name='cleaners')
 

@@ -341,7 +341,8 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCsrfToken()
             },
             body: JSON.stringify({
                 business_id: '{{ business.businessId }}',
@@ -349,7 +350,12 @@
                 message: message
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             // Remove loading indicator
             if (loadingDiv && loadingDiv.parentNode === chatMessages) {
@@ -357,12 +363,38 @@
             }
             
             if (data.error) {
+                console.error('API Error:', data.error);
                 window.showToast('Error', data.error, 'error');
+                appendMessage('assistant', 'I\'m sorry, I encountered an error processing your request. Please try again.');
                 return;
             }
             
             // Add AI response to chat
             appendMessage('assistant', data.response);
+            
+            // Handle tool call results if any
+            if (data.tool_call_results && data.tool_call_results.length > 0) {
+                console.log('Tool call results:', data.tool_call_results);
+                
+                // Process each tool call result
+                data.tool_call_results.forEach(result => {
+                    try {
+                        // Try to parse the result as JSON
+                        const resultObj = JSON.parse(result.result);
+                        
+                        // Check if this is a successful booking
+                        if (resultObj.success && resultObj.bookingId) {
+                            window.showToast('Success', 'Booking confirmed!', 'success');
+                        }
+                        
+                        // Log the result for debugging
+                        console.log('Tool result parsed:', resultObj);
+                    } catch (e) {
+                        // Not JSON or parsing error, just log the raw result
+                        console.log('Tool result (raw):', result.result);
+                    }
+                });
+            }
         })
         .catch(error => {
             // Remove loading indicator
@@ -372,7 +404,13 @@
             
             console.error('Error sending message:', error);
             window.showToast('Error', 'Failed to send message. Please try again.', 'error');
+            appendMessage('assistant', 'I\'m sorry, I encountered an error processing your request. Please try again.');
         });
+    }
+    
+    // Helper function to get CSRF token
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
     
     function appendMessage(role, content) {

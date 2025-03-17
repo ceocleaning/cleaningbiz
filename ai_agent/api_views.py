@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 import json
 import dateparser
 from automation.api_views import get_cleaners_for_business, find_available_cleaner, is_slot_available, find_alternate_slots
-from automation.utils import calculateAmount, calculateAddonsAmount
+from automation.utils import calculateAmount, calculateAddonsAmount, sendInvoicetoClient, sendEmailtoClientInvoice 
 from automation.webhooks import send_booking_data
 import traceback
 import pytz
@@ -37,8 +37,18 @@ def calculate_total(business, client_phone_number):
         # Get business settings
         businessSettingsObj = BusinessSettings.objects.get(business=business)
         
+        # Parse summary if it's a string
+        if isinstance(chat.summary, str):
+            try:
+                summary = json.loads(chat.summary)
+            except json.JSONDecodeError:
+                print(f"[DEBUG] Error parsing chat summary JSON: {chat.summary}")
+                summary = {}
+        else:
+            summary = chat.summary or {}
+        
         # Normalize service type
-        serviceType = chat.summary["serviceType"].lower().replace(" ", "")
+        serviceType = summary.get("serviceType", "").lower().replace(" ", "")
         if 'regular' in serviceType or 'standard' in serviceType:
             serviceType = 'standard'
         elif 'deep' in serviceType:
@@ -47,12 +57,15 @@ def calculate_total(business, client_phone_number):
             serviceType = 'moveinmoveout'
         elif 'airbnb' in serviceType:
             serviceType = 'airbnb'
+        else:
+            # Default to standard if no valid service type
+            serviceType = 'standard'
         
         # Convert numeric fields if they're strings
         try:
-            bedrooms = int(chat.summary["bedrooms"]) if chat.summary["bedrooms"] else 0
-            bathrooms = int(chat.summary["bathrooms"]) if chat.summary["bathrooms"] else 0
-            area = int(chat.summary["squareFeet"]) if chat.summary["squareFeet"] else 0
+            bedrooms = int(summary.get("bedrooms", 0) or 0)
+            bathrooms = int(summary.get("bathrooms", 0) or 0)
+            area = int(summary.get("squareFeet", 0) or 0)
         except ValueError:
             error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
             print(f"[DEBUG] {error_msg}")
@@ -69,18 +82,18 @@ def calculate_total(business, client_phone_number):
         
         # Process addons - extract from the data structure
         addons = {
-            "dishes": int(chat.summary.get("addonDishes", 0) or 0),
-            "laundry": int(chat.summary.get("addonLaundryLoads", 0) or 0),
-            "windows": int(chat.summary.get("addonWindowCleaning", 0) or 0),
-            "pets": int(chat.summary.get("addonPetsCleaning", 0) or 0),
-            "fridge": int(chat.summary.get("addonFridgeCleaning", 0) or 0),
-            "oven": int(chat.summary.get("addonOvenCleaning", 0) or 0),
-            "baseboards": int(chat.summary.get("addonBaseboard", 0) or 0),
-            "blinds": int(chat.summary.get("addonBlinds", 0) or 0),
-            "green": int(chat.summary.get("addonGreenCleaning", 0) or 0),
-            "cabinets": int(chat.summary.get("addonCabinetsCleaning", 0) or 0),
-            "patio": int(chat.summary.get("addonPatioSweeping", 0) or 0),
-            "garage": int(chat.summary.get("addonGarageSweeping", 0) or 0)
+            "dishes": int(summary.get("addonDishes", 0) or 0),
+            "laundry": int(summary.get("addonLaundryLoads", 0) or 0),
+            "windows": int(summary.get("addonWindowCleaning", 0) or 0),
+            "pets": int(summary.get("addonPetsCleaning", 0) or 0),
+            "fridge": int(summary.get("addonFridgeCleaning", 0) or 0),
+            "oven": int(summary.get("addonOvenCleaning", 0) or 0),
+            "baseboards": int(summary.get("addonBaseboard", 0) or 0),
+            "blinds": int(summary.get("addonBlinds", 0) or 0),
+            "green": int(summary.get("addonGreenCleaning", 0) or 0),
+            "cabinets": int(summary.get("addonCabinetsCleaning", 0) or 0),
+            "patio": int(summary.get("addonPatioSweeping", 0) or 0),
+            "garage": int(summary.get("addonGarageSweeping", 0) or 0)
         }
         
         addonsPrices = {
@@ -108,8 +121,8 @@ def calculate_total(business, client_phone_number):
         # Process custom addons from chat summary
         for custom_addon in customAddonsObj:
             addon_data_name = custom_addon.addonDataName
-            if addon_data_name and addon_data_name in chat.summary:
-                quantity = int(chat.summary.get(addon_data_name, 0) or 0)
+            if addon_data_name and addon_data_name in summary:
+                quantity = int(summary.get(addon_data_name, 0) or 0)
                 if quantity > 0:
                     addon_price = custom_addon.addonPrice
                     addon_total = quantity * addon_price
@@ -244,8 +257,18 @@ def book_appointment(business, client_phone_number, booking_data=None):
 
         chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
         
+        # Parse summary if it's a string
+        if isinstance(chat.summary, str):
+            try:
+                chat_summary = json.loads(chat.summary)
+            except json.JSONDecodeError:
+                print(f"[DEBUG] Error parsing chat summary JSON: {chat.summary}")
+                chat_summary = {}
+        else:
+            chat_summary = chat.summary or {}
+        
         # Use provided booking_data if available, otherwise use chat.summary
-        data = booking_data if booking_data else chat.summary
+        data = booking_data if booking_data else chat_summary
         print(f"[DEBUG] Booking data: {json.dumps(data, indent=2)}")
         
         # Validate required fields
@@ -403,6 +426,8 @@ def book_appointment(business, client_phone_number, booking_data=None):
         if bookingCustomAddons:
             newBooking.customAddons.set(bookingCustomAddons)
             newBooking.save()
+        
+
         
         # Send booking data to integration if needed
         send_booking_data(newBooking)

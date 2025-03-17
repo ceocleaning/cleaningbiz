@@ -116,9 +116,11 @@ def is_slot_available(cleaners, time_to_check, available_cleaners=None):
 
 # Function to find an available cleaner
 def find_available_cleaner(cleaners, time_to_check):
-    """Find an available cleaner for the given time slot."""
+    """Find the best available cleaner for the given time slot based on rating."""
     print("\nFinding available cleaner for time:", time_to_check)
     print("Number of cleaners to check:", len(cleaners))
+    
+    available_cleaners = []
     
     for cleaner in cleaners:
         print("\nChecking cleaner:", cleaner.name)
@@ -148,11 +150,17 @@ def find_available_cleaner(cleaners, time_to_check):
             print(f"{cleaner.name} has a conflicting booking")
             continue
 
-        print(f"✓ Found available cleaner: {cleaner.name}")
-        return cleaner
+        print(f"✓ {cleaner.name} is available (Rating: {cleaner.rating}/5)")
+        available_cleaners.append(cleaner)
 
-    print("No available cleaners found for this time slot")
-    return None
+    if not available_cleaners:
+        print("No available cleaners found for this time slot")
+        return None
+    
+    # Sort available cleaners by rating (highest first)
+    best_cleaner = max(available_cleaners, key=lambda c: c.rating)
+    print(f"Selected best cleaner: {best_cleaner.name} with rating {best_cleaner.rating}/5")
+    return best_cleaner
 
 # Function to find alternate available slots
 def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
@@ -260,7 +268,7 @@ def check_availability_retell(request, secretKey):
             "status": "success",
             "available": is_available,
             "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S"),
-            "cleaners": [{"id": c.id, "name": c.name} for c in available_cleaners],
+            "cleaners": [{"id": c.id, "name": c.name, "rating": c.rating} for c in available_cleaners],
         }
 
         # If not available, find alternate slots
@@ -315,7 +323,7 @@ def test_check_availability(request, secretKey):
             "status": "success",
             "available": is_available,
             "timeslot": time_to_check.strftime("%Y-%m-%d %I:%M %p"),
-            "cleaners": [{"id": c.id, "name": c.name} for c in available_cleaners],
+            "cleaners": [{"id": c.id, "name": c.name, "rating": c.rating} for c in available_cleaners],
             "logs": availability_logs
         }
 
@@ -373,7 +381,8 @@ def check_availability_for_booking(request):
             "alternative_slots": alternative_slots,
             "cleaners": [{
                 "id": c.id,
-                "name": c.name
+                "name": c.name,
+                "rating": c.rating
             } for c in available_cleaners]
         })
         
@@ -560,15 +569,7 @@ def create_booking(request):
             booking.customAddons.set(bookingCustomAddons)
             booking.save()
         
-        # Create Invoice
-        invoice = Invoice.objects.create(
-            booking=booking,
-            amount=total
-        )
-
-        # Send invoice to client
-        smsSent = sendInvoicetoClient(booking.phoneNumber, invoice, business)
-        emailSent = sendEmailtoClientInvoice(invoice, business)
+      
         
         # Send booking data to integration if needed
         from .webhooks import send_booking_data

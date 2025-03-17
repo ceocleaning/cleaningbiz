@@ -453,7 +453,7 @@ def test_email_settings(request):
         # Use from_name if available, otherwise use username
         from_email = smtpConfig.username
         if smtpConfig.from_name:
-            from_email = {smtpConfig.from_name}
+            from_email = f"{smtpConfig.from_name} <{smtpConfig.username}>"
         msg['From'] = from_email
         
         msg['To'] = request.user.email
