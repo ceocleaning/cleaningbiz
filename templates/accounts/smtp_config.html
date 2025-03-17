@@ -43,6 +43,18 @@
                             <div class="form-text">For Gmail, you may need to use an App Password</div>
                         </div>
                         
+                        <div class="mb-4">
+                            <label for="from_name" class="form-label fw-bold">From Name</label>
+                            <input type="text" class="form-control" id="from_name" name="from_name" value="{{ smtp_config.from_name|default_if_none:'' }}" placeholder="e.g. Your Business Name">
+                            <div class="form-text">The name that will appear as the sender of emails</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="reply_to" class="form-label fw-bold">Reply-To Email</label>
+                            <input type="email" class="form-control" id="reply_to" name="reply_to" value="{{ smtp_config.reply_to|default_if_none:'' }}" placeholder="e.g. support@yourbusiness.com">
+                            <div class="form-text">Email address where recipients can reply (if different from username)</div>
+                        </div>
+                        
                         <div class="d-flex justify-content-between mt-4">
                             <div class="d-flex align-items-center">
                                 <a href="{% url 'home' %}" class="btn btn-outline-secondary">
@@ -303,6 +315,8 @@
             const port = document.getElementById('port').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const fromName = document.getElementById('from_name').value;
+            const replyTo = document.getElementById('reply_to').value;
 
             // Validate form fields
             if (!host || !port || !username || !password) {
@@ -320,6 +334,8 @@
             formData.append('port', port);
             formData.append('username', username);
             formData.append('password', password);
+            formData.append('from_name', fromName);
+            formData.append('reply_to', replyTo);
             formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
             // Save the configuration first

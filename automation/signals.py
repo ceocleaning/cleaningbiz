@@ -26,7 +26,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         apiCred = ApiCredential.objects.get(business=instance.business)
         agentConfig = AgentConfiguration.objects.get(business=instance.business)
         client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
-        message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
+        message_body = f"Hello {instance.name}, this is Sarah from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
         message = client.messages.create(
             body=message_body,
             from_=apiCred.twilioSmsNumber,
@@ -44,17 +44,18 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         Messages.objects.create(
             chat=chat,
             role='assistant',
-            message=message_body
+            message=message_body,
+            is_first_message=True
         )
 
         print(f"Message sent successfully! SID: {message.sid}")
 
-
-        schedule(
-            'automation.tasks.send_call_to_lead',  
-            instance.id,  
-            schedule_type='O',
-            next_run=timezone.now() + datetime.timedelta(minutes=5),
+        if instance.business.useCall:
+            schedule(
+                'automation.tasks.send_call_to_lead',  
+                instance.id,  
+                schedule_type='O',
+                next_run=timezone.now() + datetime.timedelta(minutes=5),
             )
-        print("Call scheduled for lead")
+            print("Call scheduled for lead")
 
