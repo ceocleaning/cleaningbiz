@@ -396,6 +396,38 @@
                 padding: 0.75rem;
             }
         }
+
+        /* Toast notifications */
+        .toast-container {
+            margin-top: 60px; /* Add space below navbar */
+        }
+        
+        .toast {
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 300px;
+        }
+        
+        .toast.bg-success {
+            background-color: #10b981 !important;
+        }
+        
+        .toast.bg-danger, .toast.bg-error {
+            background-color: #ef4444 !important;
+        }
+        
+        .toast.bg-warning {
+            background-color: #f59e0b !important;
+        }
+        
+        .toast.bg-info {
+            background-color: #3b82f6 !important;
+        }
+        
+        .toast-body {
+            padding: 12px 15px;
+            font-weight: 500;
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
@@ -509,14 +541,24 @@
 
     <!-- Main Content -->
     <div class="container py-4">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+        <!-- Toast container for messages -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+            {% if messages %}
+                {% for message in messages %}
+                    {% with message_type=message.tags %}
+                        <div class="toast align-items-center text-white bg-{{ message_type }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <i class="fas {% if message_type == 'success' %}fa-check-circle{% elif message_type == 'danger' or message_type == 'error' %}fa-exclamation-circle{% elif message_type == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            {% endif %}
+        </div>
         
       
             {% block content %}
@@ -530,6 +572,25 @@
             <p class="mb-0">&copy; {% now "Y" %} CEO Cleaners. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Bootstrap Toast Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all toasts
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function(toastEl) {
+                // Configure toast options
+                var toast = new bootstrap.Toast(toastEl, {
+                    autohide: true,
+                    delay: 5000 // Auto-hide after 5 seconds
+                });
+                
+                // Show the toast
+                toast.show();
+                return toast;
+            });
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

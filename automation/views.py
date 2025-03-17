@@ -502,6 +502,18 @@ def update_cleaner_profile(request, cleaner_id):
             cleaner.email = request.POST.get('email')
             cleaner.phoneNumber = request.POST.get('phoneNumber')
             cleaner.isActive = request.POST.get('isActive') == 'on'
+            
+            # Update rating
+            rating = request.POST.get('rating')
+            if rating:
+                try:
+                    rating_value = int(rating)
+                    # Ensure rating is between 1 and 5
+                    cleaner.rating = max(1, min(5, rating_value))
+                except ValueError:
+                    # If conversion fails, don't update the rating
+                    pass
+                    
             cleaner.save()
             
             messages.success(request, 'Cleaner profile updated successfully.')
@@ -768,3 +780,154 @@ def test_features(request):
     Render a page that lists all available test features.
     """
     return render(request, 'automation/test_features.html')
+
+
+@login_required
+def cleaner_monthly_schedule(request, cleaner_id):
+    """
+    Display a monthly calendar view of a cleaner's schedule.
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    # Get the month and year from the request, default to current month
+    today = timezone.now().date()
+    month = int(request.GET.get('month', today.month))
+    year = int(request.GET.get('year', today.year))
+    
+    # Calculate first day of the month and last day of the month
+    first_day = datetime(year, month, 1).date()
+    if month == 12:
+        last_day = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+    else:
+        last_day = datetime(year, month + 1, 1).date() - timedelta(days=1)
+    
+    # Calculate previous and next month for navigation
+    if month == 1:
+        prev_month = 12
+        prev_year = year - 1
+    else:
+        prev_month = month - 1
+        prev_year = year
+    
+    if month == 12:
+        next_month = 1
+        next_year = year + 1
+    else:
+        next_month = month + 1
+        next_year = year
+    
+    # Get month name
+    month_name = first_day.strftime('%B')
+    
+    # Get day names for the calendar header
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    
+    # Calculate the calendar weeks
+    calendar_weeks = []
+    
+    # Find the first day to display (might be from the previous month)
+    first_display_day = first_day - timedelta(days=first_day.weekday() + 1 % 7)
+    if first_display_day.weekday() != 6:  # If not Sunday
+        first_display_day = first_display_day - timedelta(days=first_display_day.weekday() + 1)
+    
+    # Get cleaner's weekly availability
+    weekly_availabilities = CleanerAvailability.objects.filter(cleaner=cleaner)
+    weekly_availability_dict = {}
+    for avail in weekly_availabilities:
+        weekly_availability_dict[avail.dayOfWeek] = {
+            'start_time': avail.startTime,
+            'end_time': avail.endTime,
+            'off_day': avail.offDay
+        }
+    
+    # Get specific date exceptions
+    specific_dates = CleanerAvailability.objects.filter(
+        cleaner=cleaner,
+        specific_date__gte=first_display_day,
+        specific_date__lte=last_day + timedelta(days=7)  # Include a week after the month ends
+    )
+    specific_dates_dict = {}
+    for date in specific_dates:
+        if date.specific_date:
+            specific_dates_dict[date.specific_date] = {
+                'start_time': date.startTime,
+                'end_time': date.endTime,
+                'off_day': date.offDay
+            }
+    
+    # Get bookings for this cleaner in the displayed period
+    bookings = Booking.objects.filter(
+        cleaner=cleaner,
+        cleaningDate__gte=first_display_day,
+        cleaningDate__lte=last_day + timedelta(days=7)  # Include a week after the month ends
+    ).order_by('startTime')
+    
+    bookings_by_date = {}
+    for booking in bookings:
+        if booking.cleaningDate not in bookings_by_date:
+            bookings_by_date[booking.cleaningDate] = []
+        
+        bookings_by_date[booking.cleaningDate].append({
+            'id': booking.bookingId,
+            'time': datetime.combine(booking.cleaningDate, booking.startTime),
+            'client_name': booking.firstName,
+            'status': "Completed" if booking.isCompleted else "Pending"
+        })
+    
+    # Build the calendar
+    current_day = first_display_day
+    for _ in range(6):  # Maximum 6 weeks in a month view
+        week = []
+        for _ in range(7):  # 7 days in a week
+            day_data = {
+                'day': current_day.day,
+                'date': current_day,
+                'formatted_date': current_day.strftime('%d %B'),
+                'other_month': current_day.month != month,
+                'is_today': current_day == today,
+                'bookings': bookings_by_date.get(current_day, [])
+            }
+            
+            # Check if this day has a specific exception
+            if current_day in specific_dates_dict:
+                day_data['is_off_day'] = specific_dates_dict[current_day]['off_day']
+                day_data['start_time'] = specific_dates_dict[current_day]['start_time']
+                day_data['end_time'] = specific_dates_dict[current_day]['end_time']
+            else:
+                # Use weekly availability
+                day_name = day_names[current_day.weekday()]
+                if day_name in weekly_availability_dict:
+                    day_data['is_off_day'] = weekly_availability_dict[day_name]['off_day']
+                    day_data['start_time'] = weekly_availability_dict[day_name]['start_time']
+                    day_data['end_time'] = weekly_availability_dict[day_name]['end_time']
+                else:
+                    # Default to off day if no availability is set
+                    day_data['is_off_day'] = True
+            
+            week.append(day_data)
+            current_day += timedelta(days=1)
+        
+        calendar_weeks.append(week)
+        
+        # If we've gone past the end of the month and completed a week, we can stop
+        if current_day.month != month and current_day.weekday() == 6:
+            break
+    
+    context = {
+        'cleaner': cleaner,
+        'month_name': month_name,
+        'year': year,
+        'day_names': day_names,
+        'calendar_weeks': calendar_weeks,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year
+    }
+    
+    return render(request, 'automation/cleaner_monthly_schedule.html', context)

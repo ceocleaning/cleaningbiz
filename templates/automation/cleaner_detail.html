@@ -62,6 +62,22 @@
                             </span>
                             {% endwith %}
                         </div>
+                        <!-- Rating Display -->
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div class="me-2">Rating:</div>
+                                <div class="rating-stars">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= cleaner.rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-muted"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="ms-2">({{ cleaner.rating }}/5)</div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="border-top pt-3">
@@ -96,6 +112,9 @@
                             <small class="text-muted d-block pt-2">({{ monday_date|date:"M d" }} - {{ sunday_date|date:"M d, Y" }})</small>
                         </h5>
                         <div class="btn-group mt-3">
+                            <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-calendar-alt me-1"></i>Monthly
+                            </a>
                             <a href="{% url 'cleaner_detail' cleaner_id=cleaner.id %}?date={{ prev_week_monday|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="fas fa-chevron-left"></i>
                             </a>
@@ -114,7 +133,7 @@
                     {% for availability in weekly_availabilities %}
                     <div class="d-flex justify-content-between align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %} availability-row" data-day="{{ availability.dayOfWeek }}">
                         <div>
-                            <strong>{{ availability.dayOfWeek }}</strong>
+                            <strong class="fw-medium day-name {% if availability.offDay %}off-day{% endif %}" data-day="{{ availability.dayOfWeek }}">{{ availability.dayOfWeek }}</strong>
                         </div>
                         
                         {% if availability.offDay or current_week_exceptions_by_weekday|get_item:availability.dayOfWeek|has_off_day_exception %}
@@ -316,6 +335,22 @@
                             <input type="tel" class="form-control" name="phoneNumber" value="{{ cleaner.phoneNumber }}">
                         </div>
                         <div class="col-12">
+                            <label class="form-label">Rating</label>
+                            <div class="star-rating-container">
+                                <div class="star-rating">
+                                    <input type="hidden" name="rating" id="ratingInput" value="{{ cleaner.rating }}">
+                                    <div class="stars">
+                                        {% for i in "12345"|make_list %}
+                                            <i class="star-rating-icon fas fa-star {% if forloop.counter <= cleaner.rating %}active{% endif %}" data-rating="{{ forloop.counter }}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="rating-text ms-2">
+                                        <span id="ratingDisplay">{{ cleaner.rating }}</span>/5
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="isActive" id="isActive" {% if cleaner.isActive %}checked{% endif %}>
                                 <label class="form-check-label" for="isActive">Active Status</label>
@@ -355,7 +390,7 @@
                             <tbody>
                                 {% for availability in weekly_availabilities %}
                                 <tr>
-                                    <td class="fw-medium">{{ availability.dayOfWeek }}</td>
+                                    <td class="fw-medium day-name {% if availability.offDay %}off-day{% endif %}" data-day="{{ availability.dayOfWeek }}">{{ availability.dayOfWeek }}</td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2 time-inputs" {% if availability.offDay %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
                                             <input type="hidden" name="dayOfWeek[]" value="{{ availability.dayOfWeek }}">
@@ -548,6 +583,69 @@
         opacity: 0.5;
         pointer-events: none;
     }
+    .star-rating-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .star-rating {
+        display: flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .stars {
+        display: flex;
+        align-items: center;
+    }
+    .star-rating-icon {
+        font-size: 1.5rem;
+        margin-right: 0.25rem;
+        cursor: pointer;
+        color: #d1d5db;
+        transition: color 0.2s ease;
+    }
+    .star-rating-icon:hover {
+        transform: scale(1.1);
+    }
+    .star-rating-icon.active {
+        color: #ffc107;
+    }
+    .star-rating-icon.hover {
+        color: #ffc107;
+    }
+    .rating-text {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin-left: 10px;
+        color: #4b5563;
+    }
+    .off-day {
+        text-decoration: line-through;
+        color: #dc3545;
+        font-style: italic;
+    }
+    
+    .day-name {
+        transition: all 0.3s ease;
+    }
+    
+    /* Add a badge for off days */
+    .off-day::after {
+        content: 'OFF';
+        font-size: 0.7rem;
+        background-color: #dc3545;
+        color: white;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+        margin-left: 0.5rem;
+        font-style: normal;
+        text-decoration: none;
+        display: inline-block;
+        vertical-align: middle;
+    }
 </style>
 {% endblock %}
 
@@ -613,6 +711,101 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Rating slider functionality
+    const ratingSlider = document.getElementById('ratingSlider');
+    const ratingValue = document.getElementById('ratingValue');
+    const ratingStars = document.getElementById('ratingStars');
+    
+    if (ratingSlider) {
+        ratingSlider.addEventListener('input', function() {
+            const value = this.value;
+            ratingValue.textContent = value;
+            
+            // Update stars
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= value) {
+                    starsHtml += '<i class="fas fa-star text-warning"></i>';
+                } else {
+                    starsHtml += '<i class="far fa-star text-muted"></i>';
+                }
+            }
+            ratingStars.innerHTML = starsHtml;
+        });
+    }
+    
+    // Star rating functionality
+    const starRatings = document.querySelectorAll('.star-rating');
+    starRatings.forEach(starRating => {
+        const ratingInput = starRating.querySelector('input[type="hidden"]');
+        const stars = starRating.querySelectorAll('.star-rating-icon');
+        const ratingDisplay = starRating.querySelector('#ratingDisplay');
+        
+        stars.forEach((star, index) => {
+            // Hover effect
+            star.addEventListener('mouseenter', function() {
+                const hoverRating = index + 1;
+                
+                // Update stars for hover effect
+                stars.forEach((s, i) => {
+                    if (i < hoverRating) {
+                        s.classList.add('hover');
+                    } else {
+                        s.classList.remove('hover');
+                    }
+                });
+            });
+            
+            // Remove hover effect when mouse leaves the stars container
+            starRating.querySelector('.stars').addEventListener('mouseleave', function() {
+                stars.forEach(s => s.classList.remove('hover'));
+            });
+            
+            // Click event
+            star.addEventListener('click', function() {
+                const rating = index + 1;
+                ratingInput.value = rating;
+                
+                // Update rating display text
+                if (ratingDisplay) {
+                    ratingDisplay.textContent = rating;
+                }
+                
+                // Update stars
+                stars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+        });
+    });
+    
+    // Handle off day toggle in the schedule modal
+    const offDayToggles = document.querySelectorAll('.off-day-toggle');
+    offDayToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const dayOfWeek = this.value;
+            const row = this.closest('tr');
+            const dayNameCell = row.querySelector('.day-name');
+            const timeInputs = row.querySelector('.time-inputs');
+            
+            if (this.checked) {
+                // Mark as off day
+                dayNameCell.classList.add('off-day');
+                timeInputs.style.opacity = '0.5';
+                timeInputs.style.pointerEvents = 'none';
+            } else {
+                // Mark as working day
+                dayNameCell.classList.remove('off-day');
+                timeInputs.style.opacity = '1';
+                timeInputs.style.pointerEvents = 'auto';
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

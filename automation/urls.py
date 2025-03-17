@@ -40,6 +40,7 @@ urlpatterns = [
     path('cleaners/', views.cleaners_list, name='cleaners_list'),
     path('cleaners/add/', views.add_cleaner, name='add_cleaner'),
     path('cleaners/<int:cleaner_id>/', views.cleaner_detail, name='cleaner_detail'),
+    path('cleaners/<int:cleaner_id>/monthly-schedule/', views.cleaner_monthly_schedule, name='cleaner_monthly_schedule'),
     path('cleaners/<int:cleaner_id>/update-profile/', views.update_cleaner_profile, name='update_cleaner_profile'),
     path('cleaners/<int:cleaner_id>/update-schedule/', views.update_cleaner_schedule, name='update_cleaner_schedule'),
     path('cleaners/<int:cleaner_id>/add-specific-date/', views.add_specific_date, name='add_specific_date'),

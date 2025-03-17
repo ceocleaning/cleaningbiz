@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load automation_filters %}
+
+{% block title %}{{ cleaner.name }}'s Monthly Schedule{% endblock %}
+
+{% block styles %}
+<style>
+    .calendar-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .calendar-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .calendar-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .calendar-nav {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .calendar-nav-btn {
+        background-color: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        border-radius: 5px;
+        padding: 5px 15px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    
+    .calendar-nav-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        padding: 10px;
+        font-weight: 600;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+    }
+    
+    .calendar-day {
+        min-height: 120px;
+        padding: 10px;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        position: relative;
+        transition: background-color 0.3s;
+    }
+    
+    .calendar-day:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .calendar-day:nth-child(7n) {
+        border-right: none;
+    }
+    
+    .calendar-day-number {
+        position: absolute;
+        top: 5px;
+        right: 8px;
+        font-size: 1rem;
+        color: #6b7280;
+       
+    }
+    
+    .calendar-day.other-month {
+        background-color: #f9fafb;
+        color: #9ca3af;
+    }
+    
+    .calendar-day.today {
+        background-color: #eff6ff;
+    }
+    
+    .calendar-day.off-day {
+        background-color: #fee2e2;
+    }
+    
+    .calendar-day-content {
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .calendar-day-status {
+        margin-top: 5px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .calendar-day-status.working {
+        color: #059669;
+    }
+    
+    .calendar-day-status.off {
+        color: #dc2626;
+    }
+    
+    .calendar-day-hours {
+        margin-top: 5px;
+        font-size: 0.8rem;
+    }
+    
+    .booking-indicator {
+        margin-top: 8px;
+        padding: 4px 6px;
+        background-color: #dbeafe;
+        border-left: 3px solid #2563eb;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .booking-indicator.completed {
+        background-color: #d1fae5;
+        border-left-color: #059669;
+    }
+    
+    .booking-indicator.cancelled {
+        background-color: #fee2e2;
+        border-left-color: #dc2626;
+    }
+    
+    .legend {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+    
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        margin-right: 5px;
+        border-radius: 3px;
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-day {
+            min-height: 100px;
+        }
+        
+        .calendar-day-content {
+            margin-top: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button and Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'cleaner_detail' cleaner_id=cleaner.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Cleaner Profile
+        </a>
+        <div>
+            <h1 class="h3 mb-0 d-inline-block me-3">{{ cleaner.name }}'s Schedule</h1>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{% url 'cleaner_detail' cleaner_id=cleaner.id %}#editScheduleModal'">
+                <i class="fas fa-edit me-1"></i>Edit Schedule
+            </button>
+        </div>
+    </div>
+    
+    <!-- Legend -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Legend</h5>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #eff6ff;"></div>
+                    Today
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f9fafb;"></div>
+                    Other Month
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fee2e2;"></div>
+                    Off Day
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #dbeafe;"></div>
+                    Upcoming Booking
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #d1fae5;"></div>
+                    Completed Booking
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fee2e2;"></div>
+                    Cancelled Booking
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="calendar-container mb-4">
+        <div class="calendar-header">
+            <h2 class="calendar-title">{{ month_name }} {{ year }}</h2>
+            <div class="calendar-nav">
+                <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}?month={{ prev_month }}&year={{ prev_year }}" class="calendar-nav-btn">
+                    <i class="fas fa-chevron-left me-1"></i>Previous
+                </a>
+                <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}" class="calendar-nav-btn">
+                    Today
+                </a>
+                <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}?month={{ next_month }}&year={{ next_year }}" class="calendar-nav-btn">
+                    Next<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="calendar-grid">
+            <!-- Day headers -->
+            {% for day in day_names %}
+            <div class="calendar-day-header">{{ day }}</div>
+            {% endfor %}
+            
+            <!-- Calendar days -->
+            {% for week in calendar_weeks %}
+                {% for day in week %}
+                <div class="calendar-day {% if day.other_month %}other-month{% endif %} {% if day.is_today %}today{% endif %} {% if day.is_off_day %}off-day{% endif %}">
+                    <div class="calendar-day-number">{{ day.formatted_date }}</div>
+                    <div class="calendar-day-content">
+                        {% if not day.other_month %}
+                            {% if day.is_off_day %}
+                                <div class="calendar-day-status off">OFF DAY</div>
+                            {% else %}
+                                <div class="calendar-day-status working">Available</div>
+                                <div class="calendar-day-hours">{{ day.start_time|time:"g:i A" }} - {{ day.end_time|time:"g:i A" }}</div>
+                            {% endif %}
+                            
+                            {% for booking in day.bookings %}
+                                <div class="booking-indicator {% if booking.status == 'COMPLETED' %}completed{% elif booking.status == 'CANCELLED' %}cancelled{% endif %}">
+                                    {{ booking.time|time:"g:i A" }} - {{ booking.client_name }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
