@@ -931,3 +931,175 @@ def cleaner_monthly_schedule(request, cleaner_id):
     }
     
     return render(request, 'automation/cleaner_monthly_schedule.html', context)
+
+
+@login_required
+def business_monthly_schedule(request):
+    """
+    Display a monthly calendar view of all cleaners' schedules.
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    # Get the month and year from the request, default to current month
+    today = timezone.now().date()
+    month = int(request.GET.get('month', today.month))
+    year = int(request.GET.get('year', today.year))
+    
+    # Calculate first day of the month and last day of the month
+    first_day = datetime(year, month, 1).date()
+    
+    # Simpler way to get last day of month
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    last_day = datetime(next_year, next_month, 1).date() - timedelta(days=1)
+    
+    # Calculate previous month for navigation (simplified)
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    
+    # Get month name and day names
+    month_name = first_day.strftime('%B')
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    
+    # Calculate first day to display (previous Sunday)
+    first_weekday = first_day.weekday()
+    # Adjust for Sunday as first day (Python uses Monday=0, Sunday=6)
+    first_display_day = first_day - timedelta(days=(first_weekday + 1) % 7)
+    
+    # Get all cleaners for the business - prefetch related data to reduce queries
+    cleaners = Cleaners.objects.filter(business=business, isActive=True).prefetch_related(
+        'cleaneravailability_set'
+    )
+    
+    # Pre-fetch all bookings in the date range we're interested in
+    display_end = first_display_day + timedelta(days=42)  # Max 6 weeks
+    
+    # Get all cleaner availabilities at once
+    all_availabilities = CleanerAvailability.objects.filter(
+        cleaner__in=cleaners
+    ).select_related('cleaner')
+    
+    # Organize availabilities by cleaner and day
+    weekly_availabilities = {}
+    specific_date_availabilities = {}
+    
+    for avail in all_availabilities:
+        cleaner_id = avail.cleaner_id
+        
+        if avail.specific_date:
+            if cleaner_id not in specific_date_availabilities:
+                specific_date_availabilities[cleaner_id] = {}
+            specific_date_availabilities[cleaner_id][avail.specific_date] = avail
+        else:
+            if cleaner_id not in weekly_availabilities:
+                weekly_availabilities[cleaner_id] = {}
+            weekly_availabilities[cleaner_id][avail.dayOfWeek] = avail
+    
+    # Get all relevant bookings at once
+    all_bookings = Booking.objects.filter(
+        cleaner__in=cleaners,
+        cleaningDate__gte=first_display_day,
+        cleaningDate__lte=display_end
+    ).select_related('cleaner').order_by('startTime')
+    
+    # Organize bookings by cleaner and date
+    booking_dict = {}
+    for booking in all_bookings:
+        cleaner_id = booking.cleaner_id
+        date_key = booking.cleaningDate
+        
+        if cleaner_id not in booking_dict:
+            booking_dict[cleaner_id] = {}
+        if date_key not in booking_dict[cleaner_id]:
+            booking_dict[cleaner_id][date_key] = []
+            
+        booking_dict[cleaner_id][date_key].append({
+            'id': booking.bookingId,
+            'time': datetime.combine(booking.cleaningDate, booking.startTime),
+            'client_name': booking.firstName,
+            'status': "Completed" if booking.isCompleted else "Pending"
+        })
+    
+    # Build the calendar
+    calendar_weeks = []
+    current_day = first_display_day
+    
+    for _ in range(6):  # Maximum 6 weeks in a month view
+        week = []
+        for _ in range(7):  # 7 days in a week
+            day_data = {
+                'day': current_day.day,
+                'date': current_day,
+                'formatted_date': current_day.strftime('%d %B'),
+                'other_month': current_day.month != month,
+                'is_today': current_day == today,
+                'cleaners': []
+            }
+            
+            day_name = day_names[current_day.weekday()]
+            
+            # Add cleaner schedules for this day
+            for cleaner in cleaners:
+                cleaner_id = cleaner.id
+                
+                # Check for specific date exception first
+                if (cleaner_id in specific_date_availabilities and 
+                    current_day in specific_date_availabilities[cleaner_id]):
+                    
+                    avail = specific_date_availabilities[cleaner_id][current_day]
+                    schedule = {
+                        'name': cleaner.name,
+                        'is_off_day': avail.offDay,
+                        'start_time': avail.startTime,
+                        'end_time': avail.endTime,
+                        'bookings': []
+                    }
+                # Otherwise use weekly availability
+                elif cleaner_id in weekly_availabilities and day_name in weekly_availabilities[cleaner_id]:
+                    avail = weekly_availabilities[cleaner_id][day_name]
+                    schedule = {
+                        'name': cleaner.name,
+                        'is_off_day': avail.offDay,
+                        'start_time': avail.startTime,
+                        'end_time': avail.endTime,
+                        'bookings': []
+                    }
+                else:
+                    schedule = {
+                        'name': cleaner.name,
+                        'is_off_day': True,
+                        'start_time': None,
+                        'end_time': None,
+                        'bookings': []
+                    }
+                
+                # Add bookings from our pre-fetched dictionary
+                if cleaner_id in booking_dict and current_day in booking_dict[cleaner_id]:
+                    schedule['bookings'] = booking_dict[cleaner_id][current_day]
+                
+                day_data['cleaners'].append(schedule)
+            
+            week.append(day_data)
+            current_day += timedelta(days=1)
+        
+        calendar_weeks.append(week)
+        
+        # If we've gone past the end of the month and completed a week, we can stop
+        if current_day.month != month and current_day.weekday() == 6:
+            break
+    
+    context = {
+        'month_name': month_name,
+        'year': year,
+        'day_names': day_names,
+        'calendar_weeks': calendar_weeks,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year
+    }
+    
+    return render(request, 'automation/business_monthly_schedule.html', context)

@@ -48,4 +48,7 @@ urlpatterns = [
     path('cleaners/<int:cleaner_id>/toggle-availability/', views.toggle_cleaner_availability, name='toggle_cleaner_availability'),
     path('cleaners/<int:cleaner_id>/toggle-active/', views.toggle_cleaner_active, name='toggle_cleaner_active'),
     path('cleaners/<int:cleaner_id>/delete/', views.delete_cleaner, name='delete_cleaner'),
+
+    # Business Schedule URLs
+    path('business-schedule/', views.business_monthly_schedule, name='business_monthly_schedule'),
 ]
