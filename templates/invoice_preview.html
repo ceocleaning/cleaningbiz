@@ -209,7 +209,7 @@
     </div>
     {% endif %}
 
-    {% if not invoice.isPaid and not invoice.payment_details.status == 'AUTHORIZED' %}
+    {% if not invoice.isPaid and not invoice.payment_details.status == 'AUTHORIZED' and not request.user == booking.business.user %}
     <div class="fixed-bottom mb-3" style="right: 20px;">
         <a href="#" class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#paymentModal">
             <i class="fas fa-credit-card me-2"></i>Pay Now

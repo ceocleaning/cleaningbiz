@@ -35,3 +35,14 @@ Doc.md
 
 cert.crt
 cert.key
+localhost.crt
+localhost.key
+
+# Ignore SSL certificate files
+*.crt
+*.key
+
+
+# Ignore generated files
+generate_cert.py
+runserver_ssl.py
