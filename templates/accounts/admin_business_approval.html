@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Business Approvals{% endblock %}
+
+{% block styles %}
+<style>
+    .approval-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .approval-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .approval-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    
+    .business-card {
+        border: 1px solid var(--light-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .business-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .business-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .business-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .business-status {
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background-color: var(--warning-light);
+        color: var(--warning-dark);
+    }
+    
+    .status-approved {
+        background-color: var(--success-light);
+        color: var(--success-dark);
+    }
+    
+    .status-rejected {
+        background-color: var(--danger-light);
+        color: var(--danger-dark);
+    }
+    
+    .business-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 0.85rem;
+        color: var(--gray-color);
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-weight: 500;
+    }
+    
+    .business-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .filter-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-item {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-item.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .filter-item:not(.active) {
+        background-color: var(--light-color);
+        color: var(--dark-color);
+    }
+    
+    .filter-item:hover:not(.active) {
+        background-color: var(--primary-light);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: var(--light-color);
+        border-radius: 0.75rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: var(--gray-color);
+        margin-bottom: 1rem;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="approval-container">
+        <div class="approval-header">
+            <h1 class="approval-title">Manage Business Approvals</h1>
+            <div class="d-flex gap-2">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="filter-container">
+            <div class="filter-item {% if status == 'all' %}active{% endif %}">
+                <a href="{% url 'accounts:admin_business_approval' %}?status=all" class="text-decoration-none {% if status == 'all' %}text-white{% endif %}">
+                    All ({{ all_count }})
+                </a>
+            </div>
+            <div class="filter-item {% if status == 'pending' %}active{% endif %}">
+                <a href="{% url 'accounts:admin_business_approval' %}?status=pending" class="text-decoration-none {% if status == 'pending' %}text-white{% endif %}">
+                    Pending ({{ pending_count }})
+                </a>
+            </div>
+            <div class="filter-item {% if status == 'approved' %}active{% endif %}">
+                <a href="{% url 'accounts:admin_business_approval' %}?status=approved" class="text-decoration-none {% if status == 'approved' %}text-white{% endif %}">
+                    Approved ({{ approved_count }})
+                </a>
+            </div>
+            <div class="filter-item {% if status == 'rejected' %}active{% endif %}">
+                <a href="{% url 'accounts:admin_business_approval' %}?status=rejected" class="text-decoration-none {% if status == 'rejected' %}text-white{% endif %}">
+                    Rejected ({{ rejected_count }})
+                </a>
+            </div>
+        </div>
+        
+        {% if businesses %}
+            {% for business in businesses %}
+            <div class="business-card">
+                <div class="business-header">
+                    <h2 class="business-name">{{ business.businessName }}</h2>
+                    <div class="business-status {% if business.isApproved %}status-approved{% elif not business.isActive %}status-rejected{% else %}status-pending{% endif %}">
+                        {% if business.isApproved %}
+                            <i class="fas fa-check-circle me-1"></i>Approved
+                        {% elif not business.isActive %}
+                            <i class="fas fa-times-circle me-1"></i>Rejected
+                        {% else %}
+                            <i class="fas fa-clock me-1"></i>Pending
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="business-info">
+                    <div class="info-item">
+                        <span class="info-label">Owner</span>
+                        <span class="info-value">{{ business.user.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ business.phone }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ business.user.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Registered On</span>
+                        <span class="info-value">{{ business.createdAt|date:"F d, Y" }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-item mb-3">
+                    <span class="info-label">Address</span>
+                    <span class="info-value">{{ business.address }}</span>
+                </div>
+                
+                <div class="business-actions">
+                    {% if not business.isApproved %}
+                    <form action="{% url 'accounts:approve_business' business.id %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-check me-1"></i>Approve
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    {% if business.isApproved or business.isActive %}
+                    <form action="{% url 'accounts:reject_business' business.id %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times me-1"></i>Reject
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if businesses.has_other_pages %}
+            <div class="pagination">
+                <ul class="pagination">
+                    {% if businesses.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ businesses.previous_page_number }}&status={{ status }}">&laquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in businesses.paginator.page_range %}
+                        {% if businesses.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}&status={{ status }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if businesses.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ businesses.next_page_number }}&status={{ status }}">&raquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-store-slash"></i>
+                </div>
+                <h3>No businesses found</h3>
+                <p class="text-muted">There are no businesses matching your current filter.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

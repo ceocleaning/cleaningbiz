@@ -16,6 +16,8 @@ from django.contrib.auth.hashers import make_password
 from datetime import timedelta
 import string
 from django.conf import settings
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core.mail import send_mail
 
 
 def SignupPage(request):
@@ -57,6 +59,13 @@ def loginPage(request):
         if user is not None:
             login(request, user)
             messages.success(request, 'Logged in successfully!')
+            
+            # Check if the user has a business and if it's approved
+            if user.business_set.exists():
+                business = user.business_set.first()
+                if not business.isApproved:
+                    return redirect('accounts:approval_pending')
+            
             return redirect('home')
         else:
             messages.error(request, 'Invalid username or password.')
@@ -77,6 +86,10 @@ def profile_view(request):
     if not business:
         messages.warning(request, 'Please register your business first.')
         return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
     
     # Get related models
     business_settings = business.settings
@@ -168,6 +181,8 @@ def register_business(request):
                 businessName=businessName,
                 phone=phone,
                 address=address,
+                isActive=False,  # Set to False by default
+                isApproved=False  # Set to False by default
             )
             
             # Create default settings for the business
@@ -178,8 +193,8 @@ def register_business(request):
                 business=business,
             )
             
-            messages.success(request, 'Business registered successfully!')
-            return redirect('accounts:profile')
+            messages.success(request, 'Business registered successfully! Your account is pending approval.')
+            return redirect('accounts:approval_pending')  # Redirect to approval pending page
             
         except Exception as e:
             messages.error(request, f'Error registering business: {str(e)}')
@@ -295,8 +310,6 @@ def edit_credentials(request):
     return render(request, 'accounts/edit_credentials.html', {'credentials': credentials})
 
 
-
-
 @login_required
 def generate_secret_key(request):
     business = request.user.business_set.first()
@@ -314,6 +327,25 @@ def generate_secret_key(request):
         raise Exception(str(e))
     
     return redirect('accounts:profile')
+
+
+@login_required
+def regenerate_secret_key(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=404)
+    
+    try:
+        credentials = business.apicredential
+        new_secret_key = f"sk_{business.businessId}_{random.randint(100000, 999999)}"
+        credentials.secretKey = new_secret_key
+        credentials.save()
+        return JsonResponse({'success': True, 'secret_key': new_secret_key})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -417,8 +449,18 @@ def test_email_settings(request):
         # Create test email
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f'Test Email - {business.businessName}'
-        msg['From'] = smtpConfig.username
+        
+        # Use from_name if available, otherwise use username
+        from_email = smtpConfig.username
+        if smtpConfig.from_name:
+            from_email = {smtpConfig.from_name}
+        msg['From'] = from_email
+        
         msg['To'] = request.user.email
+        
+        # Add Reply-To header if configured
+        if smtpConfig.reply_to:
+            msg['Reply-To'] = smtpConfig.reply_to
 
         html_content = f"""
         <html>
@@ -431,6 +473,8 @@ def test_email_settings(request):
                 <h3>Email Configuration Details:</h3>
                 <p><strong>Business Name:</strong> {business.businessName}</p>
                 <p><strong>Email Address:</strong> {smtpConfig.username}</p>
+                <p><strong>From Name:</strong> {smtpConfig.from_name or 'Not set'}</p>
+                <p><strong>Reply-To:</strong> {smtpConfig.reply_to or 'Not set'}</p>
                 <p><strong>SMTP Server:</strong> {smtpConfig.host}</p>
             </div>
             
@@ -861,6 +905,8 @@ def smtp_config(request):
         smtp_config.port = request.POST.get('port', '')
         smtp_config.username = request.POST.get('username', '')
         smtp_config.password = request.POST.get('password', '')
+        smtp_config.from_name = request.POST.get('from_name', '')
+        smtp_config.reply_to = request.POST.get('reply_to', '')
         smtp_config.save()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -915,3 +961,188 @@ def delete_smtp_config(request):
         }, status=400)
         
     return redirect('accounts:smtp_config')
+
+
+@login_required
+def approval_pending(request):
+    """
+    View for the approval pending page
+    Shown after a business registers and before they are approved
+    """
+    # Check if user has a business
+    if not request.user.business_set.exists():
+        messages.warning(request, 'You need to register a business first.')
+        return redirect('accounts:register_business')
+    
+    # Get the user's business
+    business = request.user.business_set.first()
+    
+    # If the business is already approved, redirect to profile
+    if business.isApproved:
+        messages.success(request, 'Your business is already approved!')
+        return redirect('accounts:profile')
+    
+    return render(request, 'accounts/approval_pending.html', {'business': business})
+
+
+
+@login_required
+def admin_business_approval(request):
+    """
+    Admin view to manage business approvals
+    Only accessible to superusers
+    """
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('accounts:profile')
+    
+    # Get status filter from query params
+    status = request.GET.get('status', 'all')
+    
+    # Get all businesses
+    businesses_query = Business.objects.all().order_by('-createdAt')
+    
+    # Apply filters
+    if status == 'pending':
+        businesses_query = businesses_query.filter(isApproved=False, isActive=True)
+    elif status == 'approved':
+        businesses_query = businesses_query.filter(isApproved=True)
+    elif status == 'rejected':
+        businesses_query = businesses_query.filter(isActive=False)
+    
+    # Count for each status
+    all_count = Business.objects.count()
+    pending_count = Business.objects.filter(isApproved=False, isActive=True).count()
+    approved_count = Business.objects.filter(isApproved=True).count()
+    rejected_count = Business.objects.filter(isActive=False).count()
+    
+    # Pagination
+    paginator = Paginator(businesses_query, 10)  # Show 10 businesses per page
+    page = request.GET.get('page')
+    
+    try:
+        businesses = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        businesses = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page of results
+        businesses = paginator.page(paginator.num_pages)
+    
+    context = {
+        'businesses': businesses,
+        'status': status,
+        'all_count': all_count,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+    }
+    
+    return render(request, 'accounts/admin_business_approval.html', context)
+
+
+@login_required
+def approve_business(request, business_id):
+    """
+    Approve a business
+    Only accessible to superusers
+    """
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('accounts:profile')
+    
+    if request.method == 'POST':
+        business = get_object_or_404(Business, id=business_id)
+        business.isApproved = True
+        business.isActive = True
+        business.save()
+        
+        # Send email notification to business owner
+        try:
+            subject = 'Your Business Has Been Approved!'
+            message = f"""Hello {business.user.username},
+
+Congratulations! Your business '{business.businessName}' has been approved by our team.
+
+You now have full access to all features of CleaningBiz AI. Log in to your account to get started.
+
+Thank you for choosing CleaningBiz AI!
+
+Best regards,
+The CleaningBiz AI Team
+"""
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [business.user.email]
+            send_mail(subject, message, from_email, recipient_list)
+        except Exception as e:
+            # Log the error but don't stop the approval process
+            print(f"Error sending approval email: {str(e)}")
+        
+        messages.success(request, f"Business '{business.businessName}' has been approved successfully.")
+    
+    return redirect('accounts:admin_business_approval')
+
+
+@login_required
+def reject_business(request, business_id):
+    """
+    Reject a business
+    Only accessible to superusers
+    """
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('accounts:profile')
+    
+    if request.method == 'POST':
+        business = get_object_or_404(Business, id=business_id)
+        business.isApproved = False
+        business.isActive = False
+        business.save()
+        
+        # Send email notification to business owner
+        try:
+            subject = 'Your Business Registration Has Been Rejected'
+            message = f"""Hello {business.user.username},
+
+We regret to inform you that your business '{business.businessName}' registration has been rejected by our team.
+
+If you believe this is an error or would like to discuss this further, please contact our support team at support@cleaningbizai.com.
+
+Thank you for your understanding.
+
+Best regards,
+The CleaningBiz AI Team
+"""
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [business.user.email]
+            send_mail(subject, message, from_email, recipient_list)
+        except Exception as e:
+            # Log the error but don't stop the rejection process
+            print(f"Error sending rejection email: {str(e)}")
+        
+        messages.warning(request, f"Business '{business.businessName}' has been rejected.")
+    
+    return redirect('accounts:admin_business_approval')
+
+
+@login_required
+def update_business_settings(request):
+    if request.method == 'POST':
+        business = request.user.business_set.first()
+        if not business:
+            return JsonResponse({'success': False, 'message': 'Business not found'})
+        
+        try:
+            # Update useCall setting
+            use_call = request.POST.get('useCall') == 'true' or request.POST.get('useCall') == 'on'
+            business.useCall = use_call
+            business.save()
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})

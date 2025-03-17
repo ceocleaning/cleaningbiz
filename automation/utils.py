@@ -149,8 +149,18 @@ def sendEmailtoClientInvoice(invoice, business):
             # Create message container
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = config.username or from_email
+            
+            # Use from_name if available, otherwise use username
+            from_email_header = config.username or from_email
+            if config.from_name:
+                from_email_header = f'"{config.from_name}" <{config.username}>'
+            msg['From'] = from_email_header
+            
             msg['To'] = recipient_email
+            
+            # Add Reply-To header if configured
+            if config.reply_to:
+                msg['Reply-To'] = config.reply_to
             
             # Attach parts
             part1 = MIMEText(text_body, 'plain')
@@ -160,8 +170,8 @@ def sendEmailtoClientInvoice(invoice, business):
             
             # Send the message via custom SMTP server
             server = smtplib.SMTP(host=config.host, port=config.port)
-            if config.useTLS:
-                server.starttls()
+            # Always use TLS for security
+            server.starttls()
             server.login(config.username, config.password)
             server.send_message(msg)
             server.quit()

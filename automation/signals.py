@@ -44,17 +44,18 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         Messages.objects.create(
             chat=chat,
             role='assistant',
-            message=message_body
+            message=message_body,
+            is_first_message=True
         )
 
         print(f"Message sent successfully! SID: {message.sid}")
 
-
-        schedule(
-            'automation.tasks.send_call_to_lead',  
-            instance.id,  
-            schedule_type='O',
-            next_run=timezone.now() + datetime.timedelta(minutes=5),
+        if instance.business.useCall:
+            schedule(
+                'automation.tasks.send_call_to_lead',  
+                instance.id,  
+                schedule_type='O',
+                next_run=timezone.now() + datetime.timedelta(minutes=5),
             )
-        print("Call scheduled for lead")
+            print("Call scheduled for lead")
 

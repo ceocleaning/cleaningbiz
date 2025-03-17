@@ -5,7 +5,7 @@ import random
 
 User = get_user_model()
 
-URL = 'https://ceocleaners.up.railway.app'
+URL = 'https://cleaningbizai.up.railway.app'
 
 
 class Business(models.Model):
@@ -14,6 +14,11 @@ class Business(models.Model):
     businessName = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
+
+    isActive = models.BooleanField(default=False)
+    isApproved = models.BooleanField(default=False)
+
+    useCall = models.BooleanField(default=False)
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
@@ -57,6 +62,8 @@ class SMTPConfig(models.Model):
     port = models.IntegerField(null=True, blank=True)
     username = models.CharField(max_length=255, null=True, blank=True)
     password = models.CharField(max_length=255, null=True, blank=True)
+    from_name = models.CharField(max_length=255, null=True, blank=True)
+    reply_to = models.CharField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return self.business.businessName

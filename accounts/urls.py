@@ -20,6 +20,7 @@ urlpatterns = [
     path('custom-addon/<int:addon_id>/delete/', views.delete_custom_addon, name='delete_custom_addon'),
     path('business/credentials/edit/', views.edit_credentials, name='edit_credentials'),
     path('business/credentials/generate-secret/', views.generate_secret_key, name='generate_secret_key'),
+    path('business/credentials/regenerate-secret/', views.regenerate_secret_key, name='regenerate_secret_key'),
    
     
     # Password Reset URLs
@@ -32,4 +33,15 @@ urlpatterns = [
     path('smtp-config/', views.smtp_config, name='smtp_config'),
    
     path('smtp-config/delete/', views.delete_smtp_config, name='delete_smtp_config'),
+    
+    # Approval Pending URL
+    path('approval-pending/', views.approval_pending, name='approval_pending'),
+    
+    # Admin Business Approval URLs
+    path('admin/business-approval/', views.admin_business_approval, name='admin_business_approval'),
+    path('admin/business/<int:business_id>/approve/', views.approve_business, name='approve_business'),
+    path('admin/business/<int:business_id>/reject/', views.reject_business, name='reject_business'),
+
+
+    path('update-business-settings/', views.update_business_settings, name='update_business_settings'),
 ]

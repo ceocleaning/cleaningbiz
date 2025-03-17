@@ -299,11 +299,10 @@ def send_sms_response(to_number, message, secretKey):
             to=to_number
         )
 
-        lead = Lead.objects.filter(phone_number=to_number, is_response_received=False).first()
+        lead = Lead.objects.filter(phone_number=to_number).first()
         if lead:
             lead.is_response_received = True
             lead.save()
-
         
         print(f"[DEBUG] SMS sent successfully. Twilio SID: {message_obj.sid}")
     except Exception as e:

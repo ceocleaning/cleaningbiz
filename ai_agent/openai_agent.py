@@ -354,6 +354,26 @@ class OpenAIAgent:
                     return json.dumps(result)
                     
                 elif tool_name == 'calculateTotal':
+                    # First, get all messages for this chat to extract conversation summary
+                    messages = OpenAIAgent.get_chat_messages(client_phone_number)
+                    
+                    # Format messages for the summary extraction
+                    formatted_messages = []
+                    for msg in messages:
+                        if msg.get('role') in ['user', 'assistant'] and msg.get('message'):
+                            formatted_messages.append({
+                                'role': msg.get('role'),
+                                'content': msg.get('message')
+                            })
+                    
+                    # Extract conversation summary
+                    if formatted_messages:
+                        summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                        
+                        # Update chat summary in database
+                        chat.summary = summary
+                        chat.save()
+                    
                     # Execute the tool with required arguments
                     result = tools[tool_name](business, client_phone_number)
                     return json.dumps(result)
@@ -463,7 +483,7 @@ class OpenAIAgent:
             
             if not has_tool_calls:
                 # No tool calls, just return the message content
-                return message.content
+                return message.content or "I'm sorry, I encountered an error processing your request."
             
             # Process tool calls
             all_tool_results = []
@@ -554,16 +574,16 @@ class OpenAIAgent:
                 print(f"[DEBUG] Calling OpenAI to generate natural response")
                 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
                 natural_response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o",  # Using the most capable model for accurate extraction
                     messages=messages,
                     temperature=0.5,
-                    max_tokens=1024  # Using full token count for comprehensive responses
+                    max_tokens=1024  # Using full token allocation for comprehensive responses
                 )
                 
                 # Use the natural response as the final response
                 final_response = natural_response.choices[0].message.content
                 print(f"[DEBUG] Final response: {final_response}")
-                return final_response
+                return final_response or "I'm sorry, I encountered an error processing your request."
             except Exception as e:
                 print(f"Error generating natural response: {str(e)}")
                 print(f"Error details: {traceback.format_exc()}")
@@ -571,11 +591,11 @@ class OpenAIAgent:
                 # Safe fallback with better error handling
                 try:
                     if 'message' in locals():
-                        return message.content
+                        return message.content or "I'm sorry, I encountered an error processing your request."
                     elif hasattr(response, 'choices'):
-                        return response.choices[0].message.content
+                        return response.choices[0].message.content or "I'm sorry, I encountered an error processing your request."
                     elif hasattr(response, 'content'):
-                        return response.content
+                        return response.content or "I'm sorry, I encountered an error processing your request."
                     else:
                         return "I'm sorry, I encountered an error processing the response."
                 except Exception:
@@ -591,11 +611,11 @@ class OpenAIAgent:
             # Safe fallback with better error handling
             try:
                 if 'message' in locals():
-                    return message.content
+                    return message.content or "I'm sorry, I encountered an error processing your request."
                 elif hasattr(response, 'choices'):
-                    return response.choices[0].message.content
+                    return response.choices[0].message.content or "I'm sorry, I encountered an error processing your request."
                 elif hasattr(response, 'content'):
-                    return response.content
+                    return response.content or "I'm sorry, I encountered an error processing your request."
                 else:
                     return "I'm sorry, I encountered an error processing the response."
             except Exception:
@@ -870,31 +890,59 @@ def chat_api(request):
             # Process the response
             ai_response = OpenAIAgent.process_ai_response(response, client_phone_number)
             
-            # Save the assistant message
-            assistant_message = Messages.objects.create(
-                chat=chat,
-                role='assistant',
-                message=ai_response
-            )
+            # Save the assistant message - only if ai_response is not None or empty
+            if ai_response:
+                assistant_message = Messages.objects.create(
+                    chat=chat,
+                    role='assistant',
+                    message=ai_response
+                )
 
-            formatted_messages.append({
-                'role': 'assistant',
-                'content': ai_response
-            })
+                formatted_messages.append({
+                    'role': 'assistant',
+                    'content': ai_response
+                })
+            else:
+                # Handle case where ai_response is None or empty
+                ai_response = "I'm sorry, I encountered an error processing your request."
+                assistant_message = Messages.objects.create(
+                    chat=chat,
+                    role='assistant',
+                    message=ai_response
+                )
+                
+                formatted_messages.append({
+                    'role': 'assistant',
+                    'content': ai_response
+                })
             
             # Analyze and update chat summary
             # Make sure formatted_messages is in the correct format
             # Each message should be a dictionary with 'role' and 'content' keys
-            messages_for_summary = formatted_messages.copy()
+            messages_for_summary = []
             
-            # Add the latest assistant response if it's not already included
-            if ai_response and not any(msg.get('role') == 'assistant' and msg.get('content') == ai_response for msg in messages_for_summary):
-                messages_for_summary.append({
-                    'role': 'assistant',
-                    'content': ai_response
-                })
+            # Convert all messages to the correct format
+            for msg in formatted_messages:
+                if isinstance(msg, dict) and 'role' in msg:
+                    content = msg.get('content')
+                    if content:  # Only add messages with content
+                        messages_for_summary.append({
+                            'role': msg['role'],
+                            'content': content
+                        })
           
-   
+            # Extract conversation summary if we have enough messages
+            if len(messages_for_summary) >= 2:
+                try:
+                    # Extract conversation summary
+                    summary = OpenAIAgent.extract_conversation_summary(messages_for_summary)
+                    
+                    # Update chat summary in database
+                    chat.summary = summary
+                    chat.save()
+                except Exception as e:
+                    print(f"Error extracting conversation summary: {str(e)}")
+                    traceback.print_exc()
             
             # Return the response
             return JsonResponse({
