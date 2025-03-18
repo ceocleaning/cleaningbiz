@@ -72,7 +72,7 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
 
             
             # Get SMTP configuration
-            smtpConfig = SMTPConfig.objects.filter(business=instance.business)
+            smtpConfig = SMTPConfig.objects.filter(business=instance.booking.business)
             
             if not smtpConfig.exists() or not smtpConfig.first().username or not smtpConfig.first().password:
                 print("Email credentials not configured for business")

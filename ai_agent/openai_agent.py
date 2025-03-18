@@ -741,7 +741,7 @@ class OpenAIAgent:
             Respond ONLY with a valid JSON object containing these keys (leave empty if not found):
             - firstName, lastName: Customer's full name
             - email: Customer's email address
-            - phoneNumber: Customer's phone number without any spaces or dashes
+            - phoneNumber: Customer's phone number with country code without any spaces or dashes
             - address1: Street address (just the street part, no city/state/zip)
             - city: City name
             - state: State
