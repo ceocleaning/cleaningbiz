@@ -178,7 +178,7 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
 
             # Set up SMTP connection
             smtp_server = smtplib.SMTP(config.host, config.port)
-            if config.useTLS:
+            if config.port == 587:
                 smtp_server.starttls()
             smtp_server.login(config.username, config.password)
             

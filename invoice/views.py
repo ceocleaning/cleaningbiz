@@ -97,7 +97,7 @@ def delete_invoice(request, invoiceId):
         invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
         invoice.delete()
         messages.success(request, 'Invoice deleted successfully!')
-        return redirect('bookings:all_invoices')
+        return redirect('invoice:all_invoices')
     except Invoice.DoesNotExist:
         messages.error(request, 'Invoice not found')
         return redirect('invoice:all_invoices')
