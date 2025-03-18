@@ -13,16 +13,16 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
             # Check if an invoice already exists for this booking
             if not hasattr(instance, 'invoice'):
                 # Calculate the total amount from the booking
-                total_amount = instance.totalAmount
+                total_amount = instance.totalPrice
                 
                 # Create a new invoice
                 invoice = Invoice.objects.create(
                     booking=instance,
                     amount=total_amount
                 )
-                print(f"[DEBUG] Created invoice {invoice.invoiceId} for booking {instance.id}")
+                print(f"[DEBUG] Created invoice {invoice.invoiceId} for booking {instance.bookingId}")
         except Exception as e:
-            print(f"[ERROR] Error creating invoice for booking {instance.id}: {str(e)}")
+            print(f"[ERROR] Error creating invoice for booking {instance.bookingId}: {str(e)}")
 
 
 # Connect the signal
