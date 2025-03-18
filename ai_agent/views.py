@@ -10,7 +10,7 @@ from .openai_agent import OpenAIAgent
 
 from accounts.models import Business, ApiCredential
 from .models import AgentConfiguration, Chat, Messages
-
+from automation.models import Lead
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -232,7 +232,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
             
             # Process the response
             print("[DEBUG] Processing AI response")
-            ai_response_text = OpenAIAgent.process_ai_response(response.choices[0].message, client_phone_number, business)
+            ai_response_text = OpenAIAgent.process_ai_response(response, client_phone_number, business)
             
             # Save the assistant message
             print("[DEBUG] Saving assistant message to database")
