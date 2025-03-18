@@ -11,26 +11,28 @@
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         overflow: hidden;
+        overflow-x: auto;
     }
     
     .calendar-header {
         background-color: var(--primary-color);
         color: white;
-        padding: 15px 20px;
+        padding: 12px 15px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 10px;
     }
     
     .calendar-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 600;
         margin: 0;
     }
     
     .calendar-nav {
         display: flex;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
     
     .calendar-nav-btn {
@@ -38,9 +40,15 @@
         border: none;
         color: white;
         border-radius: 5px;
-        padding: 5px 15px;
+        padding: 5px 10px;
         font-weight: 500;
         transition: background-color 0.2s;
+        font-size: 0.85rem;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
     }
     
     .calendar-nav-btn:hover {
@@ -49,21 +57,23 @@
     
     .calendar-grid {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(40px, 1fr));
         border-bottom: 1px solid #e5e7eb;
+        min-width: 300px;
     }
     
     .calendar-day-header {
         text-align: center;
-        padding: 10px;
+        padding: 8px 2px;
         font-weight: 600;
         border-bottom: 1px solid #e5e7eb;
         background-color: #f9fafb;
+        font-size: 0.75rem;
     }
     
     .calendar-day {
-        min-height: 120px;
-        padding: 10px;
+        min-height: 80px;
+        padding: 6px 4px;
         border-right: 1px solid #e5e7eb;
         border-bottom: 1px solid #e5e7eb;
         position: relative;
@@ -80,11 +90,10 @@
     
     .calendar-day-number {
         position: absolute;
-        top: 5px;
-        right: 8px;
-        font-size: 1rem;
+        top: 3px;
+        right: 4px;
+        font-size: 0.8rem;
         color: #6b7280;
-       
     }
     
     .calendar-day.other-month {
@@ -101,13 +110,13 @@
     }
     
     .calendar-day-content {
-        margin-top: 20px;
-        font-size: 0.9rem;
+        margin-top: 16px;
+        font-size: 0.7rem;
     }
     
     .calendar-day-status {
-        margin-top: 5px;
-        font-size: 0.9rem;
+        margin-top: 4px;
+        font-size: 0.7rem;
         font-weight: 600;
     }
     
@@ -120,17 +129,17 @@
     }
     
     .calendar-day-hours {
-        margin-top: 5px;
-        font-size: 0.8rem;
+        margin-top: 3px;
+        font-size: 0.65rem;
     }
     
     .booking-indicator {
-        margin-top: 8px;
-        padding: 4px 6px;
+        margin-top: 6px;
+        padding: 2px 3px;
         background-color: #dbeafe;
         border-left: 3px solid #2563eb;
         border-radius: 3px;
-        font-size: 0.8rem;
+        font-size: 0.65rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -148,7 +157,7 @@
     
     .legend {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         margin-bottom: 15px;
         flex-wrap: wrap;
     }
@@ -156,47 +165,236 @@
     .legend-item {
         display: flex;
         align-items: center;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
+        margin-bottom: 5px;
     }
     
     .legend-color {
-        width: 15px;
-        height: 15px;
+        width: 10px;
+        height: 10px;
         margin-right: 5px;
         border-radius: 3px;
     }
     
-    @media (max-width: 768px) {
+    /* Responsive styles */
+    @media (min-width: 768px) {
+        .calendar-header {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+        
+        .calendar-title {
+            font-size: 1.5rem;
+        }
+        
+        .calendar-nav {
+            justify-content: flex-end;
+        }
+        
+        .calendar-nav-btn {
+            flex: 0 0 auto;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-grid {
+            grid-template-columns: repeat(7, 1fr);
+        }
+        
         .calendar-day {
-            min-height: 100px;
+            min-height: 120px;
+            padding: 10px;
+        }
+        
+        .calendar-day-header {
+            padding: 10px;
+            font-size: 0.95rem;
         }
         
         .calendar-day-content {
-            margin-top: 15px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .calendar-day-status {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .calendar-day-hours {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        
+        .booking-indicator {
+            font-size: 0.8rem;
+            padding: 4px 6px;
+            margin-top: 8px;
+        }
+        
+        .legend-item {
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+        }
+        
+        .calendar-day-number {
+            font-size: 0.95rem;
+            top: 5px;
+            right: 8px;
+        }
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 767.98px) {
+        .container {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        
+        /* Header and back button */
+        .d-flex.justify-content-between.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 15px;
+        }
+        
+        a.btn-outline-primary, button.btn-outline-primary {
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 10px;
+            min-height: 44px;
+        }
+        
+        .day-short {
+            display: inline;
+        }
+        
+        .day-full {
+            display: none;
+        }
+        
+        /* Better touch targets */
+        .btn {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Card body padding adjustment */
+        .card-body {
+            padding: 0.75rem;
+        }
+        
+        /* Smaller legend */
+        .legend {
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+    }
+    
+    /* Small screen calendar view */
+    @media (max-width: 575.98px) {
+        .calendar-container {
+            margin-left: -8px;
+            margin-right: -8px;
+            border-radius: 0;
+            width: calc(100% + 16px);
+        }
+        
+        .booking-indicator {
+            margin-top: 3px;
+            padding: 2px 3px;
+            font-size: 0.65rem;
+        }
+        
+        .calendar-day-number {
+            font-size: 0.75rem;
+            top: 2px;
+            right: 3px;
+        }
+        
+        .calendar-day-hours {
+            font-size: 0.65rem;
+        }
+        
+        /* Three letter day names */
+        .day-short {
+            font-size: 0.7rem;
+        }
+        
+        /* Force single column for back navigation */
+        .mb-3.mb-md-4 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        /* Full width calendar nav buttons */
+        .calendar-nav {
+            margin-top: 5px;
+        }
+        
+        .calendar-nav-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            min-height: 36px;
+        }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 370px) {
+        .calendar-day {
+            min-height: 70px;
+            padding: 4px 2px;
+        }
+        
+        .calendar-day-content {
+            margin-top: 14px;
+            font-size: 0.65rem;
+        }
+        
+        .calendar-day-status {
+            font-size: 0.65rem;
+        }
+        
+        .calendar-day-hours {
+            font-size: 0.6rem;
+        }
+        
+        .booking-indicator {
+            padding: 1px 2px;
+            font-size: 0.6rem;
+            margin-top: 2px;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-3 py-md-4">
     <!-- Back Button and Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
         <a href="{% url 'cleaner_detail' cleaner_id=cleaner.id %}" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Cleaner Profile
+            <i class="fas fa-arrow-left me-2"></i>Back
         </a>
-        <div>
-            <h1 class="h3 mb-0 d-inline-block me-3">{{ cleaner.name }}'s Schedule</h1>
-            <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{% url 'cleaner_detail' cleaner_id=cleaner.id %}#editScheduleModal'">
-                <i class="fas fa-edit me-1"></i>Edit Schedule
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+            <h1 class="h3 mb-0 me-0 me-md-3">{{ cleaner.name }}'s Schedule</h1>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{% url 'cleaner_detail' cleaner_id=cleaner.id %}#editScheduleModal';">
+                <i class="fas fa-edit me-1"></i>Edit
             </button>
         </div>
     </div>
     
     <!-- Legend -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h5 class="card-title mb-3">Legend</h5>
+    <div class="card shadow-sm mb-3 mb-md-4">
+        <div class="card-body p-3 p-md-4">
+            <h5 class="card-title mb-2 mb-md-3">Legend</h5>
             <div class="legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #eff6ff;"></div>
@@ -212,15 +410,15 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #dbeafe;"></div>
-                    Upcoming Booking
+                    Upcoming
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #d1fae5;"></div>
-                    Completed Booking
+                    Completed
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #fee2e2;"></div>
-                    Cancelled Booking
+                    Cancelled
                 </div>
             </div>
         </div>
@@ -232,7 +430,7 @@
             <h2 class="calendar-title">{{ month_name }} {{ year }}</h2>
             <div class="calendar-nav">
                 <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}?month={{ prev_month }}&year={{ prev_year }}" class="calendar-nav-btn">
-                    <i class="fas fa-chevron-left me-1"></i>Previous
+                    <i class="fas fa-chevron-left me-1"></i>Prev
                 </a>
                 <a href="{% url 'cleaner_monthly_schedule' cleaner_id=cleaner.id %}" class="calendar-nav-btn">
                     Today
@@ -246,7 +444,10 @@
         <div class="calendar-grid">
             <!-- Day headers -->
             {% for day in day_names %}
-            <div class="calendar-day-header">{{ day }}</div>
+            <div class="calendar-day-header">
+                <span class="day-full">{{ day }}</span>
+                <span class="day-short d-none">{{ day|slice:":3" }}</span>
+            </div>
             {% endfor %}
             
             <!-- Calendar days -->
@@ -257,7 +458,7 @@
                     <div class="calendar-day-content">
                         {% if not day.other_month %}
                             {% if day.is_off_day %}
-                                <div class="calendar-day-status off">OFF DAY</div>
+                                <div class="calendar-day-status off">OFF</div>
                             {% else %}
                                 <div class="calendar-day-status working">Available</div>
                                 <div class="calendar-day-hours">{{ day.start_time|time:"g:i A" }} - {{ day.end_time|time:"g:i A" }}</div>
@@ -276,4 +477,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Show abbreviated day names on small screens
+    function updateDayNames() {
+        if (window.innerWidth < 768) {
+            document.querySelectorAll('.day-short').forEach(el => el.classList.remove('d-none'));
+            document.querySelectorAll('.day-full').forEach(el => el.classList.add('d-none'));
+        } else {
+            document.querySelectorAll('.day-short').forEach(el => el.classList.add('d-none'));
+            document.querySelectorAll('.day-full').forEach(el => el.classList.remove('d-none'));
+        }
+    }
+    
+    // Run on load and resize
+    window.addEventListener('load', updateDayNames);
+    window.addEventListener('resize', updateDayNames);
+</script>
 {% endblock %}

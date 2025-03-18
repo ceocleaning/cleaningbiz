@@ -32,27 +32,161 @@ function toggleJsonView() {
 </script>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.mapping-tree {
+    font-family: monospace;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.nested-object {
+    margin-left: 0;
+}
+
+.object-name {
+    font-size: 1.1em;
+    color: #333;
+}
+
+.nested-fields {
+    margin-left: 2rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--primary-color);
+}
+
+.field-list {
+    margin-left: 2rem;
+}
+
+.field-item {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+
+code {
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.05);
+    word-break: break-word;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+        margin-top: 1rem !important;
+    }
+    
+    .card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.5rem;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .nested-fields {
+        margin-left: 0.75rem;
+        padding-left: 0.75rem;
+    }
+    
+    .field-list {
+        margin-left: 0.75rem;
+    }
+    
+    .field-item {
+        flex-wrap: wrap;
+    }
+    
+    .mapping-tree {
+        padding: 0.75rem !important;
+    }
+    
+    .object-name {
+        font-size: 1em;
+    }
+    
+    pre {
+        padding: 0.75rem;
+        max-height: 300px;
+        font-size: 0.8rem;
+    }
+    
+    code {
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mt-4">
+<div class="container-fluid px-3 px-md-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3 mb-md-4">
+        <h1 class="mt-3 mt-md-4 mb-0">
             <i class="fas fa-eye me-2 text-primary"></i>
             Mapping Preview - {{ platform.name }}
         </h1>
-        <div>
-            <a href="{% url 'integration_mapping' platform.id %}" class="btn btn-primary">
+        <div class="d-flex flex-column flex-md-row gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+            <a href="{% url 'integration_mapping' platform.id %}" class="btn btn-primary w-100 w-md-auto">
                 <i class="fas fa-edit me-1"></i>Edit Mappings
             </a>
-            <a href="{% url 'integration_list' %}" class="btn btn-secondary">
-                <i class="fas fa-list me-1"></i>Back to List
+            <a href="{% url 'integration_list' %}" class="btn btn-secondary w-100 w-md-auto">
+                <i class="fas fa-list me-1"></i>Back
             </a>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-3">
         <!-- Source Data -->
         <div class="col-md-5">
-            <div class="card mb-4">
+            <div class="card mb-3 mb-md-4">
                 <div class="card-header bg-success text-white">
                     <i class="fas fa-database me-1"></i>
                     Your Booking Data
@@ -75,7 +209,7 @@ function toggleJsonView() {
                                         <i class="fas fa-asterisk text-danger ms-1" data-bs-toggle="tooltip" title="Required"></i>
                                         {% endif %}
                                     </td>
-                                    <td><span class="text-muted">{{ value }}</span></td>
+                                    <td><span class="text-muted text-break">{{ value }}</span></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -87,18 +221,18 @@ function toggleJsonView() {
 
         <!-- Mapping Structure -->
         <div class="col-md-7">
-            <div class="card mb-4">
+            <div class="card mb-3 mb-md-4">
                 <div class="card-header bg-primary text-white">
                     <i class="fas fa-sitemap me-1"></i>
                     Mapped Structure
                 </div>
                 <div class="card-body">
-                    <div class="mapping-tree p-3">
+                    <div class="mapping-tree p-2 p-md-3">
                         {% for type, mappings in grouped_mappings.items %}
                             {% if type == 'Nested' %}
                                 {% regroup mappings by parent_path as nested_groups %}
                                 {% for group in nested_groups %}
-                                    <div class="nested-object mb-4">
+                                    <div class="nested-object mb-3 mb-md-4">
                                         <div class="object-name mb-2">
                                             <i class="fas fa-folder text-warning me-2"></i>
                                             <strong>{{ group.grouper }}</strong>
@@ -162,64 +296,4 @@ function toggleJsonView() {
         </div>
     </div>
 </div>
-
-<style>
-.mapping-tree {
-    font-family: monospace;
-    background: #f8f9fa;
-    border-radius: 4px;
-}
-
-.nested-object {
-    margin-left: 0;
-}
-
-.object-name {
-    font-size: 1.1em;
-    color: #333;
-}
-
-.nested-fields {
-    margin-left: 2rem;
-    padding-left: 1rem;
-    border-left: 2px solid var(--primary-color);
-}
-
-.field-list {
-    margin-left: 2rem;
-}
-
-.field-item {
-    padding: 0.25rem 0;
-    display: flex;
-    align-items: center;
-}
-
-code {
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    background: rgba(0,0,0,0.05);
-}
-
-.card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-}
-
-.card-header {
-    font-weight: 500;
-}
-
-pre {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 4px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-pre code {
-    background: none;
-    padding: 0;
-}
-</style>
 {% endblock %}

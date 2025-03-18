@@ -54,6 +54,15 @@
             letter-spacing: -0.5px;
         }
 
+        .navbar-toggler {
+            padding: 0.4rem 0.75rem;
+            border-color: var(--gray-light);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.25);
+        }
+
         .nav-link {
             position: relative;
             font-weight: 500;
@@ -80,6 +89,52 @@
             height: 3px;
             background-color: var(--primary-color);
             border-radius: 3px;
+        }
+
+        /* Mobile navigation fixes */
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                background-color: white;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                margin-top: 0.5rem;
+            }
+            
+            .nav-item {
+                margin-bottom: 0.5rem;
+            }
+            
+            .dropdown-menu {
+                position: static !important;
+                float: none;
+                width: 100%;
+                margin-top: 0.5rem;
+                box-shadow: none;
+                border: 1px solid var(--gray-light);
+            }
+            
+            .navbar-nav {
+                margin-bottom: 1rem !important;
+            }
+            
+            .d-flex.align-items-center {
+                width: auto;
+            }
+            
+            .navbar .container > .d-flex.align-items-center {
+                flex-grow: 1;
+                justify-content: space-between;
+            }
+            
+            .nav-link.active::after {
+                display: none;
+            }
         }
 
         /* Cards */
@@ -395,6 +450,20 @@
             .table tbody td {
                 padding: 0.75rem;
             }
+            
+            .avatar-circle {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .avatar-initials {
+                font-size: 14px;
+            }
+        }
+        
+        /* Ensure navbar container has position for dropdown */
+        .navbar .container {
+            position: relative;
         }
 
         /* Toast notifications */
@@ -428,6 +497,14 @@
             padding: 12px 15px;
             font-weight: 500;
         }
+
+        /* Fix for dropdown positioning */
+        @media (min-width: 992px) {
+            .dropdown-menu-lg-end {
+                right: 0;
+                left: auto;
+            }
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
@@ -435,13 +512,15 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
-                <i class="fas fa-broom me-2"></i>CleaningBiz AI
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center">
+                <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
+                    <i class="fas fa-broom me-2"></i>CleaningBiz AI
+                </a>
+                <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if user.is_authenticated %}
@@ -492,9 +571,10 @@
                                 <div class="avatar-circle me-2">
                                     <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
                                 </div>
-                                <span class="d-none d-md-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-inline d-md-none">Account</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
                                 <li class="px-3 py-2 d-flex flex-column">
                                     <span class="fw-bold">{{ request.user.get_full_name }}</span>
                                     <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>

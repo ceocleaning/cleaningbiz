@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container py-3 py-md-4">
     <div class="row justify-content-center">
         <div class="col-md-12">
             <!-- Header Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
+            <div class="card shadow-sm mb-3 mb-md-4">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                         <div>
                             <h4 class="mb-1 text-primary fw-bold">
                                 <i class="fas fa-user-tag me-2"></i>Lead #{{ lead.leadId }}
@@ -19,7 +19,7 @@
                                 <i class="fa fa-clock me-1"></i>Updated on {{ lead.updatedAt|date:"F d, Y" }}
                             </span>
                         </div>
-                        <div class="text-end">
+                        <div class="text-start text-md-end">
                             <div class="mb-2">
                                 {% if lead.isConverted %}
                                 <span class="badge bg-success">
@@ -37,28 +37,28 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row g-3">
                 <!-- Contact Information -->
-                <div class="col-md-6 mb-4">
+                <div class="col-12 col-md-6 mb-3 mb-md-4">
                     <div class="card shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex align-items-center mb-3 mb-md-4">
                                 <div class="icon-circle bg-primary text-white me-3">
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <h5 class="card-title mb-0">Contact Information</h5>
                             </div>
                             <div class="contact-info">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Name</span>
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Name</span>
                                     <span class="fw-bold">{{ lead.name }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Email</span>
-                                    <span>{{ lead.email }}</span>
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Email</span>
+                                    <span class="text-break">{{ lead.email }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Phone Number</span>
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Phone Number</span>
                                     <span>{{ lead.phone_number }}</span>
                                 </div>
                             </div>
@@ -67,10 +67,10 @@
                 </div>
 
                 <!-- Lead Details -->
-                <div class="col-md-6 mb-4">
+                <div class="col-12 col-md-6 mb-3 mb-md-4">
                     <div class="card shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex align-items-center mb-3 mb-md-4">
                                 <div class="icon-circle bg-info text-white me-3">
                                     <i class="fas fa-info-circle"></i>
                                 </div>
@@ -98,15 +98,13 @@
             </div>
 
             <!-- Actions -->
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <a href="{% url 'update_lead' lead.leadId %}" class="btn btn-primary me-2">
-                                <i class="fas fa-edit me-2"></i>Edit Lead
-                            </a>
-                        </div>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <div class="card shadow-sm mt-3">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a href="{% url 'update_lead' lead.leadId %}" class="btn btn-primary w-100 w-md-auto">
+                            <i class="fas fa-edit me-2"></i>Edit Lead
+                        </a>
+                        <button type="button" class="btn btn-danger w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#deleteModal">
                             <i class="fas fa-trash me-2"></i>Delete Lead
                         </button>
                     </div>
@@ -116,7 +114,7 @@
            
             <!-- Delete Modal -->
             <div class="modal fade" id="deleteModal" tabindex="-1">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Delete Lead</h5>
@@ -126,11 +124,11 @@
                             <p>Are you sure you want to delete this lead?</p>
                             <p class="text-danger"><small>This action cannot be undone.</small></p>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <div class="modal-footer flex-column flex-sm-row">
+                            <button type="button" class="btn btn-secondary w-100 w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Cancel</button>
                             <form action="{% url 'delete_lead' lead.leadId %}" method="POST" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button type="submit" class="btn btn-danger w-100 w-sm-auto">Delete</button>
                             </form>
                         </div>
                     </div>
@@ -139,4 +137,91 @@
         </div>
     </div>
 </div>
+
+<!-- Add responsive styles specifically for this page -->
+<style>
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .text-break {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    @media (max-width: 767.98px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .icon-circle {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+        }
+        
+        h4 {
+            font-size: 1.3rem;
+        }
+        
+        h5 {
+            font-size: 1.1rem;
+        }
+        
+        .btn {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.9rem;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Better spacing for mobile views */
+        .mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .d-grid .btn {
+            margin-bottom: 0.5rem;
+        }
+        
+        .d-grid .btn:last-child {
+            margin-bottom: 0;
+        }
+    }
+    
+    /* Touch optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .btn, a.badge {
+            min-height: 44px;
+        }
+        
+        .form-control {
+            min-height: 44px;
+        }
+        
+        .modal-footer form {
+            width: 100%;
+        }
+        
+        .d-grid .btn {
+            width: 100%;
+        }
+    }
+</style>
 {% endblock %}

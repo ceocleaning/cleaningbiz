@@ -28,7 +28,7 @@
                         </div>
                     </div>
                     <div class="mt-3">
-                        <span class="badge bg-success">
+                        <span class="badge bg-success rounded-pill px-3 py-2">
                             <i class="fas fa-chart-line me-1"></i>{{ converted_leads|default:"0" }} Converted
                         </span>
                     </div>
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                     <div class="mt-3">
-                        <span class="badge bg-success">
+                        <span class="badge bg-success rounded-pill px-3 py-2">
                             <i class="fas fa-check me-1"></i>{{ completed_bookings|default:"0" }} Completed
                         </span>
                     </div>
@@ -68,7 +68,7 @@
                         </div>
                     </div>
                     <div class="mt-3">
-                        <span class="badge bg-warning">
+                        <span class="badge bg-warning rounded-pill px-3 py-2">
                             <i class="fas fa-file-invoice-dollar me-1"></i>{{ pending_invoices|default:"0" }} Pending Invoices
                         </span>
                     </div>
@@ -88,7 +88,7 @@
                         </div>
                     </div>
                     <div class="mt-3">
-                        <span class="badge bg-primary">
+                        <span class="badge bg-primary rounded-pill px-3 py-2">
                             <i class="fas fa-star me-1"></i>{{ top_rated_cleaners|default:"0" }} Top Rated
                         </span>
                     </div>
@@ -108,79 +108,91 @@
                 <div class="card-body">
                     <div class="row g-4">
                         <div class="col-md-4">
-                            <a href="{% url 'bookings:all_bookings' %}" class="card bg-primary text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-primary p-2 me-3">
-                                        <i class="fas fa-calendar-alt fa-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Manage Bookings</h6>
-                                        <small>View and update schedules</small>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a href="{% url 'invoice:all_invoices' %}" class="card bg-success text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-success p-2 me-3">
-                                        <i class="fas fa-file-invoice fa-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Invoices</h6>
-                                        <small>Generate & manage invoices</small>
+                            <a href="{% url 'bookings:all_bookings' %}" class="card border-0 shadow-sm bg-primary text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-calendar-alt text-primary fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Manage Bookings</h6>
+                                            <small>View and update schedules</small>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="{% url 'all_leads' %}" class="card bg-info text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-info p-2 me-3">
-                                        <i class="fas fa-user-plus fa-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Manage Leads</h6>
-                                        <small>Track potential clients</small>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a href="{% url 'cleaners_list' %}" class="card bg-warning text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-warning p-2 me-3">
-                                        <i class="fas fa-users fa-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Cleaners</h6>
-                                        <small>Manage your team</small>
+                            <a href="{% url 'invoice:all_invoices' %}" class="card border-0 shadow-sm bg-success text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-file-invoice text-success fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Invoices</h6>
+                                            <small>Generate & manage invoices</small>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="{% url 'accounts:profile' %}" class="card bg-danger text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-danger p-2 me-3">
-                                        <i class="fas fa-cog fa-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Settings</h6>
-                                        <small>Configure your account</small>
+                            <a href="{% url 'all_leads' %}" class="card border-0 shadow-sm bg-info text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-user-plus text-info fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Manage Leads</h6>
+                                            <small>Track potential clients</small>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="{% url 'analytics:analytics_dashboard' %}" class="card bg-secondary text-white text-decoration-none p-3 h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-secondary p-2 me-3">
-                                        <i class="fas fa-chart-bar fa-lg"></i>
+                            <a href="{% url 'cleaners_list' %}" class="card border-0 shadow-sm bg-warning text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-users text-warning fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Cleaners</h6>
+                                            <small>Manage your team</small>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h6 class="mb-1">Analytics</h6>
-                                        <small>View business insights</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'accounts:profile' %}" class="card border-0 shadow-sm bg-danger text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-cog text-danger fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Settings</h6>
+                                            <small>Configure your account</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'analytics:analytics_dashboard' %}" class="card border-0 shadow-sm bg-secondary text-white text-decoration-none h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-white p-2 me-3">
+                                            <i class="fas fa-chart-bar text-secondary fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Analytics</h6>
+                                            <small>View business insights</small>
+                                        </div>
                                     </div>
                                 </div>
                             </a>
@@ -199,7 +211,7 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for activity in recent_activities|default:'' %}
-                        <div class="list-group-item">
+                        <div class="list-group-item border-0 py-3">
                             <div class="d-flex align-items-center">
                                 <div class="rounded-circle bg-{{ activity.type|default:'primary' }} bg-opacity-10 p-2 me-3">
                                     <i class="fas fa-{{ activity.icon|default:'circle' }} text-{{ activity.type|default:'primary' }}"></i>
@@ -222,10 +234,30 @@
         </div>
     </div>
 </div>
-
-
+{% endblock %}
+{% block styles %}
+<style>
+    /* Dashboard specific styles */
+    .badge {
+        font-weight: 500;
+    }
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+    .list-group-item {
+        transition: all 0.2s ease;
+        border-left: 0;
+        border-right: 0;
+    }
+    .list-group-item:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
-
 {% endblock %}

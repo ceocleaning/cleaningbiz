@@ -296,8 +296,10 @@ def edit_credentials(request):
     if request.method == 'POST':
         try:
             credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
-         
             credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
+            credentials.twilioSmsNumber = request.POST.get('twilioSmsNumber', '')
+            credentials.twilioAccountSid = request.POST.get('twilioSid', '')
+            credentials.twilioAuthToken = request.POST.get('twilioAuthToken', '')
             credentials.save()
             
             messages.success(request, 'API credentials updated successfully!')
@@ -307,7 +309,7 @@ def edit_credentials(request):
             messages.error(request, f'Error updating credentials: {str(e)}')
             raise Exception(str(e))
     
-    return render(request, 'accounts/edit_credentials.html', {'credentials': credentials})
+    return render(request, 'accounts/edit_credentials.html', {'credentials': credentials, 'business': business})
 
 
 @login_required

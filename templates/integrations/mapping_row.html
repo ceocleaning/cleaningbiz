@@ -29,15 +29,15 @@
             <label class="form-label">Default Value</label>
             <input type="text" class="form-control default-value" value="{{ mapping.default_value|default:'' }}">
         </div>
-        <div class="col-md-1">
+        <div class="col-md-1 col-6">
             <label class="form-label">Required</label>
             <div class="form-check mt-2">
                 <input type="checkbox" class="form-check-input is-required" {% if mapping.is_required %}checked{% endif %}>
             </div>
         </div>
-        <div class="col-md-1">
-            <label class="form-label">&nbsp;</label>
-            <button type="button" class="btn btn-danger btn-sm d-block w-100" onclick="removeMapping(this)">
+        <div class="col-md-1 col-6">
+            <label class="form-label d-md-block d-none">&nbsp;</label>
+            <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeMapping(this)">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
