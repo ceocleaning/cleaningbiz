@@ -561,6 +561,7 @@ class OpenAIAgent:
                 """
                 messages.append({"role": "system", "content": system_prompt})
                 
+                chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
                 # Add context about the current conversation state to help the AI continue properly
                 if chat and hasattr(chat, 'summary') and chat.summary:
                     # Extract relevant context from the chat summary
@@ -620,7 +621,7 @@ class OpenAIAgent:
                     follow_up_response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=messages,
-                        temperature=0.7,
+                        temperature=0.5,
                         max_tokens=1000
                     )
                     
