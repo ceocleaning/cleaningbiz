@@ -109,20 +109,19 @@
                             <div class="col-md-6 mb-3">
                                 <label for="startTime" class="form-label">Start Time</label>
                                 <select class="form-control form-select" id="startTime" name="startTime" required>
-                                    <option value="">Select Time</option>
-                                    <option {% if booking.startTime == '06:00' %}selected{% endif %} value="06:00">6:00 AM</option>
-                                    <option {% if booking.startTime == '07:00' %}selected{% endif %} value="07:00">7:00 AM</option>
-                                    <option {% if booking.startTime == '08:00' %}selected{% endif %} value="08:00">8:00 AM</option>
-                                    <option {% if booking.startTime == '09:00' %}selected{% endif %} value="09:00">9:00 AM</option>
-                                    <option {% if booking.startTime == '10:00' %}selected{% endif %} value="10:00">10:00 AM</option>
-                                    <option {% if booking.startTime == '11:00' %}selected{% endif %} value="11:00">11:00 AM</option>
-                                    <option {% if booking.startTime == '12:00' %}selected{% endif %} value="12:00">12:00 PM</option>
-                                    <option {% if booking.startTime == '13:00' %}selected{% endif %} value="13:00">1:00 PM</option>
-                                    <option {% if booking.startTime == '14:00' %}selected{% endif %} value="14:00">2:00 PM</option>
-                                    <option {% if booking.startTime == '15:00' %}selected{% endif %} value="15:00">3:00 PM</option>
-                                    <option {% if booking.startTime == '16:00' %}selected{% endif %} value="16:00">4:00 PM</option>
-                                    <option {% if booking.startTime == '17:00' %}selected{% endif %} value="17:00">5:00 PM</option>
-                                    <option {% if booking.startTime == '18:00' %}selected{% endif %} value="18:00">6:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '06:00' %}selected{% endif %} value="06:00">6:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '07:00' %}selected{% endif %} value="07:00">7:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '08:00' %}selected{% endif %} value="08:00">8:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '09:00' %}selected{% endif %} value="09:00">9:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '10:00' %}selected{% endif %} value="10:00">10:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '11:00' %}selected{% endif %} value="11:00">11:00 AM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '12:00' %}selected{% endif %} value="12:00">12:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '13:00' %}selected{% endif %} value="13:00">1:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '14:00' %}selected{% endif %} value="14:00">2:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '15:00' %}selected{% endif %} value="15:00">3:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '16:00' %}selected{% endif %} value="16:00">4:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '17:00' %}selected{% endif %} value="17:00">5:00 PM</option>
+                                    <option {% if booking.startTime|time:'h:i' == '18:00' %}selected{% endif %} value="18:00">6:00 PM</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">

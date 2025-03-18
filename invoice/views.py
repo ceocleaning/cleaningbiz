@@ -51,25 +51,15 @@ def all_invoices(request):
 
 @login_required
 def create_invoice(request, bookingId):
-    bookingObj = get_object_or_404(Booking, bookingId=bookingId)
-    if request.method == 'POST':
-        amount = request.POST.get('amount')
+    bookingObj = get_object_or_404(Booking, bookingId=bookingId)    
+    invoice = Invoice.objects.create(
+        booking=bookingObj,
+        amount=bookingObj.totalPrice
+    )
+    messages.success(request, f'Invoice {invoice.invoiceId} created successfully!')
+    return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
         
-        try:
-            invoice = Invoice.objects.create(
-                booking=bookingObj,
-                amount=bookingObj.totalPrice
-            )
-            messages.success(request, f'Invoice {invoice.invoiceId} created successfully!')
-            return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
-        except Booking.DoesNotExist:
-            messages.error(request, 'Booking not found.')
-            return redirect('invoice:create_invoice')
-            
-    context = {
-        'booking': bookingObj,
-    }
-    return render(request, 'create_invoice.html', context)
+
 
 @login_required
 def edit_invoice(request, invoiceId):

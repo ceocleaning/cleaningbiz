@@ -7,9 +7,10 @@
 {% block styles %}
 <style>
     .invoice-container {
-        max-width: 80%;
+        max-width: 1200px;
+        width: 95%;
         margin: 0 auto;
-        padding: 20px;
+        padding: 15px;
         background-color: white;
         box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
@@ -34,28 +35,156 @@
         padding: 8px 16px;
         border-radius: 4px;
         font-weight: 600;
+        z-index: 1;
+    }
+    
+    /* Invoice details styling */
+    .invoice-detail-label {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .detail-row {
+        margin-bottom: 8px;
+    }
+    
+    /* Service item styling */
+    .service-details li {
+        margin-bottom: 4px;
+    }
+    
+    @media (max-width: 767px) {
+        .invoice-container {
+            width: 100%;
+            padding: 10px;
+        }
+        .payment-badge {
+            position: static;
+            display: inline-block;
+            margin: 0 auto 15px;
+            transform: none;
+        }
+        .header-section {
+            flex-direction: column;
+            text-align: center;
+        }
+        .header-section > div {
+            width: 100%;
+            text-align: center !important;
+            margin-bottom: 15px;
+        }
+        .mobile-stack {
+            margin-bottom: 15px;
+        }
+        .mobile-mb-3 {
+            margin-bottom: 1rem;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table {
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
+        .fixed-bottom {
+            position: static;
+            margin-top: 20px;
+        }
+        .fixed-bottom .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        /* Mobile table improvements */
+        .mobile-table-view {
+            display: block;
+        }
+        .mobile-table-view thead {
+            display: none;
+        }
+        .mobile-table-view tbody, 
+        .mobile-table-view tr, 
+        .mobile-table-view td {
+            display: block;
+            width: 100%;
+        }
+        .mobile-table-view td {
+            padding: 8px;
+            text-align: left !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .mobile-table-view td:before {
+            content: attr(data-label);
+            float: left;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .mobile-table-view td:last-child {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 16px;
+        }
+        .mobile-label {
+            display: inline-block;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .bill-to-container {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+        }
+        .invoice-summary-row td {
+            padding-top: 12px;
+        }
+        /* Service item improvements for mobile */
+        .service-row td {
+            position: relative;
+            padding-left: 10px;
+        }
+        .service-item-value {
+            display: inline-block;
+        }
+    }
+    
+    /* Fix for very small screens */
+    @media (max-width: 480px) {
+        .table th, .table td {
+            padding: 0.5rem;
+        }
+        .header-section img {
+            max-width: 120px;
+        }
+        .invoice-id, .invoice-status {
+            font-size: 1.2rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="invoice-container position-relative">
-    {% if invoice.isPaid %}
-    <div class="payment-badge bg-success text-white">
-        <i class="fas fa-check-circle me-1"></i>Paid
+    <div class="text-center mb-3">
+        {% if invoice.isPaid %}
+        <div class="payment-badge bg-success text-white">
+            <i class="fas fa-check-circle me-1"></i>Paid
+        </div>
+        {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
+        <div class="payment-badge bg-info text-white">
+            <i class="fas fa-clock me-1"></i>Payment Authorized
+        </div>
+        {% endif %}
     </div>
-    {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
-    <div class="payment-badge bg-info text-white">
-        <i class="fas fa-clock me-1"></i>Payment Authorized
-    </div>
-    {% endif %}
 
     <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-6">
+    <div class="row mb-4 header-section">
+        <div class="col-md-6 text-start mobile-stack">
             <img src="https://img.freepik.com/free-vector/gradient-squeegee-logo-template_23-2150208857.jpg?uid=R23824890&ga=GA1.1.1921205845.1737568792&semt=ais_hybrid" alt="Logo" style="width: 150px;">
         </div>
-        <div class="col-6 text-end">
+        <div class="col-md-6 text-md-end">
             <h4 class="mb-0">{{ business.name }}</h4>
             <p class="mb-0">{{ business.address }}</p>
             <p class="mb-0">{{ business.phone }}</p>
@@ -65,23 +194,37 @@
 
     <!-- Invoice Details -->
     <div class="row mb-4">
-        <div class="col-6">
-            <div class="row">
-                <div class="col-4 text-muted">Invoice Date:</div>
-                <div class="col-8">{{ invoice.createdAt|format_date }}</div>
-            </div>
-            <div class="row">
-                <div class="col-4 text-muted">Due Date:</div>
-                <div class="col-8">{{ invoice.dueDate|format_date|default:invoice.createdAt|format_date }}</div>
+        <div class="col-md-6 mobile-mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title fs-6">Invoice Information</h5>
+                    <div class="detail-row">
+                        <span class="invoice-detail-label">Invoice Date:</span>
+                        <span class="fw-normal">{{ invoice.createdAt|format_date }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="invoice-detail-label">Due Date:</span>
+                        <span class="fw-normal">{{ invoice.dueDate|format_date|default:invoice.createdAt|format_date }}</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6">
-            <div class="row">
-                <div class="col-4 text-muted">Bill To:</div>
-                <div class="col-8">
-                    {{ invoice.booking.firstName }} {{ invoice.booking.lastName }}<br>
-                    {{ invoice.booking.email }}<br>
-                    {{ invoice.booking.phoneNumber }}
+        <div class="col-md-6">
+            <div class="card h-100 bill-to-container">
+                <div class="card-body">
+                    <h5 class="card-title fs-6">Client Information</h5>
+                    <div class="detail-row">
+                        <span class="invoice-detail-label">Name:</span>
+                        <span class="fw-normal">{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="invoice-detail-label">Email:</span>
+                        <span class="fw-normal">{{ invoice.booking.email }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="invoice-detail-label">Phone:</span>
+                        <span class="fw-normal">{{ invoice.booking.phoneNumber }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -90,73 +233,104 @@
     <!-- Invoice Header -->
     <div class="row mb-4">
         <div class="col-6">
-            <h2 class="mb-0">INVOICE #{{ invoice.invoiceId }}</h2>
+            <h2 class="mb-0 h3 invoice-id">INVOICE #{{ invoice.invoiceId }}</h2>
         </div>
         <div class="col-6 text-end">
             {% if invoice.isPaid %}
-            <h2 class="mb-0 text-success">PAID</h2>
+            <h2 class="mb-0 h3 text-success invoice-status">PAID</h2>
             {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
-            <h2 class="mb-0 text-info">AUTHORIZED</h2>
+            <h2 class="mb-0 h3 text-info invoice-status">AUTHORIZED</h2>
             {% else %}
-            <h2 class="mb-0 text-danger">UNPAID</h2>
+            <h2 class="mb-0 h3 text-danger invoice-status">UNPAID</h2>
             {% endif %}
         </div>
     </div>
 
-    <!-- Service Details -->
+    <!-- Service Details - Mobile Optimized -->
     <div class="table-responsive mb-4">
-        <table class="table">
-            <thead class="bg-light">
+        <table class="table mobile-table-view">
+            <thead>
                 <tr>
-                    <th style="width: 25%">Description</th>
-                    <th style="width: 25%">Details</th>
-                    <th style="width: 25%">Addons</th>
-                    <th style="width: 25%" class="text-end">Amount</th>
+                    <th>Description</th>
+                    <th>Details</th>
+                    <th>Addons</th>
+                    <th class="text-end">Amount</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td><strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong></td>
-                    <td>
-                        Date: {{ invoice.booking.cleaningDate|format_date }}<br>
-                        Time: {{ invoice.booking.startTime|format_time }}<br>
-                        Bedrooms: {{ invoice.booking.bedrooms }}<br>
-                        Bathrooms: {{ invoice.booking.bathrooms }}<br>
-                        Area: {{ invoice.booking.squareFeet }} sq ft<br>
+                <tr class="service-row">
+                    <td data-label="Service:">
+                        <strong>{{ invoice.booking.get_serviceType_display|default:"Cleaning Services" }}</strong>
                     </td>
-                    <td>
+                    <td data-label="Details:">
+                        <div class="service-details">
+                            <div class="detail-row">
+                                <span class="mobile-label">Date:</span>
+                                <span class="service-item-value">{{ invoice.booking.cleaningDate|format_date }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="mobile-label">Time:</span>
+                                <span class="service-item-value">{{ invoice.booking.startTime|format_time }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="mobile-label">Bedrooms:</span>
+                                <span class="service-item-value">{{ invoice.booking.bedrooms }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="mobile-label">Bathrooms:</span>
+                                <span class="service-item-value">{{ invoice.booking.bathrooms }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="mobile-label">Area:</span>
+                                <span class="service-item-value">{{ invoice.booking.squareFeet }} sq ft</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Addons:">
                         {% if addons %}
-                            <strong>Add-ons:</strong><br>
-                            {% for addon_name, addon_value in addons %}
-                                - {{ addon_name }}: {{ addon_value }}<br>
-                            {% endfor %}
+                            <div class="mb-2">
+                                <strong>Add-ons:</strong>
+                                {% for addon_name, addon_value in addons %}
+                                    <div class="detail-row">
+                                        <span class="mobile-label">- {{ addon_name }}:</span>
+                                        <span class="service-item-value">{{ addon_value }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         {% endif %}
                         
                         {% if invoice.booking.customAddons.exists %}
-                            <strong>Custom Add-ons:</strong><br>
-                            {% for addon in invoice.booking.customAddons.all %}
-                                - {{ addon.addon.addonName }}: {{ addon.qty }}<br>
-                            {% endfor %}
+                            <div class="mb-2">
+                                <strong>Custom Add-ons:</strong>
+                                {% for addon in invoice.booking.customAddons.all %}
+                                    <div class="detail-row">
+                                        <span class="mobile-label">- {{ addon.addon.addonName }}:</span>
+                                        <span class="service-item-value">{{ addon.qty }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         {% endif %}
                         
                         {% if not addons and not invoice.booking.customAddons.exists %}
                             No addons
                         {% endif %}
                     </td>
-                    <td class="text-end"><strong id="amount_display">{{ invoice.amount|format_currency }}</strong></td>
+                    <td data-label="Amount:" class="text-end">
+                        <strong id="amount_display">{{ invoice.amount|format_currency }}</strong>
+                    </td>
                 </tr>
                 
-                <tr>
-                    <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                    <td class="text-end"><strong id="sub_total_display">{{ invoice.booking.totalPrice|format_currency }}</strong></td>
+                <tr class="invoice-summary-row">
+                    <td colspan="3" data-label="Subtotal:" class="text-end"><strong>Subtotal:</strong></td>
+                    <td data-label="" class="text-end"><strong id="sub_total_display">{{ invoice.booking.totalPrice|format_currency }}</strong></td>
                 </tr>
-                <tr>
-                    <td colspan="3" class="text-end"><strong>Tax (0%):</strong></td>
-                    <td class="text-end"><strong id="tax_display">{{ invoice.booking.tax|format_currency }}</strong></td>
+                <tr class="invoice-summary-row">
+                    <td colspan="3" data-label="Tax:" class="text-end"><strong>Tax (0%):</strong></td>
+                    <td data-label="" class="text-end"><strong id="tax_display">{{ invoice.booking.tax|format_currency }}</strong></td>
                 </tr>
-                <tr>
-                    <td colspan="3" class="text-end border-bottom"><strong>Total:</strong></td>
-                    <td class="text-end border-bottom"><strong id="total_display">{{ invoice.amount|format_currency }}</strong></td>
+                <tr class="invoice-summary-row">
+                    <td colspan="3" data-label="Total:" class="text-end border-bottom"><strong>Total:</strong></td>
+                    <td data-label="" class="text-end border-bottom"><strong id="total_display">{{ invoice.amount|format_currency }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -164,7 +338,7 @@
 
     <!-- Payment Instructions -->
     <div class="row mb-4">
-        <div class="col-6">
+        <div class="col-md-6 mobile-mb-3">
             <div class="card h-100">
                 <div class="card-header bg-light">
                     <strong>Payment Instructions</strong>
@@ -178,7 +352,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6">
+        <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header bg-light">
                     <strong>Note</strong>
@@ -193,33 +367,45 @@
     </div>
 
     <!-- Thank You Note -->
-    <div class="text-center mt-5">
-        <h3>Thank You for Your Business!</h3>
+    <div class="text-center mt-4">
+        <h3 class="h4">Thank You for Your Business!</h3>
         <p class="text-muted small">If you have any questions about this invoice, please contact us at (555) 123-4567 or info@ceocleaners.com</p>
     </div>
 
     {% if booking.business.user == request.user %}
     <div class="text-center mt-4">
-        <a href="{% url 'invoice:generate_pdf' invoice.invoiceId %}" class="btn btn-primary">
-            <i class="fas fa-download me-2"></i>Save as PDF
-        </a>
-        <a href="{% url 'invoice:all_invoices' %}" class="btn btn-secondary ms-2">
-            <i class="fas fa-arrow-left me-2"></i>Back to Invoices
-        </a>
+        <div class="row">
+            <div class="col-sm-6 mb-2 mb-sm-0">
+                <a href="{% url 'invoice:generate_pdf' invoice.invoiceId %}" class="btn btn-primary w-100">
+                    <i class="fas fa-download me-2"></i>Save as PDF
+                </a>
+            </div>
+            <div class="col-sm-6">
+                <a href="{% url 'invoice:all_invoices' %}" class="btn btn-secondary w-100">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Invoices
+                </a>
+            </div>
+        </div>
     </div>
     {% endif %}
 
     {% if not invoice.isPaid and not invoice.payment_details.status == 'AUTHORIZED' and not request.user == booking.business.user %}
-    <div class="fixed-bottom mb-3" style="right: 20px;">
-        <a href="#" class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#paymentModal">
-            <i class="fas fa-credit-card me-2"></i>Pay Now
-        </a>
+    <div class="fixed-bottom mb-3 px-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <a href="#" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                        <i class="fas fa-credit-card me-2"></i>Pay Now
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
     {% endif %}
 
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="paymentModalLabel">Payment Options</h5>
@@ -257,12 +443,8 @@
 <script src="https://web.squarecdn.com/v1/square.js"></script>
 {% endif %}
 <script>
-
-
-
-
-    document.addEventListener('DOMContentLoaded', () => {
-
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate subtotal
         const sub_total_display = document.getElementById('sub_total_display');
         const tax_display = document.getElementById('tax_display');
         const total_display = document.getElementById('total_display');
@@ -280,7 +462,25 @@
         // Format with currency symbol
         sub_total_display.textContent = `$${sub_total.toFixed(2)}`;
         amount_display.textContent = `$${sub_total.toFixed(2)}`;
-    })
+        
+        // Adjust position of payment button on small screens
+        function adjustPayButton() {
+            const payBtn = document.querySelector('.fixed-bottom');
+            if (payBtn) {
+                if (window.innerWidth < 768) {
+                    payBtn.classList.remove('fixed-bottom');
+                    payBtn.classList.add('mt-4');
+                } else {
+                    payBtn.classList.add('fixed-bottom');
+                    payBtn.classList.remove('mt-4');
+                }
+            }
+        }
+        
+        // Run on load and resize
+        adjustPayButton();
+        window.addEventListener('resize', adjustPayButton);
+    });
 
     const appId = '{{ settings.SQUARE_APP_ID }}';
     const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
