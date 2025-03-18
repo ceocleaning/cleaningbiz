@@ -33,13 +33,18 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
             to=instance.phone_number
         )
 
-        chat = Chat.objects.filter(lead=instance, clientPhoneNumber=instance.phone_number, business=instance.business).first()
+        chat = Chat.objects.filter(clientPhoneNumber=instance.phone_number).first()
         if not chat:
             chat = Chat.objects.create(
                 lead=instance,
                 clientPhoneNumber=instance.phone_number,
                 business=instance.business
             )
+        else:
+            chat.lead = instance
+            chat.messages.all().delete()
+            chat.summary = {}
+            chat.save()
 
         Messages.objects.create(
             chat=chat,
