@@ -239,7 +239,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
             assistant_message = Messages.objects.create(
                 chat=chat,
                 role='assistant',
-                message=ai_response_text
+                message=ai_response_text.get('content')
             )
             print(f"[DEBUG] Assistant message saved (ID: {assistant_message.id})")
             
