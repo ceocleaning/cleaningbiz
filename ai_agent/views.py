@@ -233,36 +233,36 @@ def process_sms_async(secretKey, from_number, body, to_number):
             # Process the response
             print("[DEBUG] Processing AI response")
             ai_response_text = OpenAIAgent.process_ai_response(response, client_phone_number, business)
-            
+            ai_response = ai_response_text.get('content')
             # Save the assistant message
             print("[DEBUG] Saving assistant message to database")
             assistant_message = Messages.objects.create(
                 chat=chat,
                 role='assistant',
-                message=ai_response_text.get('content')
+                message=ai_response
             )
             print(f"[DEBUG] Assistant message saved (ID: {assistant_message.id})")
             
             # Send the AI response back via SMS
             # Truncate if necessary to fit SMS length limits
-            original_length = len(ai_response_text)
-            if len(ai_response_text) > 1500:
+            original_length = len(ai_response)
+            if len(ai_response) > 1500:
                 print(f"[DEBUG] Truncating response from {original_length} to 1500 characters")
-                ai_response_text = ai_response_text[:1497] + "..."
+                ai_response = ai_response[:1497] + "..."
             
             print("[DEBUG] Sending final response to user")
-            send_sms_response(from_number, ai_response_text, apiCred)
+            send_sms_response(from_number, ai_response, apiCred)
             print(f"[DEBUG] Async processing completed for {from_number} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
         except Exception as e:
             print(f"[DEBUG] Error calling OpenAI API: {str(e)}")
             traceback.print_exc()
-            send_sms_response(from_number, "Sorry, we're experiencing technical difficulties. Please try again later.")
+            send_sms_response(from_number, "Sorry, we're experiencing technical difficulties. Please try again later.", apiCred)
         
     except Exception as e:
         print(f"[DEBUG] Error in async SMS processing: {str(e)}")
         traceback.print_exc()
-        send_sms_response(from_number, "Sorry, we encountered an error processing your request. Please try again later.")
+        send_sms_response(from_number, "Sorry, we encountered an error processing your request. Please try again later.", apiCred)
 
 
 def send_sms_response(to_number, message, apiCred):
