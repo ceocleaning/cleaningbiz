@@ -174,7 +174,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
         
         if not apiCred:
             print("[DEBUG] API credentials not found")
-            send_sms_response(from_number, "Sorry, we couldn't process your request at this time.")
+            send_sms_response(from_number, "Sorry, we couldn't process your request at this time.", apiCred)
             return
         
         business = apiCred.business
@@ -186,7 +186,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
         
         if not chat:
             print("[DEBUG] Failed to get or create chat")
-            send_sms_response(from_number, "Sorry, we couldn't process your request at this time.")
+            send_sms_response(from_number, "Sorry, we couldn't process your request at this time.", apiCred)
             return
         
         print(f"[DEBUG] Chat retrieved/created successfully (ID: {chat.id})")
@@ -232,7 +232,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
             
             # Process the response
             print("[DEBUG] Processing AI response")
-            ai_response_text = OpenAIAgent.process_ai_response(response.choices[0].message, client_phone_number)
+            ai_response_text = OpenAIAgent.process_ai_response(response.choices[0].message, client_phone_number, business)
             
             # Save the assistant message
             print("[DEBUG] Saving assistant message to database")
@@ -251,7 +251,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
                 ai_response_text = ai_response_text[:1497] + "..."
             
             print("[DEBUG] Sending final response to user")
-            send_sms_response(from_number, ai_response_text, secretKey)
+            send_sms_response(from_number, ai_response_text, apiCred)
             print(f"[DEBUG] Async processing completed for {from_number} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
         except Exception as e:
@@ -265,16 +265,11 @@ def process_sms_async(secretKey, from_number, body, to_number):
         send_sms_response(from_number, "Sorry, we encountered an error processing your request. Please try again later.")
 
 
-def send_sms_response(to_number, message, secretKey):
+def send_sms_response(to_number, message, apiCred):
     """Send SMS response using Twilio client"""
     print(f"\n[DEBUG] Preparing to send SMS to {to_number}")
     print(f"[DEBUG] SMS sending timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     try:
-        # Initialize Twilio client
-        apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
-        if not apiCred:
-            print("[DEBUG] API credentials not found")
-            return
         print("[DEBUG] Initializing Twilio client")
         account_sid = apiCred.twilioAccountSid
         auth_token = apiCred.twilioAuthToken
