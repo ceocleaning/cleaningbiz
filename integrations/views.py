@@ -4,8 +4,9 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.urls import reverse
 from .models import PlatformIntegration, DataMapping
-from accounts.models import Business
+from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 import json
 from datetime import datetime, timedelta
@@ -468,3 +469,37 @@ def save_field_mappings(request, integration_id):
         'success': False,
         'message': 'Invalid request method'
     })
+
+
+#===========================================
+#                   Retell
+#===========================================
+
+@login_required
+def retell_settings(request):
+    """
+    Display available Retell API functions and their documentation
+    """
+    business = Business.objects.get(user=request.user)
+    secretKey = ApiCredential.objects.get(business=business).secretKey
+    if not business.useCall:
+        messages.info(request, "Voice AI calling features are not enabled for your account.")
+        # Redirect back to the referring page or integration list as fallback
+        referer = request.META.get('HTTP_REFERER')
+        if referer:
+            return redirect(referer)
+        return redirect('home')
+    
+    BASE_URL = 'https://cleaningbizai.up.railway.app'
+    
+    bookAppointmentURL = f"{BASE_URL}/api/create-booking/"
+    check_availability = f"{BASE_URL}/api/availability/{secretKey}/"
+    send_commercial_link = f"{BASE_URL}/api/send-commercial-form-link/"
+
+    context = {
+        'book_appointment_url': bookAppointmentURL,
+        'check_availability': check_availability,
+        'send_commercial_link': send_commercial_link
+    }
+    
+    return render(request, 'integrations/retell_settings.html', context)

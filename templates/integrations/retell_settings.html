@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Retell API Integration Settings{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-3 mb-md-0">Retell Voice API Functions</h1>
+                <a href="{% url 'integration_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Integrations
+                </a>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <span class="fa-stack fa-2x me-3 d-none d-sm-inline-block text-primary">
+                            <i class="fas fa-circle fa-stack-2x"></i>
+                            <i class="fas fa-phone fa-stack-1x fa-inverse"></i>
+                        </span>
+                        <div>
+                            <h5 class="card-title mb-2">Retell Voice AI Integration</h5>
+                            <p class="card-text mb-0">These are the available API functions that can be used with Retell voice AI. Configure these functions in your Retell dashboard to enable voice interactions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="accordion accordion-flush" id="retellFunctions">
+                <!-- Check Availability -->
+                <div class="accordion-item border rounded mb-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingAvailability">
+                        <button class="accordion-button rounded-top" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAvailability" aria-expanded="true" aria-controls="collapseAvailability">
+                            <i class="fas fa-calendar-check me-2 text-primary"></i>
+                            <strong>check_availability</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseAvailability" class="accordion-collapse collapse show" aria-labelledby="headingAvailability" data-bs-parent="#retellFunctions">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function Description</h5>
+                                    <p class="text-muted">Check TimeSlot Availability of User Selected DateTime</p>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-info-circle me-2 text-primary"></i>Check if a requested time slot is available</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function URL</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <code class="d-block bg-light p-3 rounded">{{ check_availability }}</code>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function JSON Schema</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <pre class="bg-light p-3 rounded mb-0 overflow-auto" style="max-height: 300px;"><code>{
+  "type": "object",
+  "properties": {
+    "cleaningDateTime": {
+      "type": "string",
+      "description": "The ISO 8601 timestamp user selected date time (e.g., '2025-02-26T14:00:00+00:00')."
+    }
+  },
+  "required": [
+    "cleaningDateTime"
+  ]
+}</code></pre>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Send Commercial Link -->
+                <div class="accordion-item border rounded mb-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingCommercial">
+                        <button class="accordion-button collapsed rounded-top" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCommercial" aria-expanded="false" aria-controls="collapseCommercial">
+                            <i class="fas fa-building me-2 text-primary"></i>
+                            <strong>send_commercial_link</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseCommercial" class="accordion-collapse collapse" aria-labelledby="headingCommercial" data-bs-parent="#retellFunctions">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function Description</h5>
+                                    <p class="text-muted">This function will send email to client if client selects commercial cleaning service</p>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-envelope me-2 text-primary"></i>Sends a commercial quote request link to the customer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function URL</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <code class="d-block bg-light p-3 rounded">{{ send_commercial_link }}</code>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function JSON Schema</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <pre class="bg-light p-3 rounded mb-0 overflow-auto" style="max-height: 300px;"><code>{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Full Name of the Client"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Business ID"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email of the Client"
+    }
+  },
+  "required": [
+    "email",
+    "name",
+    "business_id"
+  ]
+}</code></pre>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Book Appointment -->
+                <div class="accordion-item border rounded mb-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingBooking">
+                        <button class="accordion-button collapsed rounded-top" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBooking" aria-expanded="false" aria-controls="collapseBooking">
+                            <i class="fas fa-calendar-plus me-2 text-primary"></i>
+                            <strong>bookAppointment</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseBooking" class="accordion-collapse collapse" aria-labelledby="headingBooking" data-bs-parent="#retellFunctions">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function Description</h5>
+                                    <p class="text-muted">This will be used to book an appointment</p>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><i class="fas fa-check-circle me-2 text-primary"></i>Books a cleaning appointment with the specified details</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function URL</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <code class="d-block bg-light p-3 rounded">{{ book_appointment_url }}</code>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <h5 class="text-primary">Function JSON Schema</h5>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="code-container position-relative">
+                                        <pre class="bg-light p-3 rounded mb-0 overflow-auto" style="max-height: 300px;"><code>{
+  "type": "object",
+  "properties": {
+    "pets": {
+      "type": "integer",
+      "description": "Qty for the pet cleaning add-on"
+    },
+    "fridge": {
+      "type": "integer",
+      "description": "Qty of fridge cleaning add-on"
+    },
+    "city": {
+      "type": "string",
+      "description": "The city where the service is booked."
+    },
+    "appointment_date_time": {
+      "type": "string",
+      "description": "The date and time when the cleaning service is scheduled."
+    },
+    "zip_code": {
+      "type": "string",
+      "description": "The postal code of the booking location."
+    },
+    "patio": {
+      "type": "integer",
+      "description": "Qty for the patio cleaning add-on"
+    },
+    "laundry": {
+      "type": "integer",
+      "description": "The number of laundry loads included as an add-on."
+    },
+    "baseboard": {
+      "type": "integer",
+      "description": "Qty of Baseboard add-on"
+    },
+    "state": {
+      "type": "string",
+      "description": "The state or province of the booking location."
+    },
+    "first_name": {
+      "type": "string",
+      "description": "The first name of the person making the booking."
+    },
+    "cabinets": {
+      "type": "integer",
+      "description": "Qty for the cabinets cleaning add-on"
+    },
+    "email": {
+      "type": "string",
+      "description": "The email address of the person making the booking."
+    },
+    "area": {
+      "type": "integer",
+      "description": "The total square footage of the location."
+    },
+    "blinds": {
+      "type": "integer",
+      "description": "Qty for blinds cleaning add-on"
+    },
+    "address": {
+      "type": "string",
+      "description": "Primary address for the booking."
+    },
+    "green": {
+      "type": "integer",
+      "description": "Qty for the green cleaning add-on"
+    },
+    "oven": {
+      "type": "integer",
+      "description": "Qty of oven cleaning add-on"
+    },
+    "garage": {
+      "type": "integer",
+      "description": "Qty for the garage cleaning add-on"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "The last name of the person making the booking."
+    },
+    "dishes": {
+      "type": "integer",
+      "description": "The number of dish add-ons"
+    },
+    "bathrooms": {
+      "type": "integer",
+      "description": "The number of bathrooms in the booking location."
+    },
+    "windows": {
+      "type": "integer",
+      "description": "Qty for window cleaning add-on"
+    },
+    "bedrooms": {
+      "type": "integer",
+      "description": "The number of bedrooms in the booking location."
+    },
+    "service_type": {
+      "type": "string",
+      "description": "The type of cleaning service requested."
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "The phone number of the person making the booking."
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Business ID"
+    }
+  },
+  "required": [
+    "first_name",
+    "last_name",
+    "email",
+    "phone_number",
+    "address",
+    "city",
+    "state",
+    "zip_code",
+    "bedrooms",
+    "bathrooms",
+    "area",
+    "service_type",
+    "appointment_date_time",
+    "business_id",
+    "pets",
+    "fridge",
+    "patio",
+    "laundry",
+    "baseboard",
+    "cabinets",
+    "blinds",
+    "green",
+    "oven",
+    "garage",
+    "dishes",
+    "windows"
+  ]
+}</code></pre>
+                                        <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 copy-btn" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4 shadow-sm bg-light border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle text-primary me-3 fa-2x"></i>
+                        <div>
+                            <h5 class="card-title mb-1">Implementation Guide</h5>
+                            <p class="card-text mb-0">To implement these functions in your Retell dashboard, copy the URL and JSON schema for each function and configure them in the Retell AI settings panel.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Add copy functionality for code blocks
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        copyButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const code = this.closest('.code-container').querySelector('code').textContent;
+                navigator.clipboard.writeText(code);
+                
+                // Show copied tooltip
+                const tooltip = bootstrap.Tooltip.getInstance(this);
+                tooltip.setContent({ '.tooltip-inner': 'Copied!' });
+                
+                // Reset tooltip after delay
+                setTimeout(() => {
+                    tooltip.setContent({ '.tooltip-inner': 'Copy to clipboard' });
+                }, 2000);
+            });
+        });
+    });
+</script>
+{% endblock %} 

@@ -590,6 +590,16 @@
                                         <i class="fas fa-key me-2 text-warning"></i>SMTP Config
                                     </a>
                                 </li>
+                                {% with request.user.business_set.first as business %}
+                                    {% if business and business.useCall %}
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'retell_settings' %}">
+                                                <i class="fas fa-phone me-2 text-info"></i>Retell Settings
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endwith %}
+
                                 {% if request.user.is_superuser %}
                                 <li class="nav-item">
                                     <a class="dropdown-item" 
