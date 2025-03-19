@@ -553,7 +553,7 @@ class OpenAIAgent:
                     5. Follow up with the next logical step in the conversation based on your script
                     6. If you were collecting information before the tool call, continue collecting any missing information
                     7. If the tool provided availability or pricing, confirm it and ask if the customer wants to proceed with booking
-                    8. If the tool completed a booking, confirm the details and ask if there's anything else they need
+                    8. If the tool completed a booking, Ask client to pay by clicking on the link received through sms and email and ask if there's anything else they need
                     9. Keep your tone friendly, professional, and conversational
                     10. Remember your role is to guide the customer through the entire booking process
 
