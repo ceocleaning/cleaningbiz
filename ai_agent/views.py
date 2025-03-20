@@ -5,10 +5,6 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from datetime import datetime
 
-# Replace Gemini imports with OpenAI imports
-from .openai_agent import OpenAIAgent
-from .utils import get_chat_status
-
 from accounts.models import Business, ApiCredential
 from .models import AgentConfiguration, Chat, Messages
 from automation.models import Lead
@@ -294,6 +290,7 @@ def send_sms_response(to_number, message, apiCred):
             from_=from_number,
             to=to_number
         )
+        from .utils import get_chat_status
         chat = Chat.objects.filter(clientPhoneNumber=to_number).first()
         if chat:
             get_chat_status(chat)
