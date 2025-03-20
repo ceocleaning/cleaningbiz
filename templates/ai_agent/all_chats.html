@@ -1131,8 +1131,8 @@
                 selectChatPrompt.style.display = 'none';
                 chatContent.style.display = 'flex';
                 chatContent.style.flexDirection = 'column';
-                chatContent.style.height = '100%';
-                chatContent.style.padding = '10px';
+            
+          
                 
                 // Show loading
                 const loadingHtml = `
@@ -1347,8 +1347,7 @@
                                     formDetailsContainer.appendChild(item);
                                 });
                                 
-                                // Show form data tab if there's data
-                                document.querySelector('[data-panel="form-data"]').style.display = 'block';
+                                
                                 
                                 // Populate sidebar content with detailed view
                                 populateSidebarDetails(data.summary);
