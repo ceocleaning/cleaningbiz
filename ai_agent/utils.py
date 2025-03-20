@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 import os
-from .views import OpenAIAgent
+from .openai_agent import OpenAIAgent
 from openai import OpenAI
 load_dotenv()
 
