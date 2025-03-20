@@ -888,6 +888,7 @@ def chat_api(request):
                 return JsonResponse({
                     'error': 'Invalid action or missing phone number'
                 }, status=400)
+            
         except Exception as e:
             print(f"Error in chat_api GET: {str(e)}")
             traceback.print_exc()
@@ -910,7 +911,7 @@ def chat_api(request):
         print(f"[DEBUG] Message: {message_text}")
         
         # Validate required fields
-        if not business_id or not client_phone_number or not message_text:
+        if not business_id or not (client_phone_number or session_key) or not message_text:
             return JsonResponse({
                 'error': 'Missing required fields'
             }, status=400)
@@ -919,7 +920,7 @@ def chat_api(request):
         chat = OpenAIAgent.get_or_create_chat(business_id, client_phone_number, session_key)
         if not chat:
             return JsonResponse({
-                'error': 'Failed to get or create chat'
+                'error': 'Failed to get or create chat' 
             }, status=500)
         
         # Create a new message
@@ -933,7 +934,7 @@ def chat_api(request):
         system_prompt = OpenAIAgent.get_dynamic_system_prompt(business_id)
       
         # Get all messages for this chat
-        messages = OpenAIAgent.get_chat_messages(client_phone_number)
+        messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key)
         
         # Format messages for OpenAI
         formatted_messages = OpenAIAgent.format_messages_for_openai(messages, system_prompt)
