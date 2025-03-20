@@ -4,8 +4,9 @@ import pytz
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
-load_dotenv()
+import traceback
 
+load_dotenv()
 
 # Initialize Google Gemini AI
 genai.configure(api_key=os.getenv('GEMENI_API'))
@@ -51,55 +52,99 @@ def convert_date_str_to_date(date_str):
         )
     )
     
-    print(f"[DEBUG] String Date to DateTime - UTIL Function: {response.text}")
+    print(f"[UTIL] String Date to DateTime: {response.text}")
     return response.text
 
 
+def format_messages_for_openai(messages, system_prompt):
+    """Format chat messages for OpenAI API"""
+    formatted_messages = [{"role": "system", "content": system_prompt}]
+    
+    for message in messages:
+        if hasattr(message, 'sender'):
+            # Handle Messages objects
+            role = "assistant" if message.sender == "ai" else "user"
+            formatted_messages.append({"role": role, "content": message.message})
+        elif isinstance(message, dict):
+            # Handle dictionary messages
+            role = message.get('role')
+            content = message.get('content') or message.get('message')
+            if role and content:
+                formatted_messages.append({"role": role, "content": content})
+    
+    return formatted_messages
+
 
 def get_chat_status(chat):
-    from .openai_agent import OpenAIAgent
-
-    messages = OpenAIAgent.get_chat_messages(chat.clientPhoneNumber)
-    
-    # Format messages for OpenAI without system prompt
-    SYSTEM_PROMPT = """
-    You are an AI assistant that analyzes conversations and returns their status using a single-word response.
-
-    Instructions:
-    Analyze the conversation and determine its current status.
-    Respond with only one word from the predefined list below.
-    Do not add any extra text, explanations, or formatting.
-    Allowed Responses:
-    pending → Conversation is ongoing, and not respondeded.
-    booked → The user has confirmed a booking.
-    not_interested → The user is not interested.
-   
-    Example Outputs:
-    If the conversation is unresolved → pending
-    If the user confirms a booking → booked
-    If the user expresses disinterest → not_interested
-    
-    Important Rules:
-    ✅ Return only one word from the list.
-    ❌ Do not generate full sentences, explanations, or additional text.
-
-"""
-    formatted_messages = OpenAIAgent.format_messages_for_openai(messages, SYSTEM_PROMPT)
-    
-    # Call OpenAI API
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    
+    """
+    Use OpenAI to analyze a chat and determine its status
+    """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=formatted_messages
-        )
+        print(f"[UTIL] Getting chat status for chat ID: {chat.id}")
         
-        response_text = response.choices[0].message.content
-        chat.status = response_text
-        chat.save()
-        print(f"[DEBUG] Chat status updated to: {response_text}")
-        return response_text
+        # Get chat messages directly from database
+        from .models import Messages
+        messages = Messages.objects.filter(chat=chat).order_by('createdAt')
+        
+        if not messages.exists():
+            print(f"[UTIL] No messages found for chat ID: {chat.id}")
+            return "pending"
+        
+        # Format messages for OpenAI
+        SYSTEM_PROMPT = """
+        You are an AI assistant that analyzes conversations and returns their status using a single-word response.
+
+        Instructions:
+        Analyze the conversation and determine its current status.
+        Respond with only one word from the predefined list below.
+        Do not add any extra text, explanations, or formatting.
+        Allowed Responses:
+        pending → Conversation is ongoing, and not respondeded.
+        booked → The user has confirmed a booking.
+        not_interested → The user is not interested.
+       
+        Example Outputs:
+        If the conversation is unresolved → pending
+        If the user confirms a booking → booked
+        If the user expresses disinterest → not_interested
+        
+        Important Rules:
+        ✅ Return only one word from the list.
+        ❌ Do not generate full sentences, explanations, or additional text.
+        """
+        
+        formatted_messages = format_messages_for_openai(messages, SYSTEM_PROMPT)
+        
+        # Call OpenAI API
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        try:
+            print(f"[UTIL] Calling OpenAI API for chat ID: {chat.id}")
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=formatted_messages
+            )
+            
+            response_text = response.choices[0].message.content.strip().lower()
+            print(f"[UTIL] OpenAI response for chat ID {chat.id}: {response_text}")
+            
+            # Validate the response is one of the expected values
+            valid_statuses = ["pending", "booked", "not_interested"]
+            if response_text not in valid_statuses:
+                print(f"[UTIL] Unexpected status from OpenAI: {response_text}, defaulting to 'pending'")
+                response_text = "pending"
+                
+            chat.status = response_text
+            chat.save()
+            print(f"[UTIL] Chat status updated to: {response_text}")
+            return response_text
+            
+        except Exception as e:
+            print(f"[UTIL] Error getting chat status from OpenAI: {str(e)}")
+            print(traceback.format_exc())
+            return "error"
+            
     except Exception as e:
-        print(f"[DEBUG] Error getting chat status: {e}")
+        print(f"[UTIL] Error in get_chat_status: {str(e)}")
+        print(traceback.format_exc())
         return "error"
