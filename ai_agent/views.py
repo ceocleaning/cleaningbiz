@@ -345,3 +345,5 @@ def business_credentials_api(request):
             'success': False,
             'error': str(e)
         })
+
+

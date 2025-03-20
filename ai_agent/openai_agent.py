@@ -155,13 +155,13 @@ class OpenAIAgent:
             return 0
     
     @staticmethod
-    def get_or_create_chat(business_id, client_phone_number):
+    def get_or_create_chat(business_id, client_phone_number, session_key):
         """Get or create a chat session for a client
         
         Args:
             business_id: The ID of the business
             client_phone_number: The phone number of the client
-            
+            session_key: The session key of the client
         Returns:
             Chat object or None if error
         """
@@ -171,14 +171,23 @@ class OpenAIAgent:
             
             # Try to get an existing chat
             try:
-                chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+                if client_phone_number:
+                    chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+                else:
+                    chat = Chat.objects.get(sessionKey=session_key)
                 return chat
             except Chat.DoesNotExist:
                 # Create a new chat
-                chat = Chat.objects.create(
-                    business=business,
-                    clientPhoneNumber=client_phone_number,
-                )
+                if client_phone_number:
+                    chat = Chat.objects.create(
+                        business=business,
+                        clientPhoneNumber=client_phone_number,
+                    )
+                else:
+                    chat = Chat.objects.create(
+                        business=business,
+                        sessionKey=session_key,
+                    )
                 return chat
                 
         except Business.DoesNotExist:
@@ -190,18 +199,21 @@ class OpenAIAgent:
             return None
     
     @staticmethod
-    def get_chat_messages(client_phone_number):
+    def get_chat_messages(client_phone_number, session_key):
         """Get all messages for a chat session
         
         Args:
             client_phone_number: The phone number of the client
-            
+            session_key: The session key of the client
         Returns:
             List of message dictionaries or empty list if error
         """
         try:
             # Get the chat object
-            chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+            if client_phone_number:
+                chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+            else:
+                chat = Chat.objects.get(sessionKey=session_key)
             
             # Get all messages for this chat
             messages = Messages.objects.filter(chat=chat).order_by('createdAt')
@@ -863,11 +875,12 @@ def chat_api(request):
     if request.method == 'GET':
         try:
             client_phone_number = request.GET.get('client_phone_number')
+            session_key = request.GET.get('session_key')
             action = request.GET.get('action')
             
-            if action == 'get_messages' and client_phone_number:
+            if action == 'get_messages' and (client_phone_number or session_key):
                 # Get all messages for this chat
-                messages = OpenAIAgent.get_chat_messages(client_phone_number)
+                messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key)
                 return JsonResponse({
                     'messages': messages
                 })
@@ -888,6 +901,7 @@ def chat_api(request):
         data = json.loads(request.body)
         business_id = data.get('business_id')
         client_phone_number = data.get('client_phone_number')
+        session_key = data.get('session_key')
         message_text = data.get('message')
         
         print(f"\n[DEBUG] Chat API request")
@@ -902,7 +916,7 @@ def chat_api(request):
             }, status=400)
         
         # Get or create the chat
-        chat = OpenAIAgent.get_or_create_chat(business_id, client_phone_number)
+        chat = OpenAIAgent.get_or_create_chat(business_id, client_phone_number, session_key)
         if not chat:
             return JsonResponse({
                 'error': 'Failed to get or create chat'
