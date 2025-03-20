@@ -8,6 +8,12 @@ CHAT_ROLE_CHOICES = (
     ('tool', 'Tool')
 )
 
+CHAT_STATUS_CHOICES = (
+    ('pending', 'Pending'),
+    ('not_interested', 'Not Interested'),
+    ('booked', 'Booked'),
+    ('call_sent', 'Call Sent'),
+)
 
 
 class Messages(models.Model):
@@ -16,7 +22,7 @@ class Messages(models.Model):
     message = models.TextField()
     is_first_message = models.BooleanField(default=False)
 
-    createdAt = models.DateTimeField(default=timezone.now)
+    createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.role}: {self.message}"
@@ -29,7 +35,9 @@ class Chat(models.Model):
 
     summary = models.JSONField(null=True, blank=True, default=dict)
 
-    createdAt = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=CHAT_STATUS_CHOICES)
+
+    createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -39,6 +47,7 @@ class Chat(models.Model):
 class AgentConfiguration(models.Model):
     """Store dynamic configuration for AI Voice Agent"""
     business = models.OneToOneField('accounts.Business', on_delete=models.CASCADE, related_name='agent_config')
+    agent_name = models.CharField(max_length=255, null=True, blank=True, default='Sarah')
     prompt = models.TextField(blank=True, null=True, help_text="Script for the AI agent")
    
     class Meta:
