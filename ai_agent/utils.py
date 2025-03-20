@@ -3,7 +3,8 @@ from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 import os
-
+from .views import OpenAIAgent
+from openai import OpenAI
 load_dotenv()
 
 
@@ -54,3 +55,50 @@ def convert_date_str_to_date(date_str):
     print(f"[DEBUG] String Date to DateTime - UTIL Function: {response.text}")
     return response.text
 
+
+
+def get_chat_status(chat):
+    messages = OpenAIAgent.get_chat_messages(chat.clientPhoneNumber)
+    
+    # Format messages for OpenAI without system prompt
+    SYSTEM_PROMPT = """
+    You are an AI assistant that analyzes conversations and returns their status using a single-word response.
+
+    Instructions:
+    Analyze the conversation and determine its current status.
+    Respond with only one word from the predefined list below.
+    Do not add any extra text, explanations, or formatting.
+    Allowed Responses:
+    pending → Conversation is ongoing, and not respondeded.
+    booked → The user has confirmed a booking.
+    not_interested → The user is not interested.
+   
+    Example Outputs:
+    If the conversation is unresolved → pending
+    If the user confirms a booking → booked
+    If the user expresses disinterest → not_interested
+    
+    Important Rules:
+    ✅ Return only one word from the list.
+    ❌ Do not generate full sentences, explanations, or additional text.
+
+"""
+    formatted_messages = OpenAIAgent.format_messages_for_openai(messages, SYSTEM_PROMPT)
+    
+    # Call OpenAI API
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=formatted_messages
+        )
+        
+        response_text = response.choices[0].message.content
+        chat.status = response_text
+        chat.save()
+        print(f"[DEBUG] Chat status updated to: {response_text}")
+        return response_text
+    except Exception as e:
+        print(f"[DEBUG] Error getting chat status: {e}")
+        return "error"
