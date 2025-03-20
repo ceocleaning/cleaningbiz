@@ -22,6 +22,19 @@ from twilio.rest import Client
 
 @receiver(post_save, sender=Lead)
 def set_status_and_send_email(sender, instance, created, **kwargs):
+    from django_q.tasks import schedule
+    from django_q.models import Schedule
+    
+    # Check if the schedule already exists
+    if not Schedule.objects.filter(func="ai_agent.tasks.check_chat_status").exists():
+        # Schedule the function to run every 2 minutes
+        schedule(
+            "ai_agent.tasks.check_chat_status",
+            schedule_type=Schedule.MINUTES,
+            minutes=2,
+            repeats=-1,  # Run indefinitely
+        )
+        
     if created:
         apiCred = ApiCredential.objects.get(business=instance.business)
         agentConfig = AgentConfiguration.objects.get(business=instance.business)

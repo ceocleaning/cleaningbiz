@@ -9,6 +9,10 @@ from automation.models import Lead
 
 
 def check_chat_status():
+    """
+    Task to check the status of pending chats and initiate calls if needed.
+    This function is called by Django-Q scheduler.
+    """
     chats = Chat.objects.filter(status='pending', updatedAt__lte=(timezone.now() - timedelta(minutes=2)))
     for chat in chats:
         apiCreds = ApiCredential.objects.get(business=chat.business)
