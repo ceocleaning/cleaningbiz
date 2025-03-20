@@ -3,7 +3,6 @@ from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 import os
-from .openai_agent import OpenAIAgent
 from openai import OpenAI
 load_dotenv()
 
@@ -58,6 +57,8 @@ def convert_date_str_to_date(date_str):
 
 
 def get_chat_status(chat):
+    from .openai_agent import OpenAIAgent
+
     messages = OpenAIAgent.get_chat_messages(chat.clientPhoneNumber)
     
     # Format messages for OpenAI without system prompt

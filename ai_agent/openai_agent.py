@@ -305,7 +305,7 @@ class OpenAIAgent:
                 tool_args = tool_args_raw
             
             # Get available tools
-            from ai_agent.api_views import check_availability, calculate_total, book_appointment
+            from .api_views import check_availability, calculate_total, book_appointment
             
             tools = {
                 'check_availability': check_availability,
