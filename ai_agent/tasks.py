@@ -17,6 +17,9 @@ def check_chat_status():
     for chat in chats:
         apiCreds = ApiCredential.objects.get(business=chat.business)
         business = apiCreds.business
+        if chat.clientPhoneNumber == '' or chat.clientPhoneNumber == None:
+            continue
+        
         lead = Lead.objects.get(phone_number=chat.clientPhoneNumber)
 
         if business.useCall:
