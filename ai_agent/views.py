@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from datetime import datetime
 
 from accounts.models import Business, ApiCredential
@@ -18,10 +18,114 @@ import traceback
 from openai import OpenAI
 import threading
 from twilio.rest import Client
+import json
 
 # Create your views here.
 
+@login_required
+def all_chats(request):
+    """
+    View all chats for the current user's business
+    """
+    try:
+        # Get the current user's business
+        business = Business.objects.filter(user=request.user).first()
+        
+        if not business:
+            messages.error(request, "You need to have a business registered to view chats.")
+            return redirect('home')
+        
+        # Get all chats for this business
+        chats = Chat.objects.filter(business=business).order_by('-updatedAt')
+        
+        # Get the last message for each chat
+        for chat in chats:
+            last_message = Messages.objects.filter(chat=chat).order_by('-createdAt').first()
+            chat.last_message = last_message.message if last_message else "No messages"
+            chat.last_message_time = last_message.createdAt if last_message else chat.createdAt
+            
+            # Get lead name if available
+            lead = Lead.objects.filter(phone_number=chat.clientPhoneNumber).first()
+            chat.lead_name = lead.name if lead else chat.clientPhoneNumber or f"WebChat: {chat.sessionKey}"
+        
+        return render(request, 'ai_agent/all_chats.html', {
+            'chats': chats,
+            'business': business
+        })
+        
+    except Exception as e:
+        print(f"[VIEW] Error in all_chats view: {str(e)}")
+        print(traceback.format_exc())
+        messages.error(request, "An error occurred while retrieving chats.")
+        return redirect('home')
 
+
+@login_required
+@require_POST
+def delete_chat(request):
+    """
+    Endpoint to delete a chat (works with both AJAX and regular form submissions)
+    """
+    try:
+        # Check if it's JSON data
+        if request.headers.get('content-type') == 'application/json':
+            try:
+                data = json.loads(request.body)
+                chat_id = data.get('chat_id')
+            except json.JSONDecodeError:
+                chat_id = None
+        else:
+            # Handle form data
+            chat_id = request.POST.get('chat_id')
+        
+        if not chat_id:
+            # Return JSON response for AJAX requests
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Chat ID is required'})
+            # Return redirect with message for regular form submissions
+            messages.error(request, "Chat ID is required")
+            return redirect('ai_agent:all_chats')
+        
+        # Get the current user's business
+        business = Business.objects.filter(user=request.user).first()
+        
+        if not business:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'No business found for this user'})
+            messages.error(request, "No business found for this user")
+            return redirect('ai_agent:all_chats')
+        
+        # Get the chat
+        try:
+            chat = Chat.objects.get(id=chat_id, business=business)
+        except Chat.DoesNotExist:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Chat not found'})
+            messages.error(request, "Chat not found")
+            return redirect('ai_agent:all_chats')
+        
+        # Delete all messages first (CASCADE should handle this, but being explicit)
+        Messages.objects.filter(chat=chat).delete()
+        
+        # Delete the chat
+        chat.delete()
+        
+        # Return appropriate response
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Chat deleted successfully'})
+        
+        messages.success(request, "Chat deleted successfully")
+        return redirect('ai_agent:all_chats')
+        
+    except Exception as e:
+        print(f"[VIEW] Error in delete_chat: {str(e)}")
+        print(traceback.format_exc())
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': f"Error: {str(e)}"})
+        
+        messages.error(request, f"Error deleting chat: {str(e)}")
+        return redirect('ai_agent:all_chats')
 
 @login_required
 @require_POST
@@ -346,5 +450,48 @@ def business_credentials_api(request):
             'success': False,
             'error': str(e)
         })
+
+@require_http_methods(["GET"])
+def get_chat_data(request, chat_id):
+    try:
+        # Get the business for the current user
+        business = Business.objects.filter(user=request.user).first()
+        if not business:
+            return JsonResponse({
+                'success': False,
+                'message': 'No business found for this user'
+            }, status=403)
+            
+        # Get the chat and make sure it belongs to this business
+        chat = get_object_or_404(Chat, id=chat_id, business=business)
+        
+        # Get messages
+        messages = Messages.objects.filter(chat=chat).order_by('createdAt')
+        
+        # Get lead information
+        lead = Lead.objects.filter(phone_number=chat.clientPhoneNumber).first()
+        lead_name = lead.name if lead else "Unknown"
+
+        
+        messages_data = [{
+            'role': msg.role,
+            'message': msg.message,
+            'createdAt': msg.createdAt.isoformat()
+        } for msg in messages]
+        
+        return JsonResponse({
+            'success': True,
+            'lead_name': lead_name,
+            'phone_number': chat.clientPhoneNumber,
+            'status': chat.status,
+            'messages': messages_data,
+            'summary': chat.summary
+        })
+    except Exception as e:
+        print(f"Error in get_chat_data: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
 
 

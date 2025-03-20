@@ -1,0 +1,1718 @@
+{% extends 'base.html' %}
+
+{% block title %}SMS Conversations - {{ business.businessName }}{% endblock %}
+
+{% block styles %}
+<style>
+
+    .chat-container {
+        height: 80dvh;
+        max-width: 100%;
+        margin: 20px auto;
+        border-radius: 12px;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+        display: flex;
+        background-color: #fff;
+        overflow: hidden !important;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+        width: 400px;
+        background-color: #fff;
+        border-right: 1px solid #edf2f7;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .sidebar-header {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #edf2f7;
+    }
+    
+    .sidebar-header h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #334155;
+        margin: 0;
+    }
+    
+    .sidebar-date {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: normal;
+        text-align: right;
+    }
+    
+    .sidebar-search {
+        padding: 12px 20px;
+        border-bottom: 1px solid #edf2f7;
+    }
+    
+    .search-input {
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 15px 10px 40px;
+        width: 100%;
+        font-size: 0.9rem;
+    }
+    
+    .search-wrapper {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+    
+    .conversation-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+    }
+    
+    .conversation-item {
+        padding: 16px 20px;
+        display: flex;
+        align-items: flex-start;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .conversation-item:hover {
+        background-color: #f8fafc;
+    }
+    
+    .conversation-item.active {
+        background-color: #f1f5f9;
+    }
+    
+    .profile-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        margin-right: 15px;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+        background-color: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #475569;
+    }
+    
+    .profile-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .profile-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 16px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+        display: inline-block;
+    }
+    
+    .status-dot.pending {
+        background-color: #f59e0b;
+    }
+    
+    .status-dot.booked {
+        background-color: #10b981;
+    }
+    
+    .status-dot.not-interested {
+        background-color: #ef4444;
+    }
+    
+    .status-dot.call-sent {
+        background-color: #3b82f6;
+    }
+    
+    .conversation-details {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .conversation-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .conversation-preview {
+        font-size: 0.85rem;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0;
+    }
+    
+    .conversation-meta {
+        text-align: right;
+        margin-left: 10px;
+        min-width: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    .conversation-time {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .badge-pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .badge-booked {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+    
+    .badge-not-interested {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .badge-call-sent {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    /* Chat Main Area Styles */
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background-color: #f8fafc;
+        position: relative;
+    }
+    
+    /* Add chat content container styles */
+    .chat-content-wrapper {
+        display: flex;
+        height: calc(100% - 67px); /* Subtract header height */
+    }
+    
+    .chat-content-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .chat-sidebar {
+        width: 320px;
+        border-left: 1px solid #edf2f7;
+        background-color: #fff;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease, width 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .chat-sidebar.collapsed {
+        width: 0;
+    }
+    
+    .sidebar-toggle {
+        position: absolute;
+        right: 338px;
+        top: 67px; /* Same as header height */
+        width: 24px;
+        height: 40px;
+        background-color: #fff;
+        border: 1px solid #edf2f7;
+        border-right: none;
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        color: #64748b;
+        transition: right 0.3s ease;
+    }
+    
+    .sidebar-toggle.collapsed {
+        right: 18px;
+    }
+    
+    .sidebar-toggle i {
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar-toggle.collapsed i {
+        transform: rotate(180deg);
+    }
+    
+    .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #fff;
+    }
+    
+    .sidebar-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #334155;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .sidebar-title i {
+        margin-right: 8px;
+        color: #64748b;
+    }
+    
+    .sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+    }
+    
+    .form-section {
+        margin-bottom: 20px;
+    }
+    
+    .form-section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 40px;
+        text-align: center;
+        color: #64748b;
+        background-color: #f8fafc;
+    }
+    
+    .empty-state-chat {
+        background-color: #fff;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        max-width: 500px;
+        width: 100%;
+    }
+    
+    .empty-icon {
+        font-size: 56px;
+        margin-bottom: 20px;
+        color: #cbd5e1;
+    }
+    
+    .chat-header {
+        padding: 15px 25px;
+        background-color: #fff;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 10;
+    }
+    
+    .chat-profile {
+        display: flex;
+        align-items: center;
+    }
+    
+    .back-btn {
+        margin-right: 15px;
+        color: #64748b;
+        transition: color 0.2s ease;
+        display: none;
+    }
+    
+    .back-btn:hover {
+        color: #334155;
+    }
+    
+    .chat-profile-image {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    
+    .chat-profile-details h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+        color: #334155;
+    }
+    
+    .chat-profile-details p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+    }
+    
+    .chat-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .action-btn {
+        background: none;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn:hover {
+        background-color: #f1f5f9;
+        color: #334155;
+    }
+    
+    .action-btn.danger:hover {
+        color: #ef4444;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 25px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .messages-container {
+        max-width: 850px;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .chat-date-divider {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+    
+    .chat-date-divider:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 1px;
+        background-color: #e2e8f0;
+        z-index: 0;
+    }
+    
+    .chat-date-divider span {
+        background-color: #f8fafc;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #64748b;
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .message {
+        display: flex;
+        max-width: 75%;
+        margin-bottom: 12px;
+    }
+    
+    .message.outgoing {
+        margin-left: auto;
+    }
+    
+    .message-content {
+        background-color: #fff;
+        border-radius: 16px;
+        padding: 14px 18px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        position: relative;
+    }
+    
+    .message.outgoing .message-content {
+        background-color: #ebf8ff;
+        color: #111827;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .message.incoming .message-content {
+        background-color: #fff;
+        color: #111827;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .message-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        color: #64748b;
+        text-align: right;
+        margin-top: 4px;
+    }
+    
+    .delete-button {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        padding: 5px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #ef4444;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .conversation-item:hover .delete-button {
+        opacity: 1;
+    }
+    
+    .delete-button:hover {
+        background-color: #fee2e2;
+    }
+    
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding: 40px;
+        background-color: rgba(248, 250, 252, 0.6);
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spinner 0.8s linear infinite;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes spinner {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    .loading-text {
+        font-size: 0.9rem;
+        color: #334155;
+        margin-top: 10px;
+        font-weight: 500;
+    }
+    
+    .empty-state h2, .empty-state h3 {
+        color: #334155;
+        margin-bottom: 8px;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 992px) {
+        .chat-sidebar {
+            position: absolute;
+            right: 0;
+            top: 67px; /* Same as header height */
+            height: calc(100% - 67px);
+            z-index: 5;
+            transform: translateX(0);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-sidebar.collapsed {
+            transform: translateX(100%);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .chat-container {
+            margin: 0;
+            height: 100vh;
+            border-radius: 0;
+        }
+        
+        .sidebar {
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        
+        .chat-main {
+            width: 100%;
+        }
+        
+        .chat-main.active {
+            z-index: 5;
+        }
+
+        .back-btn {
+            display: block;
+        }
+        
+        .sidebar-toggle {
+            right: 18px;
+        }
+    }
+
+    /* Add chat summary section styles */
+    .chat-summary {
+        background-color: #fff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 16px 25px;
+        display: none;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .summary-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .summary-title i {
+        margin-right: 8px;
+    }
+
+    .summary-toggle {
+        color: #94a3b8;
+        transition: transform 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .summary-toggle.collapsed {
+        transform: rotate(180deg);
+    }
+
+    .summary-content {
+        max-height: 500px;
+        opacity: 1;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .summary-content.collapsed {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .summary-card {
+        background-color: #f8fafc;
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .card-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .card-value.highlight {
+        color: #3b82f6;
+    }
+
+    .card-value.success {
+        color: #10b981;
+    }
+
+    .card-value.warning {
+        color: #f59e0b;
+    }
+
+    .card-value.danger {
+        color: #ef4444;
+    }
+
+    .chat-metadata {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .metadata-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .metadata-item i {
+        margin-right: 6px;
+        font-size: 0.9rem;
+    }
+    
+    /* Add summary tabs styling */
+    .summary-tabs {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 12px;
+    }
+    
+    .summary-tab {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .summary-tab.active {
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+    
+    .summary-panel {
+        display: none;
+    }
+    
+    .summary-panel.active {
+        display: block;
+    }
+    
+    .form-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    
+    .form-item {
+        margin-bottom: 8px;
+    }
+    
+    .form-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .form-value {
+        font-size: 0.9rem;
+        color: #334155;
+        font-weight: 500;
+    }
+    
+    .appointment-time {
+        color: #3b82f6;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>Conversations</h1>
+            <div class="sidebar-date" id="current-date">{{ now|date:"l, F j, Y" }}</div>
+        </div>
+        
+        <div class="sidebar-search">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="search-input" placeholder="Search conversations...">
+            </div>
+        </div>
+        
+        <div class="conversation-list" id="conversation-list">
+            {% if chats %}
+                {% for chat in chats %}
+                <div class="conversation-item" data-chat-id="{{ chat.id }}" id="chat-item-{{ chat.id }}">
+                    <div class="profile-image">
+                        {% if chat.lead_name %}
+                            <div class="profile-initials">{{ chat.lead_name|slice:":1" }}</div>
+                        {% else %}
+                            <div class="profile-initials">?</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="conversation-details">
+                        <h2 class="conversation-title">{{ chat.lead_name|default:"Unknown" }}</h2>
+                        <p class="conversation-preview">{{ chat.last_message }}</p>
+                    </div>
+                    
+                    <div class="conversation-meta">
+                        <div class="conversation-time">{{ chat.updatedAt|date:"M d" }}</div>
+                        {% if chat.status == 'pending' %}
+                        <span class="status-badge badge-pending">
+                            <span class="status-dot pending"></span>Pending
+                        </span>
+                        {% elif chat.status == 'booked' %}
+                        <span class="status-badge badge-booked">
+                            <span class="status-dot booked"></span>Booked
+                        </span>
+                        {% elif chat.status == 'not_interested' %}
+                        <span class="status-badge badge-not-interested">
+                            <span class="status-dot not-interested"></span>Not Int.
+                        </span>
+                        {% elif chat.status == 'call_sent' %}
+                        <span class="status-badge badge-call-sent">
+                            <span class="status-dot call-sent"></span>Call Sent
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <button class="delete-button delete-chat" data-id="{{ chat.id }}" title="Delete conversation">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-comment-alt"></i>
+                    </div>
+                    <h3>No conversations yet</h3>
+                    <p>Conversations will appear here when clients message your business phone number.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main Chat Area -->
+    <div class="chat-main" id="chatMain">
+        <div class="empty-state" id="selectChatPrompt">
+            <div class="empty-state-chat">
+                <div class="empty-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h2>Select a conversation</h2>
+                <p>Choose a conversation from the list to view messages</p>
+            </div>
+        </div>
+        
+        <!-- Chat Content -->
+        <div id="chatContent" style="display: none; height: 100%;">
+            <div class="chat-header">
+                <div class="chat-profile">
+                    <a href="#" class="back-btn" id="backToList">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <img id="chatProfileImage" src="" class="chat-profile-image" alt="">
+                    <div class="chat-profile-details">
+                        <h2 id="chatProfileName"></h2>
+                        <p id="chatProfilePhone"></p>
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <span id="chatStatusBadge" class="status-badge"></span>
+                    <button class="action-btn danger" id="chatDeleteBtn" title="Delete conversation">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-content-wrapper">
+                <div class="chat-content-main">
+                    <!-- Chat Summary Section -->
+                    <div class="chat-summary" id="chatSummary">
+                        <div class="summary-title" id="summaryToggle">
+                            <div><i class="fas fa-chart-bar"></i> Conversation Summary</div>
+                            <div class="summary-toggle" id="summaryToggleIcon">
+                                <i class="fas fa-chevron-up"></i>
+                            </div>
+                        </div>
+                        <div class="summary-content" id="summaryContent">
+                            <div class="summary-tabs">
+                                <div class="summary-tab active" data-panel="analytics">Analytics</div>
+                                
+                            </div>
+                            
+                            <div class="summary-panel active" id="analytics-panel">
+                                <div class="summary-cards">
+                                    <div class="summary-card">
+                                        <div class="card-label">Total Messages</div>
+                                        <div class="card-value" id="totalMessages">-</div>
+                                    </div>
+                                    <div class="summary-card">
+                                        <div class="card-label">First Contact</div>
+                                        <div class="card-value" id="firstContact">-</div>
+                                    </div>
+                                    <div class="summary-card">
+                                        <div class="card-label">Last Activity</div>
+                                        <div class="card-value" id="lastActivity">-</div>
+                                    </div>
+                                    <div class="summary-card">
+                                        <div class="card-label">Status</div>
+                                        <div class="card-value" id="statusValue">-</div>
+                                    </div>
+                                </div>
+                                <div class="chat-metadata">
+                                    <div class="metadata-item" id="messageCountItem">
+                                        <i class="fas fa-comment"></i> <span id="aiMessageCount">0</span> AI messages, <span id="userMessageCount">0</span> user messages
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-clock"></i> <span id="conversationDuration">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-panel" id="form-data-panel">
+                                <div class="form-details" id="formDetails">
+                                    <div class="empty-state" style="padding: 20px; width: 100%; text-align: center;">
+                                        <div style="color: #94a3b8; margin-bottom: 8px;">
+                                            <i class="fas fa-file-alt fa-2x"></i>
+                                        </div>
+                                        <p>No form data available</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="messages-container" id="messagesContainer">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right sidebar for details -->
+                <div class="chat-sidebar collapsed" id="chatDetailsSidebar">
+                    <div class="sidebar-header">
+                        <h3 class="sidebar-title"><i class="fas fa-info-circle"></i> Client Details</h3>
+                    </div>
+                    <div class="sidebar-body" id="clientDetailsContent">
+                        <div class="loading-spinner-small" id="sidebarLoader">
+                            <div class="spinner" style="width: 30px; height: 30px;"></div>
+                            <div style="margin-top: 10px; font-size: 0.85rem;">Loading details...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar toggle button -->
+                <div class="sidebar-toggle collapsed" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for DELETE requests -->
+<form id="delete-chat-form" method="POST" action="{% url 'ai_agent:delete_sms_chat' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="chat_id" id="delete-chat-id">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const sidebar = document.getElementById('sidebar');
+        const chatMain = document.getElementById('chatMain');
+        const selectChatPrompt = document.getElementById('selectChatPrompt');
+        const chatContent = document.getElementById('chatContent');
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        const backToList = document.getElementById('backToList');
+        const deleteButtons = document.querySelectorAll('.delete-button');
+        const chatDeleteBtn = document.getElementById('chatDeleteBtn');
+        const deleteForm = document.getElementById('delete-chat-form');
+        const searchInput = document.getElementById('search-input');
+        const summaryToggle = document.getElementById('summaryToggle');
+        const summaryContent = document.getElementById('summaryContent');
+        const summaryToggleIcon = document.getElementById('summaryToggleIcon');
+        const summaryTabs = document.querySelectorAll('.summary-tab');
+        const chatDetailsSidebar = document.getElementById('chatDetailsSidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        
+        // Initialize summary state from localStorage or default to expanded
+        let isSummaryCollapsed = localStorage.getItem('chatSummaryCollapsed') === 'true';
+        let isSidebarCollapsed = localStorage.getItem('chatSidebarCollapsed') === 'true' || true; // Default closed
+        
+        // Set initial summary state
+        if (isSummaryCollapsed) {
+            summaryContent.classList.add('collapsed');
+            summaryToggleIcon.classList.add('collapsed');
+        }
+        
+        // Set initial sidebar state
+        if (isSidebarCollapsed) {
+            chatDetailsSidebar.classList.add('collapsed');
+            sidebarToggle.classList.add('collapsed');
+        } else {
+            chatDetailsSidebar.classList.remove('collapsed');
+            sidebarToggle.classList.remove('collapsed');
+        }
+        
+        // Toggle summary section
+        if (summaryToggle) {
+            summaryToggle.addEventListener('click', function() {
+                isSummaryCollapsed = !isSummaryCollapsed;
+                localStorage.setItem('chatSummaryCollapsed', isSummaryCollapsed);
+                
+                if (isSummaryCollapsed) {
+                    summaryContent.classList.add('collapsed');
+                    summaryToggleIcon.classList.add('collapsed');
+                } else {
+                    summaryContent.classList.remove('collapsed');
+                    summaryToggleIcon.classList.remove('collapsed');
+                }
+            });
+        }
+        
+        // Toggle sidebar
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                isSidebarCollapsed = !isSidebarCollapsed;
+                localStorage.setItem('chatSidebarCollapsed', isSidebarCollapsed);
+                
+                if (isSidebarCollapsed) {
+                    chatDetailsSidebar.classList.add('collapsed');
+                    sidebarToggle.classList.add('collapsed');
+                } else {
+                    chatDetailsSidebar.classList.remove('collapsed');
+                    sidebarToggle.classList.remove('collapsed');
+                }
+            });
+        }
+        
+        // Set current date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+        
+        // Search functionality
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                conversationItems.forEach(item => {
+                    const title = item.querySelector('.conversation-title').textContent.toLowerCase();
+                    const preview = item.querySelector('.conversation-preview').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || preview.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Handle conversation selection
+        conversationItems.forEach(item => {
+            item.addEventListener('click', async function(e) {
+                // Don't handle clicks on the delete button
+                if (e.target.closest('.delete-button')) return;
+                
+                const chatId = this.getAttribute('data-chat-id');
+                
+                // Set active class
+                conversationItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show chat content with loading state
+                selectChatPrompt.style.display = 'none';
+                chatContent.style.display = 'flex';
+                chatContent.style.flexDirection = 'column';
+                chatContent.style.height = '100%';
+                chatContent.style.padding = '10px';
+                
+                // Show loading
+                const loadingHtml = `
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Loading messages...</div>
+                    </div>
+                `;
+                
+                // Add loading overlay
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                chatMessagesContainer.insertAdjacentHTML('beforeend', loadingHtml);
+                
+                try {
+                    // Fetch chat data
+                    const response = await fetch(`/ai_agent/chat/${chatId}/data`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Remove loading spinner
+                    const loadingSpinner = document.getElementById('loadingSpinner');
+                    if (loadingSpinner) loadingSpinner.remove();
+                    
+                    if (data.success) {
+                        // Update chat header
+                        document.getElementById('chatProfileName').textContent = data.lead_name || 'Unknown Client';
+                        document.getElementById('chatProfilePhone').textContent = data.phone_number;
+                        document.getElementById('chatProfileImage').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.lead_name || 'Client')}&background=random&size=42&bold=true`;
+                        document.getElementById('chatDeleteBtn').setAttribute('data-id', chatId);
+                        
+                        // Update status badge
+                        const statusBadge = document.getElementById('chatStatusBadge');
+                        statusBadge.className = 'status-badge';
+                        
+                        switch(data.status) {
+                            case 'pending':
+                                statusBadge.classList.add('badge-pending');
+                                statusBadge.innerHTML = '<span class="status-dot pending"></span>Pending';
+                                document.getElementById('statusValue').textContent = 'Pending';
+                                document.getElementById('statusValue').className = 'card-value warning';
+                                break;
+                            case 'booked':
+                                statusBadge.classList.add('badge-booked');
+                                statusBadge.innerHTML = '<span class="status-dot booked"></span>Booked';
+                                document.getElementById('statusValue').textContent = 'Booked';
+                                document.getElementById('statusValue').className = 'card-value success';
+                                break;
+                            case 'not_interested':
+                                statusBadge.classList.add('badge-not-interested');
+                                statusBadge.innerHTML = '<span class="status-dot not-interested"></span>Not Interested';
+                                document.getElementById('statusValue').textContent = 'Not Interested';
+                                document.getElementById('statusValue').className = 'card-value danger';
+                                break;
+                            case 'call_sent':
+                                statusBadge.classList.add('badge-call-sent');
+                                statusBadge.innerHTML = '<span class="status-dot call-sent"></span>Call Sent';
+                                document.getElementById('statusValue').textContent = 'Call Sent';
+                                document.getElementById('statusValue').className = 'card-value highlight';
+                                break;
+                        }
+                        
+                        // Calculate summary data
+                        if (data.messages && data.messages.length > 0) {
+                            // Show summary section
+                            document.getElementById('chatSummary').style.display = 'block';
+                            
+                            // Apply saved collapse state
+                            if (isSummaryCollapsed) {
+                                summaryContent.classList.add('collapsed');
+                                summaryToggleIcon.classList.add('collapsed');
+                            } else {
+                                summaryContent.classList.remove('collapsed');
+                                summaryToggleIcon.classList.remove('collapsed');
+                            }
+                            
+                            // Total messages
+                            const totalMessages = data.messages.length;
+                            document.getElementById('totalMessages').textContent = totalMessages;
+                            
+                            // Calculate message counts by type
+                            const aiMessages = data.messages.filter(msg => msg.role === 'ai').length;
+                            const userMessages = data.messages.filter(msg => msg.role === 'user').length;
+                            document.getElementById('aiMessageCount').textContent = aiMessages;
+                            document.getElementById('userMessageCount').textContent = userMessages;
+                            
+                            // First contact date
+                            const firstMessage = new Date(data.messages[0].createdAt);
+                            document.getElementById('firstContact').textContent = firstMessage.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            
+                            // Last activity
+                            const lastMessage = new Date(data.messages[data.messages.length - 1].createdAt);
+                            document.getElementById('lastActivity').textContent = lastMessage.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            
+                            // Conversation duration
+                            const durationMs = lastMessage - firstMessage;
+                            const durationDays = Math.floor(durationMs / (1000 * 60 * 60 * 24));
+                            
+                            if (durationDays === 0) {
+                                const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+                                if (durationHours === 0) {
+                                    const durationMinutes = Math.floor(durationMs / (1000 * 60));
+                                    document.getElementById('conversationDuration').textContent = `${durationMinutes} minutes`;
+                                } else {
+                                    document.getElementById('conversationDuration').textContent = `${durationHours} hours`;
+                                }
+                            } else {
+                                document.getElementById('conversationDuration').textContent = `${durationDays} days`;
+                            }
+                            
+                            // Display form data from chat.summary if available
+                            const formDetailsContainer = document.getElementById('formDetails');
+                            if (data.summary && Object.keys(data.summary).length > 0) {
+                                // Clear previous content
+                                formDetailsContainer.innerHTML = '';
+                                
+                                // Format label from camelCase or snake_case to Title Case with spaces
+                                const formatLabel = (label) => {
+                                    // Handle camelCase
+                                    const spacedLabel = label.replace(/([A-Z])/g, ' $1')
+                                        // Handle snake_case
+                                        .replace(/_/g, ' ')
+                                        // Capitalize first letter
+                                        .replace(/^./, str => str.toUpperCase());
+                                    return spacedLabel;
+                                };
+                                
+                                // Create a priority list for important fields to show first
+                                const priorityFields = [
+                                    'appointmentDateTime', 
+                                    'serviceType', 
+                                    'firstName', 
+                                    'lastName', 
+                                    'phoneNumber',
+                                    'email',
+                                    'address1',
+                                    'city',
+                                    'state',
+                                    'zipCode'
+                                ];
+                                
+                                // Sort fields with priority first, then alphabetically
+                                const sortedFields = Object.keys(data.summary).sort((a, b) => {
+                                    const indexA = priorityFields.indexOf(a);
+                                    const indexB = priorityFields.indexOf(b);
+                                    
+                                    // If both fields are in the priority list
+                                    if (indexA >= 0 && indexB >= 0) {
+                                        return indexA - indexB;
+                                    }
+                                    
+                                    // If only a is in the priority list
+                                    if (indexA >= 0) {
+                                        return -1;
+                                    }
+                                    
+                                    // If only b is in the priority list
+                                    if (indexB >= 0) {
+                                        return 1;
+                                    }
+                                    
+                                    // Neither in priority list, sort alphabetically
+                                    return a.localeCompare(b);
+                                });
+                                
+                                // Handle appointment time specially
+                                if (data.summary.appointmentDateTime) {
+                                    const appointmentItem = document.createElement('div');
+                                    appointmentItem.className = 'form-item';
+                                    appointmentItem.innerHTML = `
+                                        <span class="form-label">Appointment</span>
+                                        <div class="form-value appointment-time">
+                                            <i class="far fa-calendar-alt"></i> ${data.summary.appointmentDateTime}
+                                        </div>
+                                    `;
+                                    formDetailsContainer.appendChild(appointmentItem);
+                                }
+                                
+                                // Add the rest of the fields
+                                sortedFields.forEach(key => {
+                                    // Skip appointment time as it's already handled
+                                    if (key === 'appointmentDateTime') return;
+                                    
+                                    // Skip empty values
+                                    if (!data.summary[key]) return;
+                                    
+                                    const item = document.createElement('div');
+                                    item.className = 'form-item';
+                                    
+                                    // Special handling for addon fields (showing as checkmarks)
+                                    if (key.startsWith('addon') && (data.summary[key] === true || data.summary[key] === "true" || data.summary[key] === "yes" || data.summary[key] === "Yes")) {
+                                        item.innerHTML = `
+                                            <span class="form-label">${formatLabel(key)}</span>
+                                            <div class="form-value"><i class="fas fa-check" style="color: #10b981;"></i> Yes</div>
+                                        `;
+                                    } else {
+                                        item.innerHTML = `
+                                            <span class="form-label">${formatLabel(key)}</span>
+                                            <div class="form-value">${data.summary[key]}</div>
+                                        `;
+                                    }
+                                    
+                                    formDetailsContainer.appendChild(item);
+                                });
+                                
+                                // Show form data tab if there's data
+                                document.querySelector('[data-panel="form-data"]').style.display = 'block';
+                                
+                                // Populate sidebar content with detailed view
+                                populateSidebarDetails(data.summary);
+                                
+                                // Auto-open sidebar if there's data
+                                if (!isSidebarCollapsed && window.innerWidth >= 992) {
+                                    chatDetailsSidebar.classList.remove('collapsed');
+                                    sidebarToggle.classList.remove('collapsed');
+                                }
+                            } else {
+                                // Show no data available message
+                                formDetailsContainer.innerHTML = `
+                                    <div class="empty-state" style="padding: 20px; width: 100%; text-align: center;">
+                                        <div style="color: #94a3b8; margin-bottom: 8px;">
+                                            <i class="fas fa-file-alt fa-2x"></i>
+                                        </div>
+                                        <p>No form data available</p>
+                                    </div>
+                                `;
+                                // Hide form data tab if there's no data
+                                document.querySelector('[data-panel="form-data"]').style.display = 'none';
+                                
+                                // Show empty state in sidebar
+                                document.getElementById('clientDetailsContent').innerHTML = `
+                                    <div class="empty-state" style="padding: 20px; text-align: center;">
+                                        <div style="color: #94a3b8; margin-bottom: 8px;">
+                                            <i class="fas fa-user-circle fa-2x"></i>
+                                        </div>
+                                        <p>No client details available</p>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            // Hide summary section if no messages
+                            document.getElementById('chatSummary').style.display = 'none';
+                        }
+                        
+                        // Render messages
+                        const messagesContainer = document.getElementById('messagesContainer');
+                        messagesContainer.innerHTML = '';
+                        
+                        if (data.messages && data.messages.length > 0) {
+                            let currentDate = '';
+                            
+                            data.messages.forEach(message => {
+                                // Check if we need a date divider
+                                const messageDate = new Date(message.createdAt);
+                                const formattedDate = messageDate.toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                                
+                                if (formattedDate !== currentDate) {
+                                    currentDate = formattedDate;
+                                    messagesContainer.innerHTML += `
+                                        <div class="chat-date-divider">
+                                            <span>${formattedDate}</span>
+                                        </div>
+                                    `;
+                                }
+                                
+                                // Format time
+                                const messageTime = messageDate.toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                });
+                                
+                                // Create message HTML
+                                const messageClass = message.role === 'user' ? 'outgoing' : 'incoming';
+                                const messageHTML = `
+                                    <div class="message ${messageClass}">
+                                        <div class="message-content">
+                                            <div class="message-text">${message.message.replace(/\n/g, '<br>')}</div>
+                                            <div class="message-time">${messageTime}</div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                messagesContainer.innerHTML += messageHTML;
+                            });
+                            
+                            // Scroll to bottom
+                            setTimeout(() => {
+                                const chatMessages = document.getElementById('chatMessages');
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }, 100);
+                        } else {
+                            messagesContainer.innerHTML = `
+                                <div class="empty-state">
+                                    <div class="empty-icon">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </div>
+                                    <h3>No messages yet</h3>
+                                    <p>Messages will appear here once the conversation starts.</p>
+                                </div>
+                            `;
+                        }
+                        
+                        // Show chat content
+                        selectChatPrompt.style.display = 'none';
+                        chatContent.style.display = 'flex';
+                        
+                        // Handle mobile view
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.add('hidden');
+                            chatMain.classList.add('active');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching chat data:', error);
+                    
+                    // Show error message
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon" style="color: #ef4444;">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <h3>Error loading messages</h3>
+                            <p>There was a problem loading chat data. Please try again later.</p>
+                            <button class="btn btn-primary mt-3" onclick="location.reload()">Refresh Page</button>
+                        </div>
+                    `;
+                }
+            });
+        });
+        
+        // Handle back button on mobile
+        if (backToList) {
+            backToList.addEventListener('click', function(e) {
+                e.preventDefault();
+                sidebar.classList.remove('hidden');
+                chatMain.classList.remove('active');
+                
+                // Reset selection
+                conversationItems.forEach(i => i.classList.remove('active'));
+                selectChatPrompt.style.display = 'flex';
+                chatContent.style.display = 'none';
+            });
+        }
+        
+        // Delete conversation functionality
+        const handleDelete = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const chatId = this.getAttribute('data-id');
+            
+            if (confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+                try {
+                    // AJAX request
+                    fetch("{% url 'ai_agent:delete_sms_chat' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            chat_id: chatId
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the chat item
+                            const chatItem = document.getElementById(`chat-item-${chatId}`);
+                            if (chatItem) chatItem.remove();
+                            
+                            // Reset chat view if this chat was selected
+                            if (chatContent.style.display !== 'none') {
+                                selectChatPrompt.style.display = 'flex';
+                                chatContent.style.display = 'none';
+                            }
+                            
+                            // Show empty state if no chats left
+                            if (document.querySelectorAll('.conversation-item').length === 0) {
+                                document.getElementById('conversation-list').innerHTML = `
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-comment-alt"></i>
+                                        </div>
+                                        <h3>No conversations yet</h3>
+                                        <p>Conversations will appear here when clients message your business phone number.</p>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            alert(data.message || 'Error deleting conversation');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                        // Fallback to form submission
+                        deleteForm.querySelector('#delete-chat-id').value = chatId;
+                        deleteForm.submit();
+                    });
+                } catch(e) {
+                    console.error('Error:', e);
+                    
+                    // Fallback to form submission
+                    deleteForm.querySelector('#delete-chat-id').value = chatId;
+                    deleteForm.submit();
+                }
+            }
+        };
+        
+        // Attach delete handlers
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', handleDelete);
+        });
+        
+        if (chatDeleteBtn) {
+            chatDeleteBtn.addEventListener('click', handleDelete);
+        }
+    });
+
+    // Function to populate sidebar with detailed client information
+    function populateSidebarDetails(summaryData) {
+        const sidebarContent = document.getElementById('clientDetailsContent');
+        sidebarContent.innerHTML = '';
+        
+        if (!summaryData || Object.keys(summaryData).length === 0) {
+            sidebarContent.innerHTML = `
+                <div class="empty-state" style="padding: 20px; text-align: center;">
+                    <div style="color: #94a3b8; margin-bottom: 8px;">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                    </div>
+                    <p>No client details available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Format key names to be more readable
+        const formatKey = (key) => {
+            return key
+                .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                .replace(/_/g, ' ') // Replace underscores with spaces
+                .replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
+        };
+        
+        // Group fields by category
+        const categories = {
+            'Contact Details': ['firstName', 'lastName', 'phoneNumber', 'email'],
+            'Location': ['address1', 'city', 'state', 'zipCode'],
+            'Property Details': ['bedrooms', 'bathrooms', 'squareFeet'],
+            'Service Information': ['serviceType', 'appointmentDateTime', 'detailSummary', 'additionalNotes'],
+            'Addon Services': Object.keys(summaryData).filter(key => key.startsWith('addon'))
+        };
+        
+        // Create sections for each category
+        Object.keys(categories).forEach(category => {
+            const fields = categories[category].filter(key => summaryData[key]);
+            
+            if (fields.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'form-section';
+                
+                section.innerHTML = `<h4 class="form-section-title">${category}</h4>`;
+                
+                // Special case for appointment time
+                if (category === 'Service Information' && summaryData.appointmentDateTime) {
+                    const appointmentItem = document.createElement('div');
+                    appointmentItem.className = 'form-item';
+                    appointmentItem.innerHTML = `
+                        <span class="form-label">Appointment</span>
+                        <div class="form-value appointment-time">
+                            <i class="far fa-calendar-alt"></i> ${summaryData.appointmentDateTime}
+                        </div>
+                    `;
+                    section.appendChild(appointmentItem);
+                }
+                
+                fields.forEach(key => {
+                    // Skip appointment time as it's already handled
+                    if (key === 'appointmentDateTime' && category === 'Service Information') return;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'form-item';
+                    
+                    if (key.startsWith('addon') && (summaryData[key] === true || summaryData[key] === "true" || summaryData[key] === "yes" || summaryData[key] === "Yes")) {
+                        item.innerHTML = `
+                            <span class="form-label">${formatKey(key)}</span>
+                            <div class="form-value"><i class="fas fa-check" style="color: #10b981;"></i> Yes</div>
+                        `;
+                    } else if (key === 'serviceType') {
+                        let serviceClass = '';
+                        switch(summaryData[key]?.toLowerCase()) {
+                            case 'deep clean':
+                            case 'deep cleaning': 
+                                serviceClass = 'highlight';
+                                break;
+                            case 'move in/out clean':
+                            case 'move-in/out': 
+                                serviceClass = 'warning';
+                                break;
+                            case 'recurring':
+                            case 'recurring clean': 
+                                serviceClass = 'success';
+                                break;
+                        }
+                        
+                        item.innerHTML = `
+                            <span class="form-label">${formatKey(key)}</span>
+                            <div class="form-value ${serviceClass}">${summaryData[key]}</div>
+                        `;
+                    } else if (key === 'additionalNotes' || key === 'detailSummary') {
+                        // Add full width styling for notes
+                        item.style.gridColumn = '1 / -1';
+                        item.innerHTML = `
+                            <span class="form-label">${formatKey(key)}</span>
+                            <div class="form-value" style="white-space: pre-wrap;">${summaryData[key]}</div>
+                        `;
+                    } else {
+                        item.innerHTML = `
+                            <span class="form-label">${formatKey(key)}</span>
+                            <div class="form-value">${summaryData[key]}</div>
+                        `;
+                    }
+                    
+                    section.appendChild(item);
+                });
+                
+                sidebarContent.appendChild(section);
+            }
+        });
+        
+        // Add a special section with a summary of services
+        if (categories['Addon Services'].some(key => summaryData[key])) {
+            const addonCount = categories['Addon Services'].filter(key => 
+                summaryData[key] === true || 
+                summaryData[key] === "true" || 
+                summaryData[key] === "yes" || 
+                summaryData[key] === "Yes"
+            ).length;
+            
+            const serviceOverview = document.createElement('div');
+            serviceOverview.className = 'form-section';
+            serviceOverview.style.borderTop = '1px solid #e2e8f0';
+            serviceOverview.style.paddingTop = '16px';
+            serviceOverview.style.marginTop = '20px';
+            
+            serviceOverview.innerHTML = `
+                <div class="form-item" style="text-align: center;">
+                    <div class="form-value" style="font-size: 1rem; margin-bottom: 8px;">
+                        <strong>${summaryData.serviceType || 'Cleaning'} Service</strong>
+                    </div>
+                    <div class="form-value" style="color: #64748b;">
+                        <i class="fas fa-plus-circle" style="color: #10b981;"></i> ${addonCount} additional services selected
+                    </div>
+                </div>
+            `;
+            
+            sidebarContent.appendChild(serviceOverview);
+        }
+    }
+</script>
+{% endblock %}
