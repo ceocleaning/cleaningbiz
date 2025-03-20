@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.conf import settings
 import random
 
 
 User = get_user_model()
 
-URL = 'https://cleaningbizai.up.railway.app'
+URL = settings.BASE_URL
 
 
 class Business(models.Model):

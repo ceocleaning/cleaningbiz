@@ -517,6 +517,15 @@
                     navbar.classList.remove('nav-scrolled');
                 }
             });
+
+
+            if(window.self !== window.top || ~location.href.indexOf("wv_task=")){
+              var s = document.createElement("script");
+              s.type = "text/javascript";
+              s.src = "https://app.webvizio.com/js/webvizio.js";
+              s.id = "webvizio_script";
+              document.head.append(s);
+             }  
         });
     </script>
     

@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from automation.webhooks import send_booking_data
 import requests
-
+from django.conf import settings
 # Create your views here.
 
 @login_required
@@ -490,7 +490,7 @@ def retell_settings(request):
             return redirect(referer)
         return redirect('home')
     
-    BASE_URL = 'https://cleaningbizai.up.railway.app'
+    BASE_URL = settings.BASE_URL
     
     bookAppointmentURL = f"{BASE_URL}/api/create-booking/"
     check_availability = f"{BASE_URL}/api/availability/{secretKey}/"
