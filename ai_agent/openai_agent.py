@@ -1023,7 +1023,7 @@ def chat_api(request):
                 model="gpt-4o",
                 messages=formatted_messages,
                 temperature=0.5,
-                max_tokens=1024,
+                max_tokens=5000,
                 tools=OpenAIAgent.get_openai_tools()
             )
             
