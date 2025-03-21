@@ -4,7 +4,7 @@
 
 {% block styles %}
 <style>
-
+    
     .chat-container {
         height: 80dvh;
         max-width: 100%;
@@ -661,7 +661,7 @@
         background-color: #fff;
         border-bottom: 1px solid #edf2f7;
         padding: 16px 25px;
-        display: none;
+            display: none;
         transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
@@ -848,34 +848,34 @@
                             <div class="profile-initials">{{ chat.lead_name|slice:":1" }}</div>
                         {% else %}
                             <div class="profile-initials">?</div>
-                        {% endif %}
-                    </div>
+                            {% endif %}
+                        </div>
                     
                     <div class="conversation-details">
                         <h2 class="conversation-title">{{ chat.lead_name|default:"Unknown" }}</h2>
                         <p class="conversation-preview">{{ chat.last_message }}</p>
-                    </div>
+                        </div>
                     
                     <div class="conversation-meta">
                         <div class="conversation-time">{{ chat.updatedAt|date:"M d" }}</div>
-                        {% if chat.status == 'pending' %}
+                            {% if chat.status == 'pending' %}
                         <span class="status-badge badge-pending">
                             <span class="status-dot pending"></span>Pending
                         </span>
-                        {% elif chat.status == 'booked' %}
+                            {% elif chat.status == 'booked' %}
                         <span class="status-badge badge-booked">
                             <span class="status-dot booked"></span>Booked
                         </span>
-                        {% elif chat.status == 'not_interested' %}
+                            {% elif chat.status == 'not_interested' %}
                         <span class="status-badge badge-not-interested">
                             <span class="status-dot not-interested"></span>Not Int.
                         </span>
-                        {% elif chat.status == 'call_sent' %}
+                            {% elif chat.status == 'call_sent' %}
                         <span class="status-badge badge-call-sent">
                             <span class="status-dot call-sent"></span>Call Sent
                         </span>
-                        {% endif %}
-                    </div>
+                            {% endif %}
+                        </div>
                     
                     <button class="delete-button delete-chat" data-id="{{ chat.id }}" title="Delete conversation">
                         <i class="fas fa-trash-alt"></i>
@@ -883,13 +883,13 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">
+            <div class="empty-state">
+                <div class="empty-icon">
                         <i class="fas fa-comment-alt"></i>
-                    </div>
+                </div>
                     <h3>No conversations yet</h3>
                     <p>Conversations will appear here when clients message your business phone number.</p>
-                </div>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -899,8 +899,8 @@
         <div class="empty-state" id="selectChatPrompt">
             <div class="empty-state-chat">
                 <div class="empty-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
+                <i class="fas fa-comments"></i>
+            </div>
                 <h2>Select a conversation</h2>
                 <p>Choose a conversation from the list to view messages</p>
             </div>
@@ -1491,33 +1491,33 @@
         
         // Delete conversation functionality
         const handleDelete = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const chatId = this.getAttribute('data-id');
-            
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const chatId = this.getAttribute('data-id');
+                
             if (confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-                try {
+                    try {
                     // AJAX request
-                    fetch("{% url 'ai_agent:delete_sms_chat' %}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            chat_id: chatId
+                        fetch("{% url 'ai_agent:delete_sms_chat' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                chat_id: chatId
+                            })
                         })
-                    })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! Status: ${response.status}`);
                         }
                         return response.json();
                     })
-                    .then(data => {
-                        if (data.success) {
+                        .then(data => {
+                            if (data.success) {
                             // Remove the chat item
                             const chatItem = document.getElementById(`chat-item-${chatId}`);
                             if (chatItem) chatItem.remove();
@@ -1531,34 +1531,34 @@
                             // Show empty state if no chats left
                             if (document.querySelectorAll('.conversation-item').length === 0) {
                                 document.getElementById('conversation-list').innerHTML = `
-                                    <div class="empty-state">
-                                        <div class="empty-icon">
+                                        <div class="empty-state">
+                                            <div class="empty-icon">
                                             <i class="fas fa-comment-alt"></i>
-                                        </div>
+                                            </div>
                                         <h3>No conversations yet</h3>
                                         <p>Conversations will appear here when clients message your business phone number.</p>
-                                    </div>
-                                `;
-                            }
-                        } else {
+                                        </div>
+                                    `;
+                                }
+                            } else {
                             alert(data.message || 'Error deleting conversation');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            
                         // Fallback to form submission
                         deleteForm.querySelector('#delete-chat-id').value = chatId;
-                        deleteForm.submit();
-                    });
-                } catch(e) {
+                            deleteForm.submit();
+                        });
+                    } catch(e) {
                     console.error('Error:', e);
                     
-                    // Fallback to form submission
+                        // Fallback to form submission
                     deleteForm.querySelector('#delete-chat-id').value = chatId;
-                    deleteForm.submit();
+                        deleteForm.submit();
+                    }
                 }
-            }
         };
         
         // Attach delete handlers
@@ -1712,4 +1712,4 @@
         }
     }
 </script>
-{% endblock %}
+{% endblock %} 

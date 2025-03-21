@@ -99,7 +99,7 @@
                                 <span class="text-white opacity-80">Basic Reporting</span>
                             </li>
                         </ul>
-                        <a href="/signup?plan=starter" class="btn btn-outline-primary w-100 py-3 rounded-pill">
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-primary w-100 py-3 rounded-pill">
                             Start Free Trial
                         </a>
                     </div>
@@ -108,9 +108,12 @@
             
             <!-- Professional Plan -->
             <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="card h-100 border-0 rounded-4 shadow-lg position-relative pricing-card featured bg-dark-surface-2 border-gradient-accent">
-                    <div class="position-absolute top-0 start-50 translate-middle">
-                        <span class="badge bg-accent py-2 px-4 rounded-pill">Most Popular</span>
+                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient">
+                    <!-- Popular badge/ribbon -->
+                    <div class="position-absolute" style="top: 0; left: 0; right: 0; overflow: visible; text-align: center; z-index: 5;">
+                        <div style="background-color: var(--bs-accent); color: white; display: inline-block; padding: 8px 16px; border-radius: 0 0 12px 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <i class="fas fa-star me-1"></i> Most Popular
+                        </div>
                     </div>
                     <div class="card-body p-5 pt-5 mt-3">
                         <div class="plan-header mb-4">
@@ -177,7 +180,7 @@
                                 <span class="text-white opacity-80">SMS Notifications</span>
                             </li>
                         </ul>
-                        <a href="/signup?plan=professional" class="btn btn-primary w-100 py-3 rounded-pill">
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-primary w-100 py-3 rounded-pill">
                             Start Free Trial
                         </a>
                     </div>
@@ -252,7 +255,7 @@
                                 <span class="text-white opacity-80">Priority Support</span>
                             </li>
                         </ul>
-                        <a href="/signup?plan=enterprise" class="btn btn-outline-primary w-100 py-3 rounded-pill">
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-primary w-100 py-3 rounded-pill">
                             Start Free Trial
                         </a>
                     </div>
@@ -486,6 +489,10 @@
 </section>
 
 <style>
+    :root {
+    --bs-accent: #FF6B35;
+    --bs-primary-color: #2D5BFF;
+}
     /* Custom pricing toggle styling */
     .pricing-toggle {
         position: relative;

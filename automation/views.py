@@ -39,13 +39,14 @@ def ContactUsPage(request):
         email = request.POST.get('email', '')
         subject = request.POST.get('subject', '')
         message = request.POST.get('message', '')
+        phone = request.POST.get('phone')
         privacy_accepted = request.POST.get('privacy_accepted', False)
         
         # Validate form data
         if name and email and subject and message and privacy_accepted:
             # Prepare email content
             email_subject = f"Contact Form: {subject}"
-            email_message = f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}"
+            email_message = f"Name: {name}\n Phone Number: {phone} \nEmail: {email}\n\nMessage:\n{message}"
             from_email = email  # Use the user's email as the from address
             recipient_list = ['kashifmehmood926@gmail.com']  # Replace with your actual email
                 

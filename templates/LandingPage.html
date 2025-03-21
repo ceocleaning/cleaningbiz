@@ -34,8 +34,8 @@
                     Transform Your <br>
                     <span class="position-relative text-gradient">
                         Cleaning Business
-                        <svg class="position-absolute w-100" style="bottom: -10px; left: 0; z-index: -1; height: 10px;">
-                            <path d="M0,0 Q25,10 50,0 T100,0" fill="none" stroke="url(#gradient)" stroke-width="3" />
+                        <svg class="position-absolute" style="bottom: -10px; left: 0; z-index: -1; height: 10px;">
+                            <path d="M0,0 Q25,10 50,0" fill="none" stroke="url(#gradient)" stroke-width="3" />
                             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" stop-color="var(--primary-400)" />
                                 <stop offset="100%" stop-color="var(--accent-400)" />
@@ -80,10 +80,10 @@
                 
                 <!-- CTA Buttons -->
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="/signup" class="btn btn-accent shadow-glow-accent">
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-accent shadow-glow-accent">
                         <i class="fas fa-rocket me-2"></i>Get Started Free
                     </a>
-                    <a href="/demo" class="btn btn-outline-light">
+                    <a href="" class="btn btn-outline-light">
                         <i class="fas fa-headphones me-2"></i>Listen to Demo
                     </a>
                 </div>
@@ -104,7 +104,7 @@
                         </div>
                         <div>
                             <h6 class="mb-1 text-white">Booking Confirmed</h6>
-                            <p class="small mb-0 text-dark-text-secondary">Office cleaning scheduled for tomorrow at 3:00 PM</p>
+                            <p class="small mb-0 text-dark-text-secondary">House cleaning scheduled for Tomorrow at 3:00 PM</p>
                         </div>
                     </div>
                     
@@ -236,7 +236,7 @@
         <div class="row align-items-center py-4">
             <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                 <div class="position-relative rounded-xxl overflow-hidden shadow-lg border-gradient">
-                    <img src="https://images.unsplash.com/photo-1556745753-b2904692b3cd?auto=format&fit=crop&q=80" alt="AI Voice Agent" class="img-fluid">
+                    <img src="https://images.pexels.com/photos/3783096/pexels-photo-3783096.jpeg?auto=compress&cs=tinysrgb&w=600" height="500" alt="AI Voice Agent">
                     <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center">
                         <a href="#" class="btn btn-accent rounded-circle shadow-lg p-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
                             <i class="fas fa-play fs-3"></i>
@@ -548,21 +548,24 @@
                             </li>
                             <li class="d-flex align-items-center mb-3">
                                 <i class="fas fa-times-circle text-muted me-2"></i>
-                                <span class="text-muted">Custom voice configuration</span>
+                                <span class="" style="color: gainsboro;">Custom voice configuration</span>
                             </li>
                         </ul>
-                        <a href="/signup" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
                     </div>
                 </div>
             </div>
             
             <!-- Pro Plan -->
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                <div class="card h-100 bg-gradient-primary rounded-xl p-4 border-gradient-accent" style="background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);">
-                    <div class="position-absolute top-0 start-50 translate-middle">
-                        <span class="badge bg-accent rounded-pill px-3 py-2">Most Popular</span>
+                <div class="card h-100 bg-gradient-primary rounded-xl p-4 border-gradient-accent position-relative" style="background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);">
+                    <!-- Popular badge/ribbon -->
+                    <div class="position-absolute" style="top: 0; left: 0; right: 0; overflow: visible; text-align: center; z-index: 5;">
+                        <div style="background-color: var(--bs-accent); color: white; display: inline-block; padding: 8px 16px; border-radius: 0 0 12px 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <i class="fas fa-star me-1"></i> Most Popular
+                        </div>
                     </div>
-                    <div class="card-body p-2">
+                    <div class="card-body p-2" style="margin-top: 10px;">
                         <h3 class="text-white fw-bold mb-3">Professional</h3>
                         <div class="d-flex align-items-baseline mb-4">
                             <span class="display-4 fw-bold text-white">$199</span>
