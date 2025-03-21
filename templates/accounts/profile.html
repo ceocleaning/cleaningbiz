@@ -261,6 +261,22 @@
                         <i class="fas fa-info-circle me-1"></i>
                         When enabled, you can use Retell AI for voice calls with customers.
                       </div>
+                      
+                      <!-- Call Delay Setting (only visible when Retell AI is enabled) -->
+                      <div id="callDelaySettings" class="mt-3" {% if not business.useCall %}style="display: none;"{% endif %}>
+                        <div class="form-group">
+                          <label for="callDelayMinutes" class="form-label fw-medium">Automated Call Delay (minutes)</label>
+                          <div class="input-group">
+                            <input type="number" class="form-control" id="callDelayMinutes" name="callDelayMinutes" 
+                                  value="{{ business.timeToWait|default:10 }}" min="1" max="60">
+                            <span class="input-group-text">minutes</span>
+                          </div>
+                          <div class="form-text text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Automated call will be sent after this many minutes if user doesn't respond to the first message.
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1809,6 +1825,16 @@
         const businessSettingsForm = document.getElementById('businessSettingsForm');
         const settingsLoader = document.getElementById('settingsLoader');
         
+        // Toggle call delay settings based on Retell AI toggle
+        const useCallToggle = document.getElementById('useCallToggle');
+        const callDelaySettings = document.getElementById('callDelaySettings');
+        
+        if (useCallToggle && callDelaySettings) {
+            useCallToggle.addEventListener('change', function() {
+                callDelaySettings.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
         if (saveSettingsBtn && businessSettingsForm) {
             saveSettingsBtn.addEventListener('click', function() {
                 // Show loader
@@ -1827,8 +1853,13 @@
                 formData.append('csrfmiddlewaretoken', csrfToken);
                 
                 // Add useCall value
-                const useCallToggle = document.getElementById('useCallToggle');
                 formData.append('useCall', useCallToggle.checked);
+                
+                // Add callDelayMinutes value if Retell AI is enabled
+                if (useCallToggle.checked) {
+                    const callDelayMinutes = document.getElementById('callDelayMinutes').value;
+                    formData.append('callDelayMinutes', callDelayMinutes);
+                }
                 
                 fetch('{% url "accounts:update_business_settings" %}', {
                     method: 'POST',

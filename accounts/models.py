@@ -20,6 +20,7 @@ class Business(models.Model):
     isApproved = models.BooleanField(default=False)
 
     useCall = models.BooleanField(default=False)
+    timeToWait = models.IntegerField(default=0)
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)

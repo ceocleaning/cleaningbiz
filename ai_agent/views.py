@@ -159,13 +159,15 @@ def agent_config_unified(request):
     config, created = AgentConfiguration.objects.get_or_create(
         business=business,
         defaults={
-            'prompt': ''
+            'prompt': '',
+            'agent_name': 'Sarah'
         }
     )
     
     if request.method == 'POST':
         # Update configuration
         config.prompt = request.POST.get('prompt', config.prompt)
+        config.agent_name = request.POST.get('agent_name', config.agent_name)
         config.save()
         
         messages.success(request, f"Configuration for {business.businessName} updated successfully.")
@@ -201,6 +203,12 @@ def agent_config_save(request):
     
     # Update configuration
     config.prompt = request.POST.get('prompt', config.prompt)
+    
+    # Update agent name if provided
+    agent_name = request.POST.get('agent_name')
+    if agent_name:
+        config.agent_name = agent_name
+    
     config.save()
     
     # Generate the system prompt for preview

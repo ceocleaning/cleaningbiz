@@ -1141,6 +1141,19 @@ def update_business_settings(request):
             # Update useCall setting
             use_call = request.POST.get('useCall') == 'true' or request.POST.get('useCall') == 'on'
             business.useCall = use_call
+            wait_time = request.POST.get('callDelayMinutes')
+            
+            # Update callDelayMinutes if provided and useCall is enabled
+            if use_call and wait_time:
+                try:
+                    wait_time = int(wait_time)
+                    # Ensure value is within reasonable limits
+                    if 1 <= wait_time <= 60:  # Between 1 minute and 60 minutes
+                        business.timeToWait = wait_time
+                except (ValueError, TypeError):
+                    # If conversion fails, use default value
+                    business.timeToWait = 10
+            
             business.save()
             
             return JsonResponse({'success': True})
