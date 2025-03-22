@@ -52,7 +52,6 @@ def convert_date_str_to_date(date_str):
         )
     )
     
-    print(f"[UTIL] String Date to DateTime: {response.text}")
     return response.text
 
 
@@ -61,13 +60,20 @@ def format_messages_for_openai(messages, system_prompt):
     formatted_messages = [{"role": "system", "content": system_prompt}]
     
     for message in messages:
-        if hasattr(message, 'sender'):
+        if hasattr(message, 'role'):
             # Handle Messages objects
-            role = "assistant" if message.sender == "ai" else "user"
-            formatted_messages.append({"role": role, "content": message.message})
+            role = message.role
+            # Skip messages with role 'tool' as they cause OpenAI API errors
+            if role == 'tool':
+                continue
+            content = message.message
+            formatted_messages.append({"role": role, "content": content})
         elif isinstance(message, dict):
             # Handle dictionary messages
             role = message.get('role')
+            # Skip messages with role 'tool' as they cause OpenAI API errors
+            if role == 'tool':
+                continue
             content = message.get('content') or message.get('message')
             if role and content:
                 formatted_messages.append({"role": role, "content": content})
@@ -80,14 +86,11 @@ def get_chat_status(chat):
     Use OpenAI to analyze a chat and determine its status
     """
     try:
-        print(f"[UTIL] Getting chat status for chat ID: {chat.id}")
-        
         # Get chat messages directly from database
         from .models import Messages
         messages = Messages.objects.filter(chat=chat).order_by('createdAt')
         
         if not messages.exists():
-            print(f"[UTIL] No messages found for chat ID: {chat.id}")
             return "pending"
         
         # Format messages for OpenAI
@@ -107,6 +110,7 @@ def get_chat_status(chat):
         If the conversation is unresolved → pending
         If the user confirms a booking → booked
         If the user expresses disinterest → not_interested
+        If booking is confirmed → booked
         
         Important Rules:
         ✅ Return only one word from the list.
@@ -119,24 +123,20 @@ def get_chat_status(chat):
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
         try:
-            print(f"[UTIL] Calling OpenAI API for chat ID: {chat.id}")
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=formatted_messages
             )
             
             response_text = response.choices[0].message.content.strip().lower()
-            print(f"[UTIL] OpenAI response for chat ID {chat.id}: {response_text}")
             
             # Validate the response is one of the expected values
             valid_statuses = ["pending", "booked", "not_interested"]
             if response_text not in valid_statuses:
-                print(f"[UTIL] Unexpected status from OpenAI: {response_text}, defaulting to 'pending'")
                 response_text = "pending"
                 
             chat.status = response_text
             chat.save()
-            print(f"[UTIL] Chat status updated to: {response_text}")
             return response_text
             
         except Exception as e:

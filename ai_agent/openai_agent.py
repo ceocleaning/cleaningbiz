@@ -239,29 +239,74 @@ class OpenAIAgent:
             Chat object or None if error
         """
         try:
+            print(f"[DEBUG] get_or_create_chat called with business_id={business_id}, client_phone_number={client_phone_number}, session_key={session_key}")
+            
             # Get the business object
             business = Business.objects.get(businessId=business_id)
+            print(f"[DEBUG] Found business: {business.businessName}")
             
             # Try to get an existing chat
             try:
                 if client_phone_number:
-                    chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+                    # Check if multiple chats exist for this phone number
+                    chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                    print(f"[DEBUG] Found {chats.count()} chats for phone number {client_phone_number}")
+                    if chats.exists():
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number}. Using the most recent one.")
+                        # Log the chat IDs for debugging
+                            for i, chat in enumerate(chats):
+                                print(f"[DEBUG] Chat {i+1}: ID={chat.id}, Created={chat.createdAt}")
+                            
+                            # Get the most recent chat
+                            chat = chats.order_by('-createdAt').first()
+                            
+                            # Delete older duplicate chats to prevent future issues
+                            chats.exclude(id=chat.id).delete()
+                            print(f"[DEBUG] Deleted older duplicate chats. Keeping chat ID={chat.id}")
+                        else:
+                            chat = chats.first()
+                    else:
+                        chat = Chat.objects.create(
+                            business=business,
+                            clientPhoneNumber=client_phone_number,
+                            status='pending'  # Add default status
+                        )
+                           
+                        print(f"[DEBUG] Created new chat ID={chat.id}")
+                        return chat
                 else:
-                    chat = Chat.objects.get(sessionKey=session_key)
+                    # Check if multiple chats exist for this session key
+                    chats = Chat.objects.filter(sessionKey=session_key)
+                    if chats.exists():
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for session key {session_key}. Using the most recent one.")
+                            # Log the chat IDs for debugging
+                            for i, chat in enumerate(chats):
+                                print(f"[DEBUG] Chat {i+1}: ID={chat.id}, Created={chat.createdAt}")
+                            
+                            # Get the most recent chat
+                            chat = chats.order_by('-createdAt').first()
+                            
+                            # Delete older duplicate chats to prevent future issues
+                            chats.exclude(id=chat.id).delete()
+                            print(f"[DEBUG] Deleted older duplicate chats. Keeping chat ID={chat.id}")
+                        else:
+                            chat = chats.first()
+                    else:
+                        chat = Chat.objects.create(
+                            business=business,
+                            sessionKey=session_key,
+                            status='pending'  # Add default status
+                        )
+                        print(f"[DEBUG] Created new chat ID={chat.id}")
+                
+                print(f"[DEBUG] Using existing chat ID={chat.id}")
                 return chat
+                
             except Chat.DoesNotExist:
-                # Create a new chat
-                if client_phone_number:
-                    chat = Chat.objects.create(
-                        business=business,
-                        clientPhoneNumber=client_phone_number,
-                    )
-                else:
-                    chat = Chat.objects.create(
-                        business=business,
-                        sessionKey=session_key,
-                    )
-                return chat
+                pass
+                
                 
         except Business.DoesNotExist:
             print(f"[DEBUG] Business not found with ID: {business_id}")
@@ -282,11 +327,43 @@ class OpenAIAgent:
             List of message dictionaries or empty list if error
         """
         try:
+            print(f"[DEBUG] get_chat_messages called with client_phone_number={client_phone_number}, session_key={session_key}")
+            
             # Get the chat object
             if client_phone_number:
-                chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+                # Check if multiple chats exist for this phone number
+                chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                if chats.count() > 1:
+                    print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number} in get_chat_messages. Using the most recent one.")
+                    # Log the chat IDs for debugging
+                    for i, chat in enumerate(chats):
+                        print(f"[DEBUG] Chat {i+1}: ID={chat.id}, Created={chat.createdAt}")
+                    
+                    # Get the most recent chat
+                    chat = chats.order_by('-createdAt').first()
+                elif chats.count() == 0:
+                    print(f"[DEBUG] No chat found for phone number: {client_phone_number}")
+                    return []
+                else:
+                    chat = chats.first()
             else:
-                chat = Chat.objects.get(sessionKey=session_key)
+                # Check if multiple chats exist for this session key
+                chats = Chat.objects.filter(sessionKey=session_key)
+                if chats.count() > 1:
+                    print(f"[WARNING] Found {chats.count()} chats for session key {session_key} in get_chat_messages. Using the most recent one.")
+                    # Log the chat IDs for debugging
+                    for i, chat in enumerate(chats):
+                        print(f"[DEBUG] Chat {i+1}: ID={chat.id}, Created={chat.createdAt}")
+                    
+                    # Get the most recent chat
+                    chat = chats.order_by('-createdAt').first()
+                elif chats.count() == 0:
+                    print(f"[DEBUG] No chat found for session key: {session_key}")
+                    return []
+                else:
+                    chat = chats.first()
+            
+            print(f"[DEBUG] Getting messages for chat ID={chat.id}")
             
             # Get all messages for this chat
             messages = Messages.objects.filter(chat=chat).order_by('createdAt')
@@ -302,7 +379,8 @@ class OpenAIAgent:
                     'message': msg.message,   # Keep message key for backward compatibility
                     'createdAt': msg.createdAt
                 })
-                
+            
+            print(f"[DEBUG] Retrieved {len(message_list)} messages from chat ID={chat.id}")
             return message_list
             
         except Chat.DoesNotExist:
@@ -349,158 +427,215 @@ class OpenAIAgent:
             return [{"role": "system", "content": system_prompt}]
     
     @staticmethod
-    def execute_tool_call(tool_name, tool_args_raw, client_phone_number, business):
+    def execute_tool_call(tool_name, tool_args_raw, client_phone_number, business, session_key=None):
         """Execute a tool call from the OpenAI API
         
         Args:
             tool_name: The name of the tool to execute
-            tool_args_raw: The arguments for the tool as a JSON string or dict
-            client_phone_number: The phone number of the client for context
+            tool_args_raw: The arguments for the tool
+            client_phone_number: The phone number of the client
             business: The business object
+            session_key: Optional session key for web chat
             
         Returns:
-            String containing the result of the tool execution
+            String with the result of the tool call
         """
-        try:
-            print(f"\n[DEBUG] Executing tool call: {tool_name}")
-            print(f"[DEBUG] Tool arguments: {tool_args_raw}")
+        print(f"\n[DEBUG] Executing tool call: {tool_name}")
+        print(f"[DEBUG] Tool arguments: {tool_args_raw}")
+        
+        if client_phone_number is None and session_key is None:
+            print("[ERROR] Missing client phone number and session key")
+            return json.dumps({
+                "error": "Missing client identification"
+            })
             
-            # Parse tool arguments if they're a string
+        # Parse the tool arguments
+        try:
             if isinstance(tool_args_raw, str):
-                try:
-                    tool_args = json.loads(tool_args_raw)
-                except json.JSONDecodeError as e:
-                    print(f"[ERROR] Error parsing tool arguments: {str(e)}")
-                    return json.dumps({
-                        "error": f"Error parsing tool arguments: {str(e)}"
-                    })
+                tool_args = json.loads(tool_args_raw)
             else:
                 tool_args = tool_args_raw
+        except Exception as e:
+            print(f"[ERROR] Error parsing tool arguments: {str(e)}")
+            traceback.print_exc()
+            return json.dumps({
+                "error": f"Error parsing tool arguments: {str(e)}"
+            })
             
-            # Get available tools
-            from .api_views import check_availability, calculate_total, book_appointment
-            
-            tools = {
-                'check_availability': check_availability,
-                'calculateTotal': calculate_total,
-                'bookAppointment': book_appointment
-            }
-            
-            # Check if the tool exists
-            if tool_name not in tools:
-                print(f"[ERROR] Unknown tool: {tool_name}")
-                return json.dumps({
-                    "error": f"Unknown tool: {tool_name}"
-                })
+        # Import tools from api_views.py
+        from .api_views import calculate_total, check_availability, book_appointment, get_current_time_in_chicago
+
+        # Handle tool calls
+        try:
+            # checkAvailability tool
+            if tool_name == 'checkAvailability':
+                print(f"\n[DEBUG] Executing checkAvailability tool with args: {tool_args}")
+                date_str = tool_args.get('date')
+                print(f"[DEBUG] Checking availability for date: {date_str}")
+                print(f"[DEBUG] Business details: ID={business.businessId}, Name={business.businessName}")
                 
-            # Check if we have a client phone number
-            if not client_phone_number:
-                print(f"[ERROR] Missing client phone number")
-                return json.dumps({
-                    "error": "Missing client phone number"
-                })
-            
-            # Execute the appropriate tool based on the tool name and required arguments
-            if tool_name == 'check_availability':
-                # Extract date from arguments
-                date = tool_args.get('date')
-                if not date:
+                if not date_str:
+                    print("[DEBUG] Missing date parameter in checkAvailability")
                     return json.dumps({
-                        "error": "Missing required argument: date"
+                        "error": "Missing date parameter"
                     })
                 
-                # Execute the tool with required arguments
-                result = tools[tool_name](business, date)
-                return json.dumps(result)
-                
-            elif tool_name == 'calculateTotal':
-                # Get messages for this chat
-                messages = OpenAIAgent.get_chat_messages(client_phone_number)
-                
-                # Format messages for the summary extraction
-                formatted_messages = []
-                for msg in messages:
-                    if isinstance(msg, dict) and 'role' in msg:
-                        # Handle different message formats
-                        content = msg.get('content') or msg.get('message')
-                        if content:
-                            formatted_messages.append({
-                                'role': msg['role'],
-                                'content': content
-                            })
-                
-                # Extract conversation summary
-                if formatted_messages:
-                    try:
-                        # Extract conversation summary
-                        summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
-                        
-                        # Update chat summary in database
-                        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-                        if isinstance(summary, dict):
-                            chat.summary = summary
-                            chat.save()
-                            print(f"[DEBUG] Successfully saved summary to chat in calculateTotal: {len(summary.keys())} fields")
-                        else:
-                            print(f"[DEBUG] Summary is not a dict, cannot save in calculateTotal: {type(summary)}")
-                    except Exception as e:
-                        print(f"[DEBUG] Error extracting conversation summary in calculateTotal: {str(e)}")
-                        traceback.print_exc()
-                
-                # Execute the tool with required arguments
-                result = tools[tool_name](business, client_phone_number)
-                return json.dumps(result)
-                
-            elif tool_name == 'bookAppointment':
-                # Get messages for this chat
-                messages = OpenAIAgent.get_chat_messages(client_phone_number)
-                
-                # Format messages for the summary extraction
-                formatted_messages = []
-                for msg in messages:
-                    if isinstance(msg, dict) and 'role' in msg:
-                        # Handle different message formats
-                        content = msg.get('content') or msg.get('message')
-                        if content:
-                            formatted_messages.append({
-                                'role': msg['role'],
-                                'content': content
-                            })
-                
-                # Extract summary from conversation
-                try:
-                    chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
-                    
-                    # Update the chat with the summary
-                    if isinstance(summary, dict):
-                        chat.summary = summary
-                        chat.save()
-                        print(f"[DEBUG] Successfully saved summary to chat in bookAppointment: {len(summary.keys())} fields")
-                    else:
-                        print(f"[DEBUG] Summary is not a dict, cannot save in bookAppointment: {type(summary)}")
-                        return json.dumps({
-                            "success": False,
-                            "message": "Error processing conversation summary. Please try again."
-                        })
+                try:    
+                    # Call the check_availability function from api_views.py
+                    print(f"[DEBUG] Calling check_availability function with business ID={business.businessId} and date={date_str}")
+                    result = check_availability(business, date_str)
+                    print(f"[DEBUG] check_availability returned: {result}")
+                    return json.dumps(result)
                 except Exception as e:
-                    print(f"[DEBUG] Error extracting conversation summary in bookAppointment: {str(e)}")
+                    print(f"[ERROR] Error in checkAvailability: {str(e)}")
                     traceback.print_exc()
                     return json.dumps({
-                        "success": False,
-                        "message": "Error processing conversation summary. Please try again."
+                        "error": f"Error checking availability: {str(e)}"
                     })
                 
-                # Check if we have enough information to create a booking
-                if not summary or not isinstance(summary, dict) or len([v for v in summary.values() if v]) < 5:
+            # calculateTotal tool
+            elif tool_name == 'calculateTotal':
+                print(f"\n[DEBUG] Executing calculateTotal tool with args: {tool_args}")
+                print(f"[DEBUG] Using client_phone_number={client_phone_number}, session_key={session_key}")
+                
+                try:
+                    # Extract arguments
+                    bedrooms = tool_args.get('bedrooms', 0)
+                    bathrooms = tool_args.get('bathrooms', 0)
+                    extras = tool_args.get('extras', [])
+                    
+                    print(f"[DEBUG] calculateTotal with bedrooms={bedrooms}, bathrooms={bathrooms}, extras={extras}")
+                    
+                    # Get the chat using either phone number or session key
+                    if client_phone_number:
+                        # Call the calculate_total function from api_views.py
+                        result = calculate_total(business, client_phone_number)
+                    else:
+                        # For session-based chats, we need to retrieve the chat and then call calculate_total
+                        chat = None
+                        try:
+                            chats = Chat.objects.filter(sessionKey=session_key)
+                            if chats.exists():
+                                chat = chats.order_by('-createdAt').first()
+                                if chat.clientPhoneNumber:
+                                    result = calculate_total(business, chat.clientPhoneNumber)
+                                else:
+                                    return json.dumps({
+                                        "error": "No phone number associated with this session"
+                                    })
+                            else:
+                                return json.dumps({
+                                    "error": "No chat found for this session"
+                                })
+                        except Exception as e:
+                            print(f"[ERROR] Error retrieving chat: {str(e)}")
+                            traceback.print_exc()
+                            return json.dumps({
+                                "error": f"Error retrieving chat: {str(e)}"
+                            })
+                    
+                    return json.dumps(result)
+                except Exception as e:
+                    print(f"[ERROR] Error in calculateTotal: {str(e)}")
+                    traceback.print_exc()
                     return json.dumps({
-                        "success": False,
-                        "message": "Not enough customer information available. Please collect more details first."
+                        "error": f"Error executing calculateTotal tool: {str(e)}"
                     })
                 
-                # Execute the tool with required arguments
-                result = tools[tool_name](business, client_phone_number)
-                return json.dumps(result)
+            # bookAppointment tool
+            elif tool_name == 'bookAppointment':
+                # Extract summary from conversation
+                try:
+                    # Handle potential multiple chats
+                    if client_phone_number:
+                        chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number} in bookAppointment. Using the most recent one.")
+                            chat = chats.order_by('-createdAt').first()
+                        elif chats.count() == 0:
+                            return json.dumps({
+                                "success": False,
+                                "message": "No chat found for this phone number. Please try again."
+                            })
+                        else:
+                            chat = chats.first()
+                    elif session_key:
+                        chats = Chat.objects.filter(sessionKey=session_key)
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for session key {session_key} in bookAppointment. Using the most recent one.")
+                            chat = chats.order_by('-createdAt').first()
+                        elif chats.count() == 0:
+                            return json.dumps({
+                                "success": False,
+                                "message": "No chat found for this session. Please try again."
+                            })
+                        else:
+                            chat = chats.first()
+                    else:
+                        return json.dumps({
+                            "success": False,
+                            "message": "No client identifier found. Please try again."
+                        })
+                    
+                    # Get chat messages and format for summary extraction
+                    messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key)
+                    formatted_messages = []
+                    for msg in messages:
+                        if isinstance(msg, dict) and 'role' in msg:
+                            # Handle different message formats
+                            content = msg.get('content') or msg.get('message')
+                            if content:
+                                formatted_messages.append({
+                                    'role': msg['role'],
+                                    'content': content
+                                })
+                        
+                    # Extract summary from conversation
+                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                    
+                    # Check if chat has a clientPhoneNumber
+                    if not chat.clientPhoneNumber and session_key:
+                        # Need to update phone number from summary
+                        phone_number = summary.get('phoneNumber')
+                        if phone_number:
+                            chat.clientPhoneNumber = phone_number
+                            chat.save()
+                            print(f"[DEBUG] Updated chat with phone number: {phone_number}")
+                    
+                    # Call the book_appointment function
+                    client_phone = chat.clientPhoneNumber
+                    if client_phone:
+                        result = book_appointment(business, client_phone)
+                        
+                        # If booking was successful and we have a booking ID, update the chat summary
+                        if result.get('success') and result.get('booking_id'):
+                            # Update summary with booking ID
+                            if not isinstance(chat.summary, dict):
+                                chat.summary = {}
+                            chat.summary['bookingId'] = result.get('booking_id')
+                            chat.save()
+                            print(f"[DEBUG] Updated chat summary with booking ID: {result.get('booking_id')}")
+                    else:
+                        result = {
+                            "success": False,
+                            "error": "No phone number available for booking"
+                        }
+                    
+                    return json.dumps(result)
+                except Exception as e:
+                    print(f"[ERROR] Error in bookAppointment: {str(e)}")
+                    traceback.print_exc()
+                    return json.dumps({
+                        "error": f"Error booking appointment: {str(e)}"
+                    })
+                    
+            # getCurrentTime tool
+            elif tool_name == 'getCurrentTime':
+                # Call the get_current_time_in_chicago function
+                result = get_current_time_in_chicago()
+                return json.dumps({
+                    "current_time": result
+                })
                 
             else:
                 return json.dumps({
@@ -516,23 +651,23 @@ class OpenAIAgent:
     
     @staticmethod
     def get_openai_tools():
-        """Get the OpenAI tools configuration for function calling
+        """Get the available tools for the agent
         
         Returns:
-            List of tool definitions in the OpenAI format
+            List of tool definitions
         """
-        return [
+        tools = [
             {
                 "type": "function",
                 "function": {
-                    "name": "check_availability",
-                    "description": "Check if a specific date and time is available for booking a cleaning appointment",
+                    "name": "checkAvailability",
+                    "description": "Check if a given date and time is available for booking",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "date": {
                                 "type": "string",
-                                "description": "The date and time to check for availability in natural language format (e.g., 'tomorrow at 2pm', 'next Monday at 10am')"
+                                "description": "The date and time to check availability for, in natural language (e.g. 'tomorrow at 10am', 'next Monday at 2pm')"
                             }
                         },
                         "required": ["date"]
@@ -542,30 +677,47 @@ class OpenAIAgent:
             {
                 "type": "function",
                 "function": {
-                    "name": "bookAppointment",
-                    "description": "Book a cleaning appointment with the collected customer information",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {}
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "current_time",
-                    "description": "Get the current time in Chicago timezone (Central Time)",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {}
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
                     "name": "calculateTotal",
-                    "description": "Calculate the total price for a cleaning service based on property details and selected addons",
+                    "description": "Calculate the total price based on the customer details",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "bedrooms": {
+                                "type": "integer",
+                                "description": "Number of bedrooms"
+                            },
+                            "bathrooms": {
+                                "type": "integer",
+                                "description": "Number of bathrooms"
+                            },
+                            "extras": {
+                                "type": "array",
+                                "description": "List of extra services (deep_clean, fridge_cleaning, oven_cleaning, window_cleaning, cabinet_cleaning)",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": ["bedrooms", "bathrooms"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "bookAppointment",
+                    "description": "Book an appointment based on the customer details collected during the conversation",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "getCurrentTime",
+                    "description": "Get the current time in Chicago timezone",
                     "parameters": {
                         "type": "object",
                         "properties": {}
@@ -573,15 +725,18 @@ class OpenAIAgent:
                 }
             }
         ]
+        
+        return tools
     
     @staticmethod
-    def process_ai_response(response, client_phone_number, business):
+    def process_ai_response(response, client_phone_number, business, session_key=None):
         """Process the AI response from OpenAI API
         
         Args:
             response: The response from OpenAI API
             client_phone_number: The phone number of the client
             business: The business object
+            session_key: The session key for web chat (added parameter)
             
         Returns:
             Dictionary with response content and any tool call results
@@ -605,7 +760,8 @@ class OpenAIAgent:
                             tool_call.function.name,
                             tool_call.function.arguments,
                             client_phone_number,
-                            business
+                            business,
+                            session_key  # Pass session_key to execute_tool_call
                         )
                         
                         # Add to results
@@ -646,36 +802,84 @@ class OpenAIAgent:
                 """
                 messages.append({"role": "system", "content": system_prompt})
                 
-                chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
-                # Add context about the current conversation state to help the AI continue properly
-                if chat and hasattr(chat, 'summary') and chat.summary:
-                    # Extract relevant context from the chat summary
-                    context_prompt = "Current conversation context:\n"
+                # Get the chat using either phone number or session key
+                try:
+                    # Handle getting the chat based on available identifiers
+                    print(f"[DEBUG] process_ai_response trying to get chat with client_phone_number={client_phone_number} or session_key={session_key}")
                     
-                    # Add collected customer information
-                    customer_info = []
-                    for field in ['firstName', 'lastName', 'email', 'phoneNumber', 'address']:
-                        if chat.summary.get(field):
-                            customer_info.append(f"- {field}: {chat.summary.get(field)}")
+                    # Ensure we have access to the models
+                    from .models import Chat, Messages, AgentConfiguration
+                    print(f"[DEBUG] Successfully imported models")
                     
-                    if customer_info:
-                        context_prompt += "\nCustomer information collected:\n" + "\n".join(customer_info) + "\n"
-                    
-                    # Add property details if available
-                    property_info = []
-                    for field in ['bedrooms', 'bathrooms', 'squareFeet', 'serviceType']:
-                        if chat.summary.get(field):
-                            property_info.append(f"- {field}: {chat.summary.get(field)}")
-                    
-                    if property_info:
-                        context_prompt += "\nProperty details collected:\n" + "\n".join(property_info) + "\n"
-                    
-                    # Add conversation stage information
-                    if chat.summary.get('conversationStage'):
-                        context_prompt += f"\nCurrent conversation stage: {chat.summary.get('conversationStage')}\n"
+                    if client_phone_number:
+                        # Handle potential multiple chats with the same phone number
+                        chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                        print(f"[DEBUG] Found {chats.count()} chats with phone number {client_phone_number}")
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number} in process_ai_response. Using the most recent one.")
+                            chat = chats.order_by('-createdAt').first()
+                            # Print chat details for debugging
+                            print(f"[DEBUG] Selected chat ID={chat.id}, created={chat.createdAt}, clientPhone={chat.clientPhoneNumber}, sessionKey={chat.sessionKey}")
+                        elif chats.count() == 0:
+                            chat = None
+                            print(f"[WARNING] No chat found for phone number {client_phone_number}")
+                        else:
+                            chat = chats.first()
+                            print(f"[DEBUG] Selected chat ID={chat.id}, created={chat.createdAt}, clientPhone={chat.clientPhoneNumber}, sessionKey={chat.sessionKey}")
+                    elif session_key:
+                        # Handle potential multiple chats with the same session key
+                        chats = Chat.objects.filter(sessionKey=session_key)
+                        print(f"[DEBUG] Found {chats.count()} chats with session key {session_key}")
+                        if chats.count() > 1:
+                            print(f"[WARNING] Found {chats.count()} chats for session key {session_key} in process_ai_response. Using the most recent one.")
+                            chat = chats.order_by('-createdAt').first()
+                            # Print chat details for debugging
+                            print(f"[DEBUG] Selected chat ID={chat.id}, created={chat.createdAt}, clientPhone={chat.clientPhoneNumber}, sessionKey={chat.sessionKey}")
+                        elif chats.count() == 0:
+                            chat = None
+                            print(f"[WARNING] No chat found for session key {session_key}")
+                        else:
+                            chat = chats.first()
+                            print(f"[DEBUG] Selected chat ID={chat.id}, created={chat.createdAt}, clientPhone={chat.clientPhoneNumber}, sessionKey={chat.sessionKey}")
+                    else:
+                        chat = None
+                        print("[WARNING] No client phone number or session key provided in process_ai_response.")
                         
-                    # Add this context to the messages
-                    messages.append({"role": "system", "content": context_prompt})
+                    print(f"[DEBUG] Using chat ID={chat.id if chat else 'None'} in process_ai_response")
+                
+                    # Add context about the current conversation state to help the AI continue properly
+                    if chat and hasattr(chat, 'summary') and chat.summary:
+                        # Extract relevant context from the chat summary
+                        context_prompt = "Current conversation context:\n"
+                        
+                        # Add collected customer information
+                        customer_info = []
+                        for field in ['firstName', 'lastName', 'email', 'phoneNumber', 'address']:
+                            if chat.summary.get(field):
+                                customer_info.append(f"- {field}: {chat.summary.get(field)}")
+                        
+                        if customer_info:
+                            context_prompt += "\nCustomer information collected:\n" + "\n".join(customer_info) + "\n"
+                        
+                        # Add property details if available
+                        property_info = []
+                        for field in ['bedrooms', 'bathrooms', 'squareFeet', 'serviceType']:
+                            if chat.summary.get(field):
+                                property_info.append(f"- {field}: {chat.summary.get(field)}")
+                        
+                        if property_info:
+                            context_prompt += "\nProperty details collected:\n" + "\n".join(property_info) + "\n"
+                        
+                        # Add conversation stage information
+                        if chat.summary.get('conversationStage'):
+                            context_prompt += f"\nCurrent conversation stage: {chat.summary.get('conversationStage')}\n"
+                            
+                        # Add this context to the messages
+                        messages.append({"role": "system", "content": context_prompt})
+                        
+                except Exception as e:
+                    print(f"[ERROR] Error retrieving chat in process_ai_response: {str(e)}")
+                    traceback.print_exc()
                 
                 # Add the original assistant message with tool calls
                 messages.append({
@@ -771,6 +975,7 @@ class OpenAIAgent:
             'bathrooms': '',
             'serviceType': '',
             'appointmentDateTime': '',
+            'convertedDateTime': '',
             'additionalNotes': '',
             'detailSummary': '',
             "addonDishes": '',
@@ -827,7 +1032,8 @@ class OpenAIAgent:
             Analyze the entire conversation history carefully and extract all relevant details.
             
             Respond ONLY with a valid JSON object containing these keys (leave empty if not found):
-            - firstName, lastName: Customer's full name
+            - firstName: Customer's first name
+            - lastName: Customer's last name
             - email: Customer's email address
             - phoneNumber: Customer's phone number with country code without any spaces or dashes
             - address1: Street address (just the street part, no city/state/zip)
@@ -839,6 +1045,7 @@ class OpenAIAgent:
             - bathrooms: Number of bathrooms as a numeric string
             - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
             - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
+            - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time_in_chicago()}
             - additionalNotes: Any special requests or notes
             - addonDishes: Quantity of Dishes Addon
             - addonLaundryLoads: Quantity of Laundry Loads Addon
@@ -854,6 +1061,7 @@ class OpenAIAgent:
             - addonGarageSweeping: Quantity of Garage Sweeping Addon
             - summary: Summary of the conversation
             - bookingId: Booking ID if available
+
             ONLY return a valid JSON object. No explanations or additional text.
             If you cannot determine a value, leave it as an empty string.
             """
@@ -1029,7 +1237,7 @@ def chat_api(request):
             
             # Process the response
             business = Business.objects.get(businessId=business_id)
-            ai_response = OpenAIAgent.process_ai_response(response, client_phone_number, business)
+            ai_response = OpenAIAgent.process_ai_response(response, client_phone_number, business, session_key)
             
             # Save the assistant message - only if ai_response is not None or empty
             if ai_response:
@@ -1076,40 +1284,48 @@ def chat_api(request):
                     role='assistant',
                     message="I'm sorry, I encountered an error processing your request. Please try again."
                 )
+
+            
+            from .utils import get_chat_status
+            chat_status = get_chat_status(chat)
+            print(f"[DEBUG] Chat status: {chat_status}")
             
             # Analyze and update chat summary
             # Make sure formatted_messages is in the correct format
             # Each message should be a dictionary with 'role' and 'content' keys
-            messages_for_summary = []
+            # messages_for_summary = []
             
-            # Convert all messages to the correct format
-            for msg in formatted_messages:
-                if isinstance(msg, dict) and 'role' in msg:
-                    # Handle both 'content' and 'message' keys
-                    content = msg.get('content') or msg.get('message')
-                    if content:  # Only add messages with content
-                        messages_for_summary.append({
-                            'role': msg['role'],
-                            'content': content
-                        })
+            # # Convert all messages to the correct format
+            # for msg in formatted_messages:
+            #     if isinstance(msg, dict) and 'role' in msg:
+            #         # Handle different message formats
+            #         content = msg.get('content') or msg.get('message')
+            #         if content:  # Only add messages with content
+            #             messages_for_summary.append({
+            #                 'role': msg['role'],
+            #                 'content': content
+            #             })
           
             # Extract conversation summary if we have enough messages
-            if len(messages_for_summary) >= 2:
-                try:
-                    # Extract conversation summary
-                    summary = OpenAIAgent.extract_conversation_summary(messages_for_summary)
+            # if len(messages_for_summary) >= 2:
+            #     try:
+            #         # Extract conversation summary
+            #         summary = OpenAIAgent.extract_conversation_summary(messages_for_summary)
                     
-                    # Update chat summary in database
-                    # Make sure we're storing the summary as a JSON string
-                    if isinstance(summary, dict):
-                        chat.summary = summary
-                        chat.save()
-                        print(f"[DEBUG] Successfully saved summary to chat: {len(summary.keys())} fields")
-                    else:
-                        print(f"[DEBUG] Summary is not a dict, cannot save: {type(summary)}")
-                except Exception as e:
-                    print(f"Error extracting conversation summary: {str(e)}")
-                    traceback.print_exc()
+            #         # Add debug logs to track chat object
+            #         print(f"[DEBUG] chat_api: About to save summary to chat ID={chat.id}, Phone={chat.clientPhoneNumber}, Session={chat.sessionKey}")
+                    
+            #         # Update chat summary in database
+            #         # Make sure we're storing the summary as a JSON string
+            #         if isinstance(summary, dict):
+            #             chat.summary = summary
+            #             chat.save()
+            #             print(f"[DEBUG] Successfully saved summary to chat: {len(summary.keys())} fields")
+            #         else:
+            #             print(f"[DEBUG] Summary is not a dict, cannot save: {type(summary)}")
+            #     except Exception as e:
+            #         print(f"Error extracting conversation summary: {str(e)}")
+            #         traceback.print_exc()
             
             # Return the response
             response_data = {
@@ -1147,6 +1363,8 @@ def chat_api(request):
         return JsonResponse({
             'error': str(e)
         }, status=500)
+
+
 
 @csrf_exempt
 def delete_chat(request, client_phone_number):

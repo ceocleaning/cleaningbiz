@@ -30,8 +30,6 @@ def calculate_total(business, client_phone_number):
         Dictionary with pricing details including base price, addons total, subtotal, tax, and total
     """
     try:
-        print("\n[DEBUG] calculate_total called for business:", business.businessName)
-        
         chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
         
         # Get business settings
@@ -42,7 +40,6 @@ def calculate_total(business, client_phone_number):
             try:
                 summary = json.loads(chat.summary)
             except json.JSONDecodeError:
-                print(f"[DEBUG] Error parsing chat summary JSON: {chat.summary}")
                 summary = {}
         else:
             summary = chat.summary or {}
@@ -68,7 +65,6 @@ def calculate_total(business, client_phone_number):
             area = int(summary.get("squareFeet", 0) or 0)
         except ValueError:
             error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
-            print(f"[DEBUG] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Calculate base price
@@ -147,10 +143,8 @@ def calculate_total(business, client_phone_number):
         
     except BusinessSettings.DoesNotExist:
         error_msg = f"Business settings not found for business: {business.businessName}"
-        print(f"[DEBUG] {error_msg}")
         return {"success": False, "error": error_msg}
     except Exception as e:
-        print(f"[DEBUG] Unexpected error in calculate_total: {str(e)}")
         traceback.print_exc()
         return {"success": False, "error": str(e)}
 
@@ -162,9 +156,11 @@ def get_current_time_in_chicago():
         current_time = datetime.now(chicago_tz)
         formatted_time = current_time.strftime('%Y-%m-%d %I:%M %p')
         day_of_week = current_time.strftime('%A')
-        return f"{formatted_time} ({day_of_week}) Central Time"
+        result = f"{formatted_time} ({day_of_week}) Central Time"
+        return result
     except Exception as e:
-        print(f"Error getting current time: {str(e)}")
+        print(f"[ERROR] Error getting current time: {str(e)}")
+        traceback.print_exc()
         return "Unable to retrieve current time due to an error."
 
 
@@ -181,38 +177,31 @@ def check_availability(business, date_string):
         Dictionary with availability information or error details
     """
     try:
-        print(f"\n[DEBUG] check_availability called for business: {business.businessName}")
-        print(f"[DEBUG] Received datetime string: {date_string}")
-        
         if not date_string:
-            print("[DEBUG] Missing datetime parameter")
             return {"success": False, "error": "Missing datetime parameter"}
         
         # Use convert_date_str_to_date function
         converted_datetime = convert_date_str_to_date(date_string)
         # Strip any whitespace including newlines and then parse
         converted_datetime = converted_datetime.strip()
-        parsed_datetime = datetime.fromisoformat(converted_datetime)
-
-        print(f"[DEBUG] Converted datetime: {parsed_datetime}")
         
+        try:
+            parsed_datetime = datetime.fromisoformat(converted_datetime)
+        except Exception as e:
+            return {"success": False, "error": f"Invalid date format: {str(e)}"}
+
         # Get all active cleaners for the business
         cleaners = get_cleaners_for_business(business)
-        print(f"[DEBUG] Found {len(cleaners)} active cleaners")
         
         # Check availability
         available_cleaners = []
-        print(f"[DEBUG] Checking availability for {parsed_datetime}")
         is_available, _ = is_slot_available(cleaners, parsed_datetime, available_cleaners)
-        print(f"[DEBUG] Availability result: {is_available}, Found {len(available_cleaners)} available cleaners")
         
         # Find alternative slots if not available
         alternative_slots = []
         if not is_available:
-            print("[DEBUG] Not available, finding alternative slots")
             alt_slots, _ = find_alternate_slots(cleaners, parsed_datetime, max_alternates=3)
             alternative_slots = alt_slots
-            print(f"[DEBUG] Found {len(alternative_slots)} alternative slots")
         
         # Format the parsed datetime for response
         formatted_datetime = parsed_datetime.strftime('%Y-%m-%d %H:%M')
@@ -228,11 +217,9 @@ def check_availability(business, date_string):
                 "name": c.name
             } for c in available_cleaners]
         }
-        print(f"[DEBUG] Returning response: {response_data}")
         return response_data
         
     except Exception as e:
-        print(f"[DEBUG] Unexpected error: {str(e)}")
         traceback.print_exc()
         return {"success": False, "error": str(e)}
 
@@ -252,9 +239,6 @@ def book_appointment(business, client_phone_number, booking_data=None):
         Dictionary with booking details or error information
     """
     try:
-        print("\n[DEBUG] book_appointment called for business:", business.businessName)
-        print(f"[DEBUG] Args: {client_phone_number}")
-
         chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
         
         # Parse summary if it's a string
@@ -262,14 +246,12 @@ def book_appointment(business, client_phone_number, booking_data=None):
             try:
                 chat_summary = json.loads(chat.summary)
             except json.JSONDecodeError:
-                print(f"[DEBUG] Error parsing chat summary JSON: {chat.summary}")
                 chat_summary = {}
         else:
             chat_summary = chat.summary or {}
         
         # Use provided booking_data if available, otherwise use chat.summary
         data = booking_data if booking_data else chat_summary
-        print(f"[DEBUG] Booking data: {json.dumps(data, indent=2)}")
         
         # Validate required fields
         required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 
@@ -278,7 +260,6 @@ def book_appointment(business, client_phone_number, booking_data=None):
         missing_fields = [field for field in required_fields if field not in data or not data.get(field)]
         if missing_fields:
             error_msg = f"Missing required fields: {', '.join(missing_fields)}"
-            print(f"[DEBUG] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Get business settings
@@ -302,7 +283,6 @@ def book_appointment(business, client_phone_number, booking_data=None):
             area = int(data["squareFeet"]) if data["squareFeet"] else 0
         except ValueError:
             error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
-            print(f"[DEBUG] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Calculate base price
@@ -372,7 +352,6 @@ def book_appointment(business, client_phone_number, booking_data=None):
             endTime = (cleaningDateTime + timedelta(hours=1)).time()
         except Exception as e:
             error_msg = f"Invalid appointment date/time format: {str(e)}"
-            print(f"[DEBUG] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Find available cleaner for the booking
@@ -381,11 +360,9 @@ def book_appointment(business, client_phone_number, booking_data=None):
         
         if not available_cleaner:
             error_msg = "No cleaners available for the requested time"
-            print(f"[DEBUG] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Create booking
-        print("[DEBUG] Creating booking...")
         newBooking = Booking.objects.create(
             business=business,
             firstName=data["firstName"],
@@ -427,8 +404,6 @@ def book_appointment(business, client_phone_number, booking_data=None):
             newBooking.customAddons.set(bookingCustomAddons)
             newBooking.save()
         
-
-        
         # Send booking data to integration if needed
         send_booking_data(newBooking)
         
@@ -440,6 +415,5 @@ def book_appointment(business, client_phone_number, booking_data=None):
         }
         
     except Exception as e:
-        print(f"[DEBUG] Unexpected error in book_appointment: {str(e)}")
         traceback.print_exc()
         return {"success": False, "error": str(e)}

@@ -8,6 +8,7 @@ from datetime import datetime
 from accounts.models import Business, ApiCredential
 from .models import AgentConfiguration, Chat, Messages
 from automation.models import Lead
+from bookings.models import Booking
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -40,7 +41,13 @@ def all_chats(request):
         
         # Get the last message for each chat
         for chat in chats:
-            last_message = Messages.objects.filter(chat=chat).order_by('-createdAt').first()
+            # Filter out tool messages when finding the last message
+            last_message = Messages.objects.filter(chat=chat).exclude(role='tool').order_by('-createdAt').first()
+            
+            # If no non-tool message found, check if there's any message at all
+            if not last_message:
+                last_message = Messages.objects.filter(chat=chat).order_by('-createdAt').first()
+            
             chat.last_message = last_message.message if last_message else "No messages"
             chat.last_message_time = last_message.createdAt if last_message else chat.createdAt
             
@@ -334,14 +341,14 @@ def process_sms_async(secretKey, from_number, body, to_number):
                 model="gpt-4o",
                 messages=formatted_messages,
                 temperature=0.5,
-                max_tokens=512,  # Shorter for SMS
+                max_tokens=3000,  # Shorter for SMS
                 tools=OpenAIAgent.get_openai_tools()
             )
             print(f"[DEBUG] OpenAI API response received at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
             # Process the response
             print("[DEBUG] Processing AI response")
-            ai_response_text = OpenAIAgent.process_ai_response(response, client_phone_number, business)
+            ai_response_text = OpenAIAgent.process_ai_response(response, client_phone_number, business, None)
             ai_response = ai_response_text.get('content')
             # Save the assistant message
             print("[DEBUG] Saving assistant message to database")
@@ -480,6 +487,52 @@ def get_chat_data(request, chat_id):
         lead = Lead.objects.filter(phone_number=chat.clientPhoneNumber).first()
         lead_name = lead.name if lead else "Unknown"
 
+        # Get booking details if available
+        booking_details = None
+        booking_id = chat.summary.get('bookingId') if chat.summary else None
+        
+        if booking_id:
+            booking = Booking.objects.filter(bookingId=booking_id).first()
+            if booking:
+                # Create the booking details dictionary
+                booking_details = {
+                    'bookingId': booking.bookingId,
+                    'firstName': booking.firstName,
+                    'lastName': booking.lastName,
+                    'phoneNumber': booking.phoneNumber,
+                    'email': booking.email,
+                    'address1': booking.address1,
+                    'city': booking.city,
+                    'stateOrProvince': booking.stateOrProvince,
+                    'zipCode': booking.zipCode,
+                    'cleaningDate': booking.cleaningDate.strftime('%Y-%m-%d') if booking.cleaningDate else None,
+                    'startTime': booking.startTime.strftime('%H:%M') if booking.startTime else None,
+                    'endTime': booking.endTime.strftime('%H:%M') if booking.endTime else None,
+                    'serviceType': booking.serviceType,
+                    'recurring': booking.recurring,
+                    'totalPrice': float(booking.totalPrice) if booking.totalPrice else 0,
+                    'isCompleted': booking.isCompleted,
+                    'cleaner': booking.cleaner.name if booking.cleaner else None,
+                    'bedrooms': booking.bedrooms,
+                    'bathrooms': booking.bathrooms,
+                    'squareFeet': booking.squareFeet,
+                    'otherRequests': booking.otherRequests
+                }
+                
+                # Add addon services from chat.summary to booking_details
+                if chat.summary:
+                    # Find all addon keys in the summary
+                    addon_services = {}
+                    for key, value in chat.summary.items():
+                        if key.startswith('addon') and (value is True or value == "true" or value == "yes" or value == "Yes"):
+                            addon_services[key] = value
+                    
+                    # Add addons to booking_details
+                    if addon_services:
+                        booking_details['addon_services'] = addon_services
+                        booking_details['has_addons'] = True
+                    else:
+                        booking_details['has_addons'] = False
         
         messages_data = [{
             'role': msg.role,
@@ -493,7 +546,8 @@ def get_chat_data(request, chat_id):
             'phone_number': chat.clientPhoneNumber,
             'status': chat.status,
             'messages': messages_data,
-            'summary': chat.summary
+            'summary': chat.summary,
+            'booking_details': booking_details
         })
     except Exception as e:
         print(f"Error in get_chat_data: {str(e)}")

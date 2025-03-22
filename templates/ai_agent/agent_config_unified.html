@@ -91,12 +91,13 @@
 {% block extra_js %}
 <script>
     // Global variable for client phone number
-    var clientPhoneNumber = null;
+    var clientPhoneNumber = "{{ config.business.phone|default:'' }}";
     
     document.addEventListener('DOMContentLoaded', function() {
         // Store original form values
         const originalValues = {};
         const formInputs = document.querySelectorAll('.form-input');
+        console.log(clientPhoneNumber);
         
         formInputs.forEach(input => {
             originalValues[input.id] = input.value;
@@ -212,12 +213,6 @@
             if (data.success) {
                 // Show success toast
                 window.showToast('Success', data.message, 'success');
-                
-                // Update system prompt preview
-                if (data.system_prompt) {
-                    document.getElementById('promptPreviewText').textContent = data.system_prompt;
-                    document.getElementById('systemPromptPreview').style.display = 'block';
-                }
                 
                 // Update original values to match current values
                 const formInputs = document.querySelectorAll('.form-input');

@@ -90,6 +90,18 @@
             background-color: var(--primary-color);
             border-radius: 3px;
         }
+        
+        /* Fix for active dropdown toggles */
+        .dropdown-toggle.active {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        /* Override the active indicator for dropdown toggles */
+        .dropdown-toggle.active::after {
+            bottom: 0;
+            border-bottom: none;
+        }
 
         /* Mobile navigation fixes */
         @media (max-width: 991px) {
@@ -555,7 +567,7 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if '/ai_agent/' in request.path %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle" 
                            href="#" id="aiDropdown" role="button" 
                            data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-robot me-1"></i>AI Assistant
@@ -696,13 +708,17 @@
                 return toast;
             });
 
-
+            // Fix for active dropdown toggle
+            // This ensures the dropdown menu stays accessible when the nav item is active
+            document.querySelectorAll('.dropdown-toggle.active').forEach(function(element) {
+                new bootstrap.Dropdown(element);
+            });
             
-          var s = document.createElement("script");
-          s.type = "text/javascript";
-          s.src = "https://app.webvizio.com/js/webvizio.js";
-          s.id = "webvizio_script";
-          document.head.append(s);
+            var s = document.createElement("script");
+            s.type = "text/javascript";
+            s.src = "https://app.webvizio.com/js/webvizio.js";
+            s.id = "webvizio_script";
+            document.head.append(s);
       
         });
     </script>

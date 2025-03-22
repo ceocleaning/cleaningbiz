@@ -1200,6 +1200,9 @@
                         
                         // Calculate summary data
                         if (data.messages && data.messages.length > 0) {
+                            // Filter out tool messages for calculations
+                            const filteredMessages = data.messages.filter(msg => msg.role !== 'tool');
+                            
                             // Show summary section
                             document.getElementById('chatSummary').style.display = 'block';
                             
@@ -1212,25 +1215,25 @@
                                 summaryToggleIcon.classList.remove('collapsed');
                             }
                             
-                            // Total messages
-                            const totalMessages = data.messages.length;
+                            // Total messages (excluding tool messages)
+                            const totalMessages = filteredMessages.length;
                             document.getElementById('totalMessages').textContent = totalMessages;
                             
                             // Calculate message counts by type
-                            const aiMessages = data.messages.filter(msg => msg.role === 'ai').length;
-                            const userMessages = data.messages.filter(msg => msg.role === 'user').length;
+                            const aiMessages = filteredMessages.filter(msg => msg.role === 'ai' || msg.role === 'assistant').length;
+                            const userMessages = filteredMessages.filter(msg => msg.role === 'user').length;
                             document.getElementById('aiMessageCount').textContent = aiMessages;
                             document.getElementById('userMessageCount').textContent = userMessages;
                             
                             // First contact date
-                            const firstMessage = new Date(data.messages[0].createdAt);
+                            const firstMessage = new Date(filteredMessages[0].createdAt);
                             document.getElementById('firstContact').textContent = firstMessage.toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric'
                             });
                             
                             // Last activity
-                            const lastMessage = new Date(data.messages[data.messages.length - 1].createdAt);
+                            const lastMessage = new Date(filteredMessages[filteredMessages.length - 1].createdAt);
                             document.getElementById('lastActivity').textContent = lastMessage.toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric'
@@ -1347,10 +1350,22 @@
                                     formDetailsContainer.appendChild(item);
                                 });
                                 
-                                
+                                // Display booking reference if available
+                                if (data.summary.bookingId) {
+                                    const bookingRef = document.createElement('div');
+                                    bookingRef.className = 'form-item booking-reference';
+                                    bookingRef.innerHTML = `
+                                        <span class="form-label">Booking Reference</span>
+                                        <div class="form-value">
+                                            <i class="fas fa-bookmark" style="color: #3b82f6;"></i> 
+                                            <a href="/bookings/detail/${data.summary.bookingId}/" style="color: #3b82f6; text-decoration: none; font-weight: 600;">${data.summary.bookingId}</a>
+                                        </div>
+                                    `;
+                                    formDetailsContainer.appendChild(bookingRef);
+                                }
                                 
                                 // Populate sidebar content with detailed view
-                                populateSidebarDetails(data.summary);
+                                populateSidebarDetails(data.summary, data.booking_details);
                                 
                                 // Auto-open sidebar if there's data
                                 if (!isSidebarCollapsed && window.innerWidth >= 992) {
@@ -1384,59 +1399,57 @@
                         }
                         
                         // Render messages
-                        const messagesContainer = document.getElementById('messagesContainer');
-                        messagesContainer.innerHTML = '';
+                        const messageContainer = document.getElementById('chatMessages');
+                        messageContainer.innerHTML = '';
                         
                         if (data.messages && data.messages.length > 0) {
-                            let currentDate = '';
+                            let currentDate = null;
                             
-                            data.messages.forEach(message => {
-                                // Check if we need a date divider
+                            // Filter out tool messages
+                            const filteredMessages = data.messages.filter(msg => msg.role !== 'tool');
+                            
+                            filteredMessages.forEach((message, index) => {
                                 const messageDate = new Date(message.createdAt);
-                                const formattedDate = messageDate.toLocaleDateString('en-US', {
+                                const messageDay = messageDate.toLocaleDateString('en-US', {
                                     weekday: 'long',
-                                    year: 'numeric',
                                     month: 'long',
                                     day: 'numeric'
                                 });
                                 
-                                if (formattedDate !== currentDate) {
-                                    currentDate = formattedDate;
-                                    messagesContainer.innerHTML += `
-                                        <div class="chat-date-divider">
-                                            <span>${formattedDate}</span>
-                                        </div>
-                                    `;
+                                // Add date divider if date changes
+                                if (currentDate !== messageDay) {
+                                    currentDate = messageDay;
+                                    const divider = document.createElement('div');
+                                    divider.className = 'chat-date-divider';
+                                    divider.innerHTML = `<span>${messageDay}</span>`;
+                                    messageContainer.appendChild(divider);
                                 }
                                 
-                                // Format time
-                                const messageTime = messageDate.toLocaleTimeString('en-US', {
+                                const messageEl = document.createElement('div');
+                                messageEl.className = `message ${message.role === 'user' ? 'outgoing' : 'incoming'}`;
+                                
+                                const timeFormatted = new Date(message.createdAt).toLocaleTimeString('en-US', {
                                     hour: 'numeric',
                                     minute: '2-digit',
                                     hour12: true
                                 });
                                 
-                                // Create message HTML
-                                const messageClass = message.role === 'user' ? 'outgoing' : 'incoming';
-                                const messageHTML = `
-                                    <div class="message ${messageClass}">
-                                        <div class="message-content">
-                                            <div class="message-text">${message.message.replace(/\n/g, '<br>')}</div>
-                                            <div class="message-time">${messageTime}</div>
-                                        </div>
+                                messageEl.innerHTML = `
+                                    <div class="message-content">
+                                        <div class="message-text">${message.message.replace(/\n/g, '<br>')}</div>
+                                        <div class="message-time">${timeFormatted}</div>
                                     </div>
                                 `;
                                 
-                                messagesContainer.innerHTML += messageHTML;
+                                messageContainer.appendChild(messageEl);
                             });
                             
-                            // Scroll to bottom
+                            // Scroll to bottom after messages are loaded
                             setTimeout(() => {
-                                const chatMessages = document.getElementById('chatMessages');
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                messageContainer.scrollTop = messageContainer.scrollHeight;
                             }, 100);
                         } else {
-                            messagesContainer.innerHTML = `
+                            messageContainer.innerHTML = `
                                 <div class="empty-state">
                                     <div class="empty-icon">
                                         <i class="fas fa-comment-dots"></i>
@@ -1461,7 +1474,7 @@
                     console.error('Error fetching chat data:', error);
                     
                     // Show error message
-                    document.getElementById('messagesContainer').innerHTML = `
+                    messageContainer.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-icon" style="color: #ef4444;">
                                 <i class="fas fa-exclamation-circle"></i>
@@ -1572,7 +1585,7 @@
     });
 
     // Function to populate sidebar with detailed client information
-    function populateSidebarDetails(summaryData) {
+    function populateSidebarDetails(summaryData, bookingDetails) {
         const sidebarContent = document.getElementById('clientDetailsContent');
         sidebarContent.innerHTML = '';
         
@@ -1601,7 +1614,7 @@
             'Contact Details': ['firstName', 'lastName', 'phoneNumber', 'email'],
             'Location': ['address1', 'city', 'state', 'zipCode'],
             'Property Details': ['bedrooms', 'bathrooms', 'squareFeet'],
-            'Service Information': ['serviceType', 'appointmentDateTime', 'detailSummary', 'additionalNotes'],
+            'Service Information': ['serviceType', 'convertedDateTime', 'detailSummary', 'additionalNotes'],
             'Addon Services': Object.keys(summaryData).filter(key => key.startsWith('addon'))
         };
         
@@ -1616,13 +1629,13 @@
                 section.innerHTML = `<h4 class="form-section-title">${category}</h4>`;
                 
                 // Special case for appointment time
-                if (category === 'Service Information' && summaryData.appointmentDateTime) {
+                if (category === 'Service Information' && summaryData.convertedDateTime) {
                     const appointmentItem = document.createElement('div');
                     appointmentItem.className = 'form-item';
                     appointmentItem.innerHTML = `
                         <span class="form-label">Appointment</span>
                         <div class="form-value appointment-time">
-                            <i class="far fa-calendar-alt"></i> ${summaryData.appointmentDateTime}
+                            <i class="far fa-calendar-alt"></i> ${summaryData.convertedDateTime}
                         </div>
                     `;
                     section.appendChild(appointmentItem);
@@ -1630,7 +1643,7 @@
                 
                 fields.forEach(key => {
                     // Skip appointment time as it's already handled
-                    if (key === 'appointmentDateTime' && category === 'Service Information') return;
+                    if (key === 'convertedDateTime' && category === 'Service Information') return;
                     
                     const item = document.createElement('div');
                     item.className = 'form-item';
@@ -1682,6 +1695,240 @@
             }
         });
         
+        // Display booking information if available
+        if (bookingDetails) {
+            const bookingSection = document.createElement('div');
+            bookingSection.className = 'form-section booking-section';
+            bookingSection.style.marginTop = '24px';
+            bookingSection.style.borderTop = '2px solid #3b82f6';
+            bookingSection.style.paddingTop = '16px';
+            
+            bookingSection.innerHTML = `
+                <h4 class="form-section-title">
+                    <i class="fas fa-calendar-check" style="color: #3b82f6; margin-right: 6px;"></i>
+                    Booking Details
+                </h4>
+            `;
+            
+            // Booking ID
+            if (bookingDetails.bookingId) {
+                const bookingIdItem = document.createElement('div');
+                bookingIdItem.className = 'form-item';
+                bookingIdItem.innerHTML = `
+                    <span class="form-label">Booking Reference</span>
+                    <div class="form-value" style="font-weight: 600; color: #3b82f6;">
+                        <a href="/bookings/detail/${bookingDetails.bookingId}/" style="color: #3b82f6; text-decoration: none;">${bookingDetails.bookingId}</a>
+                    </div>
+                `;
+                bookingSection.appendChild(bookingIdItem);
+            }
+            
+            // Cleaning Date & Time
+            if (bookingDetails.cleaningDate) {
+                const dateItem = document.createElement('div');
+                dateItem.className = 'form-item';
+                
+                // Format the time if available
+                let timeDisplay = '';
+                if (bookingDetails.startTime) {
+                    timeDisplay = ` at ${bookingDetails.startTime}`;
+                    if (bookingDetails.endTime) {
+                        timeDisplay += ` - ${bookingDetails.endTime}`;
+                    }
+                }
+                
+                dateItem.innerHTML = `
+                    <span class="form-label">Scheduled Date</span>
+                    <div class="form-value appointment-time">
+                        <i class="far fa-calendar-alt"></i> ${bookingDetails.cleaningDate}${timeDisplay}
+                    </div>
+                `;
+                bookingSection.appendChild(dateItem);
+            }
+            
+            // Service Type
+            if (bookingDetails.serviceType) {
+                const serviceItem = document.createElement('div');
+                serviceItem.className = 'form-item';
+                
+                let serviceClass = '';
+                switch(bookingDetails.serviceType.toLowerCase()) {
+                    case 'deep':
+                    case 'deep cleaning': 
+                        serviceClass = 'highlight';
+                        break;
+                    case 'moveinmoveout':
+                    case 'move in/move out': 
+                        serviceClass = 'warning';
+                        break;
+                    case 'recurring':
+                    case 'standard': 
+                        serviceClass = 'success';
+                        break;
+                    case 'airbnb':
+                        serviceClass = 'info';
+                        break;
+                }
+                
+                serviceItem.innerHTML = `
+                    <span class="form-label">Service Type</span>
+                    <div class="form-value ${serviceClass}">
+                        ${bookingDetails.serviceType.replace('moveinmoveout', 'Move In/Move Out').replace('standard', 'Standard Cleaning')}
+                    </div>
+                `;
+                bookingSection.appendChild(serviceItem);
+            }
+            
+            // Recurring
+            if (bookingDetails.recurring && bookingDetails.recurring !== 'one-time') {
+                const recurringItem = document.createElement('div');
+                recurringItem.className = 'form-item';
+                
+                recurringItem.innerHTML = `
+                    <span class="form-label">Recurring</span>
+                    <div class="form-value success">
+                        <i class="fas fa-sync-alt" style="margin-right: 4px;"></i>
+                        ${bookingDetails.recurring}
+                    </div>
+                `;
+                bookingSection.appendChild(recurringItem);
+            }
+            
+            // Total Price
+            if (bookingDetails.totalPrice) {
+                const priceItem = document.createElement('div');
+                priceItem.className = 'form-item';
+                priceItem.innerHTML = `
+                    <span class="form-label">Total Price</span>
+                    <div class="form-value" style="font-weight: 600;">
+                        $${parseFloat(bookingDetails.totalPrice).toFixed(2)}
+                    </div>
+                `;
+                bookingSection.appendChild(priceItem);
+            }
+            
+            // Assigned Cleaner
+            if (bookingDetails.cleaner) {
+                const cleanerItem = document.createElement('div');
+                cleanerItem.className = 'form-item';
+                cleanerItem.innerHTML = `
+                    <span class="form-label">Assigned Cleaner</span>
+                    <div class="form-value">
+                        <i class="fas fa-user" style="margin-right: 4px;"></i>
+                        ${bookingDetails.cleaner}
+                    </div>
+                `;
+                bookingSection.appendChild(cleanerItem);
+            }
+            
+            // Completion Status
+            const statusItem = document.createElement('div');
+            statusItem.className = 'form-item';
+            statusItem.innerHTML = `
+                <span class="form-label">Status</span>
+                <div class="form-value ${bookingDetails.isCompleted ? 'success' : 'warning'}">
+                    ${bookingDetails.isCompleted ? 
+                        '<i class="fas fa-check-circle" style="margin-right: 4px;"></i> Completed' : 
+                        '<i class="fas fa-clock" style="margin-right: 4px;"></i> Pending'}
+                </div>
+            `;
+            bookingSection.appendChild(statusItem);
+            
+            // Display addon services if available in booking_details
+            if (bookingDetails.has_addons && bookingDetails.addon_services) {
+                const addonSection = document.createElement('div');
+                addonSection.className = 'form-item';
+                addonSection.style.marginTop = '16px';
+                addonSection.style.borderTop = '1px solid #e2e8f0';
+                addonSection.style.paddingTop = '12px';
+                addonSection.style.gridColumn = '1 / -1';
+                
+                const addonHeader = document.createElement('div');
+                addonHeader.className = 'form-label';
+                addonHeader.innerHTML = 'Addon Services';
+                addonSection.appendChild(addonHeader);
+                
+                const addonList = document.createElement('div');
+                addonList.className = 'form-value';
+                addonList.style.display = 'grid';
+                addonList.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+                addonList.style.gap = '8px';
+                addonList.style.marginTop = '8px';
+                
+                // Format addon names nicely
+                const formatAddonName = (key) => {
+                    return key
+                        .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                        .replace(/_/g, ' ') // Replace underscores with spaces
+                        .replace(/^addon\s?/i, '') // Remove 'addon' prefix
+                        .replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
+                };
+                
+                Object.keys(bookingDetails.addon_services).forEach(key => {
+                    const addonItem = document.createElement('div');
+                    addonItem.style.display = 'flex';
+                    addonItem.style.alignItems = 'center';
+                    addonItem.innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i>
+                        ${formatAddonName(key)}
+                    `;
+                    addonList.appendChild(addonItem);
+                });
+                
+                addonSection.appendChild(addonList);
+                bookingSection.appendChild(addonSection);
+            }
+            
+            // Add addon services from summary data to booking details
+            const addonKeys = Object.keys(summaryData).filter(key => 
+                key.startsWith('addon') && 
+                (summaryData[key] === true || 
+                summaryData[key] === "true" || 
+                summaryData[key] === "yes" || 
+                summaryData[key] === "Yes")
+            );
+            
+            // Only add addons from the summary if there are no addons in the booking details
+            if (addonKeys.length > 0 && (!bookingDetails.addon_services || Object.keys(bookingDetails.addon_services).length === 0)) {
+                const addonSection = document.createElement('div');
+                addonSection.className = 'form-item';
+                addonSection.style.marginTop = '16px';
+                addonSection.style.borderTop = '1px solid #e2e8f0';
+                addonSection.style.paddingTop = '12px';
+                addonSection.style.gridColumn = '1 / -1';
+                
+                // Create addon services header
+                const addonHeader = document.createElement('div');
+                addonHeader.className = 'form-label';
+                addonHeader.innerHTML = 'Addon Services (From Chat)';
+                addonSection.appendChild(addonHeader);
+                
+                // Create addon services list
+                const addonList = document.createElement('div');
+                addonList.className = 'form-value';
+                addonList.style.display = 'grid';
+                addonList.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+                addonList.style.gap = '8px';
+                addonList.style.marginTop = '8px';
+                
+                addonKeys.forEach(key => {
+                    const addonItem = document.createElement('div');
+                    addonItem.style.display = 'flex';
+                    addonItem.style.alignItems = 'center';
+                    addonItem.innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i>
+                        ${formatKey(key).replace('Addon ', '')}
+                    `;
+                    addonList.appendChild(addonItem);
+                });
+                
+                addonSection.appendChild(addonList);
+                bookingSection.appendChild(addonSection);
+            }
+            
+            sidebarContent.appendChild(bookingSection);
+        }
+        
         // Add a special section with a summary of services
         if (categories['Addon Services'].some(key => summaryData[key])) {
             const addonCount = categories['Addon Services'].filter(key => 
@@ -1697,13 +1944,39 @@
             serviceOverview.style.paddingTop = '16px';
             serviceOverview.style.marginTop = '20px';
             
+            let serviceText = '';
+            if (bookingDetails && bookingDetails.serviceType) {
+                serviceText = bookingDetails.serviceType.replace('moveinmoveout', 'Move In/Move Out').replace('standard', 'Standard Cleaning');
+            } else {
+                serviceText = summaryData.serviceType || 'Cleaning';
+            }
+            
+            // Use correct addon count based on booking details if available
+            let addonText = '';
+            let addonTextColor = '';
+            
+            if (bookingDetails && 'has_addons' in bookingDetails) {
+                if (bookingDetails.has_addons && bookingDetails.addon_services) {
+                    const bookingAddonCount = Object.keys(bookingDetails.addon_services).length;
+                    addonText = `${bookingAddonCount} additional service${bookingAddonCount !== 1 ? 's' : ''} selected`;
+                    addonTextColor = '#10b981'; // green color for addons
+                } else {
+                    addonText = '0 additional services selected';
+                    addonTextColor = '#64748b'; // gray color for no addons
+                }
+            } else {
+                addonText = `${addonCount} additional service${addonCount !== 1 ? 's' : ''} selected`;
+                addonTextColor = addonCount > 0 ? '#10b981' : '#64748b';
+            }
+            
             serviceOverview.innerHTML = `
                 <div class="form-item" style="text-align: center;">
                     <div class="form-value" style="font-size: 1rem; margin-bottom: 8px;">
-                        <strong>${summaryData.serviceType || 'Cleaning'} Service</strong>
+                        <strong>${serviceText} Service</strong>
                     </div>
                     <div class="form-value" style="color: #64748b;">
-                        <i class="fas fa-plus-circle" style="color: #10b981;"></i> ${addonCount} additional services selected
+                        <i class="fas fa-${addonText.startsWith('0') ? 'info-circle' : 'plus-circle'}" style="color: ${addonTextColor}; margin-right: 4px;"></i> 
+                        ${addonText}
                     </div>
                 </div>
             `;
@@ -1712,4 +1985,4 @@
         }
     }
 </script>
-{% endblock %} 
+{% endblock %}
