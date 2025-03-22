@@ -1011,7 +1011,6 @@ class OpenAIAgent:
             "addonPatioSweeping": '',
             "addonGarageSweeping": '',
 
-            'summary': '',
             'bookingId': ''
         }
         
@@ -1067,6 +1066,7 @@ class OpenAIAgent:
             - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
             - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time_in_chicago()}
             - additionalNotes: Any special requests or notes
+            - detailSummary: Summary of the Whole conversation
             - addonDishes: Quantity of Dishes Addon
             - addonLaundryLoads: Quantity of Laundry Loads Addon
             - addonWindowCleaning: Quantity of Window Cleaning Addon
@@ -1079,7 +1079,7 @@ class OpenAIAgent:
             - addonCabinetsCleaning: Quantity of Cabinets Cleaning Addon
             - addonPatioSweeping: Quantity of Patio Sweeping Addon
             - addonGarageSweeping: Quantity of Garage Sweeping Addon
-            - summary: Summary of the conversation
+            
             - bookingId: Booking ID if available
 
             ONLY return a valid JSON object. No explanations or additional text.

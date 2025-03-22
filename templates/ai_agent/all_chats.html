@@ -965,7 +965,9 @@
                                 </div>
                                 <div class="chat-metadata">
                                     <div class="metadata-item" id="messageCountItem">
-                                        <i class="fas fa-comment"></i> <span id="aiMessageCount">0</span> AI messages, <span id="userMessageCount">0</span> user messages
+                                         <span class="badge bg-primary" style="margin-right: 10px;"><i class="fas fa-comment"></i><span id="aiMessageCount">0</span> AI messages</span> 
+                                         
+                                         <span class="badge bg-secondary" style="margin-left: 10px;"><i class="fas fa-comment"></i><span id="userMessageCount">0</span> user messages</span>
                                     </div>
                                     <div class="metadata-item">
                                         <i class="fas fa-clock"></i> <span id="conversationDuration">-</span>
@@ -1008,7 +1010,7 @@
                 
                 <!-- Sidebar toggle button -->
                 <div class="sidebar-toggle collapsed" id="sidebarToggle">
-                    <i class="fas fa-chevron-left"></i>
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             </div>
         </div>
@@ -1694,6 +1696,34 @@
                 sidebarContent.appendChild(section);
             }
         });
+        
+        // Add a conversation summary section if available
+        if (summaryData.detailSummary) {
+            const summarySection = document.createElement('div');
+            summarySection.className = 'form-section';
+            summarySection.style.marginTop = '24px';
+            summarySection.style.borderTop = '1px solid #e2e8f0';
+            summarySection.style.paddingTop = '16px';
+            
+            summarySection.innerHTML = `
+                <h4 class="form-section-title">
+                    <i class="fas fa-comment-dots" style="color: #3b82f6; margin-right: 6px; align-items: left;text-align: left;"></i>
+                    Conversation Summary
+                </h4>
+            `;
+            
+            const summaryContent = document.createElement('div');
+            summaryContent.className = 'form-item';
+            summaryContent.style.gridColumn = '1 / -1';
+            summaryContent.innerHTML = `
+                <div class="form-value" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; color: #4b5563; background-color: #f9fafb; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb; text-align: left;">
+                    ${summaryData.detailSummary}
+                </div>
+            `;
+            
+            summarySection.appendChild(summaryContent);
+            sidebarContent.appendChild(summarySection);
+        }
         
         // Display booking information if available
         if (bookingDetails) {
