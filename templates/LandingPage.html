@@ -721,8 +721,16 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://chatbot-widget-khaki.vercel.app/chatbot-widget.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
+        ChatbotWidget.init({
+            businessId: 'BUS-1143',
+            botName: 'Sarah',
+            initialMessage: 'Hello I am Sarah, how can I help you today?',
+        });
+
         // Initialize toggle functionality
         const pricingToggle = document.getElementById('pricing-toggle');
         if (pricingToggle) {
