@@ -63,20 +63,36 @@ def format_messages_for_openai(messages, system_prompt):
         if hasattr(message, 'role'):
             # Handle Messages objects
             role = message.role
-            # Skip messages with role 'tool' as they cause OpenAI API errors
-            if role == 'tool':
-                continue
             content = message.message
-            formatted_messages.append({"role": role, "content": content})
+            
+            # Convert tool messages to assistant messages
+            if role == 'tool':
+                # If it's a JSON string, leave it as is, otherwise stringify it
+                if not isinstance(content, str) or (isinstance(content, str) and not content.startswith('{')):
+                    content = f"Tool Response: {str(content)}"
+                formatted_messages.append({
+                    "role": "assistant",
+                    "content": content
+                })
+            else:
+                formatted_messages.append({"role": role, "content": content})
         elif isinstance(message, dict):
             # Handle dictionary messages
             role = message.get('role')
-            # Skip messages with role 'tool' as they cause OpenAI API errors
-            if role == 'tool':
-                continue
             content = message.get('content') or message.get('message')
+            
             if role and content:
-                formatted_messages.append({"role": role, "content": content})
+                # Convert tool messages to assistant messages
+                if role == 'tool':
+                    # If it's a JSON string, leave it as is, otherwise stringify it
+                    if not isinstance(content, str) or (isinstance(content, str) and not content.startswith('{')):
+                        content = f"Tool Response: {str(content)}"
+                    formatted_messages.append({
+                        "role": "assistant",
+                        "content": content
+                    })
+                else:
+                    formatted_messages.append({"role": role, "content": content})
     
     return formatted_messages
 
@@ -118,6 +134,7 @@ def get_chat_status(chat):
         """
         
         formatted_messages = format_messages_for_openai(messages, SYSTEM_PROMPT)
+        print(formatted_messages)
         
         # Call OpenAI API
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))

@@ -121,6 +121,15 @@ class OpenAIAgent:
                     You are responsible for calculating the total cost of the appointment.
                     You are responsible for confirming the appointment with the customer.
 
+                    ##BOOKING STATUS AWARENESS - VERY IMPORTANT
+                    1. Carefully track if a booking has already been completed in the conversation.
+                    2. If a booking has been confirmed (booking ID exists or tool call was successful), DO NOT attempt to book again unless the customer EXPLICITLY asks for another/additional booking.
+                    3. When a customer asks about their booking after it's confirmed, provide ALL available booking details including date, time, service type, and especially the booking ID.
+                    4. If the customer asks "Did I book a booking?" or "What is my booking ID?" or similar questions after a successful booking, ALWAYS confirm that they did and provide the complete booking details.
+                    5. NEVER suggest booking the same service again if a booking is already confirmed.
+                    6. Recognize tool response messages that contain booking confirmation details, and use this information to answer customer questions about their booking.
+                    7. If the booking ID appears in any previous message (including tool responses), make sure to include it when the customer asks about their booking.
+
                     ##RULES AND GUARDRAILS
                     1. NEVER share or acknowledge that you are an AI. Present yourself as {agent_config.agent_name}, a human representative of {business.businessName}.
                     2. NEVER make up information that hasn't been provided in the prompt.
@@ -203,6 +212,7 @@ class OpenAIAgent:
 
                     2. bookAppointment: Use this tool to book an appointment after collecting all required customer information
                        - When to use: After confirming availability and collecting all required customer information
+                       - DO NOT use this tool if a booking has already been confirmed in the conversation unless the customer explicitly asks for a new/additional booking
 
                     3. current_time: Use this tool to get the current time in Chicago timezone
                        - When to use: When a customer asks about current time, business hours, or what time it is
@@ -408,21 +418,31 @@ class OpenAIAgent:
                 {"role": "system", "content": system_prompt}
             ]
             
-            # Add all user and assistant messages
+            # Add all user and assistant messages, convert tool messages to assistant
             for msg in messages:
-                if msg['role'] in ['user', 'assistant']:
+                if 'role' in msg:
                     # Check if the message has 'content' or 'message' key
                     content = msg.get('content') or msg.get('message')
                     if content:  # Only add if there's content
-                        formatted_messages.append({
-                            "role": msg['role'],
-                            "content": content
-                        })
+                        # Convert tool messages to assistant messages with stringified content
+                        if msg['role'] == 'tool':
+                            # If it's a JSON string, leave it as is, otherwise stringify it
+                            if not isinstance(content, str) or (isinstance(content, str) and not content.startswith('{')):
+                                content = f"Tool Response: {str(content)}"
+                            formatted_messages.append({
+                                "role": "assistant",
+                                "content": content
+                            })
+                        else:
+                            formatted_messages.append({
+                                "role": msg['role'],
+                                "content": content
+                            })
             
             return formatted_messages
             
         except Exception as e:
-            print(f"[DEBUG] Error formatting messages for OpenAI: {str(e)}")
+            print(f"[ERROR] Error formatting messages for OpenAI: {str(e)}")
             traceback.print_exc()
             return [{"role": "system", "content": system_prompt}]
     
@@ -896,11 +916,11 @@ class OpenAIAgent:
                 })
                 
                 # Add the tool results
-                for result in tool_call_results:
+                for tool_result in tool_call_results:
                     messages.append({
                         "role": "tool",
-                        "tool_call_id": result["tool_call_id"],
-                        "content": result["result"]
+                        "tool_call_id": tool_result["tool_call_id"],
+                        "content": tool_result["result"]
                     })
                 
                 try:
@@ -1265,13 +1285,15 @@ def chat_api(request):
                             Messages.objects.create(
                                 chat=chat,
                                 role='tool',
-                                message=tool_result['result']
+                                message=tool_result['result'],
+                                tool_call_id=tool_result['tool_call_id']  # Store the tool_call_id
                             )
                             
                             # Add the tool message to formatted_messages
                             formatted_messages.append({
                                 'role': 'tool',
-                                'content': tool_result['result']
+                                'content': tool_result['result'],
+                                'tool_call_id': tool_result['tool_call_id']
                             })
                         except Exception as e:
                             print(f"[ERROR] Error saving tool message: {str(e)}")
