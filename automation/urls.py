@@ -6,12 +6,12 @@ from .api_views import check_availability_retell, test_check_availability, check
 
 
 urlpatterns = [
-    path('', views.LandingPage, name='LandingPage'),
-    path('pricing/', views.PricingPage, name='PricingPage'),
-    path('features/', views.FeaturesPage, name='FeaturesPage'),
-    path('about-us/', views.AboutUsPage, name='AboutUsPage'),
-    path('contact-us/', views.ContactUsPage, name='ContactUsPage'),
-    path('docs/', views.DocsPage, name='DocsPage'),
+    path('', views.LandingPage, name='landing-page'),
+    path('pricing/', views.PricingPage, name='pricing-page'),
+    path('features/', views.FeaturesPage, name='features-page'),
+    path('about-us/', views.AboutUsPage, name='about-us'),
+    path('contact-us/', views.ContactUsPage, name='contact-us'),
+    path('docs/', views.DocsPage, name='docs-page'),
     path('dashboard/', views.home, name='home'),
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='retell_webhook'),
     path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
@@ -51,4 +51,7 @@ urlpatterns = [
 
     # Business Schedule URLs
     path('business-schedule/', views.business_monthly_schedule, name='business_monthly_schedule'),
+
+    # reCAPTCHA verification endpoint
+    path('verify-recaptcha/', views.verify_recaptcha, name='verify_recaptcha'),
 ]

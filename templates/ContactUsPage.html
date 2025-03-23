@@ -1,5 +1,10 @@
 {% extends 'LandingPageBase.html' %}
 
+{% block extra_head %}
+<!-- Content Security Policy to allow Google reCAPTCHA -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com 'unsafe-inline'; frame-src 'self' https://www.google.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://www.google.com;">
+{% endblock %}
+
 {% block title %}Contact Us - CleaningBiz AI{% endblock %}
 
 {% block content %}
@@ -120,7 +125,7 @@
             <div class="col-lg-6" data-aos="fade-left">
                 <div class="card bg-dark-surface-3 border-0 rounded-4 shadow-lg overflow-hidden">
                     <div class="card-body p-4 p-lg-5">
-                        <form id="contactForm" method="POST" class="needs-validation" novalidate>
+                        <form id="contactForm" method="POST" action="/contact-us/" class="needs-validation" novalidate>
                             {% csrf_token %}
                             <div class="row g-4">
                                 <div class="col-md-6">
@@ -181,8 +186,17 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-12 mb-4">
+                                    <div class="form-group">
+                                        <label class="text-white mb-2">Verify you're not a robot <span class="text-danger">*</span></label>
+                                        <div id="recaptcha-container" class="g-recaptcha" data-sitekey="6Lf7ef0qAAAAAIOoSjew30LOmVKLmxtF-P0weufR" data-theme="dark" data-callback="enableSubmitButton"></div>
+                                        <div class="invalid-feedback text-danger" id="recaptchaError" style="display: none;">
+                                            Please complete the reCAPTCHA verification.
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold">
+                                    <button type="submit" id="submitButton" class="btn btn-primary w-100 py-3 rounded-3 fw-bold">
                                         <i class="fas fa-paper-plane me-2"></i> Send Message
                                     </button>
                                 </div>
@@ -373,12 +387,26 @@
 </style>
 
 <script>
+    // Function to enable submit button when reCAPTCHA is verified
+    function enableSubmitButton() {
+        document.getElementById('recaptchaError').style.display = 'none';
+        document.getElementById('submitButton').disabled = false;
+        console.log('reCAPTCHA verified, submit button enabled');
+    }
+    
     // Form submission with AJAX
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('contactForm');
         const successAlert = document.getElementById('formSuccess');
         const errorAlert = document.getElementById('formError');
         const errorMessage = document.getElementById('errorMessage');
+        const recaptchaError = document.getElementById('recaptchaError');
+        const submitButton = document.getElementById('submitButton');
+        
+        // Disable submit button initially until reCAPTCHA is completed
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
         
         if (form) {
             form.addEventListener('submit', function(event) {
@@ -390,21 +418,34 @@
                     return;
                 }
                 
+                // Use regular reCAPTCHA v2 validation
+                const recaptchaResponse = grecaptcha.getResponse();
+                if (!recaptchaResponse) {
+                    recaptchaError.style.display = 'block';
+                    return;
+                } else {
+                    recaptchaError.style.display = 'none';
+                }
+                
+                // Log the token for debugging
+                console.log('reCAPTCHA token length:', recaptchaResponse.length);
+                
                 // Hide any existing alerts
                 successAlert.style.display = 'none';
                 errorAlert.style.display = 'none';
                 
                 // Show loading state
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Sending...';
-                submitBtn.disabled = true;
+                const originalBtnText = submitButton.innerHTML;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Sending...';
+                submitButton.disabled = true;
                 
                 // Collect form data
                 const formData = new FormData(form);
+                // Add reCAPTCHA response to form data
+                formData.append('g-recaptcha-response', recaptchaResponse);
                 
-                // Send AJAX request
-                fetch(window.location.href, {
+                // Send AJAX request to the form's action URL
+                fetch(form.action, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -414,8 +455,11 @@
                 .then(response => response.json())
                 .then(data => {
                     // Reset button state
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.disabled = false;
+                    submitButton.innerHTML = originalBtnText;
+                    submitButton.disabled = false;
+                    
+                    // Reset reCAPTCHA
+                    grecaptcha.reset();
                     
                     if (data.success) {
                         // Hide form and show success animation
@@ -426,17 +470,29 @@
                         successAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     } else {
                         // Show error message
-                        errorMessage.textContent = data.message;
+                        errorMessage.textContent = data.message || 'An error occurred. Please try again.';
                         errorAlert.style.display = 'block';
                         
-                        // Scroll to the error message
-                        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // If the error is related to reCAPTCHA, highlight the reCAPTCHA field
+                        if (data.message && data.message.toLowerCase().includes('recaptcha')) {
+                            recaptchaError.textContent = data.message;
+                            recaptchaError.style.display = 'block';
+                            
+                            // Focus the recaptcha container for user attention
+                            document.getElementById('recaptcha-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            // Scroll to the general error message
+                            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
                     }
                 })
                 .catch(error => {
                     // Reset button state
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.disabled = false;
+                    submitButton.innerHTML = originalBtnText;
+                    submitButton.disabled = false;
+                    
+                    // Reset reCAPTCHA
+                    grecaptcha.reset();
                     
                     // Show error message
                     errorMessage.textContent = 'There was a network error. Please try again later.';
@@ -455,14 +511,22 @@
     function resetContactForm() {
         const form = document.getElementById('contactForm');
         const successAlert = document.getElementById('formSuccess');
+        const errorAlert = document.getElementById('formError');
         
         // Hide success message and show form
         successAlert.style.display = 'none';
+        errorAlert.style.display = 'none';
         form.classList.remove('d-none');
         
         // Reset form fields
         form.reset();
         form.classList.remove('was-validated');
+        
+        // Reset reCAPTCHA
+        grecaptcha.reset();
+        
+        // Make sure submit button is disabled until reCAPTCHA is verified again
+        document.getElementById('submitButton').disabled = true;
     }
 </script>
 
@@ -677,5 +741,11 @@
         transition: background-color 5000s ease-in-out 0s;
     }
 </style>
+
+<!-- Add reCAPTCHA script just before the closing body tag -->
+{% block extra_scripts %}
+<!-- Google reCAPTCHA API - Using standard v2 -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endblock %}
 
 {% endblock %}
