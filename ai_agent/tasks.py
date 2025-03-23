@@ -44,58 +44,59 @@ def check_chat_status():
                     continue
                 
                 # Get lead information
-                try:
-                    lead = Lead.objects.get(phone_number=chat.clientPhoneNumber, business=business)
+                
+                leads = Lead.objects.filter(phone_number=chat.clientPhoneNumber, business=business)
+                for lead in leads:
                     print(f"[TASK] Found lead: {lead.name}")
-                except Lead.DoesNotExist:
-                    print(f"[TASK] No lead found with phone number: {chat.clientPhoneNumber}")
-                    results['errors'] += 1
-                    continue
-                
-                # Process based on business settings
-                if business.useCall:
-                    print(f"[TASK] Business uses call feature, attempting to make call")
-                    
-                    # Validate required credentials
-                    if not apiCreds.retellAPIKey or not apiCreds.voiceAgentNumber:
-                        print(f"[TASK] Missing Retell API key or voice agent number for business: {business.businessName}")
+                    if not lead:
+                        print(f"[TASK] No lead found with phone number: {chat.clientPhoneNumber}")
                         results['errors'] += 1
                         continue
                     
-                    # Make the call
-                    try:
-                        client = Retell(api_key=apiCreds.retellAPIKey)
-                        print(f"[TASK] Making call from {apiCreds.voiceAgentNumber} to {lead.phone_number}")
+                    # Process based on business settings
+                    if business.useCall:
+                        print(f"[TASK] Business uses call feature, attempting to make call")
                         
-                        call_response = client.call.create_phone_call(
-                            from_number=apiCreds.voiceAgentNumber,
-                            to_number=lead.phone_number,
-                            retell_llm_dynamic_variables={
-                                'name': lead.name,
-                                'service': lead.content
-                            }
-                        )
+                        # Validate required credentials
+                        if not apiCreds.retellAPIKey or not apiCreds.voiceAgentNumber:
+                            print(f"[TASK] Missing Retell API key or voice agent number for business: {business.businessName}")
+                            results['errors'] += 1
+                            continue
                         
-                        # Update lead and chat status
-                        lead.is_call_sent = True
-                        lead.call_sent_at = timezone.now()
-                        lead.save()
-                        
-                        chat.status = 'call_sent'
-                        chat.save()
-                        
-                        print(f"[TASK] Call successfully made, response ID: {call_response}")
-                        results['calls_made'] += 1
-                    except Exception as e:
-                        print(f"[TASK] Error making call: {str(e)}")
-                        print(traceback.format_exc())
-                        results['errors'] += 1
-                        continue
-                else:
-                    print(f"[TASK] Business does not use call feature, skipping")
-                
-                results['processed'] += 1
-                print(f"[TASK] Successfully processed chat ID: {chat.id}")
+                        # Make the call
+                        try:
+                            client = Retell(api_key=apiCreds.retellAPIKey)
+                            print(f"[TASK] Making call from {apiCreds.voiceAgentNumber} to {lead.phone_number}")
+                            
+                            call_response = client.call.create_phone_call(
+                                from_number=apiCreds.voiceAgentNumber,
+                                to_number=lead.phone_number,
+                                retell_llm_dynamic_variables={
+                                    'name': lead.name,
+                                    'service': lead.content
+                                }
+                            )
+                            
+                            # Update lead and chat status
+                            lead.is_call_sent = True
+                            lead.call_sent_at = timezone.now()
+                            lead.save()
+                            
+                            chat.status = 'call_sent'
+                            chat.save()
+                            
+                            print(f"[TASK] Call successfully made, response ID: {call_response}")
+                            results['calls_made'] += 1
+                        except Exception as e:
+                            print(f"[TASK] Error making call: {str(e)}")
+                            print(traceback.format_exc())
+                            results['errors'] += 1
+                            continue
+                    else:
+                        print(f"[TASK] Business does not use call feature, skipping")
+                    
+                    results['processed'] += 1
+                    print(f"[TASK] Successfully processed chat ID: {chat.id}")
                 
             except Exception as chat_error:
                 print(f"[TASK] Error processing chat ID: {chat.id}: {str(chat_error)}")
