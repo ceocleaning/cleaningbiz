@@ -115,3 +115,34 @@ class Booking(models.Model):
         if not self.bookingId:
             self.bookingId = self.generateBookingId()
         super().save(*args, **kwargs)
+        
+    def get_all_addons(self):
+        """Return a list of all add-ons (standard and custom) for this booking."""
+        addons = []
+        
+        # Standard add-ons
+        addon_fields = {
+            'addonDishes': 'Dishes',
+            'addonLaundryLoads': 'Laundry',
+            'addonWindowCleaning': 'Windows',
+            'addonPetsCleaning': 'Pets',
+            'addonFridgeCleaning': 'Fridge',
+            'addonOvenCleaning': 'Oven',
+            'addonBaseboard': 'Baseboard',
+            'addonBlinds': 'Blinds',
+            'addonGreenCleaning': 'Green Cleaning',
+            'addonCabinetsCleaning': 'Cabinets',
+            'addonPatioSweeping': 'Patio',
+            'addonGarageSweeping': 'Garage'
+        }
+        
+        for field, display_name in addon_fields.items():
+            value = getattr(self, field, 0)
+            if value:
+                addons.append((display_name, value))
+        
+        # Custom add-ons
+        for custom_addon in self.customAddons.all():
+            addons.append((custom_addon.addon.addonName, custom_addon.qty))
+        
+        return addons

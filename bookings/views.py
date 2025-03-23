@@ -11,6 +11,7 @@ from automation.models import CleanerAvailability, Cleaners
 from decimal import Decimal
 import json
 from datetime import datetime
+from django.db.models import Min, Count
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -26,6 +27,123 @@ def all_bookings(request):
     }
     return render(request, 'bookings.html', context)
 
+@login_required
+def customers(request):
+    if not Business.objects.filter(user=request.user).exists():
+        return redirect('accounts:register_business')
+    
+    # Get all bookings for the user's business
+    bookings = Booking.objects.filter(business__user=request.user)
+    
+    # Dictionary to store unique customers
+    unique_customers = {}
+    
+    # Process bookings to extract unique customers by email or phone
+    for booking in bookings:
+        # Skip if no email and no phone
+        if not booking.email and not booking.phoneNumber:
+            continue
+            
+        # Create a unique key based on email or phone
+        key = booking.email if booking.email else booking.phoneNumber
+        
+        if key not in unique_customers:
+            # First occurrence - create new customer entry
+            unique_customers[key] = {
+                'firstName': booking.firstName,
+                'lastName': booking.lastName,
+                'email': booking.email,
+                'phoneNumber': booking.phoneNumber,
+                'joinedDate': booking.createdAt,
+                'bookingCount': 1,
+                'totalSpent': booking.totalPrice,
+                'identifier': key  # Store identifier for linking to detail page
+            }
+        else:
+            # Update existing customer with additional booking info
+            unique_customers[key]['bookingCount'] += 1
+            unique_customers[key]['totalSpent'] += booking.totalPrice
+            # Keep the earliest created date as joined date
+            if booking.createdAt < unique_customers[key]['joinedDate']:
+                unique_customers[key]['joinedDate'] = booking.createdAt
+    
+    # Convert dictionary to list for template
+    customers_list = list(unique_customers.values())
+    
+    # Sort customers by joined date (newest first)
+    customers_list.sort(key=lambda x: x['joinedDate'], reverse=True)
+    
+    context = {
+        'customers': customers_list,
+        'total_customers': len(customers_list)
+    }
+    
+    return render(request, 'customers.html', context)
+
+@login_required
+def customer_detail(request, identifier):
+    """View for displaying a specific customer's details and booking history."""
+    if not Business.objects.filter(user=request.user).exists():
+        return redirect('accounts:register_business')
+    
+    # Determine if identifier is an email or phone
+    if '@' in identifier:
+        # It's an email
+        bookings = Booking.objects.filter(business__user=request.user, email=identifier).order_by('-createdAt')
+        identifier_type = 'email'
+    else:
+        # It's a phone number
+        bookings = Booking.objects.filter(business__user=request.user, phoneNumber=identifier).order_by('-createdAt')
+        identifier_type = 'phone'
+    
+    if not bookings.exists():
+        messages.error(request, 'Customer not found.')
+        return redirect('bookings:customers')
+    
+    # Get customer details from the most recent booking
+    most_recent_booking = bookings.first()
+    
+    # Calculate statistics
+    total_spent = sum(booking.totalPrice for booking in bookings)
+    completed_bookings = bookings.filter(isCompleted=True).count()
+    pending_bookings = bookings.filter(isCompleted=False).count()
+    
+    # Find the first booking to determine join date
+    first_booking = bookings.order_by('createdAt').first()
+    join_date = first_booking.createdAt if first_booking else None
+    
+    # Service type distribution
+    service_stats = {}
+    for booking in bookings:
+        service_type = booking.get_serviceType_display()
+        if service_type in service_stats:
+            service_stats[service_type] += 1
+        else:
+            service_stats[service_type] = 1
+    
+    context = {
+        'customer': {
+            'firstName': most_recent_booking.firstName,
+            'lastName': most_recent_booking.lastName,
+            'email': most_recent_booking.email,
+            'phoneNumber': most_recent_booking.phoneNumber,
+            'companyName': most_recent_booking.companyName,
+            'joinDate': join_date,
+            'identifier': identifier,
+            'identifier_type': identifier_type
+        },
+        'bookings': bookings,
+        'stats': {
+            'totalBookings': bookings.count(),
+            'completedBookings': completed_bookings,
+            'pendingBookings': pending_bookings,
+            'totalSpent': total_spent,
+            'avgBookingValue': total_spent / bookings.count() if bookings.count() > 0 else 0,
+            'serviceStats': service_stats
+        }
+    }
+    
+    return render(request, 'customer_detail.html', context)
 
 @require_http_methods(["GET", "POST"])
 @transaction.atomic

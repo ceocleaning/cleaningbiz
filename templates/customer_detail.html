@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer: {{ customer.firstName }} {{ customer.lastName }}{% endblock %}
+
+{% block content %}
+<!-- Page header with back button -->
+<div class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 p-md-4">
+    <div class="d-flex align-items-center">
+        <h1 class="h2 mb-0">
+            <a href="{% url 'bookings:customers' %}" class="btn btn-sm btn-outline-primary" style="vertical-align: middle;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <i class="fas fa-user me-2"></i>Customer Details
+        </h1>
+    </div>
+    <div class="d-flex gap-2">
+        {% if customer.email %}
+        <a href="mailto:{{ customer.email }}" class="btn btn-outline-primary">
+            <i class="fas fa-envelope me-1"></i> Email
+        </a>
+        {% endif %}
+        {% if customer.phoneNumber %}
+        <a href="tel:{{ customer.phoneNumber }}" class="btn btn-outline-success">
+            <i class="fas fa-phone me-1"></i> Call
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Customer info card -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-gradient text-white" style="background-color: #4e73df;">
+                <div class="d-flex align-items-center">
+                    <div class="customer-avatar rounded-circle bg-white text-dark d-flex align-items-center justify-content-center me-3">
+                        <span class="h3 mb-0">{{ customer.firstName|first|upper }}</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">{{ customer.firstName }} {{ customer.lastName }}</h5>
+                        <p class="mb-0 small opacity-75">Customer since {{ customer.joinDate|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% if customer.companyName %}
+                    <li class="list-group-item px-0 py-3 d-flex align-items-center">
+                        <span class="icon-circle bg-dark me-3">
+                            <i class="fas fa-building text-white"></i>
+                        </span>
+                        <div>
+                            <p class="text-muted small mb-0">Company</p>
+                            <p class="mb-0 fw-medium">{{ customer.companyName }}</p>
+                        </div>
+                    </li>
+                    {% endif %}
+                    
+                    {% if customer.email %}
+                    <li class="list-group-item px-0 py-3 d-flex align-items-center">
+                        <span class="icon-circle bg-primary me-3">
+                            <i class="fas fa-envelope text-white"></i>
+                        </span>
+                        <div>
+                            <p class="text-muted small mb-0">Email</p>
+                            <a href="mailto:{{ customer.email }}" class="mb-0 fw-medium text-reset">{{ customer.email }}</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    
+                    {% if customer.phoneNumber %}
+                    <li class="list-group-item px-0 py-3 d-flex align-items-center">
+                        <span class="icon-circle bg-success me-3">
+                            <i class="fas fa-phone-alt text-white"></i>
+                        </span>
+                        <div>
+                            <p class="text-muted small mb-0">Phone</p>
+                            <a href="tel:{{ customer.phoneNumber }}" class="mb-0 fw-medium text-reset">{{ customer.phoneNumber }}</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics cards -->
+    <div class="col-lg-8 mb-4">
+        <div class="row g-3">
+            <div class="col-sm-6 col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-muted small mb-1">Total Bookings</h6>
+                                <h3 class="mb-0">{{ stats.totalBookings }}</h3>
+                            </div>
+                            <span class="icon-circle bg-primary">
+                                <i class="fas fa-calendar-check text-white"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-sm-6 col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-muted small mb-1">Total Spent</h6>
+                                <h3 class="mb-0">${{ stats.totalSpent|floatformat:2 }}</h3>
+                            </div>
+                            <span class="icon-circle bg-success">
+                                <i class="fas fa-dollar-sign text-white"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-sm-6 col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-muted small mb-1">Avg. Booking Value</h6>
+                                <h3 class="mb-0">${{ stats.avgBookingValue|floatformat:2 }}</h3>
+                            </div>
+                            <span class="icon-circle bg-info">
+                                <i class="fas fa-chart-line text-white"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-sm-6 col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="text-muted small mb-0">Booking Status</h6>
+                            <span class="icon-circle bg-warning">
+                                <i class="fas fa-tasks text-white"></i>
+                            </span>
+                        </div>
+                        <div class="progress-stacked">
+                            {% if stats.totalBookings > 0 %}
+                            {% with completed_percent=stats.completedBookings|floatformat:0|filesizeformat pending_percent=stats.pendingBookings|floatformat:0 %}
+                            <div class="progress-bar bg-success completed-bar" role="progressbar" 
+                                 aria-valuenow="{{ stats.completedBookings }}" aria-valuemin="0" aria-valuemax="{{ stats.totalBookings }}">
+                                {{ stats.completedBookings }} Completed
+                            </div>
+                            <div class="progress-bar bg-warning pending-bar" role="progressbar" 
+                                 aria-valuenow="{{ stats.pendingBookings }}" aria-valuemin="0" aria-valuemax="{{ stats.totalBookings }}">
+                                {{ stats.pendingBookings }} Pending
+                            </div>
+                            {% endwith %}
+                            {% else %}
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 100%">
+                                No bookings
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-sm-6 col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="text-muted small mb-0">Service Types</h6>
+                            <span class="icon-circle bg-danger">
+                                <i class="fas fa-broom text-white"></i>
+                            </span>
+                        </div>
+                        <div class="service-stats">
+                            {% for service, count in stats.serviceStats.items %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">{{ service }}</span>
+                                <span class="badge bg-primary">{{ count }}</span>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-muted small">No service data available</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking history -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h4 mb-0"><i class="fas fa-history me-2"></i>Booking History</h3>
+        <span class="badge bg-primary">{{ stats.totalBookings }} Bookings</span>
+    </div>
+    
+    {% if bookings %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+        {% for booking in bookings %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span class="fw-medium">Booking #{{ booking.bookingId }}</span>
+                    {% if booking.isCompleted %}
+                    <span class="badge bg-success">Completed</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Service type badge -->
+                    <div class="service-type-badge mb-3">
+                        {% if booking.serviceType == 'standard' %}
+                        <span class="badge bg-info">Standard Cleaning</span>
+                        {% elif booking.serviceType == 'deep' %}
+                        <span class="badge bg-primary">Deep Cleaning</span>
+                        {% elif booking.serviceType == 'moveinmoveout' %}
+                        <span class="badge bg-danger">Move In/Out Cleaning</span>
+                        {% elif booking.serviceType == 'airbnb' %}
+                        <span class="badge bg-success">Airbnb Cleaning</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ booking.get_serviceType_display }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <span class="service-icon rounded-circle me-3
+                                {% if booking.serviceType == 'standard' %}bg-info{% elif booking.serviceType == 'deep' %}bg-primary{% elif booking.serviceType == 'moveinmoveout' %}bg-danger{% else %}bg-success{% endif %}">
+                                <i class="fas fa-broom text-white"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Cleaning Details</h6>
+                            <p class="text-muted mb-0 small">
+                                <i class="fas fa-calendar me-1"></i> {{ booking.cleaningDate|date:"M d, Y" }}
+                                {% if booking.startTime %}
+                                <span class="ms-2">
+                                    <i class="far fa-clock me-1"></i> {{ booking.startTime|time:"g:i A" }}
+                                </span>
+                                {% endif %}
+                            </p>
+                            <p class="text-muted mb-0 small mt-1">
+                                <i class="fas fa-history me-1"></i> Created {{ booking.createdAt|timesince }} ago
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Property address -->
+                    <div class="mb-3">
+                        <div class="property-address p-2 rounded bg-light">
+                            <p class="small text-muted mb-1">
+                                <i class="fas fa-map-marker-alt me-1"></i> Property Address
+                            </p>
+                            <p class="small mb-0">
+                                {{ booking.address1 }}{% if booking.address2 %}, {{ booking.address2 }}{% endif %}<br>
+                                {{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Property details -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <div class="property-stat p-2 rounded bg-light text-center">
+                                <p class="small text-muted mb-0">Beds</p>
+                                <p class="fw-medium mb-0">{{ booking.bedrooms }}</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="property-stat p-2 rounded bg-light text-center">
+                                <p class="small text-muted mb-0">Baths</p>
+                                <p class="fw-medium mb-0">{{ booking.bathrooms }}</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="property-stat p-2 rounded bg-light text-center">
+                                <p class="small text-muted mb-0">Sq.Ft.</p>
+                                <p class="fw-medium mb-0">{{ booking.squareFeet }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Add-ons section -->
+                    {% with addons_list=booking.get_all_addons %}
+                    {% if addons_list %}
+                    <div class="mb-3">
+                        <p class="small text-muted mb-1">
+                            <i class="fas fa-plus-circle me-1"></i> Add-ons
+                        </p>
+                        <div class="addons-container">
+                            {% for addon_name, addon_qty in addons_list %}
+                            {% if addon_qty > 0 %}
+                            <span class="badge bg-light text-dark me-1 mb-1">{{ addon_name }} ({{ addon_qty }})</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Assigned cleaner -->
+                    {% if booking.cleaner %}
+                    <div class="mb-3">
+                        <div class="cleaner-info p-2 rounded bg-light d-flex align-items-center">
+                            <div class="flex-shrink-0 me-2">
+                                <span class="cleaner-icon rounded-circle bg-secondary d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user-tie text-white"></i>
+                                </span>
+                            </div>
+                            <div>
+                                    <p class="small text-muted mb-0">Assigned Cleaner</p>
+                                    <p class="small fw-medium mb-0">{{ booking.cleaner.name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${{ booking.totalPrice|floatformat:2 }}</h5>
+                        <div>
+                            <a href="{% url 'bookings:booking_detail' booking.bookingId %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i> View
+                            </a>
+                            <a href="{% url 'bookings:edit_booking' booking.bookingId %}" class="btn btn-sm btn-outline-info ms-1">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 bg-light rounded-3">
+        <i class="fas fa-calendar-times text-muted fa-3x mb-3"></i>
+        <h5>No Bookings Found</h5>
+        <p class="text-muted">This customer doesn't have any bookings yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Custom styles for this page -->
+<style>
+    .customer-avatar {
+        width: 60px;
+        height: 60px;
+        font-weight: 500;
+    }
+    
+    .icon-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+    }
+    
+    .fw-medium {
+        font-weight: 500;
+    }
+    
+    .card-header.bg-gradient {
+        border-bottom: 0;
+    }
+    
+    .service-stats {
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    
+    .progress-stacked {
+        height: 26px;
+        border-radius: 6px;
+    }
+    
+    .progress-stacked .progress-bar {
+        padding: 0 8px;
+        font-size: 0.8rem;
+        line-height: 26px;
+        font-weight: 500;
+    }
+    
+    .service-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .addons-container {
+        max-height: 80px;
+        overflow-y: auto;
+        padding: 5px;
+        border-radius: 6px;
+    }
+    
+    .addons-container .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .property-address {
+        font-size: 0.85rem;
+    }
+    
+    .service-type-badge .badge {
+        font-size: 0.85rem;
+        padding: 0.5em 0.85em;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 20px;
+    }
+    
+    .cleaner-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+    
+    @media (max-width: 767.98px) {
+        .customer-avatar {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .icon-circle {
+            width: 32px;
+            height: 32px;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+        }
+        
+        .service-icon {
+            width: 36px;
+            height: 36px;
+        }
+    }
+    
+    /* Progress bar width calculations using JavaScript */
+    .progress-stacked {
+        position: relative;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate and set progress bar widths
+        if (document.querySelector('.completed-bar')) {
+            const totalBookings = {{ stats.totalBookings }};
+            const completedBookings = {{ stats.completedBookings }};
+            const pendingBookings = {{ stats.pendingBookings }};
+            
+            const completedPercent = (completedBookings / totalBookings) * 100;
+            const pendingPercent = (pendingBookings / totalBookings) * 100;
+            
+            document.querySelector('.completed-bar').style.width = completedPercent + '%';
+            document.querySelector('.pending-bar').style.width = pendingPercent + '%';
+        }
+    });
+</script>
+{% endblock %} 

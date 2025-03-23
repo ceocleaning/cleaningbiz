@@ -536,12 +536,30 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/booking/' %}active{% endif %}" 
-                           href="{% url 'bookings:all_bookings' %}">
+             
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" 
+                           href="#" id="aiDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-calendar-check me-1"></i>Bookings
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="aiDropdown">
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                   href="{% url 'bookings:all_bookings' %}">
+                                    <i class="fas fa-calendar-check me-2 text-primary"></i>Bookings
+                                </a>
+                            </li>
+                           
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}" 
+                                   href="{% url 'bookings:customers' %}">
+                                    <i class="fas fa-users me-2 text-success"></i>Customers
+                                </a>
+                            </li>
+                        </ul>
                     </li>
+                 
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/booking/invoices/' %}active{% endif %}" 
                            href="{% url 'invoice:all_invoices' %}">
