@@ -1264,3 +1264,74 @@ def verify_recaptcha_token(token):
             'success': False,
             'message': f'Error verifying reCAPTCHA: {str(e)}'
         }
+
+@csrf_exempt
+@require_POST
+def book_demo(request):
+    """
+    Process demo booking form submissions and send email notifications
+    """
+    # Check if it's an AJAX request
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if is_ajax:
+        try:
+            # Get form data
+            name = request.POST.get('name', '')
+            email = request.POST.get('email', '')
+            phone = request.POST.get('phone', '')
+            company = request.POST.get('company', '')
+            
+            # Validate required fields
+            if not all([name, email, phone]):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please fill in all required fields.'
+                })
+                
+            # Prepare email content
+            email_subject = f"Demo Request: {name} from {company or 'N/A'}"
+            email_message = f"""
+            New demo request:
+            
+            Name: {name}
+            Email: {email}
+            Phone: {phone}
+            Company: {company or 'Not provided'}
+            
+            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+            """
+            
+            # Send email using EmailMessage for more control
+            from_email = 'noreply@cleaningbizai.com'  # Use a consistent from address
+            recipient_list = ['kashifmehmood926@gmail.com', 'ceocleaningacademy@gmail.com']
+            
+            # Send email notification
+            email = EmailMessage(
+                subject=email_subject,
+                body=email_message,
+                from_email=from_email,
+                to=recipient_list,
+                reply_to=[email],  # Set reply-to as the user's email
+            )
+            email.send(fail_silently=False)
+            
+            logger.info(f"Demo request sent successfully from {email}")
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Your demo request has been sent successfully! We will get back to you soon.'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in demo booking form: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'An error occurred: {str(e)}'
+            })
+    
+    # If not an AJAX request, return an error
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    })

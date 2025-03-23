@@ -690,26 +690,37 @@
                 <div class="card bg-dark-surface rounded-xxl p-4 border-gradient shadow-lg">
                     <div class="card-body">
                         <h3 class="h4 fw-bold text-white mb-4">Schedule a Free Demo</h3>
-                        <form>
+                        <form id="demoForm" method="POST" action="/book-demo/">
+                            {% csrf_token %}
                             <div class="mb-3">
-                                <label for="name" class="form-label text-dark-text-secondary">Full Name</label>
-                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="name" placeholder="Your name">
+                                <label for="name" class="form-label text-dark-text-secondary">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="name" name="name" placeholder="Your name" required>
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label text-dark-text-secondary">Email Address</label>
-                                <input type="email" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="email" placeholder="your@email.com">
+                                <label for="email" class="form-label text-dark-text-secondary">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="email" name="email" placeholder="your@email.com" required>
                             </div>
                             <div class="mb-3">
-                                <label for="phone" class="form-label text-dark-text-secondary">Phone Number</label>
-                                <input type="tel" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="phone" placeholder="(123) 456-7890">
+                                <label for="phone" class="form-label text-dark-text-secondary">Phone Number <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="phone" name="phone" placeholder="(123) 456-7890" required>
                             </div>
                             <div class="mb-4">
                                 <label for="company" class="form-label text-dark-text-secondary">Company Name</label>
-                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="company" placeholder="Your company">
+                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="company" name="company" placeholder="Your company">
                             </div>
-                            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-glow">
+                            <button type="submit" id="demoSubmitBtn" class="btn btn-primary btn-lg w-100 shadow-glow">
                                 <i class="fas fa-calendar-check me-2"></i>Book Your Demo
                             </button>
+                            
+                            <!-- Success Message -->
+                            <div id="demoSuccess" class="alert alert-success mt-3" style="display: none;">
+                                <i class="fas fa-check-circle me-2"></i> Your demo request has been sent successfully! We'll contact you shortly.
+                            </div>
+                            
+                            <!-- Error Message -->
+                            <div id="demoError" class="alert alert-danger mt-3" style="display: none;">
+                                <i class="fas fa-exclamation-circle me-2"></i> <span id="demoErrorMsg">There was an error. Please try again.</span>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -735,6 +746,62 @@
         const pricingToggle = document.getElementById('pricing-toggle');
         if (pricingToggle) {
             pricingToggle.addEventListener('change', togglePricing);
+        }
+        
+        // Demo Form Submission
+        const demoForm = document.getElementById('demoForm');
+        if (demoForm) {
+            demoForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Show loading state
+                const submitBtn = document.getElementById('demoSubmitBtn');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Sending...';
+                submitBtn.disabled = true;
+                
+                // Hide any previous alerts
+                document.getElementById('demoSuccess').style.display = 'none';
+                document.getElementById('demoError').style.display = 'none';
+                
+                // Get form data
+                const formData = new FormData(demoForm);
+                
+                // Send AJAX request
+                fetch(demoForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                    
+                    if (data.success) {
+                        // Show success message and reset form
+                        document.getElementById('demoSuccess').style.display = 'block';
+                        demoForm.reset();
+                    } else {
+                        // Show error message
+                        document.getElementById('demoErrorMsg').textContent = data.message || 'There was an error. Please try again.';
+                        document.getElementById('demoError').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                    
+                    // Show error message
+                    document.getElementById('demoErrorMsg').textContent = 'Network error. Please try again later.';
+                    document.getElementById('demoError').style.display = 'block';
+                    console.error('Error:', error);
+                });
+            });
         }
     });
     

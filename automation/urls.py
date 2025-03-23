@@ -54,4 +54,7 @@ urlpatterns = [
 
     # reCAPTCHA verification endpoint
     path('verify-recaptcha/', views.verify_recaptcha, name='verify_recaptcha'),
+
+    # Demo booking form
+    path('book-demo/', views.book_demo, name='book_demo'),
 ]
