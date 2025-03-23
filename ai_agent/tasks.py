@@ -45,7 +45,7 @@ def check_chat_status():
                 
                 # Get lead information
                 try:
-                    lead = Lead.objects.get(phone_number=chat.clientPhoneNumber)
+                    lead = Lead.objects.get(phone_number=chat.clientPhoneNumber, business=business)
                     print(f"[TASK] Found lead: {lead.name}")
                 except Lead.DoesNotExist:
                     print(f"[TASK] No lead found with phone number: {chat.clientPhoneNumber}")

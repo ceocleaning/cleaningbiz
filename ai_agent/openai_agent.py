@@ -1191,7 +1191,7 @@ def chat_api(request):
                 })
             else:
                 return JsonResponse({
-                    'error': 'Invalid action or missing phone number'
+                    'error': 'Invalid action or missing phone number or session key'
                 }, status=400)
             
         except Exception as e:
