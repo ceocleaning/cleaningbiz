@@ -15,7 +15,7 @@ from datetime import datetime
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
-    bookings = Booking.objects.filter(business__user=request.user)
+    bookings = Booking.objects.filter(business__user=request.user).order_by('-cleaningDate', '-startTime')
     pending_bookings = bookings.filter(isCompleted=False).count()
     completed_bookings = bookings.filter(isCompleted=True).count()
     
