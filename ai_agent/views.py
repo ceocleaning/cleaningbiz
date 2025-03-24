@@ -298,7 +298,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
         
         # Get or create a chat for this phone number
         print(f"[DEBUG] Getting or creating chat for business ID {business.businessId} and phone {client_phone_number}")
-        chat = OpenAIAgent.get_or_create_chat(business.businessId, client_phone_number)
+        chat = OpenAIAgent.get_or_create_chat(business.businessId, client_phone_number, session_key=None)
         
         if not chat:
             print("[DEBUG] Failed to get or create chat")
