@@ -323,7 +323,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
         
         # Get all messages for this chat
         print("[DEBUG] Retrieving chat history")
-        messages = OpenAIAgent.get_chat_messages(client_phone_number)
+        messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key=None)
         print(f"[DEBUG] Retrieved {len(messages)} messages from chat history")
         
         # Format messages for OpenAI
@@ -341,7 +341,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
                 model="gpt-4o",
                 messages=formatted_messages,
                 temperature=0.5,
-                max_tokens=3000,  # Shorter for SMS
+                max_tokens=3000, 
                 tools=OpenAIAgent.get_openai_tools()
             )
             print(f"[DEBUG] OpenAI API response received at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
