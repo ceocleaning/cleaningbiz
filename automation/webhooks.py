@@ -344,9 +344,9 @@ def send_booking_data(booking):
                         "bathrooms": booking.bathrooms,
                         "squareFeet": booking.squareFeet,
                         "serviceType": booking.serviceType,
-                        "cleaningDate": booking.cleaningDate,
-                        "startTime": booking.startTime,
-                        "endTime": booking.endTime,
+                        "cleaningDate": booking.cleaningDate.strftime('%Y-%m-%d') if booking.cleaningDate else None,
+                        "startTime": booking.startTime.strftime('%H:%M') if booking.startTime else None,
+                        "endTime": booking.endTime.strftime('%H:%M') if booking.endTime else None,
                         "totalPrice": float(booking.totalPrice),
                         "tax": float(booking.tax or 0),
                         "addonDishes": booking.addonDishes,
@@ -375,7 +375,16 @@ def send_booking_data(booking):
                 else:  # direct_api
                     # Create payload using field mappings
                     print(f"Creating mapped payload for {integration.name}")
-                    payload = create_mapped_payload(booking.__dict__, integration)
+                    # Convert date fields to string format before creating mapped payload
+                    booking_dict = booking.__dict__.copy()
+                    if 'cleaningDate' in booking_dict:
+                        booking_dict['cleaningDate'] = booking.cleaningDate.strftime('%Y-%m-%d') if booking.cleaningDate else None
+                    if 'startTime' in booking_dict:
+                        booking_dict['startTime'] = booking.startTime.strftime('%H:%M') if booking.startTime else None
+                    if 'endTime' in booking_dict:
+                        booking_dict['endTime'] = booking.endTime.strftime('%H:%M') if booking.endTime else None
+                    
+                    payload = create_mapped_payload(booking_dict, integration)
                     
                     # Send to base URL
                     headers = {"Content-Type": "application/json"}
