@@ -389,7 +389,7 @@ def check_availability_for_booking(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-# API endpoint to create a new booking
+# API endpoint to create a new booking from Retell
 @csrf_exempt
 @api_view(['POST', 'GET'])
 def create_booking(request):
@@ -453,23 +453,23 @@ def create_booking(request):
         booking = Booking(
             business=business,
             cleaner=available_cleaner,
-            firstName=data['first_name'],
-            lastName=data['last_name'],
-            email=data['email'],
-            phoneNumber=data['phone_number'],
-            address1=data['address'],
-            city=data['city'],
-            stateOrProvince=data['state'],
-            zipCode=data['zip_code'],
-            bedrooms=int(data['bedrooms']),
-            bathrooms=int(data['bathrooms']),
-            squareFeet=int(data['area']),
+            firstName=data.get('first_name', 'Not Set'),
+            lastName=data.get('last_name', 'Not Set'),
+            email=data.get('email', 'Not Set'),
+            phoneNumber=data.get('phone_number', 'Not Set'),
+            address1=data.get('address', 'Not Set'),
+            city=data.get('city', 'Not Set'),
+            stateOrProvince=data.get('state', 'Not Set'),
+            zipCode=data.get('zip_code', 'Not Set'),
+            bedrooms=int(data.get('bedrooms', 0)) or 0,
+            bathrooms=int(data.get('bathrooms', 0)) or 0,
+            squareFeet=int(data.get('area', 0)) or 0,
             cleaningDate=cleaning_date,
             startTime=start_time,
             endTime=end_time,
             serviceType=service_type,
             recurring=data.get('recurring', 'one-time'),
-            otherRequests=data.get('otherRequests', '')
+            otherRequests=data.get('otherRequests', 'Not Set')
         )
         
         # Process addons
