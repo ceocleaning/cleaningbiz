@@ -16,7 +16,7 @@ from .api_views import get_cleaners_for_business, find_available_cleaner
 from accounts.models import ApiCredential, Business, BusinessSettings, CustomAddons
 from bookings.models import Booking
 from .utils import calculateAmount, calculateAddonsAmount
-from integrations.models import PlatformIntegration, DataMapping
+from integrations.models import PlatformIntegration, DataMapping, IntegrationLog
 
 @csrf_exempt
 def thumbtack_webhook(request, secretKey):
@@ -335,8 +335,8 @@ def send_booking_data(booking):
                         "lastName": booking.lastName,
                         "email": booking.email,
                         "phoneNumber": booking.phoneNumber,
-                        "address1": booking.address,
-                        "address2": '',
+                        "address1": booking.address1,
+                        "address2": booking.address2,
                         "city": booking.city,
                         "stateOrProvince": booking.stateOrProvince,
                         "zipCode": booking.zipCode,
@@ -403,6 +403,15 @@ def send_booking_data(booking):
                 
                 response.raise_for_status()
                 print(f"Successfully sent booking data to {integration.name}", response.text)
+                
+                # Log successful integration
+                IntegrationLog.objects.create(
+                    platform=integration,
+                    status='success',
+                    request_data=payload,
+                    response_data=response.json() if response.text else None
+                )
+                
                 results[integration_type]['success'].append({
                     'name': integration.name,
                     'response': response.text,
@@ -412,6 +421,15 @@ def send_booking_data(booking):
             except Exception as e:
                 error_msg = f"Error sending booking data to {integration.name}: {str(e)}"
                 print(error_msg)
+                
+                # Log failed integration
+                IntegrationLog.objects.create(
+                    platform=integration,
+                    status='failed',
+                    request_data=payload if 'payload' in locals() else {},
+                    error_message=str(e)
+                )
+                
                 results[integration_type]['failed'].append({
                     'name': integration.name,
                     'error': str(e)
