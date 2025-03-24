@@ -16,14 +16,43 @@ from django.db.models import Min, Count
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
-    bookings = Booking.objects.filter(business__user=request.user).order_by('-cleaningDate', '-startTime')
-    pending_bookings = bookings.filter(isCompleted=False).count()
-    completed_bookings = bookings.filter(isCompleted=True).count()
+    
+    # Get all bookings for the user's business
+    all_bookings = Booking.objects.filter(business__user=request.user)
+    
+    # Get current date for filtering
+    today = datetime.now().date()
+    
+    # Upcoming bookings (not completed and future date)
+    upcoming_bookings = all_bookings.filter(
+        isCompleted=False,
+        cleaningDate__gte=today
+    ).order_by('cleaningDate', 'startTime')
+    
+    # Completed bookings (isCompleted=True and past date)
+    completed_bookings = all_bookings.filter(
+        isCompleted=True,
+        cleaningDate__lt=today
+    ).order_by('-cleaningDate', '-startTime')
+    
+    # Pending bookings (unpaid invoices)
+    pending_bookings = all_bookings.filter(
+        invoice__isnull=False,  # Has an invoice
+        invoice__isPaid=False,  # Invoice is not paid
+    ).order_by('cleaningDate', 'startTime')
+    
+    # Counts for the dashboard cards
+    total_bookings = all_bookings.count()
+    pending_count = all_bookings.filter(isCompleted=False).count()
+    completed_count = all_bookings.filter(isCompleted=True).count()
     
     context = {
-        'bookings': bookings,
+        'upcoming_bookings': upcoming_bookings,
+        'completed_bookings': completed_bookings,
         'pending_bookings': pending_bookings,
-        'completed_bookings': completed_bookings
+        'total_bookings': total_bookings,
+        'pending_count': pending_count,
+        'completed_count': completed_count
     }
     return render(request, 'bookings.html', context)
 
