@@ -392,11 +392,12 @@
             document.getElementById('chatLoading').style.display = 'none';
             
             const chatMessagesContent = document.getElementById('chatMessagesContent');
+            chatMessagesContent.style.display = 'block';
             
-            if (data.messages && data.messages.length > 0) {
+            // Check status field from the response
+            if (data.status === 'success' && data.messages && data.messages.length > 0) {
                 // Clear existing messages
                 chatMessagesContent.innerHTML = '';
-                chatMessagesContent.style.display = 'block';
                 
                 // Add all messages
                 data.messages.forEach(message => {
@@ -409,9 +410,14 @@
                     appendMessage(message.role, message.message, timestamp);
                 });
             } else {
-                // Show empty state with welcome message
+                // Show empty state with welcome message - handles both status='error' and empty messages case
                 chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
-                chatMessagesContent.style.display = 'block';
+                
+                // Show toast for error if present
+                if (data.status === 'error' && data.error) {
+                    console.log('Error loading messages:', data.error);
+                    window.showToast('Error', data.error || 'No messages found', 'error');
+                }
             }
             
             // Scroll to bottom

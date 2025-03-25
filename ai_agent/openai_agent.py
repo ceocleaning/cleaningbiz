@@ -113,6 +113,8 @@ class OpenAIAgent:
                 agent_config = AgentConfiguration.objects.get(business=business)
                 
                 system_prompt = f"""You are {agent_config.agent_name}, virtual customer support and sales representative. You are speaking with a potential customer.
+                  
+                    ALWAYS ASK ONE QUESTION AT A TIME.
 
                     ##PRIMARY ROLE AND KNOWLEDGE SOURCE
                     Your primary role is to answer questions about cleaning services using ONLY the information provided by the business. DO NOT make up information or use general knowledge about cleaning that hasn't been explicitly provided by {business.businessName}.
@@ -564,9 +566,13 @@ class OpenAIAgent:
                         
                     # Extract summary from conversation
                     summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                
+                    
+                    # Save summary to chat object
                     chat.summary = summary
                     chat.save()
-             
+                
+                  
                     
                     # Get the chat using either phone number or session key
                     if client_phone_number:
@@ -634,28 +640,34 @@ class OpenAIAgent:
                         
                     # Extract summary from conversation
                     summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                    
+                  
+                    # Save summary to chat object
                     chat.summary = summary
                     chat.save()
+                    
+                 
                    
                     if client_phone_number:
                         result = book_appointment(business, client_phone_number)
                         
-                        # If booking was successful and we have a booking ID, update the chat summary
-                        if result.get('success') and result.get('booking_id'):
-                            # Update summary with booking ID
-                            if not isinstance(chat.summary, dict):
-                                chat.summary = {}
-                            chat.summary['bookingId'] = result.get('booking_id')
-                            chat.save()
-                            print(f"[DEBUG] Updated chat summary with booking ID: {result.get('booking_id')}")
                     elif session_key:
                         result = book_appointment(business, session_key)
+
+
                     else:
                         result = {
                             "success": False,
                             "error": "No phone number or session key available"
                         }
-                    
+                    if result.get('success') and result.get('bookingId'):
+                        # Update summary with booking ID
+                        if not isinstance(chat.summary, dict):
+                            chat.summary = {}
+                        chat.summary['bookingId'] = result.get('bookingId')
+                        chat.save()
+                        print(f"[DEBUG] Updated chat summary with booking ID: {result.get('bookingId')}")
+                
                     return json.dumps(result)
                 except Exception as e:
                     print(f"[ERROR] Error in bookAppointment: {str(e)}")
@@ -1130,8 +1142,8 @@ class OpenAIAgent:
                 for key, value in extracted_data.items():
                     if key in summary and value:
                         summary[key] = value
-                
-                print(f"[DEBUG] Successfully extracted summary with {len([v for v in summary.values() if v])} non-empty fields")
+          
+                return summary
                 
             except json.JSONDecodeError as e:
                 print(f"[ERROR] Error parsing extracted information: {str(e)}")
@@ -1203,9 +1215,16 @@ def chat_api(request):
             if action == 'get_messages' and (client_phone_number or session_key):
                 # Get all messages for this chat
                 messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key)
-                return JsonResponse({
-                    'messages': messages
-                })
+                if len(messages) == 0:
+                    return JsonResponse({
+                        'error': 'No messages found',
+                        'status': 'error'
+                    }, status=400)
+                else:
+                    return JsonResponse({
+                        'messages': messages,
+                        'status': 'success'
+                    })
             else:
                 return JsonResponse({
                     'error': 'Invalid action or missing phone number or session key'
@@ -1343,7 +1362,7 @@ def chat_api(request):
             #                 'content': content
             #             })
           
-            # Extract conversation summary if we have enough messages
+            # # Extract conversation summary if we have enough messages
             # if len(messages_for_summary) >= 2:
             #     try:
             #         # Extract conversation summary
