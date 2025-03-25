@@ -308,8 +308,13 @@
             document.getElementById('chatLoading').style.display = 'flex';
             document.getElementById('chatMessagesContent').style.display = 'none';
             
-            // Load messages
-            loadMessages();
+            // If we already have the phone number, load messages immediately
+            if (clientPhoneNumber) {
+                loadMessages();
+            } else {
+                // Initialize chat will get the phone number and then call loadMessages
+                initializeChat();
+            }
             
             // Focus on the message input
             document.getElementById('messageInput').focus();
@@ -320,6 +325,12 @@
     }
     
     function initializeChat() {
+        // Check if we already initialized the chat
+        if (clientPhoneNumber) {
+            loadMessages();
+            return;
+        }
+        
         // Get the Twilio SMS number for the business
         fetch('/ai_agent/api/business/credentials/', {
             method: 'GET',
@@ -335,12 +346,25 @@
                 // Load existing messages if any
                 loadMessages();
             } else {
+                // Hide loader and show empty chat
+                document.getElementById('chatLoading').style.display = 'none';
+                const chatMessagesContent = document.getElementById('chatMessagesContent');
+                chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
+                chatMessagesContent.style.display = 'block';
+                
                 window.showToast('Warning', 'No Twilio SMS number found for this business. Using a default test number.', 'warning');
                 clientPhoneNumber = '+1234567890'; // Default test number
             }
         })
         .catch(error => {
             console.error('Error fetching business credentials:', error);
+            
+            // Hide loader and show empty chat
+            document.getElementById('chatLoading').style.display = 'none';
+            const chatMessagesContent = document.getElementById('chatMessagesContent');
+            chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
+            chatMessagesContent.style.display = 'block';
+            
             window.showToast('Warning', 'Failed to fetch business credentials. Using a default test number.', 'warning');
             clientPhoneNumber = '+1234567890'; // Default test number
         });
@@ -351,6 +375,7 @@
             // If no phone number, hide loader and show empty content
             document.getElementById('chatLoading').style.display = 'none';
             document.getElementById('chatMessagesContent').style.display = 'block';
+            document.getElementById('chatMessagesContent').innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
             return;
         }
         
@@ -369,8 +394,7 @@
             const chatMessagesContent = document.getElementById('chatMessagesContent');
             
             if (data.messages && data.messages.length > 0) {
-                const chatMessages = document.getElementById('chatMessages');
-                // Clear existing messages but keep the loader and empty content elements
+                // Clear existing messages
                 chatMessagesContent.innerHTML = '';
                 chatMessagesContent.style.display = 'block';
                 
@@ -385,7 +409,8 @@
                     appendMessage(message.role, message.message, timestamp);
                 });
             } else {
-                // Show empty state
+                // Show empty state with welcome message
+                chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
                 chatMessagesContent.style.display = 'block';
             }
             
@@ -396,7 +421,9 @@
             console.error('Error loading messages:', error);
             // Hide loader and show empty state on error
             document.getElementById('chatLoading').style.display = 'none';
-            document.getElementById('chatMessagesContent').style.display = 'block';
+            const chatMessagesContent = document.getElementById('chatMessagesContent');
+            chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
+            chatMessagesContent.style.display = 'block';
         });
     }
     

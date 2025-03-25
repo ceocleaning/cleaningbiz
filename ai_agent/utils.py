@@ -134,7 +134,7 @@ def get_chat_status(chat):
         """
         
         formatted_messages = format_messages_for_openai(messages, SYSTEM_PROMPT)
-        print(formatted_messages)
+
         
         # Call OpenAI API
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))

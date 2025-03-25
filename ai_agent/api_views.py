@@ -17,20 +17,29 @@ from .models import Chat
 
 
 
-def calculate_total(business, client_phone_number):
+def calculate_total(business, client_phone_number, session_key=None):
     """Function to calculate total price based on user information and business settings.
     
     Args:
         business: The Business object for which to calculate the total
-        data: Dictionary containing customer details and addon selections
-            Required fields: serviceType, bedrooms, bathrooms, squareFeet
-            Optional fields: addonDishes, addonLaundryLoads, addonWindowCleaning, etc.
+        client_phone_number: The phone number of the client
+        OR
+        session_key: The session key of the chat
     
     Returns:
         Dictionary with pricing details including base price, addons total, subtotal, tax, and total
+        
     """
+
+    print(f"[INFO] Calculating total for business: {business.businessName}")
+    print(f"[INFO] Client phone number: {client_phone_number}")
+    print(f"[INFO] Session key: {session_key}")
+
     try:
-        chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
+        if session_key:
+            chat = Chat.objects.get(business=business, sessionKey=session_key)
+        else:
+            chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
         
         # Get business settings
         businessSettingsObj = BusinessSettings.objects.get(business=business)
@@ -224,7 +233,7 @@ def check_availability(business, date_string):
         return {"success": False, "error": str(e)}
 
 
-def book_appointment(business, client_phone_number, booking_data=None):
+def book_appointment(business, client_phone_number, session_key=None):
     """Function to book an appointment for the AI agent.
     Creates a booking in the system based on customer details collected by the AI agent.
     
@@ -238,8 +247,16 @@ def book_appointment(business, client_phone_number, booking_data=None):
     Returns:
         Dictionary with booking details or error information
     """
+
+    print(f"[INFO] Booking appointment for business: {business.businessName}")
+    print(f"[INFO] Client phone number: {client_phone_number}")
+    print(f"[INFO] Session key: {session_key}")
+
     try:
-        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+        if session_key:
+            chat = Chat.objects.get(business=business, sessionKey=session_key)
+        else:
+            chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
         
         # Parse summary if it's a string
         if isinstance(chat.summary, str):
@@ -251,7 +268,7 @@ def book_appointment(business, client_phone_number, booking_data=None):
             chat_summary = chat.summary or {}
         
         # Use provided booking_data if available, otherwise use chat.summary
-        data = booking_data if booking_data else chat_summary
+        data = chat_summary
         
         # Validate required fields
         required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 
