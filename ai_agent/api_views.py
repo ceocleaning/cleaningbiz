@@ -255,35 +255,53 @@ def book_appointment(business, client_phone_number, session_key=None):
     try:
         if session_key:
             chat = Chat.objects.get(business=business, sessionKey=session_key)
+            print(f"[DEBUG] Found chat using session_key: {session_key}, Chat ID: {chat.id}")
         else:
             chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
+            print(f"[DEBUG] Found chat using phone number: {client_phone_number}, Chat ID: {chat.id}")
         
         # Parse summary if it's a string
+        print(f"[DEBUG] Chat summary type before parsing: {type(chat.summary)}")
+        print(f"[DEBUG] Raw chat summary: {chat.summary}")
+        
         if isinstance(chat.summary, str):
             try:
                 chat_summary = json.loads(chat.summary)
-            except json.JSONDecodeError:
+                print(f"[DEBUG] Parsed summary from string, keys: {chat_summary.keys()}")
+            except json.JSONDecodeError as e:
+                print(f"[ERROR] JSON decode error: {str(e)}")
                 chat_summary = {}
         else:
             chat_summary = chat.summary or {}
+            print(f"[DEBUG] Using dict summary, keys: {chat_summary.keys() if chat_summary else 'empty'}")
         
         # Use provided booking_data if available, otherwise use chat.summary
         data = chat_summary
+        print(f"[DEBUG] Data for booking: {json.dumps(data, indent=2)}")
         
         # Validate required fields
-        required_fields = ["firstName", "lastName", "phoneNumber", "address1", "city", "state", 
+        required_fields = ["firstName", "phoneNumber", "address1", "city", "state", 
                           "serviceType", "appointmentDateTime", "bedrooms", "bathrooms", "squareFeet"]
+        
+        print("[DEBUG] Validating required fields:")
+        for field in required_fields:
+            print(f"[DEBUG] Field '{field}': {'Present' if field in data and data.get(field) else 'Missing'} - Value: {data.get(field, 'N/A')}")
         
         missing_fields = [field for field in required_fields if field not in data or not data.get(field)]
         if missing_fields:
             error_msg = f"Missing required fields: {', '.join(missing_fields)}"
+            print(f"[ERROR] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Get business settings
         businessSettingsObj = BusinessSettings.objects.get(business=business)
+        print(f"[DEBUG] Got business settings for: {business.businessName}")
         
         # Normalize service type
         serviceType = data["serviceType"].lower().replace(" ", "")
+        original_service_type = data["serviceType"]
+        print(f"[DEBUG] Original service type: {original_service_type}, Normalized: {serviceType}")
+        
         if 'regular' in serviceType or 'standard' in serviceType:
             serviceType = 'standard'
         elif 'deep' in serviceType:
@@ -293,13 +311,17 @@ def book_appointment(business, client_phone_number, session_key=None):
         elif 'airbnb' in serviceType:
             serviceType = 'airbnb'
         
+        print(f"[DEBUG] Final service type: {serviceType}")
+        
         # Convert numeric fields if they're strings
         try:
             bedrooms = int(data["bedrooms"]) if data["bedrooms"] else 0
             bathrooms = int(data["bathrooms"]) if data["bathrooms"] else 0
             area = int(data["squareFeet"]) if data["squareFeet"] else 0
-        except ValueError:
-            error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
+            print(f"[DEBUG] Parsed numeric values - Bedrooms: {bedrooms}, Bathrooms: {bathrooms}, Area: {area}")
+        except ValueError as e:
+            error_msg = f"Invalid numeric values for bedrooms, bathrooms, or area: {str(e)}"
+            print(f"[ERROR] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Calculate base price
@@ -310,6 +332,7 @@ def book_appointment(business, client_phone_number, session_key=None):
             serviceType,
             businessSettingsObj
         )
+        print(f"[DEBUG] Calculated base price: ${calculateTotal}")
         
         # Process addons - extract from the data structure
         addons = {
@@ -326,6 +349,7 @@ def book_appointment(business, client_phone_number, session_key=None):
             "patio": int(data.get("addonPatioSweeping", 0) or 0),
             "garage": int(data.get("addonGarageSweeping", 0) or 0)
         }
+        print(f"[DEBUG] Addon selections: {json.dumps(addons, indent=2)}")
         
         addonsPrices = {
             "dishes": businessSettingsObj.addonPriceDishes,
@@ -347,39 +371,60 @@ def book_appointment(business, client_phone_number, session_key=None):
         bookingCustomAddons = []
         customAddonTotal = 0
         
+        print(f"[DEBUG] Found {customAddonsObj.count()} custom addons for business")
+        
         # We'll assume custom addons are not handled through the AI agent for now
         # This can be extended later if needed
         
         # Calculate final amounts
         addons_result = calculateAddonsAmount(addons, addonsPrices)
+        print(f"[DEBUG] Addons total: ${addons_result}")
+        
         sub_total = calculateTotal + addons_result + customAddonTotal
         tax = sub_total * (businessSettingsObj.taxPercent / 100)
         total = sub_total + tax
         
+        print(f"[DEBUG] Price calculation - Base: ${calculateTotal}, Addons: ${addons_result}, "
+              f"Custom Addons: ${customAddonTotal}, Subtotal: ${sub_total}, "
+              f"Tax ({businessSettingsObj.taxPercent}%): ${tax}, Total: ${total}")
+        
         # Parse appointment datetime
         try:
             # Try different date formats
+            print(f"[DEBUG] Raw appointment datetime: {data['appointmentDateTime']}")
             converted_datetime = convert_date_str_to_date(data["appointmentDateTime"])
+            print(f"[DEBUG] Converted datetime: {converted_datetime}")
+            
             # Strip any whitespace including newlines and then parse
             converted_datetime = converted_datetime.strip()
             cleaningDateTime = datetime.fromisoformat(converted_datetime)
+            print(f"[DEBUG] Parsed cleaning datetime: {cleaningDateTime}")
             
             cleaningDate = cleaningDateTime.date()
             startTime = cleaningDateTime.time()
             endTime = (cleaningDateTime + timedelta(hours=1)).time()
+            print(f"[DEBUG] Cleaning date: {cleaningDate}, Start time: {startTime}, End time: {endTime}")
         except Exception as e:
             error_msg = f"Invalid appointment date/time format: {str(e)}"
+            print(f"[ERROR] {error_msg}")
             return {"success": False, "error": error_msg}
         
         # Find available cleaner for the booking
         cleaners = get_cleaners_for_business(business)
+        print(f"[DEBUG] Found {len(cleaners)} cleaners for business")
+        
         available_cleaner = find_available_cleaner(cleaners, cleaningDateTime)
+        if available_cleaner:
+            print(f"[DEBUG] Found available cleaner: {available_cleaner.name} (ID: {available_cleaner.id})")
+        else:
+            print("[DEBUG] No cleaners available for the requested time")
         
         if not available_cleaner:
             error_msg = "No cleaners available for the requested time"
             return {"success": False, "error": error_msg}
         
         # Create booking
+        print("[DEBUG] Creating new booking record...")
         newBooking = Booking.objects.create(
             business=business,
             firstName=data["firstName"],
@@ -415,16 +460,31 @@ def book_appointment(business, client_phone_number, session_key=None):
             addonGarageSweeping=addons["garage"],
             cleaner=available_cleaner,
         )
+        print(f"[DEBUG] Created booking with ID: {newBooking.id}, Booking ID: {newBooking.bookingId}")
         
         # Add custom addons
         if bookingCustomAddons:
             newBooking.customAddons.set(bookingCustomAddons)
             newBooking.save()
+            print(f"[DEBUG] Added {len(bookingCustomAddons)} custom addons to booking")
         
         # Send booking data to integration if needed
+        print("[DEBUG] Sending booking data to integration")
         send_booking_data(newBooking)
         
+        # Update chat summary with booking ID
+        print(f"[DEBUG] Updating chat summary with booking ID: {newBooking.bookingId}")
+        try:
+            updated_summary = chat.summary.copy() if isinstance(chat.summary, dict) else {}
+            updated_summary['bookingId'] = newBooking.bookingId
+            chat.summary = updated_summary
+            chat.save()
+            print(f"[DEBUG] Successfully updated chat summary with booking ID")
+        except Exception as e:
+            print(f"[ERROR] Failed to update chat summary with booking ID: {str(e)}")
+        
         # Return success response
+        print(f"[DEBUG] Booking process completed successfully - ID: {newBooking.bookingId}")
         return {
             "success": True,
             "booking_id": newBooking.bookingId,
@@ -432,5 +492,6 @@ def book_appointment(business, client_phone_number, session_key=None):
         }
         
     except Exception as e:
+        print(f"[ERROR] Exception in book_appointment: {str(e)}")
         traceback.print_exc()
         return {"success": False, "error": str(e)}
