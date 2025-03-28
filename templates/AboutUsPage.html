@@ -3,6 +3,13 @@
 {% block title %}About Us - CleaningBiz AI{% endblock %}
 
 {% block content %}
+
+<style>
+    .yellow {
+        color: #ffd700;
+    }
+</style>
+
 <!-- Hero Section -->
 <section class="py-5 position-relative overflow-hidden bg-dark-surface-2">
     <div class="position-absolute top-0 start-0 end-0 bottom-0">
@@ -88,76 +95,6 @@
     </div>
 </section>
 
-<!-- Our Team Section -->
-<section class="py-5 bg-dark-surface">
-    <div class="container py-5">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6">Our Team</span>
-            <h2 class="display-5 fw-bold text-white mb-3">Meet the <span class="text-gradient">Innovators</span></h2>
-            <p class="fs-5 text-white opacity-80 mx-auto col-lg-8">Our diverse team of experts is passionate about creating solutions that make a difference</p>
-        </div>
-        
-        <div class="row g-4">
-            <!-- Team Member 1 -->
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                <div class="card bg-dark-surface-2 border-0 rounded-4 overflow-hidden h-100">
-                    <div class="card-body p-4 text-center">
-                        <div class="team-member-img mb-4 mx-auto" style="width: 150px; height: 150px; overflow: hidden; border-radius: 50%;">
-                            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80" alt="CEO" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <h3 class="fs-4 fw-bold text-white mb-2">Michael Johnson</h3>
-                        <p class="text-primary mb-3">Founder & CEO</p>
-                        <p class="text-white opacity-80 mb-4">With over 15 years of experience in the cleaning industry, Michael brings a deep understanding of the challenges faced by cleaning businesses.</p>
-                        <div class="social-icons">
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-twitter"></i></a>
-                            <a href="#" class="text-white opacity-80"><i class="fas fa-envelope"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Team Member 2 -->
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="card bg-dark-surface-2 border-0 rounded-4 overflow-hidden h-100">
-                    <div class="card-body p-4 text-center">
-                        <div class="team-member-img mb-4 mx-auto" style="width: 150px; height: 150px; overflow: hidden; border-radius: 50%;">
-                            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80" alt="CTO" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <h3 class="fs-4 fw-bold text-white mb-2">Sarah Chen</h3>
-                        <p class="text-primary mb-3">Chief Technology Officer</p>
-                        <p class="text-white opacity-80 mb-4">Sarah leads our technology development with expertise in AI and machine learning. She's passionate about creating intuitive, powerful solutions.</p>
-                        <div class="social-icons">
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-github"></i></a>
-                            <a href="#" class="text-white opacity-80"><i class="fas fa-envelope"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Team Member 3 -->
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                <div class="card bg-dark-surface-2 border-0 rounded-4 overflow-hidden h-100">
-                    <div class="card-body p-4 text-center">
-                        <div class="team-member-img mb-4 mx-auto" style="width: 150px; height: 150px; overflow: hidden; border-radius: 50%;">
-                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80" alt="COO" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <h3 class="fs-4 fw-bold text-white mb-2">David Rodriguez</h3>
-                        <p class="text-primary mb-3">Chief Operations Officer</p>
-                        <p class="text-white opacity-80 mb-4">David ensures our solutions meet real-world business needs. His background in operations management helps shape our product strategy.</p>
-                        <div class="social-icons">
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-white opacity-80 me-3"><i class="fab fa-twitter"></i></a>
-                            <a href="#" class="text-white opacity-80"><i class="fas fa-envelope"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- Our Values Section -->
 <section class="py-5 bg-dark-surface-2">
     <div class="container py-5">
@@ -173,7 +110,7 @@
                 <div class="card bg-dark-surface-3 border-0 rounded-4 h-100 p-1 overflow-hidden">
                     <div class="card-body p-4">
                         <div class="feature-icon-wrapper mb-4">
-                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-start">
                                 <i class="fas fa-lightbulb text-gradient fs-2"></i>
                             </div>
                         </div>
@@ -188,7 +125,7 @@
                 <div class="card bg-dark-surface-3 border-0 rounded-4 h-100 p-1 overflow-hidden">
                     <div class="card-body p-4">
                         <div class="feature-icon-wrapper mb-4">
-                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-start">
                                 <i class="fas fa-users text-gradient fs-2"></i>
                             </div>
                         </div>
@@ -203,7 +140,7 @@
                 <div class="card bg-dark-surface-3 border-0 rounded-4 h-100 p-1 overflow-hidden">
                     <div class="card-body p-4">
                         <div class="feature-icon-wrapper mb-4">
-                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-center">
+                            <div class="feature-icon-bg rounded-circle d-flex align-items-center justify-content-start">
                                 <i class="fas fa-shield-alt text-gradient fs-2"></i>
                             </div>
                         </div>
@@ -232,11 +169,11 @@
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
                             <div class="text-primary">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
                             </div>
                         </div>
                         <p class="text-white opacity-80 mb-4 fs-5">"The AI Voice Agent has completely transformed how we handle customer calls. We're booking more appointments with less staff time, and our customers love the seamless experience."</p>
@@ -259,11 +196,11 @@
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
                             <div class="text-primary">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
                             </div>
                         </div>
                         <p class="text-white opacity-80 mb-4 fs-5">"The scheduling system has eliminated double-bookings and optimized our team's routes. We're saving hours each day and serving more customers with the same staff."</p>
@@ -286,11 +223,11 @@
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
                             <div class="text-primary">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
+                                <i class="fas yellow fa-star"></i>
                             </div>
                         </div>
                         <p class="text-white opacity-80 mb-4 fs-5">"The analytics dashboard has given us insights we never had before. We've been able to identify our most profitable services and focus our marketing efforts accordingly."</p>
@@ -322,8 +259,8 @@
                 <h2 class="display-4 fw-bold text-white mb-4" data-aos="fade-up">Ready to <span class="text-gradient">Transform</span> Your Cleaning Business?</h2>
                 <p class="fs-5 text-white opacity-80 mb-5" data-aos="fade-up" data-aos-delay="100">Join hundreds of cleaning businesses that are growing with CleaningBiz AI</p>
                 <div class="d-flex flex-column flex-sm-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                    <a href="/pricing" class="btn btn-primary btn-lg px-4 py-3 rounded-pill">View Pricing</a>
-                    <a href="/contact" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">Contact Us</a>
+                    <a href="{% url 'pricing-page' %}" class="btn btn-primary btn-lg px-4 py-3 rounded-pill">View Pricing</a>
+                    <a href="{% url 'contact-us' %}" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">Contact Us</a>
                 </div>
             </div>
         </div>

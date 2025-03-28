@@ -1349,4 +1349,4 @@ def PrivacyPolicyPage(request):
 
 
 def TermsOfServicePage(request):
-    return render(request, 'TermsOfService_fixed.html')
+    return render(request, 'TermsOfService.html')

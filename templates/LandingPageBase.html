@@ -319,19 +319,19 @@
                         <a class="nav-link {% if request.path == '/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/features/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/features">Features</a>
+                        <a class="nav-link {% if request.path == '/features/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/features/">Features</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/pricing/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/pricing">Pricing</a>
+                        <a class="nav-link {% if request.path == '/pricing/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/pricing/">Pricing</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/about-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/about-us">About</a>
+                        <a class="nav-link {% if request.path == '/about-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/about-us/">About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/contact-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/contact-us">Contact</a>
+                        <a class="nav-link {% if request.path == '/contact-us/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/contact-us/">Contact</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/docs/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/docs">How it works?</a>
+                        <a class="nav-link {% if request.path == '/docs/' %}active fw-bold{% else %}text-white fw-medium{% endif %} px-3" href="/docs/">How it works?</a>
                     </li>
                 </ul>
                 <div class="d-flex ms-lg-4">
@@ -385,30 +385,21 @@
                     <h5 class="text-white fw-bold mb-4">Quick Links</h5>
                     <ul class="list-unstyled">
                         <li class="mb-3">
-                            <a href="/" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                            <a href="{% url 'landing-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
                                 <i class="fas fa-chevron-right me-2 small"></i>Home
                             </a>
                         </li>
                         <li class="mb-3">
-                            <a href="/features" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                            <a href="{% url 'features-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
                                 <i class="fas fa-chevron-right me-2 small"></i>Features
                             </a>
                         </li>
                         <li class="mb-3">
-                            <a href="/pricing" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                            <a href="{% url 'pricing-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
                                 <i class="fas fa-chevron-right me-2 small"></i>Pricing
                             </a>
                         </li>
-                        <li class="mb-3">
-                            <a href="/demo" class="text-dark-text-secondary hover-text-white text-decoration-none">
-                                <i class="fas fa-chevron-right me-2 small"></i>Demo
-                            </a>
-                        </li>
-                        <li class="mb-3">
-                            <a href="/blog" class="text-dark-text-secondary hover-text-white text-decoration-none">
-                                <i class="fas fa-chevron-right me-2 small"></i>Blog
-                            </a>
-                        </li>
+                       
                     </ul>
                 </div>
                 

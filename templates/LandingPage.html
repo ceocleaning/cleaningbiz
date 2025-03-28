@@ -301,7 +301,7 @@
         </div>
         
         <div class="text-center mt-5" data-aos="fade-up">
-            <a href="/demo" class="btn btn-primary shadow-glow px-4">
+            <a href="" class="btn btn-primary shadow-glow px-4">
                 <i class="fas fa-headphones me-2"></i>Listen to a Demo Call
             </a>
         </div>
@@ -349,7 +349,7 @@
                     </div>
                 </div>
                 
-                <a href="/about" class="btn btn-outline-light px-4 py-2">
+                <a href="{% url 'about-us' %}" class="btn btn-outline-light px-4 py-2">
                     <span class="me-2">Learn More About Us</span>
                     <i class="fas fa-arrow-right"></i>
                 </a>
@@ -594,7 +594,7 @@
                                 <span class="text-white opacity-75">Custom voice configuration</span>
                             </li>
                         </ul>
-                        <a href="/signup" class="btn btn-accent w-100 py-3 rounded-pill shadow-glow">Get Started</a>
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-accent w-100 py-3 rounded-pill shadow-glow">Get Started</a>
                     </div>
                 </div>
             </div>
@@ -631,7 +631,7 @@
                                 <span class="text-dark-text-secondary">Advanced analytics & reporting</span>
                             </li>
                         </ul>
-                        <a href="/signup" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
                     </div>
                 </div>
             </div>
@@ -644,7 +644,7 @@
                     <p class="text-dark-text-secondary mb-0">Contact our team for a tailored plan that meets your specific business requirements.</p>
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <a href="/contact" class="btn btn-primary shadow-glow px-4 py-2">
+                    <a href="mailto:info@ceocleaners.com" class="btn btn-primary shadow-glow px-4 py-2">
                         <i class="fas fa-envelope me-2"></i>Contact Sales
                     </a>
                 </div>
@@ -668,12 +668,10 @@
                 <p class="lead text-white opacity-80 mb-4">Join hundreds of cleaning businesses already using our AI Voice Agent to handle calls, schedule appointments, and grow their revenue.</p>
                 
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="/signup" class="btn btn-accent btn-lg shadow-glow px-4">
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-accent btn-lg shadow-glow px-4">
                         <i class="fas fa-rocket me-2"></i>Get Started Now
                     </a>
-                    <a href="/demo" class="btn btn-outline-light btn-lg px-4">
-                        <i class="fas fa-headphones me-2"></i>Listen to Demo
-                    </a>
+                   
                 </div>
                 
                 <div class="mt-4 d-flex align-items-center">
@@ -690,7 +688,7 @@
                 <div class="card bg-dark-surface rounded-xxl p-4 border-gradient shadow-lg">
                     <div class="card-body">
                         <h3 class="h4 fw-bold text-white mb-4">Schedule a Free Demo</h3>
-                        <form id="demoForm" method="POST" action="/book-demo/">
+                        <form id="demoForm" method="POST" action="{% url 'book_demo' %}">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="name" class="form-label text-dark-text-secondary">Full Name <span class="text-danger">*</span></label>
