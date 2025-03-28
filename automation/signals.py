@@ -15,6 +15,7 @@ from django_q.tasks import schedule
 
 import datetime
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 
 
@@ -42,7 +43,9 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
             print(f"Twilio Account SID: {apiCred.twilioAccountSid}")
             print(f"Twilio Auth Token: {apiCred.twilioAuthToken}")
             print(f"Twilio SMS Number: {apiCred.twilioSmsNumber}")
+
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
+            
             message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
             message = client.messages.create(
                 body=message_body,
@@ -81,6 +84,6 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 )
                 print(f"Call scheduled for lead {instance.id} in {instance.business.timeToWait} minutes")
                 
-        except Exception as e:
+        except TwilioRestException:
             print(f"Error sending message: {e}")
 
