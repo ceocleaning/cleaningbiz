@@ -1335,3 +1335,18 @@ def book_demo(request):
         'success': False,
         'message': 'Invalid request'
     })
+
+
+
+
+
+
+
+
+
+def PrivacyPolicyPage(request):
+    return render(request, 'PrivacyPolicy_fixed.html')
+
+
+def TermsOfServicePage(request):
+    return render(request, 'TermsOfService.html')

@@ -57,4 +57,8 @@ urlpatterns = [
 
     # Demo booking form
     path('book-demo/', views.book_demo, name='book_demo'),
+
+    # Privacy Policy and Terms of Service
+    path('privacy-policy/', views.PrivacyPolicyPage, name='privacy_policy'),
+    path('terms-of-service/', views.TermsOfServicePage, name='terms_of_service'),
 ]
