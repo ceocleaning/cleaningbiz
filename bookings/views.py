@@ -26,7 +26,9 @@ def all_bookings(request):
     # Upcoming bookings (not completed and future date)
     upcoming_bookings = all_bookings.filter(
         isCompleted=False,
-        cleaningDate__gte=today
+        cleaningDate__gte=today,
+        invoice__isnull=False,
+        invoice__isPaid=True
     ).order_by('cleaningDate', 'startTime')
     
     # Completed bookings (isCompleted=True and past date)
