@@ -92,24 +92,24 @@
         </div>
         
         <div class="row g-4">
-            <!-- Retell AI Integration -->
+            <!-- ChatGPT Integration -->
             <div class="col-lg-4" data-aos="fade-up">
                 <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
                     <div class="integration-icon-wrapper mb-4">
                         <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
-                            <i class="fas fa-phone-alt text-white fs-3"></i>
+                            <i class="fas fa-robot text-white fs-3"></i>
                         </div>
                     </div>
-                    <h3 class="fs-4 fw-bold text-white mb-3">Retell AI</h3>
-                    <p class="text-white opacity-80 mb-4">Our AI Voice Agent integration powered by Retell AI handles both inbound and outbound calls with natural conversation.</p>
+                    <h3 class="fs-4 fw-bold text-white mb-3">ChatGPT</h3>
+                    <p class="text-white opacity-80 mb-4">Our intelligent AI integration powered by ChatGPT handles complex conversations and provides natural language understanding.</p>
                     <div class="integration-features">
                         <div class="d-flex align-items-center mb-2">
                             <i class="fas fa-check text-primary-400 me-2"></i>
-                            <p class="text-white opacity-80 mb-0">Natural voice conversations</p>
+                            <p class="text-white opacity-80 mb-0">Natural language processing</p>
                         </div>
                         <div class="d-flex align-items-center mb-2">
                             <i class="fas fa-check text-primary-400 me-2"></i>
-                            <p class="text-white opacity-80 mb-0">Automated outbound calling</p>
+                            <p class="text-white opacity-80 mb-0">Intelligent response generation</p>
                         </div>
                         <div class="d-flex align-items-center mb-2">
                             <i class="fas fa-check text-primary-400 me-2"></i>
@@ -117,14 +117,45 @@
                         </div>
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check text-primary-400 me-2"></i>
-                            <p class="text-white opacity-80 mb-0">Appointment scheduling</p>
+                            <p class="text-white opacity-80 mb-0">Contextual conversation handling</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Twilio Integration -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
+                    <div class="integration-icon-wrapper mb-4">
+                        <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
+                            <i class="fas fa-comment-dots text-white fs-3"></i>
+                        </div>
+                    </div>
+                    <h3 class="fs-4 fw-bold text-white mb-3">Twilio</h3>
+                    <p class="text-white opacity-80 mb-4">Seamlessly handle SMS and voice communications with our robust Twilio integration.</p>
+                    <div class="integration-features">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Automated SMS messaging</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Voice call support</p>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Reliable message delivery</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check text-primary-400 me-2"></i>
+                            <p class="text-white opacity-80 mb-0">Two-way communication</p>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- Thumbtack Integration -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
                     <div class="integration-icon-wrapper mb-4">
                         <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
@@ -155,7 +186,7 @@
             </div>
             
             <!-- Square Integration -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
                 <div class="integration-card p-4 bg-dark-surface-3 rounded-4 h-100 position-relative overflow-hidden">
                     <div class="integration-icon-wrapper mb-4">
                         <div class="integration-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-600" style="width: 60px; height: 60px;">
@@ -533,8 +564,8 @@
                     <h3 class="fs-3 fw-bold text-white mb-3">Ready to Transform Your Business?</h3>
                     <p class="text-white opacity-90 mb-4">Get started today and let Sarah handle your customer calls while you focus on growing your business.</p>
                     <div class="d-flex justify-content-center">
-                        <a href="#" class="btn btn-light me-2">Watch Demo <i class="fas fa-play ms-1"></i></a>
-                        <a href="#" class="btn btn-outline-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
+                      
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                 </div>
             </div>
@@ -1020,15 +1051,15 @@
                             <h3 class="fs-4 fw-bold text-white mb-4">Contact Information</h3>
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-envelope text-primary-400 me-3 fs-5"></i>
-                                <p class="text-white opacity-80 mb-0">support@cleaningbiz.ai</p>
+                                <p class="text-white opacity-80 mb-0">info@cleaningbixai.com</p>
                             </div>
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-phone-alt text-primary-400 me-3 fs-5"></i>
-                                <p class="text-white opacity-80 mb-0">(555) 123-4567</p>
+                                <p class="text-white opacity-80 mb-0">+1 (206) 279-0892</p>
                             </div>
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-clock text-primary-400 me-3 fs-5"></i>
-                                <p class="text-white opacity-80 mb-0">Monday - Friday, 9am - 5pm CT</p>
+                                <p class="text-white opacity-80 mb-0">Monday - Friday, 9am - 5pm EST</p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -1262,11 +1293,11 @@ function generatePrompt(business) {
                             <h3 class="fs-3 fw-bold text-white mb-3">Ready to Experience AI-Powered Customer Service?</h3>
                             <p class="text-white opacity-90 mb-4">Join the growing number of cleaning businesses transforming their operations with CleaningBiz AI.</p>
                             <div class="d-flex justify-content-center flex-wrap gap-2">
-                                <a href="#" class="btn btn-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
-                                <a href="#" class="btn btn-outline-light">Schedule a Demo <i class="fas fa-calendar-alt ms-1"></i></a>
+                                <a href="{% url 'accounts:signup' %}" class="btn btn-light">Get Started <i class="fas fa-arrow-right ms-1"></i></a>
+                                <a href="{% url 'contact-us' %}" class="btn btn-outline-light">Schedule a Demo <i class="fas fa-calendar-alt ms-1"></i></a>
                             </div>
                         </div>
-                    </div>
+                    </div>  
                 </div>
             </div>
         </div>

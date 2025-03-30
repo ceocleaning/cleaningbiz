@@ -982,11 +982,11 @@
                 <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your <span class="text-gradient">Cleaning Business?</span></h2>
                 <p class="fs-5 text-white opacity-80 mb-5">Join thousands of cleaning businesses that are growing with our AI-powered platform</p>
                 <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
-                    <a href="/pricing" class="btn btn-accent btn-lg px-4 py-3 rounded-pill shadow-glow">
+                    <a href="{% url 'pricing-page' %}" class="btn btn-accent btn-lg px-4 py-3 rounded-pill shadow-glow">
                         <span class="me-2">View Pricing</span>
                         <i class="fas fa-arrow-right"></i>
                     </a>
-                    <a href="/contact" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+                    <a href="mailto:info@cleaningbixai.com" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
                         <span class="me-2">Contact Sales</span>
                         <i class="fas fa-headset"></i>
                     </a>
@@ -1090,7 +1090,6 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-fill-color: transparent;
     }
 </style>
 {% endblock %}

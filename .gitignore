@@ -15,7 +15,8 @@ db.sqlite3
 
 # Ignore Environment Variables
 .env
-
+.cursor
+coding-rules.mdc
 # Ignore logs and temp files
 *.log
 *.out
