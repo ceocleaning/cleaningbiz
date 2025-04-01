@@ -44,9 +44,7 @@ def convert_date_str_to_date(date_str):
         model="gpt-4o",
         messages=formatted_messages,
         temperature=0.1,
-        max_tokens=100,
-        top_p=0.95,
-        top_k=40,
+        max_tokens=100
         )
     
     response_text = response.choices[0].message.content.strip()
