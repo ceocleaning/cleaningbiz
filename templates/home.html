@@ -197,6 +197,7 @@
                                 </div>
                             </a>
                         </div>
+                        {% if user.is_superuser %}
                         <!-- New Usage Analytics Overview Button -->
                         <div class="col-md-4">
                             <a href="{% url 'usage_analytics:usage_overview' %}" class="card border-0 shadow-sm bg-primary text-white text-decoration-none h-100">
@@ -261,6 +262,7 @@
                                 </div>
                             </a>
                         </div>
+                        {% endif %}
                         <!-- Retell AI Agent Setup Button -->
                         <div class="col-md-4">
                             <a href="{% url 'list_retell_agents' %}" class="card border-0 shadow-sm bg-purple text-white text-decoration-none h-100" style="background-color: #6f42c1;">

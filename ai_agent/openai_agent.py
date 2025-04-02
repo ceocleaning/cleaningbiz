@@ -660,13 +660,13 @@ class OpenAIAgent:
                             "success": False,
                             "error": "No phone number or session key available"
                         }
-                    if result.get('success') and result.get('bookingId'):
+                    if result.get('success') and result.get('booking_id'):
                         # Update summary with booking ID
                         if not isinstance(chat.summary, dict):
                             chat.summary = {}
-                        chat.summary['bookingId'] = result.get('bookingId')
+                        chat.summary['bookingId'] = result.get('booking_id')
                         chat.save()
-                        print(f"[DEBUG] Updated chat summary with booking ID: {result.get('bookingId')}")
+                        print(f"[DEBUG] Updated chat summary with booking ID: {result.get('booking_id')}")
                 
                     return json.dumps(result)
                 except Exception as e:
