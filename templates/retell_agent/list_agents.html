@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Retell Agents{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Retell AI Agents</h3>
+                    <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary btn-sm">Create New Agent</a>
+                </div>
+                <div class="card-body">
+                    {% if agents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Agent Name</th>
+                                    <th>Agent ID</th>
+                                    <th>Voice</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agent in agents %}
+                                <tr>
+                                    <td>{{ agent.agent_name }}</td>
+                                    <td><small class="text-muted">{{ agent.agent_id }}</small></td>
+                                    <td>{{ agent.voice_id }}</td>
+                                    <td>{{ agent.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">Edit</a>
+                                            <a href="{% url 'delete_retell_agent' agent.agent_id %}" class="btn btn-outline-danger">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-robot fa-4x text-muted"></i>
+                        </div>
+                        <h4 class="text-muted">No agents found</h4>
+                        <p>Create your first AI voice agent to start making calls</p>
+                        <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary mt-2">Create Agent</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

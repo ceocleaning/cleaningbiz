@@ -14,7 +14,7 @@ from .models import *
 from .api_views import get_cleaners_for_business, find_available_cleaner
 
 from accounts.models import ApiCredential, Business, BusinessSettings, CustomAddons
-from bookings.models import Booking
+from bookings.models import Booking, BookingCustomAddons
 from .utils import calculateAmount, calculateAddonsAmount
 from integrations.models import PlatformIntegration, DataMapping, IntegrationLog
 

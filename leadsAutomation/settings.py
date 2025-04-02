@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'ai_agent',
     'usage_analytics',
     'subscription',
+    'retell_agent',
 ]
 
 MIDDLEWARE = [
@@ -229,3 +230,8 @@ Q_CLUSTER = {
     'orm': 'default',
     'max_attempts': 3,
 }
+
+
+# Retell Settings
+RETELL_API_KEY = os.getenv('RETELL_API_KEY', '')
+RETELL_BASE_URL = 'https://api.retellai.com'

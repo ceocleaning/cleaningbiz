@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Create Retell LLM{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Create Retell LLM</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'create_retell_llm' %}" id="retellLLMForm">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Settings -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Basic Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="model" class="form-label">LLM Model</label>
+                                <select class="form-select" id="model" name="model" required>
+                                    <option value="gpt-4o" selected>GPT-4o</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="model_temperature" class="form-label">Model Temperature</label>
+                                <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.7" id="model_temperature" name="model_temperature">
+                                <div class="d-flex justify-content-between">
+                                    <small>0</small>
+                                    <small id="tempValue">0.7</small>
+                                    <small>1</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="model_high_priority" name="model_high_priority">
+                                <label class="form-check-label" for="model_high_priority">High Priority</label>
+                            </div>
+                            
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="tool_call_strict_mode" name="tool_call_strict_mode" checked>
+                                <label class="form-check-label" for="tool_call_strict_mode">Tool Call Strict Mode</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Prompt Settings -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Prompt Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="general_prompt" class="form-label">General Prompt</label>
+                                <textarea class="form-control" id="general_prompt" name="general_prompt" rows="5" required>You are an AI assistant helping users with their queries.</textarea>
+                                <div class="form-text">Define the personality and behavior of your agent</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="begin_message" class="form-label">Begin Message</label>
+                                <input type="text" class="form-control" id="begin_message" name="begin_message" value="Hello, I am your AI assistant. How can I help you today?">
+                                <div class="form-text">The first message your agent will say when a call starts</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tool Settings -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">General Tools</h5>
+                            
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable_end_call" name="enable_end_call" checked>
+                                <label class="form-check-label" for="enable_end_call">Enable End Call Tool</label>
+                            </div>
+                            
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable_transfer_call" name="enable_transfer_call">
+                                <label class="form-check-label" for="enable_transfer_call">Enable Transfer Call Tool</label>
+                            </div>
+                            
+                            <div id="transfer_call_settings" class="ps-4 mb-3" style="display: none;">
+                                <div class="mb-2">
+                                    <label for="transfer_name" class="form-label">Transfer Name</label>
+                                    <input type="text" class="form-control" id="transfer_name" name="transfer_name" value="transfer_to_support" placeholder="E.g., transfer_to_support">
+                                </div>
+                                <div class="mb-2">
+                                    <label for="transfer_description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="transfer_description" name="transfer_description" value="Transfer to the support team." placeholder="E.g., Transfer to the support team.">
+                                </div>
+                                <div class="mb-2">
+                                    <label for="transfer_number" class="form-label">Phone Number</label>
+                                    <input type="text" class="form-control" id="transfer_number" name="transfer_number" placeholder="E.g., 16175551212">
+                                </div>
+                            </div>
+                            
+                            <!-- Custom Tools Section -->
+                            <div class="mt-4">
+                                <h6 class="mb-3">Custom Tools</h6>
+                                
+                                <div id="custom_tools_container">
+                                    <!-- Custom tools will be added here -->
+                                </div>
+                                
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add_custom_tool_btn">
+                                    <i class="fas fa-plus me-1"></i> Add Custom Tool
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create LLM Engine</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Range sliders real-time value display
+        const tempSlider = document.getElementById('model_temperature');
+        const tempValue = document.getElementById('tempValue');
+        if (tempSlider && tempValue) {
+            tempValue.textContent = tempSlider.value;
+            tempSlider.addEventListener('input', function() {
+                tempValue.textContent = this.value;
+            });
+        }
+        
+        // Toggle transfer call settings
+        const transferToggle = document.getElementById('enable_transfer_call');
+        const transferSettings = document.getElementById('transfer_call_settings');
+        if (transferToggle && transferSettings) {
+            transferToggle.addEventListener('change', function() {
+                transferSettings.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Custom tools management
+        let customToolCounter = 0;
+        const customToolsContainer = document.getElementById('custom_tools_container');
+        const addCustomToolBtn = document.getElementById('add_custom_tool_btn');
+        
+        if (addCustomToolBtn && customToolsContainer) {
+            addCustomToolBtn.addEventListener('click', function() {
+                const toolCard = document.createElement('div');
+                toolCard.className = 'card mb-3 custom-tool';
+                toolCard.dataset.toolIndex = customToolCounter;
+                
+                toolCard.innerHTML = `
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Custom Tool</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-tool-btn">Remove</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tool Name</label>
+                            <input type="text" class="form-control" name="custom_tools[${customToolCounter}][name]" placeholder="E.g., fetch_customer_data" required>
+                            <div class="form-text">Must be a unique identifier for this tool</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" name="custom_tools[${customToolCounter}][description]" placeholder="E.g., Fetches customer details from the CRM system" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">API Endpoint URL</label>
+                            <input type="url" class="form-control" name="custom_tools[${customToolCounter}][url]" placeholder="E.g., https://api.example.com/customer-data" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="speak_during_execution_${customToolCounter}" name="custom_tools[${customToolCounter}][speak_during_execution]" checked>
+                                    <label class="form-check-label" for="speak_during_execution_${customToolCounter}">Speak During Execution</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="speak_after_execution_${customToolCounter}" name="custom_tools[${customToolCounter}][speak_after_execution]" checked>
+                                    <label class="form-check-label" for="speak_after_execution_${customToolCounter}">Speak After Execution</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Execution Message</label>
+                            <input type="text" class="form-control" name="custom_tools[${customToolCounter}][execution_message_description]" placeholder="E.g., Fetching customer details, please wait...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Timeout (ms)</label>
+                            <input type="number" class="form-control" name="custom_tools[${customToolCounter}][timeout_ms]" value="60000" min="1000" step="1000">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Parameters</label>
+                            <div class="parameters-container">
+                                <!-- Parameters will be added here -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2 add-parameter-btn">
+                                <i class="fas fa-plus me-1"></i> Add Parameter
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                customToolsContainer.appendChild(toolCard);
+                
+                // Add event listener for removing this tool
+                const removeBtn = toolCard.querySelector('.remove-tool-btn');
+                removeBtn.addEventListener('click', function() {
+                    toolCard.remove();
+                });
+                
+                // Add event listener for adding parameters
+                const addParamBtn = toolCard.querySelector('.add-parameter-btn');
+                const paramsContainer = toolCard.querySelector('.parameters-container');
+                let paramCounter = 0;
+                
+                addParamBtn.addEventListener('click', function() {
+                    const paramRow = document.createElement('div');
+                    paramRow.className = 'card mb-2 parameter-row';
+                    
+                    paramRow.innerHTML = `
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Parameter</h6>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-param-btn">×</button>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" name="custom_tools[${customToolCounter}][parameters][${paramCounter}][name]" placeholder="E.g., customer_id" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Type</label>
+                                    <select class="form-select" name="custom_tools[${customToolCounter}][parameters][${paramCounter}][type]">
+                                        <option value="string" selected>String</option>
+                                        <option value="number">Number</option>
+                                        <option value="boolean">Boolean</option>
+                                        <option value="object">Object</option>
+                                        <option value="array">Array</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Required</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" name="custom_tools[${customToolCounter}][parameters][${paramCounter}][required]" checked>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <input type="text" class="form-control" name="custom_tools[${customToolCounter}][parameters][${paramCounter}][description]" placeholder="E.g., The unique identifier of the customer">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    paramsContainer.appendChild(paramRow);
+                    
+                    // Add event listener for removing this parameter
+                    const removeParamBtn = paramRow.querySelector('.remove-param-btn');
+                    removeParamBtn.addEventListener('click', function() {
+                        paramRow.remove();
+                    });
+                    
+                    paramCounter++;
+                });
+                
+                customToolCounter++;
+            });
+        }
+        
+        // Form submission handling
+        const form = document.getElementById('retellLLMForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Build the request payload
+                const formData = new FormData(form);
+                
+                // Build general tools
+                const generalTools = [];
+                
+                // Add end call tool if enabled
+                if (formData.get('enable_end_call') === 'on') {
+                    generalTools.push({
+                        type: "end_call",
+                        name: "end_call",
+                        description: "End the call with user."
+                    });
+                }
+                
+                // Add transfer call tool if enabled
+                if (formData.get('enable_transfer_call') === 'on') {
+                    generalTools.push({
+                        type: "transfer_call",
+                        name: formData.get('transfer_name') || "transfer_to_support",
+                        description: formData.get('transfer_description') || "Transfer to the support team.",
+                        number: formData.get('transfer_number') || "16175551212"
+                    });
+                }
+                
+                // Process custom tools
+                const customTools = document.querySelectorAll('.custom-tool');
+                customTools.forEach(toolCard => {
+                    const toolIndex = toolCard.dataset.toolIndex;
+                    
+                    // Get basic tool info
+                    const name = formData.get(`custom_tools[${toolIndex}][name]`);
+                    const description = formData.get(`custom_tools[${toolIndex}][description]`);
+                    const url = formData.get(`custom_tools[${toolIndex}][url]`);
+                    const speakDuringExecution = formData.get(`custom_tools[${toolIndex}][speak_during_execution]`) === 'on';
+                    const speakAfterExecution = formData.get(`custom_tools[${toolIndex}][speak_after_execution]`) === 'on';
+                    const executionMessage = formData.get(`custom_tools[${toolIndex}][execution_message_description]`);
+                    const timeout = parseInt(formData.get(`custom_tools[${toolIndex}][timeout_ms]`)) || 60000;
+                    
+                    // Skip if name or url is missing
+                    if (!name || !url) return;
+                    
+                    // Process parameters
+                    const parameters = {
+                        type: "object",
+                        properties: {},
+                        required: []
+                    };
+                    
+                    const paramRows = toolCard.querySelectorAll('.parameter-row');
+                    paramRows.forEach((paramRow, paramIndex) => {
+                        const paramName = formData.get(`custom_tools[${toolIndex}][parameters][${paramIndex}][name]`);
+                        const paramType = formData.get(`custom_tools[${toolIndex}][parameters][${paramIndex}][type]`);
+                        const paramDesc = formData.get(`custom_tools[${toolIndex}][parameters][${paramIndex}][description]`);
+                        const paramRequired = formData.get(`custom_tools[${toolIndex}][parameters][${paramIndex}][required]`) === 'on';
+                        
+                        if (paramName && paramType) {
+                            // Add parameter to properties
+                            parameters.properties[paramName] = {
+                                type: paramType,
+                                description: paramDesc || `Parameter ${paramName}`
+                            };
+                            
+                            // Add to required list if needed
+                            if (paramRequired) {
+                                parameters.required.push(paramName);
+                            }
+                        }
+                    });
+                    
+                    // Create custom tool object
+                    const customTool = {
+                        type: "custom",
+                        name: name,
+                        url: url,
+                        description: description,
+                        speak_during_execution: speakDuringExecution,
+                        speak_after_execution: speakAfterExecution,
+                        parameters: parameters,
+                        timeout_ms: timeout
+                    };
+                    
+                    // Add execution message if provided
+                    if (executionMessage) {
+                        customTool.execution_message_description = executionMessage;
+                    }
+                    
+                    // Add to general tools
+                    generalTools.push(customTool);
+                });
+                
+                // Build final payload
+                const payload = {
+                    model: formData.get('model'),
+                    model_temperature: parseFloat(formData.get('model_temperature')),
+                    model_high_priority: formData.get('model_high_priority') === 'on',
+                    tool_call_strict_mode: formData.get('tool_call_strict_mode') === 'on',
+                    general_prompt: formData.get('general_prompt'),
+                    general_tools: generalTools,
+                    begin_message: formData.get('begin_message'),
+                    default_dynamic_variables: {
+                        customer_name: "John Doe"
+                    }
+                };
+                
+                // Convert to FormData for submission
+                const submitData = new FormData();
+                submitData.append('payload', JSON.stringify(payload));
+                
+                // Submit the form with the processed payload
+                const xhr = new XMLHttpRequest();
+                xhr.open(form.method, form.action);
+                xhr.setRequestHeader('X-CSRFToken', formData.get('csrfmiddlewaretoken'));
+                
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const response = JSON.parse(xhr.responseText);
+                        alert(`LLM created successfully with ID: ${response.llm_id}`);
+                        // Optionally redirect to agent setup page with this LLM ID
+                        window.location.href = `{% url 'setup_retell_agent' %}?llm_id=${response.llm_id}`;
+                    } else {
+                        alert('Error creating LLM: ' + xhr.responseText);
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    alert('Request failed');
+                };
+                
+                xhr.send(submitData);
+            });
+        }
+    });
+</script>
+{% endblock %} 

@@ -41,6 +41,8 @@ Body:
 }
 
 
+
+
 Response:
 {
   "agent_id": "oBeDLoLOeuAbiuaMFXRtDOLriTJ5tSxD",
@@ -123,6 +125,134 @@ Response:
   "ring_duration_ms": 30000
 }
 
+--------------------------------------------------------------
+Update Agent
+
+PATCH: https://api.retellai.com/update-agent/{agent_id}
+
+Body:
+{
+  "response_engine": {
+    "type": "retell-llm",
+    "llm_id": "your-retell-llm-id"
+  },
+  "agent_name": "Jarvis",
+  "voice_id": "11labs-Adrian",
+  "voice_model": "eleven_turbo_v2",
+  "fallback_voice_ids": ["openai-Alloy", "deepgram-Angus"],
+  "voice_temperature": 1,
+  "voice_speed": 1,
+  "volume": 1,
+  "responsiveness": 1,
+  "interruption_sensitivity": 1,
+  "enable_backchannel": true,
+  "backchannel_frequency": 0.9,
+  "backchannel_words": ["yeah", "uh-huh"],
+  "reminder_trigger_ms": 10000,
+  "reminder_max_count": 2,
+  "ambient_sound": "coffee-shop",
+  "ambient_sound_volume": 1,
+  "language": "en-US",
+  "webhook_url": "https://webhook-url-here",
+  "boosted_keywords": ["retell", "kroger"],
+  "enable_transcription_formatting": true,
+  "opt_out_sensitive_data_storage": true,
+  "pronunciation_dictionary": null,
+  "normalize_for_speech": true,
+  "end_call_after_silence_ms": 600000,
+  "max_call_duration_ms": 3600000,
+  "enable_voicemail_detection": true,
+  "voicemail_message": "Hi, please give us a callback.",
+  "voicemail_detection_timeout_ms": 30000,
+  "post_call_analysis_data": null,
+  "begin_message_delay_ms": 1000,
+  "ring_duration_ms": 30000
+}
+
+
+Response:
+{
+  "agent_id": "oBeDLoLOeuAbiuaMFXRtDOLriTJ5tSxD",
+  "response_engine": {
+    "type": "retell-llm",
+    "llm_id": "llm_234sdertfsdsfsdf"
+  },
+  "agent_name": "Jarvis",
+  "voice_id": "11labs-Adrian",
+  "voice_model": "eleven_turbo_v2",
+  "fallback_voice_ids": [
+    "openai-Alloy",
+    "deepgram-Angus"
+  ],
+  "voice_temperature": 1,
+  "voice_speed": 1,
+  "volume": 1,
+  "responsiveness": 1,
+  "interruption_sensitivity": 1,
+  "enable_backchannel": true,
+  "backchannel_frequency": 0.9,
+  "backchannel_words": [
+    "yeah",
+    "uh-huh"
+  ],
+  "reminder_trigger_ms": 10000,
+  "reminder_max_count": 2,
+  "ambient_sound": "coffee-shop",
+  "ambient_sound_volume": 1,
+  "language": "en-US",
+  "webhook_url": "https://webhook-url-here",
+  "boosted_keywords": [
+    "retell",
+    "kroger"
+  ],
+  "enable_transcription_formatting": true,
+  "opt_out_sensitive_data_storage": true,
+  "pronunciation_dictionary": [
+    {
+      "word": "actually",
+      "alphabet": "ipa",
+      "phoneme": "ˈæktʃuəli"
+    }
+  ],
+  "normalize_for_speech": true,
+  "end_call_after_silence_ms": 600000,
+  "max_call_duration_ms": 3600000,
+  "enable_voicemail_detection": true,
+  "voicemail_message": "Hi, please give us a callback.",
+  "voicemail_detection_timeout_ms": 30000,
+  "post_call_analysis_data": [
+    {
+      "type": "string",
+      "name": "customer_name",
+      "description": "The name of the customer.",
+      "examples": [
+        "John Doe",
+        "Jane Smith"
+      ]
+    }
+  ],
+  "begin_message_delay_ms": 1000,
+  "ring_duration_ms": 30000,
+  "last_modification_timestamp": 1703413636133
+}
+
+
+
+
+
+
+
+------------------------------------------------------------
+Deleteing Agent using SDK
+
+from retell import Retell
+
+client = Retell(
+    api_key="YOUR_RETELL_API_KEY",
+)
+client.agent.delete(
+    "{agent_id}",
+)
 
 
 --------------------------------------------------------------
@@ -149,43 +279,29 @@ Body:
       "name": "transfer_to_support",
       "description": "Transfer to the support team.",
       "number": "16175551212"
-    }
-  ],
-  "states": [
-    {
-      "name": "information_collection",
-      "state_prompt": "You will follow the steps below to collect information...",
-      "edges": [
-        {
-          "destination_state_name": "appointment_booking",
-          "description": "Transition to book an appointment."
-        }
-      ],
-      "tools": [
-        {
-          "type": "transfer_call",
-          "name": "transfer_to_support",
-          "description": "Transfer to the support team.",
-          "number": "16175551212"
-        }
-      ]
     },
     {
-      "name": "appointment_booking",
-      "state_prompt": "You will follow the steps below to book an appointment...",
-      "tools": [
-        {
-          "type": "book_appointment_cal",
-          "name": "book_appointment",
-          "description": "Book an annual check-up.",
-          "cal_api_key": "cal_live_xxxxxxxxxxxx",
-          "event_type_id": 60444,
-          "timezone": "America/Los_Angeles"
-        }
-      ]
+      "type": "custom",
+      "name": "fetch_customer_data",
+      "url": "https://api.example.com/customer-data",
+      "description": "Fetches customer details from the CRM system.",
+      "speak_during_execution": true,
+      "speak_after_execution": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The unique identifier of the customer."
+          }
+        },
+        "required": ["customer_id"]
+      },
+      "execution_message_description": "Fetching customer details, please wait...",
+      "timeout_ms": 60000
     }
   ],
-  "starting_state": "information_collection",
+ 
   "begin_message": "Hello, I am your AI assistant. How can I help you today?",
   "default_dynamic_variables": {
     "customer_name": "John Doe"
@@ -327,6 +443,90 @@ Response:
   ],
   "last_modification_timestamp": 1703413636133
 }
+
+
+-------------------------------------------------------------------
+
+List Retell LLMs
+- List all Retell LLM Response Engines that can be attached to an agent.
+
+GET: https://api.retellai.com/list-retell-llms
+
+Response:
+[
+  {
+    "llm_id": "oBeDLoLOeuAbiuaMFXRtDOLriTJ5tSxD",
+    "model": "gpt-4o",
+    "s2s_model": "gpt-4o-realtime",
+    "model_temperature": 0,
+    "model_high_priority": true,
+    "tool_call_strict_mode": true,
+    "general_prompt": "You are ...",
+    "general_tools": [
+      {
+        "type": "end_call",
+        "name": "end_call",
+        "description": "End the call with user."
+      }
+    ],
+    "states": [
+      {
+        "name": "information_collection",
+        "state_prompt": "You will follow the steps below to collect information...",
+        "edges": [
+          {
+            "destination_state_name": "appointment_booking",
+            "description": "Transition to book an appointment."
+          }
+        ],
+        "tools": [
+          {
+            "type": "transfer_call",
+            "name": "transfer_to_support",
+            "description": "Transfer to the support team.",
+            "number": "16175551212"
+          }
+        ]
+      },
+      {
+        "name": "appointment_booking",
+        "state_prompt": "You will follow the steps below to book an appointment...",
+        "tools": [
+          {
+            "type": "book_appointment_cal",
+            "name": "book_appointment",
+            "description": "Book an annual check up.",
+            "cal_api_key": "cal_live_xxxxxxxxxxxx",
+            "event_type_id": 60444,
+            "timezone": "America/Los_Angeles"
+          }
+        ]
+      }
+    ],
+    "starting_state": "information_collection",
+    "begin_message": "Hey I am a virtual assistant calling from Retell Hospital.",
+    "default_dynamic_variables": {
+      "customer_name": "John Doe"
+    },
+    "knowledge_base_ids": [
+      "<string>"
+    ],
+    "last_modification_timestamp": 1703413636133
+  }
+]
+
+
+------------------------------------------------------------------
+
+Deleting Retell LLM using SDK
+from retell import Retell
+
+client = Retell(
+    api_key="YOUR_RETELL_API_KEY",
+)
+client.llm.delete(
+    "llm_id",
+)
 
 
 

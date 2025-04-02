@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 
-from accounts.models import Business
+from accounts.models import Business, CustomAddons
 from bookings.models import Booking
 from .models import Chat, Messages, AgentConfiguration
 from .api_views import check_availability, book_appointment, get_current_time_in_chicago, calculate_total
@@ -565,7 +565,7 @@ class OpenAIAgent:
                                 })
                         
                     # Extract summary from conversation
-                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages, business.businessId)
                 
                     
                     # Save summary to chat object
@@ -639,7 +639,7 @@ class OpenAIAgent:
                                 })
                         
                     # Extract summary from conversation
-                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages)
+                    summary = OpenAIAgent.extract_conversation_summary(formatted_messages, business.businessId)
                     
                   
                     # Save summary to chat object
@@ -997,7 +997,7 @@ class OpenAIAgent:
             }
     
     @staticmethod
-    def extract_conversation_summary(chat_history):
+    def extract_conversation_summary(chat_history, business_id=None):
         """
         Extract key information from the conversation history for booking purposes using OpenAI LLM.
         
@@ -1007,6 +1007,9 @@ class OpenAIAgent:
         Returns:
             Dictionary with extracted customer information
         """
+        
+
+
         # Initialize empty summary with default values
         summary = {
             'firstName': '',
@@ -1037,10 +1040,17 @@ class OpenAIAgent:
             "addonCabinetsCleaning": '',
             "addonPatioSweeping": '',
             "addonGarageSweeping": '',
-
             'bookingId': ''
         }
         
+
+        if business_id:
+            business = Business.objects.get(businessId=business_id)
+            customAddons = CustomAddons.objects.filter(business=business)
+            custom_addon_fields = "\n".join([f'            - {addon.addonDataName}: Quantity of {addon.addonName} Addon' for addon in customAddons])
+            for addon in customAddons:
+                summary[addon.addonDataName] = ''
+
         try:
             print(f"[DEBUG] Starting conversation summary extraction at {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
             
@@ -1074,7 +1084,7 @@ class OpenAIAgent:
             
             # Create a detailed system prompt for OpenAI to extract comprehensive information
             system_prompt = f"""
-            You are an AI assistant for CEO Cleaners, a professional cleaning service. Your task is to extract specific customer booking information from this conversation.
+            You are an AI assistant for Cleaning Biz, a professional cleaning service. Your task is to extract specific customer booking information from this conversation.
             Analyze the entire conversation history carefully and extract all relevant details.
             
             Respond ONLY with a valid JSON object containing these keys (leave empty if not found):
@@ -1106,6 +1116,7 @@ class OpenAIAgent:
             - addonCabinetsCleaning: Quantity of Cabinets Cleaning Addon
             - addonPatioSweeping: Quantity of Patio Sweeping Addon
             - addonGarageSweeping: Quantity of Garage Sweeping Addon
+            {custom_addon_fields}
             
             - bookingId: Booking ID if available
 

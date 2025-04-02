@@ -370,12 +370,18 @@ def book_appointment(business, client_phone_number, session_key=None):
         customAddonsObj = CustomAddons.objects.filter(business=business)
         bookingCustomAddons = []
         customAddonTotal = 0
+
+        for custom_addon in customAddonsObj:
+            addon_data_name = custom_addon.addonDataName
+            if addon_data_name and addon_data_name in data:
+                quantity = int(data.get(addon_data_name, 0) or 0)
+                if quantity > 0:
+                    addon_price = custom_addon.addonPrice
+                    addon_total = quantity * addon_price
+                    customAddonTotal += addon_total
         
         print(f"[DEBUG] Found {customAddonsObj.count()} custom addons for business")
-        
-        # We'll assume custom addons are not handled through the AI agent for now
-        # This can be extended later if needed
-        
+       
         # Calculate final amounts
         addons_result = calculateAddonsAmount(addons, addonsPrices)
         print(f"[DEBUG] Addons total: ${addons_result}")

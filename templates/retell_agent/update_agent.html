@@ -1,0 +1,767 @@
+{% extends "base.html" %}
+
+{% block title %}Update Agent{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Update Agent</h3>
+                    <a href="{% url 'list_retell_agents' %}" class="btn btn-outline-secondary btn-sm">Back to List</a>
+                </div>
+                <div class="card-body">
+                    {% if loading %}
+                    <div id="loadingIndicator" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Fetching the latest data...</p>
+                    </div>
+                    {% else %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs mb-4" id="agentTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">Basic Settings</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="voice-tab" data-bs-toggle="tab" data-bs-target="#voice" type="button" role="tab">Voice Settings</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="llm-tab" data-bs-toggle="tab" data-bs-target="#llm" type="button" role="tab">LLM Settings</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">Advanced Settings</button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab content -->
+                        <div class="tab-content">
+                            <!-- Basic Settings Tab -->
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="agent_name" class="form-label">Agent Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="agent_name" name="agent_name" value="{{ agent.agent_name }}" required>
+                                            <div class="form-text">The name of your AI agent</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Agent ID</label>
+                                            <input type="text" class="form-control" value="{{ agent.agent_id }}" readonly>
+                                            <div class="form-text">Your agent's unique identifier (cannot be changed)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="language" class="form-label">Language</label>
+                                            <select class="form-select" id="language" name="language">
+                                                <option value="en-US" {% if llm_data.language == "en-US" %}selected{% endif %}>English (US)</option>
+                                                <option value="en-GB" {% if llm_data.language == "en-GB" %}selected{% endif %}>English (UK)</option>
+                                                <option value="es-ES" {% if llm_data.language == "es-ES" %}selected{% endif %}>Spanish</option>
+                                                <option value="fr-FR" {% if llm_data.language == "fr-FR" %}selected{% endif %}>French</option>
+                                                <option value="de-DE" {% if llm_data.language == "de-DE" %}selected{% endif %}>German</option>
+                                            </select>
+                                            <div class="form-text">The primary language for your agent</div>
+                                        </div>
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                            
+                            <!-- Voice Settings Tab -->
+                            <div class="tab-pane fade" id="voice" role="tabpanel">
+                                <div id="voiceSettingsLoading" class="text-center py-3 mb-3 d-none">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading voices...</span>
+                                    </div>
+                                    <span class="ms-2">Loading available voices...</span>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="voice_id" class="form-label">Voice Selection</label>
+                                        <div class="input-group mb-2">
+                                            <select class="form-select" id="voice_id" name="voice_id">
+                                                <option value="{{ agent.voice_id }}" selected>Current: {{ agent.voice_id }}</option>
+                                            </select>
+                                            <button class="btn btn-outline-secondary" type="button" id="loadVoicesBtn">
+                                                <i class="fas fa-sync-alt"></i> Load Voices
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Select a voice for your agent</div>
+                                    </div>
+                                </div>
+
+                                <div id="voicePreviewCard" class="card mb-3 d-none">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h6 class="mb-0" id="selectedVoiceName">Voice Preview</h6>
+                                            <span class="badge bg-primary ms-2" id="selectedVoiceGender"></span>
+                                            <span class="badge bg-secondary ms-1" id="selectedVoiceAccent"></span>
+                                        </div>
+                                        <audio id="voicePreview" controls class="w-100">
+                                            <source src="" type="audio/mp3">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="voice_model" class="form-label">Voice Model</label>
+                                            <select class="form-select" id="voice_model" name="voice_model">
+                                                <option value="eleven_turbo_v2" {% if llm_data.voice_model == "eleven_turbo_v2" %}selected{% endif %}>ElevenLabs Turbo v2</option>
+                                                <option value="eleven_multilingual_v2" {% if llm_data.voice_model == "eleven_multilingual_v2" %}selected{% endif %}>ElevenLabs Multilingual v2</option>
+                                                <option value="openai_tts" {% if llm_data.voice_model == "openai_tts" %}selected{% endif %}>OpenAI TTS</option>
+                                            </select>
+                                            <div class="form-text">The voice model to use</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="fallback_voice_ids" class="form-label">Fallback Voices</label>
+                                            <input type="text" class="form-control" id="fallback_voice_ids" name="fallback_voice_ids" 
+                                                   value="{{ llm_data.fallback_voice_ids|join:',' }}">
+                                            <div class="form-text">Comma-separated list of fallback voice IDs</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="voice_temperature" class="form-label">Voice Temperature</label>
+                                            <input type="range" class="form-range" id="voice_temperature" name="voice_temperature" min="0" max="1" step="0.1" value="{{ llm_data.voice_temperature|default:1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Conservative</small>
+                                                <small><span id="voice_temp_value">{{ llm_data.voice_temperature|default:1 }}</span></small>
+                                                <small>Expressive</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="voice_speed" class="form-label">Voice Speed</label>
+                                            <input type="range" class="form-range" id="voice_speed" name="voice_speed" min="0.5" max="2" step="0.1" value="{{ llm_data.voice_speed|default:1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Slower</small>
+                                                <small><span id="voice_speed_value">{{ llm_data.voice_speed|default:1 }}</span></small>
+                                                <small>Faster</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="volume" class="form-label">Volume</label>
+                                            <input type="range" class="form-range" id="volume" name="volume" min="0" max="2" step="0.1" value="{{ llm_data.volume|default:1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Quieter</small>
+                                                <small><span id="volume_value">{{ llm_data.volume|default:1 }}</span></small>
+                                                <small>Louder</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="backchannel_words" class="form-label">Backchannel Words</label>
+                                            <input type="text" class="form-control" id="backchannel_words" name="backchannel_words" 
+                                                   value="{{ llm_data.backchannel_words|join:',' }}">
+                                            <div class="form-text">Comma-separated list of words used for backchanneling</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ambient_sound" class="form-label">Ambient Sound</label>
+                                            <select class="form-select" id="ambient_sound" name="ambient_sound">
+                                                <option value="" {% if not llm_data.ambient_sound %}selected{% endif %}>None</option>
+                                                <option value="coffee-shop" {% if llm_data.ambient_sound == "coffee-shop" %}selected{% endif %}>Coffee Shop</option>
+                                                <option value="convention-hall" {% if llm_data.ambient_sound == "convention-hall" %}selected{% endif %}>Convention Hall</option>
+                                                <option value="summer-outdoor" {% if llm_data.ambient_sound == "summer-outdoor" %}selected{% endif %}>Summer Outdoor</option>
+                                                <option value="mountain-outdoor" {% if llm_data.ambient_sound == "mountain-outdoor" %}selected{% endif %}>Mountain Outdoor</option>
+                                                <option value="static-noise" {% if llm_data.ambient_sound == "static-noise" %}selected{% endif %}>Static Noise</option>
+                                                <option value="call-center" {% if llm_data.ambient_sound == "call-center" %}selected{% endif %}>Call Center</option>
+                                            </select>
+                                            <div class="form-text">Background ambient sound during the call</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="enable_backchannel" name="enable_backchannel" {% if llm_data.enable_backchannel %}checked{% endif %}>
+                                            <label class="form-check-label" for="enable_backchannel">Enable Backchanneling</label>
+                                            <div class="form-text">Agent will respond with acknowledgment sounds like "uh-huh" and "yeah"</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="backchannel_frequency" class="form-label">Backchannel Frequency</label>
+                                            <input type="range" class="form-range" id="backchannel_frequency" name="backchannel_frequency" min="0" max="1" step="0.1" value="{{ llm_data.backchannel_frequency|default:0.8 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Less Often</small>
+                                                <small><span id="backchannel_frequency_value">{{ llm_data.backchannel_frequency|default:0.8 }}</span></small>
+                                                <small>More Often</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ambient_sound_volume" class="form-label">Ambient Sound Volume</label>
+                                            <input type="range" class="form-range" id="ambient_sound_volume" name="ambient_sound_volume" min="0" max="1" step="0.1" value="{{ llm_data.ambient_sound_volume|default:0.1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Quieter</small>
+                                                <small><span id="ambient_volume_value">{{ llm_data.ambient_sound_volume|default:0.1 }}</span></small>
+                                                <small>Louder</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="begin_message_delay_ms" class="form-label">Begin Message Delay (seconds)</label>
+                                            <input type="number" class="form-control" id="begin_message_delay_ms" name="begin_message_delay_ms" value="{{ llm_data.begin_message_delay_ms|default:1000|divisibleby:1000 }}">
+                                            <div class="form-text">Delay before agent speaks at the start of call</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- LLM Settings Tab -->
+                            <div class="tab-pane fade" id="llm" role="tabpanel">
+                                {% if agent.llm %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">LLM ID</label>
+                                            <input type="text" class="form-control" value="{{ agent.llm.llm_id }}" readonly>
+                                            <div class="form-text">Connected to {{ agent.llm.model }} model</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="model_temperature" class="form-label">Model Temperature</label>
+                                            <input type="range" class="form-range" id="model_temperature" name="model_temperature" min="0" max="1" step="0.1" value="{{ llm_data.model_temperature|default:0.7 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>More Precise</small>
+                                                <small><span id="model_temp_value">{{ llm_data.model_temperature|default:0.7 }}</span></small>
+                                                <small>More Creative</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="begin_message" class="form-label">Begin Message</label>
+                                    <input type="text" class="form-control" id="begin_message" name="begin_message" value="{{ llm_data.begin_message }}">
+                                    <div class="form-text">The first message the agent will say at the start of a call</div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="llm_prompt" class="form-label">General Prompt</label>
+                                    <textarea class="form-control" id="llm_prompt" name="llm_prompt" rows="10">{{ agent.llm.general_prompt }}</textarea>
+                                    <div class="form-text">This is the system prompt that defines your AI assistant's behavior and capabilities</div>
+                                </div>
+                                
+                                {% if llm_data %}
+                                <div class="mb-3">
+                                    <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#llmDetails">
+                                        <i class="fas fa-info-circle me-1"></i> View More LLM Details
+                                    </button>
+                                    <div class="collapse mt-2" id="llmDetails">
+                                        <div class="card card-body bg-light">
+                                            <div class="mb-2">
+                                                <strong>Model:</strong> {{ llm_data.model }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Temperature:</strong> {{ llm_data.model_temperature }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Begin Message:</strong> "{{ llm_data.begin_message }}"
+                                            </div>
+                                            {% if llm_data.general_tools %}
+                                            <div>
+                                                <strong>Tools ({{ llm_data.general_tools|length }}):</strong>
+                                                <ul class="mb-0">
+                                                    {% for tool in llm_data.general_tools %}
+                                                    <li>{{ tool.name }} ({{ tool.type }})</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    No LLM engine associated with this agent.
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Advanced Settings Tab -->
+                            <div class="tab-pane fade" id="advanced" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="responsiveness" class="form-label">Responsiveness</label>
+                                            <input type="range" class="form-range" id="responsiveness" name="responsiveness" min="0" max="1" step="0.1" value="{{ llm_data.responsiveness|default:1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Less Responsive</small>
+                                                <small><span id="responsiveness_value">{{ llm_data.responsiveness|default:1 }}</span></small>
+                                                <small>More Responsive</small>
+                                            </div>
+                                            <div class="form-text">How quickly the agent responds to user input</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="interruption_sensitivity" class="form-label">Interruption Sensitivity</label>
+                                            <input type="range" class="form-range" id="interruption_sensitivity" name="interruption_sensitivity" min="0" max="1" step="0.1" value="{{ llm_data.interruption_sensitivity|default:1 }}">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Less Sensitive</small>
+                                                <small><span id="interruption_value">{{ llm_data.interruption_sensitivity|default:1 }}</span></small>
+                                                <small>More Sensitive</small>
+                                            </div>
+                                            <div class="form-text">How readily the agent stops speaking when interrupted</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Call Handling Settings</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="max_call_duration_ms" class="form-label">Max Call Duration (minutes)</label>
+                                                <input type="number" class="form-control" id="max_call_duration_ms" name="max_call_duration_ms" value="{{ llm_data.max_call_duration_ms|default:3600000|divisibleby:60000 }}">
+                                                <div class="form-text">Maximum length of the call in minutes</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="end_call_after_silence_ms" class="form-label">End Call After Silence (seconds)</label>
+                                                <input type="number" class="form-control" id="end_call_after_silence_ms" name="end_call_after_silence_ms" value="{{ llm_data.end_call_after_silence_ms|default:600000|divisibleby:1000 }}">
+                                                <div class="form-text">End call after this many seconds of silence</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="ring_duration_ms" class="form-label">Ring Duration (seconds)</label>
+                                                <input type="number" class="form-control" id="ring_duration_ms" name="ring_duration_ms" value="{{ llm_data.ring_duration_ms|default:30000|divisibleby:1000 }}">
+                                                <div class="form-text">Duration of ringing at start of call</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="reminder_trigger_ms" class="form-label">Reminder Trigger (seconds)</label>
+                                                <input type="number" class="form-control" id="reminder_trigger_ms" name="reminder_trigger_ms" value="{{ llm_data.reminder_trigger_ms|default:10000|divisibleby:1000 }}">
+                                                <div class="form-text">Time before sending reminder during silence</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="reminder_max_count" class="form-label">Max Reminder Count</label>
+                                                <input type="number" class="form-control" id="reminder_max_count" name="reminder_max_count" value="{{ llm_data.reminder_max_count|default:2 }}">
+                                                <div class="form-text">Maximum number of reminders to send</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Voicemail Settings</h6>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="enable_voicemail_detection" name="enable_voicemail_detection" {% if llm_data.enable_voicemail_detection %}checked{% endif %}>
+                                                <label class="form-check-label" for="enable_voicemail_detection">Enable Voicemail Detection</label>
+                                                <div class="form-text">Detect and respond to voicemail systems</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="voicemail_detection_timeout_ms" class="form-label">Voicemail Detection Timeout (seconds)</label>
+                                                <input type="number" class="form-control" id="voicemail_detection_timeout_ms" name="voicemail_detection_timeout_ms" value="{{ llm_data.voicemail_detection_timeout_ms|default:30000|divisibleby:1000 }}">
+                                                <div class="form-text">Time to wait for voicemail detection</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="voicemail_message" class="form-label">Voicemail Message</label>
+                                                <input type="text" class="form-control" id="voicemail_message" name="voicemail_message" value="{{ llm_data.voicemail_message|default:'Hi, please give us a callback.' }}">
+                                                <div class="form-text">Message to leave when voicemail is detected</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Text Processing Settings</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="normalize_for_speech" name="normalize_for_speech" {% if llm_data.normalize_for_speech %}checked{% endif %}>
+                                                <label class="form-check-label" for="normalize_for_speech">Normalize for Speech</label>
+                                                <div class="form-text">Improves speech quality by formatting text</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="enable_transcription_formatting" name="enable_transcription_formatting" {% if llm_data.enable_transcription_formatting %}checked{% endif %}>
+                                                <label class="form-check-label" for="enable_transcription_formatting">Enable Transcription Formatting</label>
+                                                <div class="form-text">Format transcription for better readability</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="opt_out_sensitive_data_storage" name="opt_out_sensitive_data_storage" {% if llm_data.opt_out_sensitive_data_storage %}checked{% endif %}>
+                                                <label class="form-check-label" for="opt_out_sensitive_data_storage">Opt Out of Sensitive Data Storage</label>
+                                                <div class="form-text">Prevent storing sensitive data from this agent's calls</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="boosted_keywords" class="form-label">Boosted Keywords</label>
+                                                <input type="text" class="form-control" id="boosted_keywords" name="boosted_keywords" value="{{ llm_data.boosted_keywords|join:',' }}">
+                                                <div class="form-text">Comma-separated list of keywords to enhance in speech recognition</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" id="saveSpinner" role="status" aria-hidden="true"></span>
+                                <span id="saveText">Save Changes</span>
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Voice model compatibility configuration
+    const voiceModelCompatibility = {
+        "11labs-": {
+            displayName: "ElevenLabs",
+            models: [
+                { value: "eleven_turbo_v2", displayName: "ElevenLabs Turbo v2" },
+                { value: "eleven_flash_v2", displayName: "ElevenLabs Flash v2" },
+                { value: "eleven_turbo_v2_5", displayName: "ElevenLabs Turbo v2.5" },
+                { value: "eleven_flash_v2_5", displayName: "ElevenLabs Flash v2.5" },
+                { value: "eleven_multilingual_v2", displayName: "ElevenLabs Multilingual v2" }
+            ]
+        },
+        "openai-": {
+            displayName: "OpenAI",
+            models: [
+                { value: "openai_tts", displayName: "OpenAI TTS" }
+            ]
+        },
+        "deepgram-": {
+            displayName: "Deepgram",
+            models: [
+                { value: "deepgram_aura", displayName: "Deepgram Aura" }
+            ]
+        },
+        "play-": {
+            displayName: "PlayHT",
+            models: [
+                { value: "Play3.0-mini", displayName: "PlayHT 3.0 Mini" },
+                { value: "PlayDialog", displayName: "PlayHT Dialog" }
+            ]
+        }
+    };
+
+    // Function to update available voice models based on selected voice
+    function updateVoiceModelOptions() {
+        const voiceSelect = document.getElementById('voice_id');
+        const modelSelect = document.getElementById('voice_model');
+        const selectedVoice = voiceSelect.value;
+        
+        if (!modelSelect || !voiceSelect || !selectedVoice) return;
+        
+        // Save current selection if possible
+        const currentModel = modelSelect.value;
+        
+        // Clear existing options
+        modelSelect.innerHTML = '';
+        
+        // Determine which provider this voice belongs to
+        let matchedProvider = null;
+        for (const providerPrefix in voiceModelCompatibility) {
+            if (selectedVoice.startsWith(providerPrefix)) {
+                matchedProvider = providerPrefix;
+                break;
+            }
+        }
+        
+        if (matchedProvider) {
+            // Add compatible models
+            const providerConfig = voiceModelCompatibility[matchedProvider];
+            const compatibleModels = providerConfig.models;
+            
+            // Add a helpful option group
+            const optGroup = document.createElement('optgroup');
+            optGroup.label = `${providerConfig.displayName} Compatible Models`;
+            modelSelect.appendChild(optGroup);
+            
+            // Add each compatible model
+            compatibleModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.value;
+                option.textContent = model.displayName;
+                
+                // Re-select the current model if it's compatible
+                if (model.value === currentModel) {
+                    option.selected = true;
+                }
+                
+                optGroup.appendChild(option);
+            });
+            
+            // If the current model isn't in the list of compatible models, auto-select first compatible model
+            if (compatibleModels.length > 0 && !currentModel) {
+                modelSelect.value = compatibleModels[0].value;
+            }
+            
+            // Add a helpful message
+            const helpText = document.getElementById('voice_model_help');
+            if (helpText) {
+                helpText.textContent = `Only showing models compatible with ${providerConfig.displayName} voices`;
+            }
+        } else {
+            // If we can't determine the provider, show all options
+            for (const providerPrefix in voiceModelCompatibility) {
+                const providerConfig = voiceModelCompatibility[providerPrefix];
+                
+                const optGroup = document.createElement('optgroup');
+                optGroup.label = `${providerConfig.displayName} Models`;
+                modelSelect.appendChild(optGroup);
+                
+                providerConfig.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.displayName;
+                    
+                    // Try to preserve selection
+                    if (model.value === currentModel) {
+                        option.selected = true;
+                    }
+                    
+                    optGroup.appendChild(option);
+                });
+            }
+            
+            // Add a helpful message
+            const helpText = document.getElementById('voice_model_help');
+            if (helpText) {
+                helpText.textContent = 'Please select a voice model compatible with your selected voice';
+            }
+        }
+    }
+    
+    // Listen for voice selection changes
+    const voiceSelect = document.getElementById('voice_id');
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', updateVoiceModelOptions);
+    }
+    
+    // Add a div for the help text if it doesn't exist
+    const voiceModelFormGroup = document.querySelector('select#voice_model').closest('.mb-3');
+    if (voiceModelFormGroup) {
+        const existingHelpText = voiceModelFormGroup.querySelector('.form-text');
+        if (existingHelpText) {
+            existingHelpText.id = 'voice_model_help';
+        } else {
+            const helpTextDiv = document.createElement('div');
+            helpTextDiv.className = 'form-text';
+            helpTextDiv.id = 'voice_model_help';
+            helpTextDiv.textContent = 'The voice model to use';
+            voiceModelFormGroup.appendChild(helpTextDiv);
+        }
+    }
+    
+    // Call initially to set up the correct options
+    updateVoiceModelOptions();
+    
+    // Add loading spinner when form is submitted
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const saveButton = form.querySelector('button[type="submit"]');
+            const saveSpinner = document.getElementById('saveSpinner');
+            const saveText = document.getElementById('saveText');
+            
+            if (saveButton && saveSpinner && saveText) {
+                saveButton.disabled = true;
+                saveSpinner.classList.remove('d-none');
+                saveText.textContent = 'Saving...';
+            }
+        });
+    }
+    
+    // Update range input values display
+    const rangeInputs = [
+        { input: 'voice_temperature', display: 'voice_temp_value' },
+        { input: 'voice_speed', display: 'voice_speed_value' },
+        { input: 'volume', display: 'volume_value' },
+        { input: 'backchannel_frequency', display: 'backchannel_frequency_value' },
+        { input: 'model_temperature', display: 'model_temp_value' },
+        { input: 'responsiveness', display: 'responsiveness_value' },
+        { input: 'interruption_sensitivity', display: 'interruption_value' },
+        { input: 'ambient_sound_volume', display: 'ambient_volume_value' }
+    ];
+    
+    rangeInputs.forEach(item => {
+        const input = document.getElementById(item.input);
+        const display = document.getElementById(item.display);
+        if (input && display) {
+            // Set initial value
+            display.textContent = input.value;
+            
+            // Update on change
+            input.addEventListener('input', function() {
+                display.textContent = this.value;
+            });
+        }
+    });
+    
+    // Voice fetching and preview functionality
+    const loadVoicesBtn = document.getElementById('loadVoicesBtn');
+    const voiceSelectElement = document.getElementById('voice_id');
+    const voicePreviewCard = document.getElementById('voicePreviewCard');
+    const voicePreviewAudio = document.getElementById('voicePreview');
+    const voiceNameElement = document.getElementById('selectedVoiceName');
+    const voiceGenderElement = document.getElementById('selectedVoiceGender');
+    const voiceAccentElement = document.getElementById('selectedVoiceAccent');
+    const voiceLoadingIndicator = document.getElementById('voiceSettingsLoading');
+    
+    // Store voice data globally
+    let voicesData = [];
+    
+    if (loadVoicesBtn && voiceSelectElement) {
+        loadVoicesBtn.addEventListener('click', function() {
+            // Show loading indicator
+            voiceLoadingIndicator.classList.remove('d-none');
+            
+            // Fetch voices from API
+            fetch('/retell_agent/list-voices/')
+                .then(response => response.json())
+                .then(data => {
+                    // Store voices data
+                    voicesData = data;
+                    
+                    // Get current selection
+                    const currentValue = voiceSelectElement.value;
+                    
+                    // Clear existing options except the first one
+                    while (voiceSelectElement.options.length > 1) {
+                        voiceSelectElement.remove(1);
+                    }
+                    
+                    // Add voice options
+                    data.forEach(voice => {
+                        const option = document.createElement('option');
+                        option.value = voice.voice_id;
+                        option.textContent = `${voice.voice_name} (${voice.gender}, ${voice.accent})`;
+                        option.dataset.previewUrl = voice.preview_audio_url;
+                        option.dataset.gender = voice.gender;
+                        option.dataset.accent = voice.accent;
+                        option.dataset.provider = voice.provider;
+                        option.dataset.voiceName = voice.voice_name;
+                        
+                        // If this was the previously selected voice, select it again
+                        if (voice.voice_id === currentValue) {
+                            option.selected = true;
+                        }
+                        
+                        voiceSelectElement.appendChild(option);
+                    });
+                    
+                    // If we have a current selection, show its preview
+                    updateVoicePreview();
+                    
+                    // Hide loading indicator
+                    voiceLoadingIndicator.classList.add('d-none');
+                })
+                .catch(error => {
+                    console.error('Error fetching voices:', error);
+                    alert('Failed to load voices. Please try again.');
+                    voiceLoadingIndicator.classList.add('d-none');
+                });
+        });
+        
+        // Set up voice selection change handler
+        voiceSelectElement.addEventListener('change', updateVoicePreview);
+        
+        // Function to update voice preview
+        function updateVoicePreview() {
+            const selectedOption = voiceSelectElement.options[voiceSelectElement.selectedIndex];
+            
+            // If the option has a preview URL, show the preview card
+            if (selectedOption && selectedOption.dataset.previewUrl) {
+                // Update audio source
+                voicePreviewAudio.src = selectedOption.dataset.previewUrl;
+                
+                // Update metadata
+                voiceNameElement.textContent = selectedOption.dataset.voiceName || 'Voice Preview';
+                voiceGenderElement.textContent = selectedOption.dataset.gender || '';
+                voiceAccentElement.textContent = selectedOption.dataset.accent || '';
+                
+                // Show the preview card
+                voicePreviewCard.classList.remove('d-none');
+                
+                // Load the audio
+                voicePreviewAudio.load();
+            } else {
+                // Hide the preview card if no preview available
+                voicePreviewCard.classList.add('d-none');
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

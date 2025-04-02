@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Retell Agent{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Setup Retell AI Agent</h3>
+                    <a href="{% url 'list_retell_agents' %}" class="btn btn-outline-primary btn-sm">View All Agents</a>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'setup_retell_agent' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Settings -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Agent Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="agent_name" class="form-label">Agent Name</label>
+                                <input type="text" class="form-control" id="agent_name" name="agent_name" required placeholder="e.g., Jarvis">
+                                <div class="form-text">Give your AI agent a name</div>
+                            </div>
+                            
+                            {% if llm_id %}
+                            <div class="mb-3">
+                                <label for="llm_id" class="form-label">LLM ID</label>
+                                <input type="text" class="form-control" id="llm_id" name="llm_id" required value="{{ llm_id }}" readonly>
+                                <div class="form-text">
+                                    {% if existing_llm %}
+                                    Using existing LLM ({{ existing_llm.model }})
+                                    {% if existing_llm.general_prompt %}
+                                    <button class="btn btn-link p-0 ms-2 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#llmDetails">
+                                        <small>View details</small>
+                                    </button>
+                                    <div class="collapse mt-2" id="llmDetails">
+                                        <div class="card card-body bg-light">
+                                            <small class="text-muted">{{ existing_llm.general_prompt|truncatechars:200 }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% else %}
+                                    Using pre-configured LLM
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% elif existing_llm %}
+                            <div class="mb-3">
+                                <label for="llm_id" class="form-label">LLM ID</label>
+                                <input type="text" class="form-control" id="llm_id" name="llm_id" required value="{{ existing_llm.llm_id }}" readonly>
+                                <div class="form-text">
+                                    Using existing LLM ({{ existing_llm.model }})
+                                    {% if existing_llm.general_prompt %}
+                                    <button class="btn btn-link p-0 ms-2 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#llmDetails">
+                                        <small>View details</small>
+                                    </button>
+                                    <div class="collapse mt-2" id="llmDetails">
+                                        <div class="card card-body bg-light">
+                                            <small class="text-muted">{{ existing_llm.general_prompt|truncatechars:200 }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="mb-3 text-center py-3">
+                                <p>You need to create an LLM engine first</p>
+                                <a href="{% url 'create_retell_llm' %}" class="btn btn-primary">Create LLM Engine</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Voice Settings Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="voice_id" class="form-label">Voice</label>
+                                    <div class="input-group mb-2">
+                                        <select class="form-select" id="voice_id" name="voice_id">
+                                            <option value="" disabled>Loading voices...</option>
+                                            <option value="11labs-Adrian" selected>Adrian (Male)</option>
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" id="loadVoicesBtn" title="Refresh voices">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                    <div id="voicePreviewCard" class="card mt-2 d-none">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <span id="selectedVoiceName" class="fw-bold"></span>
+                                                    <small class="d-block text-muted" id="voiceDetails"></small>
+                                                </div>
+                                                <div class="ms-auto">
+                                                    <audio id="voicePreview" controls style="height: 40px;"></audio>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Choose a voice for your agent</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="voice_model" class="form-label">Voice Model</label>
+                                    <select class="form-select" id="voice_model" name="voice_model">
+                                        <!-- JavaScript will populate this based on voice selection -->
+                                    </select>
+                                    <div class="form-text" id="voice_model_help">Choose a compatible voice model</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if llm_id or existing_llm %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Agent</button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Voice model compatibility configuration
+    const voiceModelCompatibility = {
+        "11labs-": {
+            displayName: "ElevenLabs",
+            models: [
+                { value: "eleven_turbo_v2", displayName: "ElevenLabs Turbo v2" },
+                { value: "eleven_flash_v2", displayName: "ElevenLabs Flash v2" },
+                { value: "eleven_turbo_v2_5", displayName: "ElevenLabs Turbo v2.5" },
+                { value: "eleven_flash_v2_5", displayName: "ElevenLabs Flash v2.5" },
+                { value: "eleven_multilingual_v2", displayName: "ElevenLabs Multilingual v2" }
+            ]
+        },
+        "openai-": {
+            displayName: "OpenAI",
+            models: [
+                { value: "openai_tts", displayName: "OpenAI TTS" }
+            ]
+        },
+        "deepgram-": {
+            displayName: "Deepgram",
+            models: [
+                { value: "deepgram_aura", displayName: "Deepgram Aura" }
+            ]
+        },
+        "play-": {
+            displayName: "PlayHT",
+            models: [
+                { value: "Play3.0-mini", displayName: "PlayHT 3.0 Mini" },
+                { value: "PlayDialog", displayName: "PlayHT Dialog" }
+            ]
+        }
+    };
+
+    // Function to update available voice models based on selected voice
+    function updateVoiceModelOptions() {
+        const voiceSelect = document.getElementById('voice_id');
+        const modelSelect = document.getElementById('voice_model');
+        const selectedVoice = voiceSelect.value;
+        
+        if (!modelSelect || !voiceSelect || !selectedVoice) return;
+        
+        // Save current selection if possible
+        const currentModel = modelSelect.value;
+        
+        // Clear existing options
+        modelSelect.innerHTML = '';
+        
+        // Determine which provider this voice belongs to
+        let matchedProvider = null;
+        for (const providerPrefix in voiceModelCompatibility) {
+            if (selectedVoice.startsWith(providerPrefix)) {
+                matchedProvider = providerPrefix;
+                break;
+            }
+        }
+        
+        if (matchedProvider) {
+            // Add compatible models
+            const providerConfig = voiceModelCompatibility[matchedProvider];
+            const compatibleModels = providerConfig.models;
+            
+            // Add a helpful option group
+            const optGroup = document.createElement('optgroup');
+            optGroup.label = `${providerConfig.displayName} Compatible Models`;
+            modelSelect.appendChild(optGroup);
+            
+            // Add each compatible model
+            compatibleModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.value;
+                option.textContent = model.displayName;
+                
+                // Re-select the current model if it's compatible
+                if (model.value === currentModel) {
+                    option.selected = true;
+                }
+                
+                optGroup.appendChild(option);
+            });
+            
+            // If the current model isn't in the list of compatible models, auto-select first compatible model
+            if (compatibleModels.length > 0 && !Array.from(modelSelect.options).some(opt => opt.selected)) {
+                modelSelect.value = compatibleModels[0].value;
+            }
+            
+            // Add a helpful message
+            const helpText = document.getElementById('voice_model_help');
+            if (helpText) {
+                helpText.textContent = `Only showing models compatible with ${providerConfig.displayName} voices`;
+            }
+        }
+    }
+    
+    // Listen for voice selection changes
+    const voiceSelect = document.getElementById('voice_id');
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', updateVoiceModelOptions);
+        voiceSelect.addEventListener('change', updateVoicePreview);
+    }
+    
+    // Call initially to set up the correct options
+    updateVoiceModelOptions();
+    
+    // Voice loading and preview functionality
+    const loadVoicesBtn = document.getElementById('loadVoicesBtn');
+    const voicePreviewCard = document.getElementById('voicePreviewCard');
+    const voicePreviewAudio = document.getElementById('voicePreview');
+    const voiceNameElement = document.getElementById('selectedVoiceName');
+    const voiceDetailsElement = document.getElementById('voiceDetails');
+    
+    let voicesData = [];
+    
+    // Load voices automatically on page load
+    loadVoices();
+    
+    // Add click event for manual reload
+    if (loadVoicesBtn) {
+        loadVoicesBtn.addEventListener('click', function() {
+            loadVoices();
+        });
+    }
+    
+    // Function to load voices from API
+    function loadVoices() {
+        // Show loading indicator
+        const loadingSpinner = document.createElement('span');
+        loadingSpinner.className = 'spinner-border spinner-border-sm ms-2';
+        loadingSpinner.setAttribute('role', 'status');
+        loadVoicesBtn.disabled = true;
+        loadVoicesBtn.appendChild(loadingSpinner);
+        
+        // Clear voiceSelect except first option
+        while (voiceSelect.options.length > 1) {
+            voiceSelect.remove(1);
+        }
+        
+        // Add a loading option
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Loading voices...';
+        loadingOption.disabled = true;
+        loadingOption.selected = true;
+        voiceSelect.add(loadingOption);
+        
+        // Fetch voices from the API
+        fetch('/retell_agent/list-voices/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Store the voices data
+                voicesData = data;
+                
+                // Get current selection
+                const currentValue = voiceSelect.value;
+                
+                // Clear existing options
+                while (voiceSelect.options.length > 0) {
+                    voiceSelect.remove(0);
+                }
+                
+                // Group voices by provider
+                const providers = {};
+                
+                data.forEach(voice => {
+                    const provider = voice.provider || 'other';
+                    if (!providers[provider]) {
+                        providers[provider] = [];
+                    }
+                    providers[provider].push(voice);
+                });
+                
+                // Add options grouped by provider
+                for (const provider in providers) {
+                    const optgroup = document.createElement('optgroup');
+                    const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
+                    optgroup.label = `${providerName} Voices`;
+                    
+                    // Sort voices alphabetically within the provider
+                    providers[provider].sort((a, b) => a.voice_name.localeCompare(b.voice_name));
+                    
+                    providers[provider].forEach(voice => {
+                        const option = document.createElement('option');
+                        option.value = voice.voice_id;
+                        
+                        // Create descriptive label
+                        let label = voice.voice_name;
+                        if (voice.gender) {
+                            label += ` (${voice.gender.charAt(0).toUpperCase() + voice.gender.slice(1)})`;
+                        }
+                        
+                        option.textContent = label;
+                        
+                        // Set additional data attributes
+                        option.dataset.previewUrl = voice.preview_audio_url;
+                        option.dataset.accent = voice.accent;
+                        option.dataset.gender = voice.gender;
+                        option.dataset.age = voice.age;
+                        
+                        // Select this option if it matches the previous selection
+                        if (voice.voice_id === currentValue) {
+                            option.selected = true;
+                        }
+                        
+                        optgroup.appendChild(option);
+                    });
+                    
+                    voiceSelect.appendChild(optgroup);
+                }
+                
+                // If no option is selected, select the first one
+                if (voiceSelect.selectedIndex === -1 && voiceSelect.options.length > 0) {
+                    voiceSelect.selectedIndex = 0;
+                }
+                
+                // Trigger change event to update preview
+                voiceSelect.dispatchEvent(new Event('change'));
+            })
+            .catch(error => {
+                console.error('Error fetching voices:', error);
+                // Add an error message option
+                const errorOption = document.createElement('option');
+                errorOption.textContent = 'Error loading voices';
+                errorOption.disabled = true;
+                voiceSelect.add(errorOption);
+            })
+            .finally(() => {
+                // Remove loading indicator
+                loadVoicesBtn.disabled = false;
+                if (loadingSpinner && loadingSpinner.parentNode === loadVoicesBtn) {
+                    loadVoicesBtn.removeChild(loadingSpinner);
+                }
+            });
+    }
+    
+    // Function to update voice preview
+    function updateVoicePreview() {
+        const selectedOption = voiceSelect.options[voiceSelect.selectedIndex];
+        
+        if (selectedOption && selectedOption.dataset.previewUrl) {
+            // Show preview card
+            voicePreviewCard.classList.remove('d-none');
+            
+            // Update preview audio source
+            voicePreviewAudio.src = selectedOption.dataset.previewUrl;
+            
+            // Update voice name and details
+            voiceNameElement.textContent = selectedOption.textContent;
+            
+            // Build details string
+            let detailsText = [];
+            if (selectedOption.dataset.accent) detailsText.push(selectedOption.dataset.accent);
+            if (selectedOption.dataset.age) detailsText.push(selectedOption.dataset.age);
+            
+            voiceDetailsElement.textContent = detailsText.join(' • ');
+        } else {
+            // Hide preview card if no preview URL
+            voicePreviewCard.classList.add('d-none');
+            voicePreviewAudio.src = '';
+        }
+    }
+});
+</script>
+{% endblock %} 
