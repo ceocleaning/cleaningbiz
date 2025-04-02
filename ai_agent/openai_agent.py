@@ -1229,8 +1229,8 @@ def chat_api(request):
                 if len(messages) == 0:
                     return JsonResponse({
                         'error': 'No messages found',
-                        'status': 'error'
-                    }, status=400)
+                        'status': 'success'
+                    }, status=200)
                 else:
                     return JsonResponse({
                         'messages': messages,
