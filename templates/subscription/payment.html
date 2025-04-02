@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscribe to Plan{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'subscription:subscription_management' %}">Subscription</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Payment</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        {% if selected_plan %}
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="m-0">Complete Your Subscription</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Selected Plan Summary -->
+                    <div class="selected-plan mb-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="plan-icon d-inline-flex align-items-center justify-content-center rounded-circle me-3" style="width: 60px; height: 60px; background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.2) 100%);">
+                                        {% if 'Starter' in selected_plan.name %}
+                                        <i class="fas fa-rocket text-primary fa-2x"></i>
+                                        {% elif 'Professional' in selected_plan.name %}
+                                        <i class="fas fa-building text-primary fa-2x"></i>
+                                        {% else %}
+                                        <i class="fas fa-crown text-primary fa-2x"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">{{ selected_plan.name }}</h4>
+                                        <p class="text-muted mb-0">{{ selected_plan.billing_cycle|title }} Plan</p>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-primary p-2">Selected</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="price-tag mb-4 text-center p-3 rounded" style="background-color: rgba(13, 110, 253, 0.05);">
+                                    <span class="fs-3 fw-bold text-primary">${{ selected_plan.price }}</span>
+                                    <span class="text-muted">/ {{ selected_plan.billing_cycle }}</span>
+                                </div>
+                                
+                                <h6 class="text-uppercase text-muted mb-3 fs-6">Plan Includes</h6>
+                                
+                                <ul class="list-unstyled mb-4 features-list">
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <div class="d-flex justify-content-between flex-grow-1">
+                                            <span>Voice Minutes</span>
+                                            <span class="fw-bold">{{ selected_plan.voice_minutes }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <div class="d-flex justify-content-between flex-grow-1">
+                                            <span>Voice Calls</span>
+                                            <span class="fw-bold">{{ selected_plan.voice_calls }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <div class="d-flex justify-content-between flex-grow-1">
+                                            <span>SMS Messages</span>
+                                            <span class="fw-bold">{{ selected_plan.sms_messages }}</span>
+                                        </div>
+                                    </li>
+                                    
+                                    {% if selected_plan.features.basic_analytics and not selected_plan.features.advanced_analytics %}
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <span>Basic Analytics</span>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% if selected_plan.features.advanced_analytics %}
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <span>Advanced Analytics</span>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% if selected_plan.features.priority_support %}
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <span>Priority Support</span>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                                
+                                <div class="mt-3 text-center">
+                                    <a href="{% url 'subscription:subscription_management' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-exchange-alt me-1"></i> Change Plan
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Payment Form -->
+                    <h5 class="mb-3">Payment Details</h5>
+                    <form method="post" action="{% url 'subscription:process_payment' selected_plan.id %}" id="payment-form">
+                        {% csrf_token %}
+                        
+                        {% if error_message %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ error_message }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="card-name" class="form-label">Name on Card</label>
+                            <input type="text" class="form-control" id="card-name" name="card_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="card-number" class="form-label">Card Number</label>
+                            <input type="text" class="form-control" id="card-number" name="card_number" placeholder="4242 4242 4242 4242" required>
+                            <div class="form-text">For testing, use: 4242 4242 4242 4242</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="card-expiry" class="form-label">Expiration Date (MM/YY)</label>
+                                    <input type="text" class="form-control" id="card-expiry" name="card_expiry" placeholder="12/25" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="card-cvc" class="form-label">CVC</label>
+                                    <input type="text" class="form-control" id="card-cvc" name="card_cvc" placeholder="123" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="save-card" name="save_card">
+                            <label class="form-check-label" for="save-card">
+                                Save card for future payments
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="terms-agreement" name="terms_agreement" required>
+                            <label class="form-check-label" for="terms-agreement">
+                                I agree to the <a href="" target="_blank">Terms of Service</a> and authorize recurring charges
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-lock me-2"></i>Pay ${{ selected_plan.price }} and Subscribe
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="m-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ selected_plan.name }} ({{ selected_plan.billing_cycle }})</span>
+                        <span>${{ selected_plan.price }}</span>
+                    </div>
+                    
+                    {% if discount %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Discount</span>
+                        <span>-${{ discount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-3 fw-bold">
+                        <span>Total</span>
+                        <span>${{ total_amount|default:selected_plan.price }}</span>
+                    </div>
+                    
+                    <div class="alert alert-info small" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Your subscription will renew automatically. You can cancel anytime from your subscription page.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3">Have Questions?</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-envelope me-3 text-primary fa-lg"></i>
+                        <div>
+                            <strong>Email Support</strong><br>
+                            <a href="mailto:support@example.com">support@example.com</a>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-phone-alt me-3 text-primary fa-lg"></i>
+                        <div>
+                            <strong>Phone Support</strong><br>
+                            <a href="tel:+18005551234">1-800-555-1234</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-exclamation-circle text-warning mb-3" style="font-size: 48px;"></i>
+                    <h3 class="mb-3">No Plan Selected</h3>
+                    <p class="mb-4">Please select a subscription plan to continue with the payment process.</p>
+                    <a href="{% url 'subscription:subscription_management' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>View Available Plans
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format card number with spaces
+        document.getElementById('card-number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            const formatted = [];
+            
+            for (let i = 0; i < value.length; i += 4) {
+                formatted.push(value.substring(i, i + 4));
+            }
+            
+            e.target.value = formatted.join(' ').trim();
+        });
+        
+        // Format expiry date
+        document.getElementById('card-expiry').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            
+            if (value.length > 2) {
+                e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            } else {
+                e.target.value = value;
+            }
+        });
+        
+        // Limit CVC to 3 or 4 digits
+        document.getElementById('card-cvc').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            e.target.value = value.substring(0, 4);
+        });
+    });
+</script>
+{% endblock %} 

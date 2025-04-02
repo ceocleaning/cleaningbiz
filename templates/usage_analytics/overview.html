@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+
+{% block title %}Usage Overview{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Date Range Picker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Usage Overview</h1>
+            <p class="text-muted">Summary of your voice and SMS usage</p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div id="dateRangePicker" class="form-control cursor-pointer">
+                <i class="far fa-calendar-alt me-2"></i>
+                <span>Last 30 days</span>
+            </div>
+            <button class="btn btn-outline-primary" id="downloadReportBtn">
+                <i class="fas fa-download me-2"></i> Download Report
+            </button>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Usage Overview</li>
+        </ol>
+    </nav>
+    
+    <!-- Subscription Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary-light p-3 me-3">
+                                    <i class="fas fa-crown text-primary fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h3 class="mb-0">{{ subscription.name }}</h3>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">${{ subscription.price }}/month</span>
+                                        <span class="badge bg-{% if subscription.status == 'active' %}success{% else %}warning{% endif %} py-1 px-2">{{ subscription.status|title }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="text-muted mb-1">Next billing date</span>
+                                <span class="fw-bold">{{ subscription.next_billing_date|date:"F j, Y"|default:"Not available" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'subscription:subscription_management' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-credit-card me-2"></i> Manage Subscription
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Summary Cards Row -->
+    <div class="row mb-4">
+        <!-- Voice Calls Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Voice Calls</h6>
+                        <div class="rounded-circle bg-primary-light p-2">
+                            <i class="fas fa-phone text-primary"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ usage.voice_calls.used }} / {{ usage.voice_calls.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ usage.voice_calls.percentage }}%;" aria-valuenow="{{ usage.voice_calls.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.voice_calls.percentage }}% of your monthly limit</p>
+                        <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Voice Minutes Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Voice Minutes</h6>
+                        <div class="rounded-circle bg-info-light p-2">
+                            <i class="fas fa-clock text-info"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ usage.voice_minutes.used }} / {{ usage.voice_minutes.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ usage.voice_minutes.percentage }}%;" aria-valuenow="{{ usage.voice_minutes.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.voice_minutes.percentage }}% of your monthly limit</p>
+                        <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SMS Messages Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">SMS Messages</h6>
+                        <div class="rounded-circle bg-warning-light p-2">
+                            <i class="fas fa-comment text-warning"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ usage.sms_messages.used }} / {{ usage.sms_messages.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage.sms_messages.percentage }}%;" aria-valuenow="{{ usage.sms_messages.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.sms_messages.percentage }}% of your monthly limit</p>
+                        <a href="{% url 'usage_analytics:sms_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Trends -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Usage Trends</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-metric="all">All Metrics</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="calls">Voice Calls</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="minutes">Voice Minutes</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="sms">SMS Messages</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="usageTrendsChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Modules -->
+    <div class="row mb-4">
+        <div class="col-12 mb-3">
+            <h2 class="h4">Analytics Modules</h2>
+        </div>
+        
+        <!-- Voice Analytics Module -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <div class="p-3 text-center">
+                                <div class="rounded-circle bg-primary-light p-3 mx-auto mb-3" style="width: fit-content;">
+                                    <i class="fas fa-phone-alt text-primary fa-2x"></i>
+                                </div>
+                                <h5>Voice Analytics</h5>
+                                <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-primary mt-2">View Details</a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3">
+                                <h6 class="mb-3">Key Metrics</h6>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Total Calls</span>
+                                    <span class="fw-bold">{{ voice_metrics.total_calls }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Total Minutes</span>
+                                    <span class="fw-bold">{{ voice_metrics.total_minutes }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Avg. Call Duration</span>
+                                    <span class="fw-bold">{{ voice_metrics.avg_duration }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Success Rate</span>
+                                    <span class="fw-bold">{{ voice_metrics.success_rate }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SMS Analytics Module -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <div class="p-3 text-center">
+                                <div class="rounded-circle bg-warning-light p-3 mx-auto mb-3" style="width: fit-content;">
+                                    <i class="fas fa-comment-alt text-warning fa-2x"></i>
+                                </div>
+                                <h5>SMS Analytics</h5>
+                                <a href="{% url 'usage_analytics:sms_analytics' %}" class="btn btn-warning mt-2">View Details</a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3">
+                                <h6 class="mb-3">Key Metrics</h6>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Total Messages</span>
+                                    <span class="fw-bold">{{ sms_metrics.total_messages }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Response Rate</span>
+                                    <span class="fw-bold">{{ sms_metrics.response_rate }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Avg. Response Time</span>
+                                    <span class="fw-bold">{{ sms_metrics.avg_response_time }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Conversion Rate</span>
+                                    <span class="fw-bold">{{ sms_metrics.conversion_rate }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="activityFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                            All Activities
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="activityFilter">
+                            <li><a class="dropdown-item" href="#">All Activities</a></li>
+                            <li><a class="dropdown-item" href="#">Voice Calls</a></li>
+                            <li><a class="dropdown-item" href="#">SMS Messages</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                    <th>Duration/Preview</th>
+                                    <th>Agent</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-primary-light text-primary">Voice</span></td>
+                                    <td>+1 555-123-4567</td>
+                                    <td><span class="badge bg-success-light text-success">Completed</span></td>
+                                    <td>8m 35s</td>
+                                    <td>John Smith</td>
+                                    <td>Today, 10:45 AM</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary p-0"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning-light text-warning">SMS</span></td>
+                                    <td>+1 555-987-6543</td>
+                                    <td><span class="badge bg-warning-light text-warning">Read</span></td>
+                                    <td>Thank you for confirming your appointment. We look forward to...</td>
+                                    <td>Alex Smith</td>
+                                    <td>Today, 09:32 AM</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary p-0"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary-light text-primary">Voice</span></td>
+                                    <td>+1 555-789-0123</td>
+                                    <td><span class="badge bg-danger-light text-danger">Failed</span></td>
+                                    <td>0m 00s</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>Yesterday, 4:23 PM</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary p-0"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning-light text-warning">SMS</span></td>
+                                    <td>+1 555-456-7890</td>
+                                    <td><span class="badge bg-primary-light text-primary">Responded</span></td>
+                                    <td>Hello! This is a follow-up regarding your recent inquiry about...</td>
+                                    <td>John Smith</td>
+                                    <td>Yesterday, 3:15 PM</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary p-0"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary-light text-primary">Voice</span></td>
+                                    <td>+1 555-321-6547</td>
+                                    <td><span class="badge bg-success-light text-success">Completed</span></td>
+                                    <td>12m 49s</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>Yesterday, 1:30 PM</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary p-0"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a href="#" class="btn btn-outline-primary">View All Activity</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Date Range Picker
+    $(function() {
+        $('#dateRangePicker').daterangepicker({
+            opens: 'left',
+            startDate: moment().subtract(29, 'days'),
+            endDate: moment(),
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        }, function(start, end, label) {
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            // Call function to refresh data based on new date range
+            refreshAnalyticsData(start, end);
+        });
+    });
+
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Usage Trends Chart
+        const usageTrendsCtx = document.getElementById('usageTrendsChart').getContext('2d');
+        const usageTrendsChart = new Chart(usageTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 30}, (_, i) => moment().subtract(29-i, 'days').format('MMM D')),
+                datasets: [
+                    {
+                        label: 'Voice Calls',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 5) + 1),
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Voice Minutes',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 50) + 10),
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'SMS Messages',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 100) + 50),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // Toggle metrics on usage trends chart
+        document.querySelectorAll('[data-metric]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-metric]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const metric = this.dataset.metric;
+                if (metric === 'all') {
+                    usageTrendsChart.data.datasets.forEach(dataset => {
+                        dataset.hidden = false;
+                    });
+                } else {
+                    usageTrendsChart.data.datasets.forEach(dataset => {
+                        dataset.hidden = !dataset.label.toLowerCase().includes(metric);
+                    });
+                }
+                usageTrendsChart.update();
+            });
+        });
+
+        // Download report button
+        document.getElementById('downloadReportBtn').addEventListener('click', function() {
+            alert('Report download functionality will be implemented');
+        });
+    });
+
+    // Function to refresh analytics data based on date range
+    function refreshAnalyticsData(start, end) {
+        console.log('Refreshing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
+        // Here you would make an AJAX call to your backend to get new data
+        // Then update charts and stats with the new data
+    }
+
+    // Add some extra styles
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .bg-primary-light {
+                background-color: rgba(37, 99, 235, 0.1);
+            }
+            .bg-success-light {
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+            .bg-warning-light {
+                background-color: rgba(245, 158, 11, 0.1);
+            }
+            .bg-info-light {
+                background-color: rgba(14, 165, 233, 0.1);
+            }
+            .bg-danger-light {
+                background-color: rgba(239, 68, 68, 0.1);
+            }
+            .text-primary {
+                color: #2563eb !important;
+            }
+            .text-success {
+                color: #10b981 !important;
+            }
+            .text-warning {
+                color: #f59e0b !important;
+            }
+            .text-info {
+                color: #0ea5e9 !important;
+            }
+            .text-danger {
+                color: #ef4444 !important;
+            }
+            .cursor-pointer {
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %} 

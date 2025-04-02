@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing History{% endblock %}
+
+{% block extra_js %}
+<!-- Date Range Picker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Billing History</h1>
+            <p class="text-muted">View and manage your past invoices and payments</p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div id="dateRangePicker" class="form-control cursor-pointer">
+                <i class="far fa-calendar-alt me-2"></i>
+                <span>Last 6 months</span>
+            </div>
+            <button class="btn btn-outline-primary" id="downloadReportBtn">
+                <i class="fas fa-download me-2"></i> Export Invoices
+            </button>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'usage_analytics:usage_overview' %}">Usage Overview</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'subscription:subscription_management' %}">Subscription</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Billing History</li>
+        </ol>
+    </nav>
+    
+    <!-- Summary Cards Row -->
+    <div class="row mb-4">
+        <!-- Total Billed Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Total Billed</h6>
+                        <div class="rounded-circle bg-primary-light p-2">
+                            <i class="fas fa-file-invoice-dollar text-primary"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">${{ total_billed|default:"594.00" }}</h2>
+                    <p class="text-muted mb-0">Year to date</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current Balance Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Current Balance</h6>
+                        <div class="rounded-circle bg-warning-light p-2">
+                            <i class="fas fa-balance-scale text-warning"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">${{ current_balance|default:"0.00" }}</h2>
+                    <p class="text-success mb-0"><i class="fas fa-check-circle me-1"></i> No outstanding balance</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Last Payment Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Last Payment</h6>
+                        <div class="rounded-circle bg-success-light p-2">
+                            <i class="fas fa-credit-card text-success"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">${{ last_payment.amount|default:"99.00" }}</h2>
+                    <p class="text-muted mb-0">{{ last_payment.date|default:"Mar 15, 2023" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Billing Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Next Billing</h6>
+                        <div class="rounded-circle bg-info-light p-2">
+                            <i class="fas fa-calendar-alt text-info"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">${{ next_billing.amount|default:"99.00" }}</h2>
+                    <p class="text-muted mb-0">{{ next_billing.date|default:"Apr 15, 2023" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Payment Method</h5>
+                    <button class="btn btn-sm btn-outline-primary">Update Payment Method</button>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Visa ending in {{ payment_method.last4|default:"4242" }}</h6>
+                            <p class="text-muted mb-0">Expires {{ payment_method.exp_month|default:"12" }}/{{ payment_method.exp_year|default:"2025" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Invoices</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Date</th>
+                                    <th>Billing Period</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in billing_records %}
+                                <tr>
+                                    <td><a href="{{ invoice.invoice_url }}" class="text-primary">{{ invoice.id }}</a></td>
+                                    <td>{{ invoice.billing_date|date:"M d, Y" }}</td>
+                                    <td>{{ invoice.details.period_start|date:"M d" }} - {{ invoice.details.period_end|date:"M d, Y" }}</td>
+                                    <td>${{ invoice.amount }}</td>
+                                    <td>
+                                        {% if invoice.status == 'paid' %}
+                                        <span class="badge bg-success-light text-success">Paid</span>
+                                        {% elif invoice.status == 'pending' %}
+                                        <span class="badge bg-warning-light text-warning">Pending</span>
+                                        {% elif invoice.status == 'failed' %}
+                                        <span class="badge bg-danger-light text-danger">Failed</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-light text-secondary">{{ invoice.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ invoice.invoice_url }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <!-- Default sample data for display -->
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2023-004</a></td>
+                                    <td>Mar 15, 2023</td>
+                                    <td>Mar 15 - Apr 14, 2023</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2023-003</a></td>
+                                    <td>Feb 15, 2023</td>
+                                    <td>Feb 15 - Mar 14, 2023</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2023-002</a></td>
+                                    <td>Jan 15, 2023</td>
+                                    <td>Jan 15 - Feb 14, 2023</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2023-001</a></td>
+                                    <td>Dec 15, 2022</td>
+                                    <td>Dec 15 - Jan 14, 2023</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2022-012</a></td>
+                                    <td>Nov 15, 2022</td>
+                                    <td>Nov 15 - Dec 14, 2022</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><a href="#" class="text-primary">INV-2022-011</a></td>
+                                    <td>Oct 15, 2022</td>
+                                    <td>Oct 15 - Nov 14, 2022</td>
+                                    <td>$99.00</td>
+                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <p class="text-muted mb-0">Showing 1-6 of 24 invoices</p>
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Date Range Picker
+    $(function() {
+        $('#dateRangePicker').daterangepicker({
+            opens: 'left',
+            startDate: moment().subtract(6, 'month'),
+            endDate: moment(),
+            ranges: {
+               'Last 3 Months': [moment().subtract(3, 'month'), moment()],
+               'Last 6 Months': [moment().subtract(6, 'month'), moment()],
+               'This Year': [moment().startOf('year'), moment()],
+               'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+            }
+        }, function(start, end, label) {
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            // Call function to refresh data based on new date range
+            refreshBillingData(start, end);
+        });
+    });
+
+    // Download invoices button
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('downloadReportBtn').addEventListener('click', function() {
+            alert('Export functionality will be implemented');
+        });
+    });
+
+    // Function to refresh billing data based on date range
+    function refreshBillingData(start, end) {
+        console.log('Refreshing billing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
+        // Here you would make an AJAX call to your backend to get new data
+        // Then update the table with the new data
+    }
+
+    // Add some extra styles
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .bg-primary-light {
+                background-color: rgba(37, 99, 235, 0.1);
+            }
+            .bg-success-light {
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+            .bg-warning-light {
+                background-color: rgba(245, 158, 11, 0.1);
+            }
+            .bg-info-light {
+                background-color: rgba(14, 165, 233, 0.1);
+            }
+            .bg-danger-light {
+                background-color: rgba(239, 68, 68, 0.1);
+            }
+            .bg-secondary-light {
+                background-color: rgba(107, 114, 128, 0.1);
+            }
+            .text-primary {
+                color: #2563eb !important;
+            }
+            .text-success {
+                color: #10b981 !important;
+            }
+            .text-warning {
+                color: #f59e0b !important;
+            }
+            .text-info {
+                color: #0ea5e9 !important;
+            }
+            .text-danger {
+                color: #ef4444 !important;
+            }
+            .cursor-pointer {
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %} 

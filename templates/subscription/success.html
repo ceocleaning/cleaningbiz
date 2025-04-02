@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscription Successful{% endblock %}
+
+{% block extra_head %}
+<style>
+    .success-animation {
+        animation: scale-in 0.5s ease-out;
+    }
+    
+    @keyframes scale-in {
+        0% { transform: scale(0); opacity: 0; }
+        70% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .feature-item {
+        transition: all 0.3s ease;
+    }
+    
+    .feature-item:hover {
+        transform: translateY(-5px);
+    }
+    
+    .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #fd7e14;
+        top: -10px;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5 position-relative">
+    <div id="confetti-container"></div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <!-- Success header with gradient -->
+                    <div class="bg-gradient-primary text-white text-center p-5" style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
+                        <div class="success-animation mb-4">
+                            <div class="position-relative d-inline-block">
+                                <i class="fas fa-check-circle pulse" style="font-size: 6rem;"></i>
+                                <div class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <h1 class="display-5 fw-bold mb-2">Subscription Successful!</h1>
+                        <p class="lead mb-0">Thank you for subscribing to our {{ subscription.plan.name }} plan.</p>
+                    </div>
+                    
+                    <!-- Subscription details -->
+                    <div class="p-5">
+                        <div class="card bg-light border-0 shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="card-title text-primary mb-4">
+                                    <i class="fas fa-receipt me-2"></i>Subscription Details
+                                </h5>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <div class="d-flex align-items-center h-100 p-3 bg-white rounded shadow-sm">
+                                            <i class="fas fa-tag text-primary me-3 fa-lg"></i>
+                                            <div>
+                                                <div class="text-muted small">Plan</div>
+                                                <div class="fw-bold">{{ subscription.plan.name }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center h-100 p-3 bg-white rounded shadow-sm">
+                                            <i class="fas fa-dollar-sign text-primary me-3 fa-lg"></i>
+                                            <div>
+                                                <div class="text-muted small">Price</div>
+                                                <div class="fw-bold">${{ subscription.plan.price }}/{{ subscription.plan.billing_cycle }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <div class="d-flex align-items-center h-100 p-3 bg-white rounded shadow-sm">
+                                            <i class="fas fa-calendar-day text-primary me-3 fa-lg"></i>
+                                            <div>
+                                                <div class="text-muted small">Start Date</div>
+                                                <div class="fw-bold">{{ subscription.start_date|date:"F j, Y" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center h-100 p-3 bg-white rounded shadow-sm">
+                                            <i class="fas fa-calendar-alt text-primary me-3 fa-lg"></i>
+                                            <div>
+                                                <div class="text-muted small">Next Billing</div>
+                                                <div class="fw-bold">{{ subscription.end_date|date:"F j, Y" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center p-3 bg-white rounded shadow-sm">
+                                    <i class="fas fa-hashtag text-primary me-3 fa-lg"></i>
+                                    <div>
+                                        <div class="text-muted small">Transaction ID</div>
+                                        <div class="fw-bold">{{ transaction_id }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-4 mb-0 d-flex align-items-center">
+                                    <i class="fas fa-envelope-open-text me-3 fa-lg"></i>
+                                    <div>A confirmation email has been sent to your registered email address with all the details.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-3 d-md-flex justify-content-center mb-5">
+                            <a href="{% url 'subscription:subscription_management' %}" class="btn btn-primary btn-lg px-4 py-3">
+                                <i class="fas fa-cog me-2"></i>Manage Subscription
+                            </a>
+                            <a href="{% url 'usage_analytics:usage_overview' %}" class="btn btn-outline-primary btn-lg px-4 py-3">
+                                <i class="fas fa-chart-line me-2"></i>View Usage Dashboard
+                            </a>
+                        </div>
+                        
+                        <h4 class="text-center mb-4">What's Next?</h4>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm feature-item">
+                                    <div class="card-body text-center p-4">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 mb-3 mx-auto" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-headset text-primary fa-2x"></i>
+                                        </div>
+                                        <h5>Voice Agent</h5>
+                                        <p class="mb-0 text-muted">Configure your voice automation settings to start making calls.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm feature-item">
+                                    <div class="card-body text-center p-4">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 mb-3 mx-auto" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-comment-dots text-primary fa-2x"></i>
+                                        </div>
+                                        <h5>SMS Agent</h5>
+                                        <p class="mb-0 text-muted">Configure your SMS automation settings to start sending messages.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm feature-item">
+                                    <div class="card-body text-center p-4">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 mb-3 mx-auto" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-chart-bar text-primary fa-2x"></i>
+                                        </div>
+                                        <h5>Monitor Usage</h5>
+                                        <p class="mb-0 text-muted">Keep track of your usage through our analytics dashboard.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Prevent going back to the payment page
+    history.pushState(null, null, document.URL);
+    window.addEventListener('popstate', function () {
+        window.location.href = "{% url 'home' %}";
+    });
+    
+    // Create confetti effect
+    document.addEventListener('DOMContentLoaded', function() {
+        const confettiContainer = document.getElementById('confetti-container');
+        const colors = ['#0d6efd', '#0dcaf0', '#198754', '#ffc107', '#fd7e14'];
+        
+        for (let i = 0; i < 100; i++) {
+            createConfetti(confettiContainer, colors);
+        }
+        
+        function createConfetti(container, colors) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            
+            const size = Math.random() * 10 + 5;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            confetti.style.backgroundColor = color;
+            confetti.style.left = `${Math.random() * 100}%`;
+            
+            // Animation
+            confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+            confetti.style.opacity = Math.random();
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            
+            // Add keyframes dynamically
+            const styleSheet = document.styleSheets[0];
+            const keyframes = `@keyframes fall {
+                0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg); opacity: 0; }
+            }`;
+            
+            try {
+                styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+            } catch (e) {
+                // Fallback for browsers that don't support insertRule
+                const style = document.createElement('style');
+                style.innerHTML = keyframes;
+                document.head.appendChild(style);
+            }
+            
+            container.appendChild(confetti);
+            
+            // Remove confetti after animation ends
+            setTimeout(() => {
+                confetti.remove();
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %} 

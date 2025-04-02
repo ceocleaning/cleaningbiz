@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug Plans{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1>Debug Plans</h1>
+    <p>Total plans: {{ plans.count }}</p>
+    
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ plan.name }}</h5>
+                    <span class="badge {% if plan.billing_cycle == 'monthly' %}bg-primary{% else %}bg-success{% endif %}">
+                        {{ plan.billing_cycle }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p><strong>Price:</strong> ${{ plan.price }}</p>
+                    <p><strong>Voice Minutes:</strong> {{ plan.voice_minutes }}</p>
+                    <p><strong>Voice Calls:</strong> {{ plan.voice_calls }}</p>
+                    <p><strong>SMS Messages:</strong> {{ plan.sms_messages }}</p>
+                    <p><strong>Features:</strong></p>
+                    <ul>
+                        {% for key, value in plan.features.items %}
+                        <li>{{ key }}: {% if value %}Yes{% else %}No{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <small>ID: {{ plan.id }}</small>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">No plans found!</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+
+{% block title %}Usage Analytics{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Date Range Picker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Usage Analytics</h1>
+        <div class="d-flex align-items-center gap-3">
+            <div id="dateRangePicker" class="form-control cursor-pointer">
+                <i class="far fa-calendar-alt me-2"></i>
+                <span>Last 30 days</span>
+            </div>
+            <button class="btn btn-outline-primary" id="downloadReportBtn">
+                <i class="fas fa-download me-2"></i> Download Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Usage Analytics</li>
+        </ol>
+    </nav>
+
+    <!-- Summary Cards Row -->
+    <div class="row mb-4">
+        <!-- Voice Calls Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Voice Calls</h6>
+                        <div class="rounded-circle bg-primary-light p-2">
+                            <i class="fas fa-phone text-primary"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">0 / 100</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted small mb-0">0% of your monthly limit</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Voice Minutes Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Voice Minutes</h6>
+                        <div class="rounded-circle bg-info-light p-2">
+                            <i class="fas fa-clock text-info"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">0 / 1000</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted small mb-0">0% of your monthly limit</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SMS Messages Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">SMS Messages</h6>
+                        <div class="rounded-circle bg-warning-light p-2">
+                            <i class="fas fa-comment text-warning"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">0 / 5000</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted small mb-0">0% of your monthly limit</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Plan Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Current Plan</h6>
+                        <div class="rounded-circle bg-success-light p-2">
+                            <i class="fas fa-crown text-success"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">Professional</h2>
+                    <p class="text-muted mb-2">Monthly billing</p>
+                    <a href="#" class="btn btn-sm btn-outline-primary">Upgrade Plan</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Trends -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Usage Trends</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-metric="all">All Metrics</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="calls">Voice Calls</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="minutes">Voice Minutes</button>
+                        <button type="button" class="btn btn-outline-primary" data-metric="sms">SMS Messages</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="usageTrendsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Calls Analytics -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Voice Call Performance</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="callPerformanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Call Outcomes</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="callOutcomesChart" height="260"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMS Analytics -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">SMS Performance</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="smsPerformanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">SMS Response Rate</h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+                    <div class="position-relative" style="width: 180px; height: 180px;">
+                        <canvas id="smsResponseRateChart"></canvas>
+                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                            <h3 class="mb-0">85%</h3>
+                            <p class="mb-0 small">Response Rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <button class="btn btn-sm btn-outline-primary">View All</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Agent</th>
+                                    <th>Type</th>
+                                    <th>Contact</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                <span class="text-primary fw-bold">JS</span>
+                                            </div>
+                                            <div>John Smith</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary-light text-primary">Voice</span></td>
+                                    <td>+1 555-123-4567</td>
+                                    <td>2m 35s</td>
+                                    <td><span class="badge bg-success-light text-success">Completed</span></td>
+                                    <td>Mar 28, 2023</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                <span class="text-primary fw-bold">KJ</span>
+                                            </div>
+                                            <div>Kelly Johnson</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning-light text-warning">SMS</span></td>
+                                    <td>+1 555-789-1234</td>
+                                    <td>-</td>
+                                    <td><span class="badge bg-info-light text-info">Pending</span></td>
+                                    <td>Mar 27, 2023</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link text-primary"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Date Range Picker
+    $(function() {
+        $('#dateRangePicker').daterangepicker({
+            opens: 'left',
+            startDate: moment().subtract(29, 'days'),
+            endDate: moment(),
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        }, function(start, end, label) {
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            // Call function to refresh data based on new date range
+            refreshAnalyticsData(start, end);
+        });
+    });
+
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Usage Trends Chart
+        const usageTrendsCtx = document.getElementById('usageTrendsChart').getContext('2d');
+        const usageTrendsChart = new Chart(usageTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 30}, (_, i) => moment().subtract(29-i, 'days').format('MMM D')),
+                datasets: [
+                    {
+                        label: 'Voice Calls',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 10)),
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Voice Minutes',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 100)),
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'SMS Messages',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 50)),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // Call Performance Chart
+        const callPerformanceCtx = document.getElementById('callPerformanceChart').getContext('2d');
+        const callPerformanceChart = new Chart(callPerformanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Call Duration', 'Response Time', 'Wait Time', 'Issue Resolution'],
+                datasets: [
+                    {
+                        label: 'Average (seconds)',
+                        data: [155, 30, 15, 120],
+                        backgroundColor: '#2563eb',
+                    },
+                    {
+                        label: 'Target (seconds)',
+                        data: [180, 45, 20, 150],
+                        backgroundColor: '#93c5fd',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Call Outcomes Chart
+        const callOutcomesCtx = document.getElementById('callOutcomesChart').getContext('2d');
+        const callOutcomesChart = new Chart(callOutcomesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Successful', 'Failed', 'No Answer', 'Busy'],
+                datasets: [
+                    {
+                        data: [65, 15, 12, 8],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'],
+                        borderWidth: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // SMS Performance Chart
+        const smsPerformanceCtx = document.getElementById('smsPerformanceChart').getContext('2d');
+        const smsPerformanceChart = new Chart(smsPerformanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Sent', 'Delivered', 'Read', 'Responded'],
+                datasets: [
+                    {
+                        label: 'Count',
+                        data: [500, 485, 420, 350],
+                        backgroundColor: '#f59e0b'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // SMS Response Rate Chart
+        const smsResponseRateCtx = document.getElementById('smsResponseRateChart').getContext('2d');
+        const smsResponseRateChart = new Chart(smsResponseRateCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [
+                    {
+                        data: [85, 15],
+                        backgroundColor: ['#10b981', '#e2e8f0'],
+                        borderWidth: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                cutout: '75%'
+            }
+        });
+
+        // Toggle metrics on usage trends chart
+        document.querySelectorAll('[data-metric]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-metric]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const metric = this.dataset.metric;
+                if (metric === 'all') {
+                    usageTrendsChart.data.datasets.forEach(dataset => {
+                        dataset.hidden = false;
+                    });
+                } else {
+                    usageTrendsChart.data.datasets.forEach(dataset => {
+                        dataset.hidden = !dataset.label.toLowerCase().includes(metric);
+                    });
+                }
+                usageTrendsChart.update();
+            });
+        });
+
+        // Download report button
+        document.getElementById('downloadReportBtn').addEventListener('click', function() {
+            alert('Report download functionality will be implemented');
+        });
+    });
+
+    // Function to refresh analytics data based on date range
+    function refreshAnalyticsData(start, end) {
+        console.log('Refreshing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
+        // Here you would make an AJAX call to your backend to get new data
+        // Then update charts and stats with the new data
+    }
+
+    // Add some extra styles
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .bg-primary-light {
+                background-color: rgba(37, 99, 235, 0.1);
+            }
+            .bg-success-light {
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+            .bg-warning-light {
+                background-color: rgba(245, 158, 11, 0.1);
+            }
+            .bg-info-light {
+                background-color: rgba(14, 165, 233, 0.1);
+            }
+            .avatar-sm {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+            }
+            .cursor-pointer {
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %} 

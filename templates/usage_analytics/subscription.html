@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscription & Plans{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Subscription & Plans</h1>
+            <p class="text-muted">Manage your subscription and usage limits</p>
+        </div>
+        <div>
+            <a href="{% url 'subscription:billing_history' %}" class="btn btn-outline-primary">
+                <i class="fas fa-history me-2"></i> Billing History
+            </a>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'usage_analytics:usage_overview' %}">Usage Overview</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Subscription & Plans</li>
+        </ol>
+    </nav>
+
+    <!-- Current Plan Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="m-0 fw-bold">Current Plan</h5>
+        </div>
+        <div class="card-body">
+            {% if subscription %}
+            <div class="d-flex align-items-center mb-3">
+                <div>
+                    <h4 class="text-primary mb-1">{{ subscription.plan.name }}</h4>
+                    <p class="text-muted mb-0">
+                        {{ subscription.plan.billing_cycle|title }} billing • ${{ subscription.plan.price }}/{{ subscription.plan.billing_cycle }}
+                    </p>
+                </div>
+                <div class="ms-auto">
+                    <span class="badge bg-success p-2">Active</span>
+                </div>
+            </div>
+            <div class="included-features mb-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>{{ subscription.plan.voice_minutes }} voice minutes/month</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>{{ subscription.plan.voice_calls }} voice calls/month</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>{{ subscription.plan.sms_messages }} SMS messages/month</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Advanced Analytics</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Priority Support</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'subscription:select_plan' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-circle-up me-2"></i>Upgrade Plan
+                </a>
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal">
+                    <i class="fas fa-times-circle me-2"></i>Cancel Subscription
+                </button>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle text-warning mb-3" style="font-size: 3rem;"></i>
+                <h5>No Active Subscription</h5>
+                <p class="text-muted mb-4">You don't have an active subscription plan. Choose one of our plans to get started.</p>
+                <a href="{% url 'subscription:select_plan' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-tags me-2"></i>View Available Plans
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Usage Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Usage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Voice Minutes Usage -->
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Voice Minutes</span>
+                                <span class="fw-bold">450 / 1000</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 10px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Voice Calls Usage -->
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Voice Calls</span>
+                                <span class="fw-bold">38 / 100</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 10px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 38%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- SMS Messages Usage -->
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>SMS Messages</span>
+                                <span class="fw-bold">2150 / 5000</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 10px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 43%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fa-lg me-3"></i>
+                            <div>
+                                <p class="mb-0">Your current usage is within plan limits. You can view detailed analytics in the <a href="#" class="alert-link">Analytics Dashboard</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Plans -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold">Available Plans</h5>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="billingToggle">
+                <label class="form-check-label" for="billingToggle">
+                    <span id="billingCycle">Monthly</span>
+                    <small class="text-muted" id="yearlySavings" style="display: none;">(Save 20%)</small>
+                </label>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {% for plan in plans %}
+                {% if plan.billing_cycle == 'monthly' %}
+                <div class="col plan-card" data-plan-type="monthly">
+                    <div class="card h-100 {% if plan.name == 'Professional Plan' %}border-primary{% endif %}">
+                        {% if plan.name == 'Professional Plan' %}
+                        <div class="card-header bg-primary text-white text-center">Popular Choice</div>
+                        {% else %}
+                        <div class="card-header bg-light text-center">{{ plan.name }}</div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title text-center {% if plan.name == 'Professional Plan' %}text-primary{% endif %}">{{ plan.name }}</h5>
+                            <p class="price-tag text-center mb-3">
+                                <span class="currency">$</span>
+                                <span class="amount">{{ plan.price }}</span>
+                                <span class="period">/month</span>
+                            </p>
+                            <ul class="list-group list-group-flush mb-4">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.voice_minutes }} Voice Minutes
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.voice_calls }} Voice Calls
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.sms_messages }} SMS Messages
+                                </li>
+                                {% if plan.features.basic_analytics %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Basic Analytics
+                                </li>
+                                {% endif %}
+                                {% if plan.features.advanced_analytics %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Advanced Analytics
+                                </li>
+                                {% endif %}
+                                {% if plan.features.priority_support %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Priority Support
+                                </li>
+                                {% endif %}
+                            </ul>
+                            <div class="d-grid">
+                                <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Select Plan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Overage Rates -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Overage Rates</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">The following rates apply for usage beyond your plan limits:</p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light mb-3">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-phone text-primary me-2"></i>
+                                            <span>Voice Minutes</span>
+                                        </div>
+                                        <span class="fw-bold">$0.05/minute</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light mb-3">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-headset text-primary me-2"></i>
+                                            <span>Voice Calls</span>
+                                        </div>
+                                        <span class="fw-bold">$1.00/call</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light mb-3">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-comment text-primary me-2"></i>
+                                            <span>SMS Messages</span>
+                                        </div>
+                                        <span class="fw-bold">$0.01/message</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                            <div>
+                                <p class="mb-0">Overage charges are billed at the end of your billing cycle. You can monitor your usage in real-time from the <a href="#" class="alert-link">Usage Dashboard</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="row">
+        <div class="col-12 mb-3">
+            <h2 class="h3">Frequently Asked Questions</h2>
+        </div>
+        <div class="col-12">
+            <div class="accordion" id="subscriptionFAQ">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            How do billing cycles work?
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#subscriptionFAQ">
+                        <div class="accordion-body">
+                            Your billing cycle begins on the day you subscribe to a plan. You'll be charged immediately and then again every month or year, depending on your billing frequency. All usage limits reset at the beginning of each billing cycle.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Can I upgrade or downgrade my plan at any time?
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#subscriptionFAQ">
+                        <div class="accordion-body">
+                            Yes, you can change your plan at any time. When upgrading, the new plan takes effect immediately and you'll be charged a prorated amount for the remainder of your billing cycle. When downgrading, the new plan will take effect at the start of your next billing cycle.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            How are overage charges calculated?
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#subscriptionFAQ">
+                        <div class="accordion-body">
+                            Overage charges are calculated based on usage beyond your plan limits. For example, if your plan includes 1000 voice minutes and you use 1100 minutes, you'll be charged for the additional 100 minutes at the overage rate. Overage charges are added to your next invoice.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                            What happens if I cancel my subscription?
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#subscriptionFAQ">
+                        <div class="accordion-body">
+                            If you cancel your subscription, your plan will remain active until the end of your current billing cycle. After that, your account will revert to a limited functionality mode. You'll still be able to access your data, but you won't be able to use voice or SMS services without an active subscription.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle between monthly and yearly pricing
+        const billingToggle = document.getElementById('billingToggle');
+        const prices = document.querySelectorAll('.display-5');
+        const originalPrices = Array.from(prices).map(price => parseInt(price.textContent.replace('$', '')));
+        const periods = document.querySelectorAll('.text-muted:not(p.text-muted)');
+        
+        billingToggle.addEventListener('change', function() {
+            if (this.checked) {
+                // Yearly pricing (20% discount)
+                prices.forEach((price, index) => {
+                    const yearlyPrice = Math.round(originalPrices[index] * 12 * 0.8);
+                    price.textContent = '$' + yearlyPrice;
+                });
+                periods.forEach(period => {
+                    if (period.textContent === '/month') {
+                        period.textContent = '/year';
+                    }
+                });
+            } else {
+                // Monthly pricing
+                prices.forEach((price, index) => {
+                    price.textContent = '$' + originalPrices[index];
+                });
+                periods.forEach(period => {
+                    if (period.textContent === '/year') {
+                        period.textContent = '/month';
+                    }
+                });
+            }
+        });
+        
+        // Style enhancements
+        const style = document.createElement('style');
+        style.textContent = `
+            .bg-primary-light {
+                background-color: rgba(37, 99, 235, 0.1);
+            }
+            .shadow-sm {
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+            }
+            .shadow {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            }
+            .form-switch .form-check-input {
+                cursor: pointer;
+            }
+            .accordion-button:not(.collapsed) {
+                background-color: rgba(37, 99, 235, 0.1);
+                color: #2563eb;
+            }
+            .accordion-button:focus {
+                box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %} 

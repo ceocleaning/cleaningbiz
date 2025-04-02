@@ -69,6 +69,8 @@ def convert_date_str_to_date(date_str):
     
     response_text = response.choices[0].message.content.strip()
 
+    print(f"[UTIL] Converted {date_str} to datetime object: {response_text}")
+
     return response_text
 
 
