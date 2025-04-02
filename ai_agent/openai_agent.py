@@ -577,10 +577,10 @@ class OpenAIAgent:
                     # Get the chat using either phone number or session key
                     if client_phone_number:
                         # Call the calculate_total function from api_views.py
-                        result = calculate_total(business, client_phone_number)
+                        result = calculate_total(business, client_phone_number=client_phone_number)
                     else:
                         # For session-based chats, we need to retrieve the chat and then call calculate_total
-                        result = calculate_total(business, session_key)
+                        result = calculate_total(business, session_key=session_key)
                     
                     return json.dumps(result)
                 except Exception as e:
@@ -649,10 +649,10 @@ class OpenAIAgent:
                  
                    
                     if client_phone_number:
-                        result = book_appointment(business, client_phone_number)
+                        result = book_appointment(business, client_phone_number=client_phone_number)
                         
                     elif session_key:
-                        result = book_appointment(business, session_key)
+                        result = book_appointment(business, session_key=session_key)
 
 
                     else:
