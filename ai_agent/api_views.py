@@ -17,7 +17,7 @@ from .models import Chat
 
 
 
-def calculate_total(business, client_phone_number, session_key=None):
+def calculate_total(business, client_phone_number=None, session_key=None):
     """Function to calculate total price based on user information and business settings.
     
     Args:
@@ -38,7 +38,7 @@ def calculate_total(business, client_phone_number, session_key=None):
     try:
         if session_key:
             chat = Chat.objects.get(business=business, sessionKey=session_key)
-        else:
+        elif client_phone_number:
             chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
         
         # Get business settings
@@ -233,7 +233,7 @@ def check_availability(business, date_string):
         return {"success": False, "error": str(e)}
 
 
-def book_appointment(business, client_phone_number, session_key=None):
+def book_appointment(business, client_phone_number=None, session_key=None):
     """Function to book an appointment for the AI agent.
     Creates a booking in the system based on customer details collected by the AI agent.
     
@@ -256,7 +256,7 @@ def book_appointment(business, client_phone_number, session_key=None):
         if session_key:
             chat = Chat.objects.get(business=business, sessionKey=session_key)
             print(f"[DEBUG] Found chat using session_key: {session_key}, Chat ID: {chat.id}")
-        else:
+        elif client_phone_number:
             chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
             print(f"[DEBUG] Found chat using phone number: {client_phone_number}, Chat ID: {chat.id}")
         
