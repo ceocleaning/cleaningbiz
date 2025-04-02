@@ -34,6 +34,9 @@ class Lead(models.Model):
     is_call_sent = models.BooleanField(default=False)
     call_sent_at = models.DateTimeField(null=True, blank=True)
 
+    follow_up_call_sent = models.BooleanField(default=False)
+    follow_up_call_sent_at = models.DateTimeField(null=True, blank=True)
+
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 

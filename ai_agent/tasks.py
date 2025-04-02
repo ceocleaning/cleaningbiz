@@ -3,6 +3,8 @@ from datetime import timedelta
 from .models import Chat
 from retell import Retell
 from accounts.models import ApiCredential
+from django.conf import settings
+from retell_agent.models import RetellAgent
 from automation.models import Lead
 import traceback
 
@@ -35,8 +37,8 @@ def check_chat_status():
                 
                 # Get API credentials for this business
                 try:
-                    apiCreds = ApiCredential.objects.get(business=chat.business)
-                    business = apiCreds.business
+                    business = chat.business
+                    retellAgent = RetellAgent.objects.get(business=business)
                     print(f"[TASK] Using business: {business.businessName}")
                 except ApiCredential.DoesNotExist:
                     print(f"[TASK] No API credentials found for business ID: {chat.business.id}")
@@ -58,21 +60,21 @@ def check_chat_status():
                         print(f"[TASK] Business uses call feature, attempting to make call")
                         
                         # Validate required credentials
-                        if not apiCreds.retellAPIKey or not apiCreds.voiceAgentNumber:
-                            print(f"[TASK] Missing Retell API key or voice agent number for business: {business.businessName}")
+                        if retellAgent.agent_number:
+                            print(f"[TASK] Missing voice agent number for business: {business.businessName}")
                             results['errors'] += 1
                             continue
                         
                         # Make the call
                         try:
-                            client = Retell(api_key=apiCreds.retellAPIKey)
-                            print(f"[TASK] Making call from {apiCreds.voiceAgentNumber} to {lead.phone_number}")
+                            client = Retell(api_key=settings.RETELL_API_KEY)
+                            print(f"[TASK] Making call from {retellAgent.agent_number} to {lead.phone_number}")
 
                             if '+1' not in lead.phone_number and len(lead.phone_number) == 10:
                                 lead.phone_number = '+1' + lead.phone_number
                             
                             call_response = client.call.create_phone_call(
-                                from_number=apiCreds.voiceAgentNumber,
+                                from_number=retellAgent.agent_number,
                                 to_number=lead.phone_number,
                                 retell_llm_dynamic_variables={
                                     'name': lead.name,
@@ -81,11 +83,11 @@ def check_chat_status():
                             )
                             
                             # Update lead and chat status
-                            lead.is_call_sent = True
-                            lead.call_sent_at = timezone.now()
+                            lead.follow_up_call_sent = True
+                            lead.follow_up_call_sent_at = timezone.now()
                             lead.save()
                             
-                            chat.status = 'call_sent'
+                            chat.status = 'follow_up_call_sent'
                             chat.save()
                             
                             print(f"[TASK] Call successfully made, response ID: {call_response}")

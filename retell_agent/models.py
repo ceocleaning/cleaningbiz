@@ -9,6 +9,7 @@ class RetellAgent(models.Model):
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='retell_agents')
     agent_id = models.CharField(max_length=255, unique=True)
     agent_name = models.CharField(max_length=255)
+    agent_number = models.CharField(max_length=255, null=True, blank=True)
     llm = models.ForeignKey('RetellLLM', on_delete=models.SET_NULL, related_name='agents', null=True)
     voice_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)

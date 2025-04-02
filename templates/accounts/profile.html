@@ -653,97 +653,21 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {% if business.useCall %}
-                                    <!-- API Key Card -->
-                                    <div class="col-md-6">
-                                        <div class="card border-0 rounded-4 shadow-sm h-100 credential-card">
-                                            <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
-                                                        <i class="fas fa-key text-white"></i>
-                                                    </div>
-                                                    <h5 class="card-title mb-0">Retell API Key</h5>
-                                                    <span class="badge bg-danger ms-2 rounded-pill">Required</span>
-                                                </div>
-                                            </div>
-                                            <div class="card-body p-4 pt-2">
-                                                <div class="input-group mb-3">
-                                                    <input type="password" 
-                                                           class="form-control api-key-input" 
-                                                           id="apiKey" 
-                                                           value="{{ credentials.retellAPIKey|default:'' }}" 
-                                                           placeholder="API Key"
-                                                           readonly>
-                                                    <button class="btn btn-outline-secondary key-action-btn" 
-                                                            type="button" 
-                                                            onclick="toggleKey(this, 'apiKey')"
-                                                            data-bs-toggle="tooltip"
-                                                            data-bs-placement="top"
-                                                            title="Show/Hide Key">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-primary key-action-btn"
-                                                            type="button"
-                                                            onclick="copyToClipboard('apiKey')"
-                                                            data-bs-toggle="tooltip"
-                                                            data-bs-placement="top"
-                                                            title="Copy to Clipboard">
-                                                        <i class="fas fa-clipboard me-1"></i>Copy
-                                                    </button>
-                                                </div>
-                                                <div class="alert alert-light border-start border-success border-3 mb-0">
-                                                    <i class="fas fa-info-circle me-2 text-success"></i>
-                                                    <small>Use this key for Retell API authentication.</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
                                 </div>
 
-                                <!-- Voice & SMS Integration Section -->
-                                {% if business.useCall %}
+                               
                                 <div class="card border-0 rounded-4 shadow-sm mb-4 credential-card">
                                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                         <div class="d-flex align-items-center mb-2">
                                             <div class="rounded-circle bg-info p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
                                 <i class="fas fa-phone-alt text-white"></i>
                             </div>
-                            <h5 class="card-title mb-0">Voice & SMS Integration</h5>
+                            <h5 class="card-title mb-0">SMS Integration</h5>
                         </div>
-                        <p class="text-muted small mt-2">Configure your voice and SMS agent numbers to enable communication with customers.</p>
+                        <p class="text-muted small mt-2">Configure your SMS agent numbers to enable communication with customers.</p>
                     </div>
                     <div class="card-body p-4 pt-2">
                         <div class="row g-4">
-                            <!-- Voice Agent Number Card -->
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-3 bg-light h-100 inner-credential-card">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
-                                            <i class="fas fa-phone text-white small"></i>
-                                        </div>
-                                        <h6 class="mb-0">Retell Voice Agent Number</h6>
-                                        <span class="badge bg-primary ms-2 rounded-pill">Voice</span>
-                                    </div>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                               class="form-control api-key-input" 
-                                               id="voiceAgentNumber" 
-                                               value="{{ credentials.voiceAgentNumber|default:'' }}" 
-                                               placeholder="Voice Agent Number"
-                                               readonly>
-                                        <button class="btn btn-outline-primary key-action-btn"
-                                                type="button"
-                                                onclick="copyToClipboard('voiceAgentNumber')"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-placement="top"
-                                                title="Copy to Clipboard">
-                                            <i class="fas fa-clipboard"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                             
                             <!-- SMS Agent Number Card -->
                             <div class="col-md-6">
@@ -776,7 +700,7 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
+         
                 <!-- Twilio Integration Section -->
                 <div class="card border-0 rounded-4 shadow-sm mb-4 credential-card">
                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">

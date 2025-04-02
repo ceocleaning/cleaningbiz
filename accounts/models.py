@@ -38,9 +38,9 @@ class Business(models.Model):
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
-    retellAPIKey = models.CharField(max_length=255, null=True, blank=True)
-    retellWebhookURL = models.URLField(null=True, blank=True)
-    voiceAgentNumber = models.CharField(max_length=20, null=True, blank=True)
+    # retellAPIKey = models.CharField(max_length=255, null=True, blank=True)
+    # retellWebhookURL = models.URLField(null=True, blank=True)
+    # voiceAgentNumber = models.CharField(max_length=20, null=True, blank=True)
     twilioSmsNumber = models.CharField(max_length=20, null=True, blank=True)
     twilioAccountSid = models.CharField(max_length=255, null=True, blank=True)
     twilioAuthToken = models.CharField(max_length=255, null=True, blank=True)

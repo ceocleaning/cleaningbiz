@@ -834,3 +834,40 @@ def delete_retell_agent(request, agent_id):
         'will_delete_llm': llm_other_agents_count == 0 and agent.llm is not None
     })
 
+@login_required
+def assign_phone_number(request):
+    """
+    View to assign a phone number to a Retell agent.
+    """
+    if request.method == 'POST':
+        agent_id = request.POST.get('agent_id')
+        agent_number = request.POST.get('agent_number')
+        
+        if not agent_id or not agent_number:
+            messages.error(request, "Both agent ID and phone number are required")
+            return redirect('list_retell_agents')
+            
+        # Clean the phone number format
+        agent_number = agent_number.strip()
+        if not agent_number.startswith('+'):
+            agent_number = '+' + agent_number
+            
+        try:
+            # Get the user's business
+            business = request.user.business_set.first()
+            
+            # Get the agent
+            agent = RetellAgent.objects.get(agent_id=agent_id, business=business)
+            
+            # Update the phone number
+            agent.agent_number = agent_number
+            agent.save()
+                
+        except RetellAgent.DoesNotExist:
+            messages.error(request, "Agent not found")
+        except Exception as e:
+            print(f"Error assigning phone number: {str(e)}")
+            messages.error(request, f"An error occurred: {str(e)}")
+            
+    return redirect('list_retell_agents')
+

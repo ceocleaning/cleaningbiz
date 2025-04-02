@@ -39,13 +39,18 @@ def all_invoices(request):
         return redirect('accounts:register_business')
 
     invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
-    pending_invoices = invoices.filter(isPaid=False).count()
-    paid_invoices = invoices.filter(isPaid=True).count()
-    
+    pending_invoices = invoices.filter(isPaid=False, payment_details__isnull=True)
+    paid_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='COMPLETED')
+    authorized_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='AUTHORIZED')
+   
     context = {
         'invoices': invoices,
+        'pending_invoices_count': pending_invoices.count(),
+        'paid_invoices_count': paid_invoices.count(),
+        'authorized_invoices_count': authorized_invoices.count(),
         'pending_invoices': pending_invoices,
-        'paid_invoices': paid_invoices
+        'paid_invoices': paid_invoices,
+        'authorized_invoices': authorized_invoices,
     }
     return render(request, 'invoices.html', context)
 

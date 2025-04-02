@@ -4,57 +4,197 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Retell AI Agents</h2>
+            <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create New Agent
+            </a>
+        </div>
+    </div>
+
+    {% if agents %}
+    <div class="row g-4">
+        {% for agent in agents %}
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Retell AI Agents</h3>
-                    <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary btn-sm">Create New Agent</a>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient bg-light border-bottom d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold">{{ agent.agent_name }}</h5>
+                    <span class="badge bg-primary rounded-pill px-3 py-2">{{ agent.voice_id }}</span>
                 </div>
                 <div class="card-body">
-                    {% if agents %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Agent Name</th>
-                                    <th>Agent ID</th>
-                                    <th>Voice</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for agent in agents %}
-                                <tr>
-                                    <td>{{ agent.agent_name }}</td>
-                                    <td><small class="text-muted">{{ agent.agent_id }}</small></td>
-                                    <td>{{ agent.voice_id }}</td>
-                                    <td>{{ agent.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">Edit</a>
-                                            <a href="{% url 'delete_retell_agent' agent.agent_id %}" class="btn btn-outline-danger">Delete</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="fas fa-robot fa-4x text-muted"></i>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded h-100 bg-light bg-opacity-50">
+                                <small class="text-uppercase text-muted fw-bold d-block mb-2">Agent Details</small>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Agent ID</small>
+                                    <div class="text-truncate">
+                                        <code class="small">{{ agent.agent_id }}</code>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Created</small>
+                                    <div><i class="far fa-calendar-alt me-1"></i> {{ agent.created_at|date:"M d, Y" }}</div>
+                                </div>
+                                
+                                <div class="mb-0">
+                                    <small class="text-muted d-block">Phone Number</small>
+                                    {% if agent.agent_number %}
+                                    <div class="badge bg-success p-2">
+                                        <i class="fas fa-phone me-1"></i>{{ agent.agent_number }}
+                                    </div>
+                                    {% else %}
+                                    <span class="badge bg-secondary p-2">No number assigned</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                        <h4 class="text-muted">No agents found</h4>
-                        <p>Create your first AI voice agent to start making calls</p>
-                        <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary mt-2">Create Agent</a>
+                        
+                        <div class="col-md-8 mb-3">
+                            <div class="p-3 border rounded h-100">
+                                <small class="text-uppercase text-muted fw-bold d-block mb-2">LLM Configuration</small>
+                                
+                                {% if agent.llm %}
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-brain me-2 text-info"></i>
+                                        <div>
+                                            <strong>{{ agent.llm.model }}</strong>
+                                            <small class="d-block text-muted text-truncate">ID: {{ agent.llm.llm_id }}</small>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if agent.llm.general_prompt %}
+                                    <div class="mb-0">
+                                        <small class="text-muted d-block mb-1">General Prompt</small>
+                                        <div class="border-start ps-3 py-1 small">
+                                            <p class="text-truncate-3 mb-0">{{ agent.llm.general_prompt|truncatechars:200 }}</p>
+                                            <small class="text-muted fst-italic">Truncated - see full details when editing</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="text-muted"><i class="fas fa-exclamation-circle me-1"></i> No LLM configured</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-end gap-2 py-3">
+                    <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>Edit Agent
+                    </a>
+                    <button type="button" class="btn btn-outline-success assign-number-btn" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#assignNumberModal"
+                            data-agent-id="{{ agent.agent_id }}"
+                            data-agent-name="{{ agent.agent_name }}"
+                            data-agent-number="{{ agent.agent_number }}">
+                        {% if agent.agent_number %}
+                        <i class="fas fa-phone me-1"></i>Edit Number
+                        {% else %}
+                        <i class="fas fa-phone me-1"></i>Assign Number
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'delete_retell_agent' agent.agent_id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </a>
                 </div>
             </div>
         </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-robot fa-4x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No agents found</h4>
+            <p>Create your first AI voice agent to start making calls</p>
+            <a href="{% url 'setup_retell_agent' %}" class="btn btn-primary mt-2">Create Agent</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Assign Number Modal -->
+<div class="modal fade" id="assignNumberModal" tabindex="-1" aria-labelledby="assignNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="assignNumberForm" action="{% url 'assign_phone_number' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="agent_id" id="modalAgentId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignNumberModalLabel">Assign Phone Number</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="agentNameDisplay" class="form-label">Agent Name</label>
+                        <input type="text" class="form-control" id="agentNameDisplay" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="agentNumber" class="form-label">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+</span>
+                            <input type="tel" class="form-control" id="agentNumber" name="phone_number" placeholder="1234567890" required>
+                        </div>
+                        <div class="form-text">Enter the phone number without any spaces or special characters</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Number
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle assign number button clicks
+        const assignNumberBtns = document.querySelectorAll('.assign-number-btn');
+        const modalAgentId = document.getElementById('modalAgentId');
+        const agentNameDisplay = document.getElementById('agentNameDisplay');
+        const agentNumber = document.getElementById('agentNumber');
+        
+        assignNumberBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const agentId = this.getAttribute('data-agent-id');
+                const agentName = this.getAttribute('data-agent-name');
+                const currentNumber = this.getAttribute('data-agent-number');
+                
+                modalAgentId.value = agentId;
+                agentNameDisplay.value = agentName;
+                
+                // Prepopulate the phone number if it exists
+                if (currentNumber && currentNumber !== 'None') {
+                    // Remove the leading "+" if it exists as the input has a "+" prefix
+                    agentNumber.value = currentNumber.startsWith('+') ? currentNumber.substring(1) : currentNumber;
+                } else {
+                    agentNumber.value = '';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+<style>
+    .text-truncate-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style> 

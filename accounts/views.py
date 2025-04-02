@@ -273,6 +273,7 @@ def edit_business_settings(request):
             settings.addonPriceCabinets = request.POST.get('addonPriceCabinets', 0)
             settings.addonPricePatio = request.POST.get('addonPricePatio', 0)
             settings.addonPriceGarage = request.POST.get('addonPriceGarage', 0)
+            settings.commercialRequestLink = request.POST.get('commercialRequestLink', '')
             
             settings.save()
             messages.success(request, 'Business settings updated successfully!')
@@ -295,8 +296,8 @@ def edit_credentials(request):
     
     if request.method == 'POST':
         try:
-            credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
-            credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
+            # credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
+            # credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
             credentials.twilioSmsNumber = request.POST.get('twilioSmsNumber', '')
             credentials.twilioAccountSid = request.POST.get('twilioSid', '')
             credentials.twilioAuthToken = request.POST.get('twilioAuthToken', '')

@@ -32,7 +32,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         schedule(
             "ai_agent.tasks.check_chat_status",
             schedule_type=Schedule.MINUTES,
-            minutes=2,
+            minutes=10,
             repeats=-1,  # Run indefinitely
         )
         
@@ -68,6 +68,13 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 role='assistant',
                 message=message_body,
                 is_first_message=True
+            )
+
+            Messages.objects.create(
+                chat=chat,
+                role='assistant',
+                message=f"Lead Name is {instance.name} and Lead Phone Number is {instance.phone_number} and Lead Email is {instance.email}",
+                is_first_message=False
             )
 
             print(f"Message sent successfully! SID: {message.sid}")
