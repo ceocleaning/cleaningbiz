@@ -383,13 +383,13 @@ class OpenAIAgent:
             # Convert to a list of dictionaries
             message_list = []
             for msg in messages:
-                # Use 'content' key for consistency with OpenAI format
-                message_list.append({
-                    'id': msg.id,
-                    'role': msg.role,
-                    'content': msg.message,  # Use content key for OpenAI compatibility
-                    'message': msg.message,   # Keep message key for backward compatibility
-                    'createdAt': msg.createdAt
+                if msg.role != 'tool':
+                    message_list.append({
+                        'id': msg.id,
+                        'role': msg.role,
+                        'content': msg.message,  # Use content key for OpenAI compatibility
+                        'message': msg.message,   # Keep message key for backward compatibility
+                        'createdAt': msg.createdAt
                 })
             
             print(f"[DEBUG] Retrieved {len(message_list)} messages from chat ID={chat.id}")
