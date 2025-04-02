@@ -74,6 +74,8 @@ INSTALLED_APPS = [
     'invoice',
     'integrations',
     'ai_agent',
+    'usage_analytics',
+    'subscription',
 ]
 
 MIDDLEWARE = [

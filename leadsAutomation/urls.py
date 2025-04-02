@@ -29,6 +29,8 @@ urlpatterns = [
     path('integration/', include('integrations.urls')),
     path('analytics/', include('analytics.urls')),
     path('ai_agent/', include('ai_agent.urls')),
+    path('usage_analytics/', include('usage_analytics.urls')),
+    path('subscription/', include('subscription.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -26,7 +26,18 @@ def LandingPage(request):
     return render(request, 'LandingPage.html')
 
 def PricingPage(request):
-    return render(request, 'PricingPage.html')
+    # Import here to avoid circular imports
+    from subscription.models import SubscriptionPlan
+    from subscription.views import create_dummy_plans
+    
+    # Check if plans exist, if not create them
+    if SubscriptionPlan.objects.count() == 0:
+        create_dummy_plans()
+    
+    # Get all plans
+    plans = SubscriptionPlan.objects.filter(is_active=True)
+    
+    return render(request, 'PricingPage.html', {'plans': plans})
 
 def FeaturesPage(request):
     return render(request, 'FeaturesPage.html')

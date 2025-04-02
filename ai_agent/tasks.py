@@ -67,6 +67,9 @@ def check_chat_status():
                         try:
                             client = Retell(api_key=apiCreds.retellAPIKey)
                             print(f"[TASK] Making call from {apiCreds.voiceAgentNumber} to {lead.phone_number}")
+
+                            if '+1' not in lead.phone_number and len(lead.phone_number) == 10:
+                                lead.phone_number = '+1' + lead.phone_number
                             
                             call_response = client.call.create_phone_call(
                                 from_number=apiCreds.voiceAgentNumber,

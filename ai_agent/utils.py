@@ -14,12 +14,20 @@ current_time = datetime.now().astimezone(pytz.timezone('America/Chicago'))
 
 def convert_date_str_to_date(date_str):
     SYSTEM_PROMPT = f"""
-    You are a helpful assistant that can convert a human readable date string to a datetime object.
+    You are a helpful assistant that can convert any date and time format to a standardized datetime object.
     
     Current time: {current_time}
 
-    Takes any human readable date string and convert it to datetime object
-    Return only single datetime object in string format
+    Takes any human readable date string or any datetime format string and convert it to datetime object.
+    Return only single datetime object in string format (YYYY-MM-DD HH:MM:SS).
+    
+    Important rules:
+    - If no time is provided, use 00:00:00 as the default time
+    - Handle both US (M/D/YYYY) and international (D/M/YYYY) date formats intelligently
+    - Support natural language dates including ordinals (e.g., "7th of April, 2025")
+    - Parse relative dates like "tomorrow", "next week", "in 3 days"
+    - Always return in YYYY-MM-DD HH:MM:SS format
+    - Do not include any explanations, only return the formatted datetime
 
     example:
     Input: Tomorrow at 2 PM
@@ -33,6 +41,18 @@ def convert_date_str_to_date(date_str):
 
     Input: 13th mar at 10 am
     Output: 2025-03-13 10:00:00
+    
+    Input: 4/7/2025
+    Output: 2025-04-07 00:00:00
+    
+    Input: 7th of April, 2025
+    Output: 2025-04-07 00:00:00
+    
+    Input: 12-25-2025
+    Output: 2025-12-25 00:00:00
+    
+    Input: April 7
+    Output: 2025-04-07 00:00:00
     """
     
     formatted_messages = [
