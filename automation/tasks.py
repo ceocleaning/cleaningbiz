@@ -21,6 +21,7 @@ def send_call_to_lead(lead_id):
             call_response = client.call.create_phone_call(
                 from_number=retellAgent.agent_number,
                 to_number=lead.phone_number,
+                override_agent_id=retellAgent.agent_id,
                 retell_llm_dynamic_variables={
                     'name': lead.name,
                     'service': lead.content
