@@ -91,83 +91,85 @@
                                 {% if plan.billing_cycle == 'monthly' %}/month{% else %}/month, billed annually{% endif %}
                             </span>
                         </div>
-                        <ul class="list-unstyled mb-4 feature-list">
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">{{ plan.voice_calls }} Voice Calls</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
-                            </li>
-                            
-                            {% if plan.features.basic_analytics %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Basic Analytics</span>
-                            </li>
-                            {% endif %}
-                            
-                            {% if plan.features.advanced_analytics %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Advanced Analytics</span>
-                            </li>
-                            {% endif %}
-                            
-                            {% if plan.features.email_support %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Email Support</span>
-                            </li>
-                            {% endif %}
-                            
-                            {% if plan.features.priority_support %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Priority Support</span>
-                            </li>
-                            {% endif %}
-                            
-                            {% if plan.features.dedicated_account_manager %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Dedicated Account Manager</span>
-                            </li>
-                            {% endif %}
+                        <div class="features-container flex-grow-1">
+                            <ul class="list-unstyled mb-4 feature-list">
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.voice_calls }} Voice Calls</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
+                                </li>
+                                
+                                {% if plan.features.basic_analytics %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Basic Analytics</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.advanced_analytics %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Advanced Analytics</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.email_support %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Email Support</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.priority_support %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Priority Support</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.dedicated_account_manager %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Dedicated Account Manager</span>
+                                </li>
+                                {% endif %}
 
-                            {% if plan.features.custom_integrations %}
-                            <li class="d-flex align-items-center mb-3">
-                                <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                    <i class="fas fa-check text-success fs-6"></i>
-                                </div>
-                                <span class="text-white opacity-80">Custom Integrations</span>
-                            </li>
-                            {% endif %}
-                        </ul>
+                                {% if plan.features.custom_integrations %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Custom Integrations</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
                         
                         <!-- Button linked to the payment system -->
-                        <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if 'Professional' in plan.name %}btn-primary{% else %}btn-outline-primary{% endif %} w-100 py-3 rounded-pill">
+                        <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if 'Professional' in plan.name %}btn-accent{% else %}btn-outline-accent{% endif %} w-100 py-3 rounded-pill shadow-glow">
                             Select Plan
                         </a>
                     </div>
@@ -492,6 +494,21 @@
         min-width: 24px;
     }
     
+    /* Pricing card equal height and button alignment */
+    .pricing-card .card-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .pricing-card .feature-list {
+        flex-grow: 1;
+    }
+    
+    .pricing-card .btn {
+        margin-top: auto;
+    }
+    
     /* Custom Comparison Table Styling */
     .comparison-table-wrapper {
         border-radius: 16px;
@@ -581,6 +598,20 @@
     .accordion-button:focus {
         box-shadow: none;
         border-color: transparent;
+    }
+
+    /* Background gradient */
+    .bg-gradient {
+        background: linear-gradient(135deg, #2D5BFF 0%, #1a237e 100%);
+    }
+    
+    /* Opacity classes */
+    .opacity-10 {
+        opacity: 0.1;
+    }
+    
+    .opacity-70 {
+        opacity: 0.7;
     }
 </style>
 
@@ -754,6 +785,17 @@
         color: white;
     }
     
+    .btn-outline-accent {
+        background-color: transparent;
+        border-color: #FF6B35;
+        color: #FF6B35;
+    }
+    
+    .btn-outline-accent:hover {
+        background-color: #FF6B35;
+        color: white;
+    }
+    
     /* Primary color for text */
     .text-primary-color {
         color: #2D5BFF;
@@ -768,6 +810,21 @@
         transform: translateX(5px);
     }
     
+    /* Pricing card equal height and button alignment */
+    .pricing-card .card-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .pricing-card .feature-list {
+        flex-grow: 1;
+    }
+    
+    .pricing-card .btn {
+        margin-top: auto;
+    }
+    
     /* Accordion styling */
     .accordion-button:not(.collapsed) {
         background-color: rgba(45, 91, 255, 0.05);
@@ -779,7 +836,7 @@
         box-shadow: none;
         border-color: rgba(45, 91, 255, 0.1);
     }
-    
+
     /* Background gradient */
     .bg-gradient {
         background: linear-gradient(135deg, #2D5BFF 0%, #1a237e 100%);

@@ -517,123 +517,154 @@
             <h2 class="display-5 fw-bold text-white mb-3">Simple, <span class="text-gradient">Transparent Pricing</span></h2>
             <p class="lead text-dark-text-secondary mx-auto" style="max-width: 700px;">Choose the plan that works best for your cleaning business. All plans include our AI Voice Agent technology.</p>
         </div>
-                <div class="row g-4">
-            <!-- Basic Plan -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
-                <div class="card h-100 bg-dark-surface-2 rounded-xl p-4 border-gradient">
-                    <div class="card-body p-2">
-                        <h3 class="text-white fw-bold mb-3">Starter</h3>
-                        <div class="d-flex align-items-baseline mb-4">
-                            <span class="display-4 fw-bold text-white">$99</span>
-                            <span class="text-dark-text-secondary ms-2">/month</span>
-                        </div>
-                        <p class="text-dark-text-secondary mb-4">Perfect for small cleaning businesses just getting started.</p>
-                        <ul class="list-unstyled mb-4">
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">AI Voice Agent (Sarah)</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Up to 100 calls/month</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Appointment scheduling</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Email confirmations</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-times-circle text-muted me-2"></i>
-                                <span class="" style="color: gainsboro;">Custom voice configuration</span>
-                            </li>
-                        </ul>
-                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
-                    </div>
-                </div>
+        
+        <!-- Pricing Toggle -->
+        <div class="d-flex flex-column align-items-center justify-content-center mb-5">
+            <div class="pricing-switch-container p-2 bg-dark-surface-2 rounded-pill d-inline-flex align-items-center mb-3" data-aos="fade-up">
+                <span class="pricing-switch-label px-4 py-2 rounded-pill text-white" id="monthly-label">Monthly</span>
+                <label class="pricing-toggle mx-2">
+                    <input type="checkbox" id="pricing-toggle" class="sr-only">
+                    <span class="pricing-slider"></span>
+                </label>
+                <span class="pricing-switch-label px-4 py-2 rounded-pill text-white" id="yearly-label">Yearly</span>
             </div>
-            
-            <!-- Pro Plan -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                <div class="card h-100 bg-gradient-primary rounded-xl p-4 border-gradient-accent position-relative" style="background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);">
-                    <!-- Popular badge/ribbon -->
+            <div class="yearly-savings badge bg-accent text-white px-3 py-2 mt-2" data-aos="fade-up" data-aos-delay="100">Save 20% with annual billing</div>
+        </div>
+        
+        <!-- Load subscription plans data -->
+        {% load subscription_plans %}
+        {% get_subscription_plans as plans %}
+        
+        <!-- Dynamic Pricing Cards with Subscription Plans data -->
+        <div class="row g-4 justify-content-center">
+            {% for plan in plans %}
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100" data-plan-type="{{ plan.billing_cycle }}">
+                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient {% if plan.name == 'Professional Plan' %}featured{% endif %}">
+                    {% if plan.name == 'Professional Plan' %}
                     <div class="position-absolute" style="top: 0; left: 0; right: 0; overflow: visible; text-align: center; z-index: 5;">
                         <div style="background-color: var(--bs-accent); color: white; display: inline-block; padding: 8px 16px; border-radius: 0 0 12px 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                             <i class="fas fa-star me-1"></i> Most Popular
                         </div>
                     </div>
-                    <div class="card-body p-2" style="margin-top: 10px;">
-                        <h3 class="text-white fw-bold mb-3">Professional</h3>
-                        <div class="d-flex align-items-baseline mb-4">
-                            <span class="display-4 fw-bold text-white">$199</span>
-                            <span class="text-white opacity-75 ms-2">/month</span>
+                    <div class="card-body p-5 pt-5 mt-3">
+                    {% else %}
+                    <div class="card-body p-5">
+                    {% endif %}
+                        <div class="plan-header mb-4">
+                            <div class="plan-icon mb-4 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);">
+                                {% if 'Starter' in plan.name %}
+                                <i class="fas fa-rocket text-primary-color fs-3"></i>
+                                {% elif 'Professional' in plan.name %}
+                                <i class="fas fa-building text-primary-color fs-3"></i>
+                                {% else %}
+                                <i class="fas fa-crown text-primary-color fs-3"></i>
+                                {% endif %}
+                            </div>
+                            <h3 class="card-title h4 fw-bold mb-2 text-white">
+                                {% if 'Starter' in plan.name %}Starter{% elif 'Professional' in plan.name %}Professional{% else %}Enterprise{% endif %}
+                            </h3>
+                            <p class="card-text text-dark-text-secondary">
+                                {% if 'Starter' in plan.name %}
+                                Perfect for small cleaning businesses just getting started
+                                {% elif 'Professional' in plan.name %}
+                                Ideal for growing cleaning businesses with multiple teams
+                                {% else %}
+                                For established cleaning businesses with complex needs
+                                {% endif %}
+                            </p>
                         </div>
-                        <p class="text-white opacity-75 mb-4">Ideal for growing cleaning businesses with regular call volume.</p>
-                        <ul class="list-unstyled mb-4">
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-accent-color me-2"></i>
-                                <span class="text-white opacity-75">AI Voice Agent (Sarah)</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-accent-color me-2"></i>
-                                <span class="text-white opacity-75">Up to 500 calls/month</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-accent-color me-2"></i>
-                                <span class="text-white opacity-75">Advanced scheduling</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-accent-color me-2"></i>
-                                <span class="text-white opacity-75">SMS & Email confirmations</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-accent-color me-2"></i>
-                                <span class="text-white opacity-75">Custom voice configuration</span>
-                            </li>
-                        </ul>
-                        <a href="{% url 'accounts:signup' %}" class="btn btn-accent w-100 py-3 rounded-pill shadow-glow">Get Started</a>
+                        <div class="pricing-amount d-flex align-items-baseline mb-4">
+                            <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
+                            <span class="display-4 fw-bold text-primary-color">{{ plan.price|floatformat:0 }}</span>
+                            <span class="text-dark-text-secondary ms-2">
+                                {% if plan.billing_cycle == 'monthly' %}/month{% else %}/month, billed annually{% endif %}
+                            </span>
+                        </div>
+                        <div class="features-container flex-grow-1">
+                            <ul class="list-unstyled mb-4 feature-list">
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.voice_calls }} Voice Calls</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
+                                </li>
+                                
+                                {% if plan.features.basic_analytics %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Basic Analytics</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.advanced_analytics %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Advanced Analytics</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.email_support %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Email Support</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.priority_support %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Priority Support</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% if plan.features.dedicated_account_manager %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Dedicated Account Manager</span>
+                                </li>
+                                {% endif %}
+
+                                {% if plan.features.custom_integrations %}
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">Custom Integrations</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <!-- Button linked to the payment system -->
+                        <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if 'Professional' in plan.name %}btn-accent{% else %}btn-outline-accent{% endif %} w-100 py-3 rounded-pill shadow-glow">
+                            Select Plan
+                        </a>
                     </div>
                 </div>
             </div>
-            
-            <!-- Enterprise Plan -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-                <div class="card h-100 bg-dark-surface-2 rounded-xl p-4 border-gradient">
-                    <div class="card-body p-2">
-                        <h3 class="text-white fw-bold mb-3">Enterprise</h3>
-                        <div class="d-flex align-items-baseline mb-4">
-                            <span class="display-4 fw-bold text-white">$399</span>
-                            <span class="text-dark-text-secondary ms-2">/month</span>
-                        </div>
-                        <p class="text-dark-text-secondary mb-4">For established cleaning businesses with high call volume.</p>
-                        <ul class="list-unstyled mb-4">
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">AI Voice Agent (Sarah)</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Unlimited calls</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Priority scheduling</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">All communication channels</span>
-                            </li>
-                            <li class="d-flex align-items-center mb-3">
-                                <i class="fas fa-check-circle text-primary-color me-2"></i>
-                                <span class="text-dark-text-secondary">Advanced analytics & reporting</span>
-                            </li>
-                        </ul>
-                        <a href="{% url 'accounts:signup' %}" class="btn btn-outline-light w-100 py-3 rounded-pill">Get Started</a>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
         
         <div class="bg-dark-surface-2 rounded-xl p-4 mt-5" data-aos="fade-up">
@@ -743,6 +774,19 @@
         const pricingToggle = document.getElementById('pricing-toggle');
         if (pricingToggle) {
             pricingToggle.addEventListener('change', togglePricing);
+            
+            // Set initial state
+            const monthlyLabel = document.getElementById('monthly-label');
+            const yearlySavings = document.querySelector('.yearly-savings');
+            
+            // Set Monthly as default active option
+            monthlyLabel.classList.add('active');
+            yearlySavings.style.display = 'none';
+            
+            // Trigger initial display setup - hide yearly plans by default
+            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                card.style.display = 'none';
+            });
         }
         
         // Demo Form Submission
@@ -804,26 +848,37 @@
     
     function togglePricing() {
         const isYearly = document.getElementById('pricing-toggle').checked;
-        const monthlyPrices = document.querySelectorAll('.monthly-price');
-        const yearlyPrices = document.querySelectorAll('.yearly-price');
-        const monthlyPeriods = document.querySelectorAll('.monthly-period');
-        const yearlyPeriods = document.querySelectorAll('.yearly-period');
+        const monthlyLabel = document.getElementById('monthly-label');
+        const yearlyLabel = document.getElementById('yearly-label');
+        const yearlySavings = document.querySelector('.yearly-savings');
         
         if (isYearly) {
-            // Show yearly prices
-            monthlyPrices.forEach(el => el.style.display = 'none');
-            yearlyPrices.forEach(el => el.style.display = 'inline-block');
-            monthlyPeriods.forEach(el => el.style.display = 'none');
-            yearlyPeriods.forEach(el => el.style.display = 'inline-block');
+            // Show yearly plans
+            document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
+                card.style.display = 'none';
+            });
+            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                card.style.display = 'block';
+            });
+            
+            // Toggle active class for labels
+            monthlyLabel.classList.remove('active');
+            yearlyLabel.classList.add('active');
+            yearlySavings.style.display = 'inline-block';
         } else {
-            // Show monthly prices
-            monthlyPrices.forEach(el => el.style.display = 'inline-block');
-            yearlyPrices.forEach(el => el.style.display = 'none');
-            monthlyPeriods.forEach(el => el.style.display = 'inline-block');
-            yearlyPeriods.forEach(el => el.style.display = 'none');
+            // Show monthly plans
+            document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
+                card.style.display = 'block';
+            });
+            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                card.style.display = 'none';
+            });
+            
+            // Toggle active class for labels
+            yearlyLabel.classList.remove('active');
+            monthlyLabel.classList.add('active');
+            yearlySavings.style.display = 'none';
         }
-        
-        console.log('Pricing toggled to ' + (isYearly ? 'yearly' : 'monthly'));
     }
 </script>
 
@@ -899,6 +954,17 @@
     color: white;
 }
 
+.btn-outline-accent {
+    background-color: transparent;
+    border-color: var(--bs-accent);
+    color: var(--bs-accent);
+}
+
+.btn-outline-accent:hover {
+    background-color: var(--bs-accent);
+    color: white;
+}
+
 /* Feature card hover effect */
 .feature-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -907,6 +973,21 @@
 .feature-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Pricing card equal height and button alignment */
+.pricing-card .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.pricing-card .feature-list {
+    flex-grow: 1;
+}
+
+.pricing-card .btn {
+    margin-top: auto;
 }
 </style>
 {% endblock %}
