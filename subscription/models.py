@@ -48,7 +48,7 @@ class BusinessSubscription(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.business.name} - {self.plan.name} ({self.status})"
+        return f"{self.business.businessName} - {self.plan.name} ({self.status})"
     
     def is_subscription_active(self):
         """Check if the subscription is currently active."""
@@ -81,7 +81,7 @@ class UsageTracker(models.Model):
         unique_together = ('business', 'date')
     
     def __str__(self):
-        return f"Usage for {self.business.name} on {self.date}"
+        return f"Usage for {self.business.businessName} on {self.date}"
     
     @classmethod
     def increment_metric(cls, business, metric_name, increment_by=1):
@@ -150,4 +150,4 @@ class BillingHistory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Invoice #{self.id} - {self.business.name} (${self.amount})"
+        return f"Invoice #{self.id} - {self.business.businessName} (${self.amount})"
