@@ -10,7 +10,7 @@ import requests
 from django.core.mail import send_mail
 from accounts.models import ApiCredential
 from ai_agent.models import AgentConfiguration, Messages, Chat
-from subscription.models import Subscription, SubscriptionPlan, UsageTracker
+from subscription.models import BusinessSubscription, SubscriptionPlan, UsageTracker
 from .tasks import send_call_to_lead
 from django_q.tasks import schedule
 
@@ -92,4 +92,3 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 
         except TwilioRestException as e:
             print(f"Error sending message: {e}")
-

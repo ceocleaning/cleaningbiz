@@ -2,7 +2,7 @@ from email import message
 from accounts.models import ApiCredential
 from ai_agent.models import AgentConfiguration, Messages, Chat
 from retell_agent.models import RetellAgent
-from subscription.models import Subscription, SubscriptionPlan, UsageTracker
+from subscription.models import BusinessSubscription, SubscriptionPlan, UsageTracker
 from retell import Retell
 from .models import Lead
 from django.utils import timezone
@@ -15,8 +15,8 @@ def send_call_to_lead(lead_id):
         chat = Chat.objects.get(lead=lead)
         retellAgent = RetellAgent.objects.get(business=lead.business)
 
-        subscription = Subscription.objects.get(business=lead.business)
-        usage_tracker = UsageTracker.objects.get(subscription=subscription)
+        # Track usage for voice calls
+        UsageTracker.increment_metric(lead.business, 'voice_calls')
 
         if not lead.is_response_received and retellAgent.agent_number:
             client = Retell(api_key=settings.RETELL_API_KEY)
@@ -32,9 +32,6 @@ def send_call_to_lead(lead_id):
             lead.is_call_sent = True
             lead.call_sent_at = timezone.now()
             lead.save()
-            
-            # Track usage for voice calls
-            UsageTracker.increment_metric(lead.business, 'voice_calls')
             
             print(call_response)
         
