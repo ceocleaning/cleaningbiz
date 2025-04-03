@@ -158,7 +158,7 @@ def get_chat_status(chat):
         Do not add any extra text, explanations, or formatting.
         Allowed Responses:
         pending → Conversation is ongoing, and not respondeded.
-        booked → The user has confirmed a booking.
+        booked → If the user has confirmed a booking no matter conversation is ongoing or not.
         not_interested → The user is not interested.
        
         Example Outputs:

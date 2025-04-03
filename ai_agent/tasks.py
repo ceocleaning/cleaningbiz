@@ -60,7 +60,7 @@ def check_chat_status():
                         print(f"[TASK] Business uses call feature, attempting to make call")
                         
                         # Validate required credentials
-                        if retellAgent.agent_number:
+                        if not retellAgent.agent_number:
                             print(f"[TASK] Missing voice agent number for business: {business.businessName}")
                             results['errors'] += 1
                             continue
