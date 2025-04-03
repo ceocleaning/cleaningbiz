@@ -4,10 +4,9 @@ from django.db import transaction
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 import json
-import requests
 import threading
-from django.utils.timezone import make_aware, is_naive
 from datetime import datetime, timedelta
+from django.utils.timezone import make_aware, is_naive
 
 from rest_framework import status
 from .models import *
@@ -17,6 +16,10 @@ from accounts.models import ApiCredential, Business, BusinessSettings, CustomAdd
 from bookings.models import Booking, BookingCustomAddons
 from .utils import calculateAmount, calculateAddonsAmount
 from integrations.models import PlatformIntegration, DataMapping, IntegrationLog
+from retell_agent.models import RetellAgent
+from subscription.models import UsageTracker
+from retell import Retell
+from django.conf import settings
 
 @csrf_exempt
 def thumbtack_webhook(request, secretKey):
@@ -84,178 +87,36 @@ def process_webhook_data(webhook_data):
         businessObj = apiCredentialObj.business
         
         event = post_data.get("event")
-        if event == "call_analyzed":
-            print("Call Analyzed")
-            call_analysis = post_data.get("call", {}).get("call_analysis", {})
-            custom_data = call_analysis.get("custom_analysis_data", {})
-
-            isAppointmentBooked = custom_data.get("appointment_booked", False)
-
-            if not isAppointmentBooked:
-                print("Appointment not booked")
-                return
+        call_data = post_data.get("call", {})
+        call_id = call_data.get("call_id") or call_data.get("id", "")
+      
+        if event == 'call_ended':
+            print(f"Call ended: {call_id}")
             
-            # Extract customer data
-            customer_data = {
-                "firstName": custom_data.get("first_name", ""),
-                "lastName": custom_data.get("last_name", ""),
-                "email": custom_data.get("email", ""),
-                "phoneNumber": custom_data.get("phone_number", ""),
-                "state": custom_data.get("state", ""),
-                "zipCode": custom_data.get("zip_code", ""),
-                "city": custom_data.get("city", ""),
-                "address1": custom_data.get("address", ""),
-                "address2": "",
-                "service_type": custom_data.get("service_type", ""),
-                "appointmentDateTime": custom_data.get("cleaning_date_time", ""),
-                "bedrooms": int(custom_data.get("bedrooms", 0)),
-                "bathrooms": int(custom_data.get("bathrooms", 0)),
-                "area": int(custom_data.get("area", 0)),
-                "additionalRequests": custom_data.get('additional_requests')
-            }
+            # Get timestamps directly from the webhook payload
+            start_timestamp = call_data.get("start_timestamp")
+            end_timestamp = call_data.get("end_timestamp")
             
-            # Get business settings
-            businessSettingsObj = BusinessSettings.objects.get(business=businessObj)
-
-
-            serviceType = customer_data["service_type"].lower().replace(" ", "")
-
-            if 'regular' in serviceType:
-                serviceType = 'standard'
-            elif 'deep' in serviceType:
-                serviceType = 'deep'
-            elif 'moveinmoveout' in serviceType:
-                serviceType = 'moveinmoveout'
-            elif 'airbnb' in serviceType:
-                serviceType = 'airbnb'
-            
-            # Calculate base price
-            calculateTotal = calculateAmount(
-                customer_data["bedrooms"],
-                customer_data["bathrooms"],
-                customer_data["area"],
-                serviceType,
-                businessSettingsObj
-            )
-
-         
-            
-            # Process addons
-            addons = {
-                "dishes": int(custom_data.get("dishes", 0)),
-                "laundry": int(custom_data.get("laundry", 0)),
-                "windows": int(custom_data.get("windows", 0)),
-                "pets": int(custom_data.get("pets", 0)),
-                "fridge": int(custom_data.get("fridge", 0)),
-                "oven": int(custom_data.get("oven", 0)),
-                "baseboards": int(custom_data.get("baseboards", 0)),
-                "blinds": int(custom_data.get("blinds", 0)),
-                "green": int(custom_data.get("green", 0)),
-                "cabinets": int(custom_data.get("cabinets", 0)),
-                "patio": int(custom_data.get("patio", 0)),
-                "garage": int(custom_data.get("garage", 0))
-            }
-
-           
-            
-            addonsPrices = {
-                "dishes": businessSettingsObj.addonPriceDishes,
-                "laundry": businessSettingsObj.addonPriceLaundry,
-                "windows": businessSettingsObj.addonPriceWindow,
-                "pets": businessSettingsObj.addonPricePets,
-                "fridge": businessSettingsObj.addonPriceFridge,
-                "oven": businessSettingsObj.addonPriceOven,
-                "baseboards": businessSettingsObj.addonPriceBaseboard,
-                "blinds": businessSettingsObj.addonPriceBlinds,
-                "green": businessSettingsObj.addonPriceGreen,
-                "cabinets": businessSettingsObj.addonPriceCabinets,
-                "patio": businessSettingsObj.addonPricePatio,
-                "garage": businessSettingsObj.addonPriceGarage
-            }
-
-          
-
-            # Calculate custom addons
-            customAddonsObj = CustomAddons.objects.filter(business=businessObj)
-            bookingCustomAddons = []
-            customAddonTotal = 0
-            for customAddon in customAddonsObj:
-                if customAddon.addonName not in addons:
-                    if customAddonsObj.filter(addonName=customAddon.addonName).exists():
-                        createNewBookingAddon = BookingCustomAddons.objects.create(
-                            addon=customAddon,
-                            qty=custom_data.get(customAddon.addonName, 0)
-                        )
-                        bookingCustomAddons.append(createNewBookingAddon)
-                        customAddonTotal += customAddon.addonPrice * custom_data.get(customAddon.addonName, 0)
-
-            
-            # Calculate final amounts
-            addons_result = calculateAddonsAmount(addons, addonsPrices)
-            
-            sub_total = calculateTotal + addons_result + customAddonTotal
-            tax = sub_total * (businessSettingsObj.taxPercent / 100)
-            total = sub_total + tax
-            
-            # Create booking
-            print("Creating booking...")
-            cleaningDatetime = datetime.fromisoformat(customer_data["appointmentDateTime"])
-            cleaningDate = cleaningDatetime.date()
-            startTime = cleaningDatetime.time()
-            endTime = (cleaningDatetime + timedelta(minutes=60)).time()
-
-            # Find available cleaner for the booking
-            cleaners = get_cleaners_for_business(businessObj)
-            available_cleaner = find_available_cleaner(cleaners, cleaningDatetime)
-            print("Available Cleaner:", available_cleaner)
-
-            newBooking = Booking.objects.create(
-                business=businessObj,
-                firstName=customer_data["firstName"],
-                lastName=customer_data["lastName"],
-                email=customer_data["email"],
-                phoneNumber=customer_data["phoneNumber"],
-                address1=customer_data["address1"],
-                address2=customer_data["address2"],
-                city=customer_data["city"],
-                stateOrProvince=customer_data["state"],
-                zipCode=customer_data["zipCode"],
-                cleaningDate=cleaningDate,
-                startTime=startTime,
-                endTime=endTime,
-                serviceType=serviceType,
-                bedrooms=customer_data["bedrooms"],
-                bathrooms=customer_data["bathrooms"],
-                squareFeet=customer_data["area"],
-                otherRequests=customer_data["additionalRequests"],
-                totalPrice=total,
-                tax=tax,
-                addonDishes=addons["dishes"],
-                addonLaundryLoads=addons["laundry"],
-                addonWindowCleaning=addons["windows"],
-                addonPetsCleaning=addons["pets"],
-                addonFridgeCleaning=addons["fridge"],
-                addonOvenCleaning=addons["oven"],
-                addonBaseboard=addons["baseboards"],
-                addonBlinds=addons["blinds"],
-                addonGreenCleaning=addons["green"],
-                addonCabinetsCleaning=addons["cabinets"],
-                addonPatioSweeping=addons["patio"],
-                addonGarageSweeping=addons["garage"],
-                cleaner=available_cleaner
-            )
-
-
-            newBooking.customAddons.set(bookingCustomAddons)
-            newBooking.save()
-
-            
-            # Send booking data to integration
-            send_booking_data(newBooking)
-            
+            if start_timestamp and end_timestamp:
+                # Convert milliseconds to seconds
+                start_time = datetime.fromtimestamp(start_timestamp / 1000)
+                end_time = datetime.fromtimestamp(end_timestamp / 1000)
+                
+                # Calculate duration in minutes
+                duration = end_time - start_time
+                minutes = max(1, round(duration.total_seconds() / 60))
+                
+                # Track usage
+                UsageTracker.increment_metric(businessObj, 'voice_minutes', minutes)
+                print(f"Call {call_id} lasted {minutes} minutes")
+            else:
+                # Fallback to a default value if timestamps are missing
+                UsageTracker.increment_metric(businessObj, 'voice_minutes', 1)
+                print(f"Used fallback duration of 1 minute for call {call_id} (missing timestamps)")
+    
     except Exception as e:
         print(f"Error processing webhook: {str(e)}")
-        raise Exception(f"Error processing webhook: {str(e)}")
+
 
 
 # Sending Data to External Sources

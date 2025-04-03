@@ -410,6 +410,8 @@ def send_sms_response(to_number, message, apiCred):
             to=to_number
         )
         from .utils import get_chat_status, find_by_phone_number
+        from subscription.models import UsageTracker
+        from automation.models import Lead
         
         print(f"[DEBUG] Finding chat for phone number: {to_number}")
         
@@ -419,6 +421,7 @@ def send_sms_response(to_number, message, apiCred):
             print(f"[DEBUG] Chat found: {chat}")
             get_chat_status(chat)
 
+            
         # Find lead with the same function
         lead = find_by_phone_number(Lead, 'phone_number', to_number)
         
@@ -563,5 +566,3 @@ def get_chat_data(request, chat_id):
             'success': False,
             'message': str(e)
         }, status=400)
-
-

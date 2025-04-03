@@ -10,6 +10,7 @@ import requests
 from django.core.mail import send_mail
 from accounts.models import ApiCredential
 from ai_agent.models import AgentConfiguration, Messages, Chat
+from subscription.models import Subscription, SubscriptionPlan, UsageTracker
 from .tasks import send_call_to_lead
 from django_q.tasks import schedule
 
@@ -80,6 +81,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
             print(f"Message sent successfully! SID: {message.sid}")
 
             if instance.business.useCall and instance.business.timeToWait > 0:
+
                 schedule(
                     'automation.tasks.send_call_to_lead',  
                     instance.id,  

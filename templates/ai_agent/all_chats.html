@@ -874,6 +874,10 @@
                         <span class="status-badge badge-call-sent">
                             <span class="status-dot call-sent"></span>Call Sent
                         </span>
+                            {% elif chat.status == 'follow_up_call_sent' %}
+                        <span class="status-badge badge-call-sent">
+                            <span class="status-dot call-sent"></span>Follow Up Call Sent
+                        </span>
                             {% endif %}
                         </div>
                     

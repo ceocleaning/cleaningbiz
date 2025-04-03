@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import Chat
+from .models import Chat, Messages
+from subscription.models import UsageTracker
 
 from datetime import datetime
 
@@ -27,4 +28,10 @@ def save_chat_summary(sender, instance, **kwargs):
             instance.summary = previous_instance.summary
         elif instance.summary:
             print(f"[DEBUG] Using new summary from signal - Chat ID: {instance.id}")
+
+@receiver(post_save, sender=Messages)
+def track_usage(sender, instance,created, **kwargs):
+    if created:
+        # Track SMS usage
+        UsageTracker.increment_metric(instance.chat.business, 'sms_messages')
 

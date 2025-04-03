@@ -6,6 +6,7 @@ from accounts.models import ApiCredential
 from django.conf import settings
 from retell_agent.models import RetellAgent
 from automation.models import Lead
+from subscription.models import UsageTracker
 import traceback
 
 def check_chat_status():
@@ -89,6 +90,9 @@ def check_chat_status():
                             
                             chat.status = 'follow_up_call_sent'
                             chat.save()
+                            
+                            # Track usage for voice calls
+                            UsageTracker.increment_metric(business, 'voice_calls')
                             
                             print(f"[TASK] Call successfully made, response ID: {call_response}")
                             results['calls_made'] += 1
