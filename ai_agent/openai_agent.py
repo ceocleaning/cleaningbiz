@@ -262,14 +262,14 @@ class OpenAIAgent:
                 if client_phone_number:
                     # Check if multiple chats exist for this phone number
                     chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
-                    print(f"[DEBUG] Found {chats.count()} chats for phone number {client_phone_number}")
+                    if not chats.exists():
+                        client_phone_number = client_phone_number.replace('+1', '')
+                        chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                    
                     if chats.exists():
                         if chats.count() > 1:
                             print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number}. Using the most recent one.")
-                        # Log the chat IDs for debugging
-                            for i, chat in enumerate(chats):
-                                print(f"[DEBUG] Chat {i+1}: ID={chat.id}, Created={chat.createdAt}")
-                            
+                       
                             # Get the most recent chat
                             chat = chats.order_by('-createdAt').first()
                             
