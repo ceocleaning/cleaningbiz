@@ -81,6 +81,8 @@ def process_webhook_data(webhook_data):
     try:
         post_data = webhook_data["post_data"]
         api_credential_id = webhook_data["api_credential_id"]
+
+        print(f"Processing webhook data: {post_data}")
         
         # Get API credentials and business
         apiCredentialObj = ApiCredential.objects.get(id=api_credential_id)
@@ -98,9 +100,9 @@ def process_webhook_data(webhook_data):
             end_timestamp = call_data.get("end_timestamp")
             
             if start_timestamp and end_timestamp:
-                # Convert milliseconds to seconds
-                start_time = datetime.fromtimestamp(start_timestamp / 1000)
-                end_time = datetime.fromtimestamp(end_timestamp / 1000)
+                # Convert milliseconds to seconds and make timezone-aware
+                start_time = make_aware(datetime.fromtimestamp(start_timestamp / 1000))
+                end_time = make_aware(datetime.fromtimestamp(end_timestamp / 1000))
                 
                 # Calculate duration in minutes
                 duration = end_time - start_time
@@ -109,6 +111,9 @@ def process_webhook_data(webhook_data):
                 # Track usage
                 UsageTracker.increment_metric(businessObj, 'voice_minutes', minutes)
                 print(f"Call {call_id} lasted {minutes} minutes")
+                
+                # Log the details for debugging
+                print(f"Start time: {start_time}, End time: {end_time}, Duration: {duration}")
             else:
                 # Fallback to a default value if timestamps are missing
                 UsageTracker.increment_metric(businessObj, 'voice_minutes', 1)
@@ -116,6 +121,8 @@ def process_webhook_data(webhook_data):
     
     except Exception as e:
         print(f"Error processing webhook: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
 
 
 
