@@ -260,33 +260,18 @@ class OpenAIAgent:
             # Try to get an existing chat
             try:
                 if client_phone_number:
-                    # Check if multiple chats exist for this phone number
-                    chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
-                    if not chats.exists():
-                        client_phone_number = client_phone_number.replace('+1', '')
-                        chats = Chat.objects.filter(clientPhoneNumber=client_phone_number)
+                    from .utils import find_by_phone_number
+                    chat = find_by_phone_number(Chat, 'clientPhoneNumber', client_phone_number)
                     
-                    if chats.exists():
-                        if chats.count() > 1:
-                            print(f"[WARNING] Found {chats.count()} chats for phone number {client_phone_number}. Using the most recent one.")
-                       
-                            # Get the most recent chat
-                            chat = chats.order_by('-createdAt').first()
-                            
-                            # Delete older duplicate chats to prevent future issues
-                            chats.exclude(id=chat.id).delete()
-                            print(f"[DEBUG] Deleted older duplicate chats. Keeping chat ID={chat.id}")
-                        else:
-                            chat = chats.first()
-                    else:
+                    if not chat:
                         chat = Chat.objects.create(
                             business=business,
                             clientPhoneNumber=client_phone_number,
                             status='pending'  # Add default status
                         )
                            
-                        print(f"[DEBUG] Created new chat ID={chat.id}")
-                        return chat
+                    print(f"[DEBUG] Created new chat ID={chat.id}")
+                    return chat
                 else:
                     # Check if multiple chats exist for this session key
                     chats = Chat.objects.filter(sessionKey=session_key)

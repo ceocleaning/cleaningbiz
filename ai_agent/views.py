@@ -409,24 +409,9 @@ def send_sms_response(to_number, message, apiCred):
             from_=from_number,
             to=to_number
         )
-        from .utils import get_chat_status
+        from .utils import get_chat_status, find_by_phone_number
         
-        def find_by_phone_number(model, field_name, phone):
-            """Helper function to find a record by trying different phone number formats"""
-            # Try original format
-            obj = model.objects.filter(**{field_name: phone}).first()
-            if obj:
-                return obj
-                
-            # Try without +1 prefix
-            phone_without_prefix = phone.replace('+1', '')
-            obj = model.objects.filter(**{field_name: phone_without_prefix}).first()
-            if obj:
-                return obj
-                
-            # Try just the last 10 digits
-            phone_10_digits = phone_without_prefix[:10]
-            return model.objects.filter(**{field_name: phone_10_digits}).first()
+        
         
         # Find chat with reusable function
         chat = find_by_phone_number(Chat, 'clientPhoneNumber', to_number)

@@ -12,6 +12,30 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Change timezone to chicago
 current_time = datetime.now().astimezone(pytz.timezone('America/Chicago'))
 
+
+
+def find_by_phone_number(model, field_name, phone):
+    """Helper function to find a record by trying different phone number formats"""
+    # Try original format
+    obj = model.objects.filter(**{field_name: phone}).first()
+    if obj:
+        return obj
+        
+    # Try without +1 prefix
+    phone_without_prefix = phone.replace('+1', '')
+    obj = model.objects.filter(**{field_name: phone_without_prefix}).first()
+    if obj:
+        return obj
+        
+    # Try just the last 10 digits
+    phone_10_digits = phone_without_prefix[:10]
+    return model.objects.filter(**{field_name: phone_10_digits}).first()
+
+
+
+
+
+
 def convert_date_str_to_date(date_str):
     SYSTEM_PROMPT = f"""
     You are a helpful assistant that can convert any date and time format to a standardized datetime object.
