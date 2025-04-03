@@ -13,6 +13,7 @@ CHAT_STATUS_CHOICES = (
     ('not_interested', 'Not Interested'),
     ('booked', 'Booked'),
     ('call_sent', 'Call Sent'),
+    ('follow_up_call_sent', 'Follow Up Call Sent')
 )
 
 
