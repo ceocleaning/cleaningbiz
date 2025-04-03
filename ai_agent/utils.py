@@ -1,10 +1,11 @@
-import google.generativeai as genai
+from django.db.models import Q
 from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
 import traceback
+import re
 
 load_dotenv()
 
@@ -15,21 +16,16 @@ current_time = datetime.now().astimezone(pytz.timezone('America/Chicago'))
 
 
 def find_by_phone_number(model, field_name, phone):
-    """Helper function to find a record by trying different phone number formats"""
-    # Try original format
-    obj = model.objects.filter(**{field_name: phone}).first()
-    if obj:
-        return obj
-        
-    # Try without +1 prefix
-    phone_without_prefix = phone.replace('+1', '')
-    obj = model.objects.filter(**{field_name: phone_without_prefix}).first()
-    if obj:
-        return obj
-        
-    # Try just the last 10 digits
-    phone_10_digits = phone_without_prefix[:10]
-    return model.objects.filter(**{field_name: phone_10_digits}).first()
+    """Find a record by trying different phone number formats."""
+
+    # Extract only the last 10 digits for a more reliable comparison
+    phone_digits = re.sub(r'\D', '', phone)  # Remove all non-numeric characters
+    phone_last_10 = phone_digits[-10:]  # Get the last 10 digits
+    
+    # Build query to check different formats in a single database hit
+    query = Q(**{field_name: phone}) | Q(**{field_name: phone_digits}) | Q(**{field_name: phone_last_10})
+    
+    return model.objects.filter(query).first()
 
 
 

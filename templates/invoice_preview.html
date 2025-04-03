@@ -403,9 +403,8 @@
                     <strong>Note</strong>
                 </div>
                 <div class="card-body">
-                    1. Please include invoice number in payment reference<br>
-                    2. Payment is due within 30 days<br>
-                    3. Late payments may incur additional fees
+                    For pre-authorized payment options, the payment will be deducted on the day of service.<br><br>
+                    Please note: Your cleaning appointment will not be fully confirmed until this link is completed.
                 </div>
             </div>
         </div>
@@ -414,7 +413,7 @@
     <!-- Thank You Note -->
     <div class="text-center mt-4">
         <h3 class="h4">Thank You for Your Business!</h3>
-        <p class="text-muted small">If you have any questions about this invoice, please contact us at (555) 123-4567 or info@ceocleaners.com</p>
+        <p class="text-muted small">If you have any questions about this invoice, please contact us at {{ business.phone }} or {{ business.user.email }}</p>
     </div>
 
     {% if booking.business.user == request.user %}

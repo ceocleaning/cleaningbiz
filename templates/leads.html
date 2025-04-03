@@ -26,7 +26,7 @@
                             <th>Name</th>
                             <th>Contact Info</th>
                             <th class="d-none d-md-table-cell">Source</th>
-                            <th class="d-none d-md-table-cell">Status</th>
+                         
                             <th class="d-none d-md-table-cell">Created At</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -46,17 +46,7 @@
                             <td class="d-none d-md-table-cell">
                                 <span class="badge bg-info">{{ lead.source }}</span>
                             </td>
-                            <td class="d-none d-md-table-cell">
-                                {% if lead.isConverted %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>Converted
-                                </span>
-                                {% else %}
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-clock me-1"></i>Pending
-                                </span>
-                                {% endif %}
-                            </td>
+                           
                             <td class="d-none d-md-table-cell">{{ lead.createdAt|date:"M d, Y" }}</td>
                             <td class="text-end">
                                 <div class="d-flex flex-wrap justify-content-end gap-2">

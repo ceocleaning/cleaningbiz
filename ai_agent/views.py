@@ -411,15 +411,18 @@ def send_sms_response(to_number, message, apiCred):
         )
         from .utils import get_chat_status, find_by_phone_number
         
-        
+        print(f"[DEBUG] Finding chat for phone number: {to_number}")
         
         # Find chat with reusable function
         chat = find_by_phone_number(Chat, 'clientPhoneNumber', to_number)
         if chat:
+            print(f"[DEBUG] Chat found: {chat}")
             get_chat_status(chat)
 
         # Find lead with the same function
         lead = find_by_phone_number(Lead, 'phone_number', to_number)
+        
+        print(f"[DEBUG] Lead found: {lead}")
         if lead:
             lead.is_response_received = True
             lead.save()
