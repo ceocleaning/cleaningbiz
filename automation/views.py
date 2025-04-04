@@ -1195,7 +1195,7 @@ def verify_recaptcha_token(token):
     # For production use a reCAPTCHA secret key, not a Maps API key
     # The AIzaSy... key provided is a Google Maps API key, not a reCAPTCHA secret
     # Using a hardcoded test key for demonstration - in production use environment variables
-    secret_key = '6LeB6BkaAAAAAKAzN6DApntBaHVU_TkbKp35n1vM'  # Test secret key
+    secret_key = '6Lf7ef0qAAAAAIOoSjew30LOmVKLmxtF-P0weufR'  # Updated to match frontend site key
     
     payload = {
         'secret': secret_key,
