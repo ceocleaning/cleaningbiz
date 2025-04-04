@@ -35,7 +35,8 @@ def PricingPage(request):
         create_dummy_plans()
     
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True)
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+
     
     return render(request, 'PricingPage.html', {'plans': plans})
 

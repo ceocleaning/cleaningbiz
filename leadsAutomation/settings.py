@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'usage_analytics',
     'subscription',
     'retell_agent',
+    'admin_dashbaord'
 ]
 
 MIDDLEWARE = [
