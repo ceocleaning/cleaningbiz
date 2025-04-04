@@ -47,12 +47,46 @@ class Lead(models.Model):
     def save(self, *args, **kwargs):
         if not self.leadId:
             self.leadId = self.generateLeadId()
+        if self.phone_number:
+            self.phone_number = self.clean_phone_number(self.phone_number)
         super().save(*args, **kwargs)
     
     def generateLeadId(self):
         prefix = "ld-"
         id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
         return f"{prefix}{id}"
+    
+    def clean_phone_number(self, phone):
+        """
+        Clean and standardize phone number format by:
+        1. Removing spaces, dashes, parentheses, and other non-numeric characters
+        2. Ensuring proper country code format
+        3. Handling various input formats
+        
+        Returns a standardized phone number string
+        """
+        if not phone:
+            return phone
+            
+        # Remove all non-numeric characters
+        cleaned = ''.join(char for char in phone if char.isdigit())
+        
+        # Handle US/Canada numbers
+        if len(cleaned) == 10:
+            # Add +1 country code if it's a 10-digit US/Canada number
+            return f"+1{cleaned}"
+        elif len(cleaned) == 11 and cleaned.startswith('1'):
+            # Format with + if it's an 11-digit number starting with 1
+            return f"+{cleaned}"
+        elif cleaned.startswith('00'):
+            # Convert 00 international prefix to +
+            return f"+{cleaned[2:]}"
+        elif not cleaned.startswith('+'):
+            # Add + if it doesn't have one and isn't handled by cases above
+            return f"+{cleaned}"
+        
+        # Return the cleaned number
+        return cleaned
 
 
 
