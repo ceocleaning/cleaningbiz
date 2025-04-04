@@ -17,12 +17,16 @@ class SubscriptionPlan(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     billing_cycle = models.CharField(max_length=10, choices=BILLING_CYCLE_CHOICES, default='monthly')
     voice_minutes = models.IntegerField(default=0)
-    voice_calls = models.IntegerField(default=0)
     sms_messages = models.IntegerField(default=0)
+    agents = models.IntegerField(default=0)
+    leads = models.IntegerField(default=0)
+    
     features = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
     
     def __str__(self):
         return f"{self.name} ({self.get_billing_cycle_display()}) - ${self.price}"

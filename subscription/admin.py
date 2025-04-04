@@ -3,7 +3,7 @@ from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, Billin
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'billing_cycle', 'voice_minutes', 'voice_calls', 'sms_messages', 'is_active')
+    list_display = ('name', 'price', 'billing_cycle', 'voice_minutes', 'sms_messages', 'is_active')
     list_filter = ('billing_cycle', 'is_active')
     search_fields = ('name',)
 
