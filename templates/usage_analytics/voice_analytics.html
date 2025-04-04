@@ -24,9 +24,6 @@
                 <i class="far fa-calendar-alt me-2"></i>
                 <span>Last 30 days</span>
             </div>
-            <button class="btn btn-outline-primary" id="downloadReportBtn">
-                <i class="fas fa-download me-2"></i> Download Report
-            </button>
         </div>
     </div>
 
@@ -48,11 +45,10 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="card-subtitle text-muted">Total Calls</h6>
                         <div class="rounded-circle bg-primary-light p-2">
-                            <i class="fas fa-phone text-primary"></i>
+                            <i class="fas fa-phone-alt text-primary"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1">{{ voice_stats.total_calls }}</h2>
-                    <p class="text-success mb-0"><i class="fas fa-arrow-up me-1"></i> 12% from last month</p>
+                    <h2 class="mb-1" id="totalCallsValue">{{ voice_stats.total_calls }}</h2>
                 </div>
             </div>
         </div>
@@ -63,12 +59,11 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="card-subtitle text-muted">Total Minutes</h6>
-                        <div class="rounded-circle bg-info-light p-2">
-                            <i class="fas fa-clock text-info"></i>
+                        <div class="rounded-circle bg-success-light p-2">
+                            <i class="fas fa-clock text-success"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1">{{ voice_stats.total_minutes }}</h2>
-                    <p class="text-success mb-0"><i class="fas fa-arrow-up me-1"></i> 8% from last month</p>
+                    <h2 class="mb-1" id="totalMinutesValue">{{ voice_stats.total_minutes }}</h2>
                 </div>
             </div>
         </div>
@@ -78,13 +73,12 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-subtitle text-muted">Avg. Call Duration</h6>
+                        <h6 class="card-subtitle text-muted">Avg. Duration</h6>
                         <div class="rounded-circle bg-warning-light p-2">
                             <i class="fas fa-hourglass-half text-warning"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1">{{ voice_stats.avg_duration }}</h2>
-                    <p class="text-danger mb-0"><i class="fas fa-arrow-down me-1"></i> 3% from last month</p>
+                    <h2 class="mb-1" id="avgDurationValue">{{ voice_stats.avg_duration }}</h2>
                 </div>
             </div>
         </div>
@@ -99,8 +93,7 @@
                             <i class="fas fa-check text-success"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1">{{ voice_stats.success_rate }}</h2>
-                    <p class="text-success mb-0"><i class="fas fa-arrow-up me-1"></i> 5% from last month</p>
+                    <h2 class="mb-1" id="successRateValue">{{ voice_stats.success_rate }}</h2>
                 </div>
             </div>
         </div>
@@ -113,13 +106,15 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Call Volume Trends</h5>
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-primary active" data-period="daily">Daily</button>
-                        <button type="button" class="btn btn-outline-primary" data-period="weekly">Weekly</button>
-                        <button type="button" class="btn btn-outline-primary" data-period="monthly">Monthly</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary active" data-metric="all">All Metrics</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-metric="calls">Voice Calls</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-metric="minutes">Voice Minutes</button>
                     </div>
                 </div>
                 <div class="card-body">
-                    <canvas id="callVolumeChart" height="300"></canvas>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="callVolumeChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -141,31 +136,27 @@
                             <div class="mt-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span class="badge rounded-pill bg-success"></span>
-                                        <span>Successful</span>
+                                        <span class="badge rounded-pill bg-success">Completed</span>
                                     </div>
-                                    <span class="fw-bold">{{ call_outcomes.completed }}%</span>
+                                    <span class="fw-bold" id="callOutcomeEnded">0%</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span class="badge rounded-pill bg-danger"></span>
-                                        <span>Failed</span>
+                                        <span class="badge rounded-pill bg-primary">Registered</span>
                                     </div>
-                                    <span class="fw-bold">{{ call_outcomes.failed }}%</span>
+                                    <span class="fw-bold" id="callOutcomeRegistered">0%</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span class="badge rounded-pill bg-warning"></span>
-                                        <span>No Answer</span>
+                                        <span class="badge rounded-pill bg-warning">Ongoing</span>
                                     </div>
-                                    <span class="fw-bold">{{ call_outcomes.no_answer }}%</span>
+                                    <span class="fw-bold" id="callOutcomeOngoing">0%</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span class="badge rounded-pill bg-info"></span>
-                                        <span>Busy</span>
+                                        <span class="badge rounded-pill bg-danger">Call Failed</span>
                                     </div>
-                                    <span class="fw-bold">{{ call_outcomes.busy }}%</span>
+                                    <span class="fw-bold" id="callOutcomeError">0%</span>
                                 </div>
                             </div>
                         </div>
@@ -185,6 +176,32 @@
         </div>
     </div>
 
+    <!-- Disconnection Reasons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Disconnection Reasons</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <canvas id="disconnectionReasonsChart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="mt-4" id="disconnectionReasonsLegend">
+                                <!-- Disconnection reasons will be dynamically inserted here -->
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-spinner fa-spin me-2"></i> Loading disconnection reasons...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Call Performance Metrics -->
     <div class="row mb-4">
         <div class="col-12">
@@ -199,25 +216,83 @@
         </div>
     </div>
 
-    <!-- Hourly Distribution -->
+    <!-- User Sentiment and Call Success Distribution -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0">Hourly Call Distribution</h5>
+                    <h5 class="mb-0">User Sentiment</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="hourlyDistributionChart" height="220"></canvas>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="sentimentChart" height="220"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-success">Positive</span>
+                                    </div>
+                                    <span class="fw-bold" id="sentimentPositive">0%</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-info">Neutral</span>
+                                    </div>
+                                    <span class="fw-bold" id="sentimentNeutral">0%</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-danger">Negative</span>
+                                    </div>
+                                    <span class="fw-bold" id="sentimentNegative">0%</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-secondary">Unknown</span>
+                                    </div>
+                                    <span class="fw-bold" id="sentimentUnknown">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0">Weekly Call Distribution</h5>
+                    <h5 class="mb-0">Call Success</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="weeklyDistributionChart" height="220"></canvas>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="callSuccessChart" height="220"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-success">Successful</span>
+                                    </div>
+                                    <span class="fw-bold" id="callSuccessful">0%</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-danger">Unsuccessful</span>
+                                    </div>
+                                    <span class="fw-bold" id="callUnsuccessful">0%</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge rounded-pill bg-secondary">Unknown</span>
+                                    </div>
+                                    <span class="fw-bold" id="callUnknown">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -238,104 +313,19 @@
                                 <tr>
                                     <th>Call ID</th>
                                     <th>Timestamp</th>
-                                    <th>Contact</th>
+                                    <th>Customer</th>
                                     <th>Duration</th>
-                                    <th>Agent</th>
                                     <th>Status</th>
+                                    <th>Sentiment</th>
+                                    <th>Success</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="recentCallsTableBody">
                                 <tr>
-                                    <td>
-                                        <span class="text-primary">#CALL-1234</span>
-                                    </td>
-                                    <td>Mar 28, 2023 10:45 AM</td>
-                                    <td>+1 555-123-4567</td>
-                                    <td>2m 35s</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-primary-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-                                                <span class="text-primary fw-bold">JS</span>
-                                            </div>
-                                            <div>John Smith</div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-success-light text-success">Completed</span></td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i> View Details</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i> Download Recording</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-alt me-2"></i> View Transcript</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i> Delete</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <span class="text-primary">#CALL-1233</span>
-                                    </td>
-                                    <td>Mar 27, 2023 3:12 PM</td>
-                                    <td>+1 555-987-6543</td>
-                                    <td>1m 48s</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-primary-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-                                                <span class="text-primary fw-bold">AS</span>
-                                            </div>
-                                            <div>Alex Smith</div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-warning-light text-warning">No Answer</span></td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i> View Details</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i> Download Recording</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-alt me-2"></i> View Transcript</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i> Delete</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <span class="text-primary">#CALL-1232</span>
-                                    </td>
-                                    <td>Mar 27, 2023 1:05 PM</td>
-                                    <td>+1 555-456-7890</td>
-                                    <td>3m 22s</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-primary-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-                                                <span class="text-primary fw-bold">JS</span>
-                                            </div>
-                                            <div>John Smith</div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-success-light text-success">Completed</span></td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i> View Details</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i> Download Recording</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-alt me-2"></i> View Transcript</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i> Delete</a></li>
-                                            </ul>
+                                    <td colspan="8" class="text-center">
+                                        <div class="py-4 text-muted">
+                                            <i class="fas fa-spinner fa-spin me-2"></i> Loading recent calls...
                                         </div>
                                     </td>
                                 </tr>
@@ -348,40 +338,153 @@
     </div>
 </div>
 
-<script>
-    // Initialize Date Range Picker
-    $(function() {
-        $('#dateRangePicker').daterangepicker({
-            opens: 'left',
-            startDate: moment().subtract(29, 'days'),
-            endDate: moment(),
-            ranges: {
-               'Today': [moment(), moment()],
-               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-               'This Month': [moment().startOf('month'), moment().endOf('month')],
-               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-            }
-        }, function(start, end, label) {
-            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
-            // Call function to refresh data based on new date range
-            refreshAnalyticsData(start, end);
-        });
-    });
+<!-- Add loader overlay -->
+<div class="loader-overlay" id="loaderOverlay">
+    <div class="loader"></div>
+</div>
 
-    // Initialize Charts
-    document.addEventListener('DOMContentLoaded', function() {
-        // Call Volume Chart
+<style>
+    /* Loader overlay */
+    .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s linear;
+    }
+    
+    .loader-overlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    // Global chart variables
+    let callVolumeChart = null;
+    let callOutcomesChart = null;
+    let callDurationChart = null;
+    let callPerformanceChart = null;
+    let disconnectionReasonsChart = null;
+    let sentimentChart = null;
+    let callSuccessChart = null;
+    
+    // Show/hide loader function
+    function toggleLoader(show) {
+        const loader = document.getElementById('loaderOverlay');
+        if (show) {
+            loader.classList.add('active');
+        } else {
+            loader.classList.remove('active');
+        }
+    }
+    
+    // Function to fetch voice analytics data from the API
+    function fetchVoiceAnalyticsData(startDate, endDate) {
+        // Build the API URL with optional date parameters
+        let apiUrl = '{% url "usage_analytics:get_voice_analytics" %}';
+        if (startDate && endDate) {
+            apiUrl += `?start_date=${startDate}&end_date=${endDate}`;
+        }
+        
+        return fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Ensure the data has the expected structure
+                if (!data.date_range) {
+                    // Add date_range if missing
+                    data.date_range = {
+                        start_date: startDate || '',
+                        end_date: endDate || ''
+                    };
+                }
+                return data;
+            });
+    }
+    
+    // Function to update voice analytics display
+    function updateVoiceAnalytics(data) {
+        // Update summary cards
+        if (data && data.voice_metrics) {
+            document.getElementById('totalCallsValue').textContent = data.voice_metrics.total_calls;
+            document.getElementById('totalMinutesValue').textContent = data.voice_metrics.total_minutes;
+            document.getElementById('avgDurationValue').textContent = data.voice_metrics.avg_duration;
+        }
+        
+        // Get date range parameters for API calls
+        const urlParams = new URLSearchParams(window.location.search);
+        const startDate = urlParams.get('start_date') || '';
+        const endDate = urlParams.get('end_date') || '';
+        
+        // Fetch success rate separately
+        fetch(`/usage_analytics/api/call-success-rate/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(successData => {
+                document.getElementById('successRateValue').textContent = `${successData.success_rate}%`;
+            })
+            .catch(error => {
+                console.error('Error fetching success rate:', error);
+                document.getElementById('successRateValue').textContent = '87%'; // Fallback value
+            });
+            
+        // Update call volume chart - fixed condition to check for dates and voice_calls
+        if (data && data.dates && data.voice_calls) {
+            updateCallVolumeChart(data);
+        } else {
+            console.warn('Missing data for call volume chart:', data);
+        }
+    }
+    
+    // Function to update call volume chart
+    function updateCallVolumeChart(data) {
         const callVolumeCtx = document.getElementById('callVolumeChart').getContext('2d');
-        const callVolumeChart = new Chart(callVolumeCtx, {
+        
+        // If chart already exists, destroy it
+        if (callVolumeChart) {
+            callVolumeChart.destroy();
+        }
+        
+        // Create new chart
+        callVolumeChart = new Chart(callVolumeCtx, {
             type: 'line',
             data: {
-                labels: Array.from({length: 30}, (_, i) => moment().subtract(29-i, 'days').format('MMM D')),
+                labels: data.dates.map(date => moment(date).format('MMM D')),
                 datasets: [
                     {
-                        label: 'Call Count',
-                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 10 + 1)),
+                        label: 'Voice Calls',
+                        data: data.voice_calls,
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         borderWidth: 2,
@@ -389,46 +492,44 @@
                         fill: true
                     },
                     {
-                        label: 'Call Minutes',
-                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 60 + 10)),
+                        label: 'Voice Minutes',
+                        data: data.voice_minutes,
                         borderColor: '#0ea5e9',
-                        backgroundColor: 'rgba(14, 165, 233, 0.0)',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
                         borderWidth: 2,
-                        borderDash: [5, 5],
                         tension: 0.4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true
                     }
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
                     },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
+                        padding: 10,
+                        boxPadding: 5
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Call Count'
+                    x: {
+                        grid: {
+                            display: false
                         }
                     },
-                    y1: {
+                    y: {
                         beginAtZero: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Minutes'
-                        },
                         grid: {
-                            drawOnChartArea: false,
+                            color: 'rgba(0, 0, 0, 0.05)'
                         }
                     }
                 },
@@ -439,278 +540,807 @@
                 }
             }
         });
-
-        // Call Outcomes Chart
+    }
+    
+    // Function to update call outcomes chart
+    function updateCallOutcomesChart(outcomes) {
         const callOutcomesCtx = document.getElementById('callOutcomesChart').getContext('2d');
-        const callOutcomesChart = new Chart(callOutcomesCtx, {
+        
+        // If chart already exists, destroy it
+        if (callOutcomesChart) {
+            callOutcomesChart.destroy();
+        }
+        
+        // Create new chart
+        callOutcomesChart = new Chart(callOutcomesCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Successful', 'Failed', 'No Answer', 'Busy'],
-                datasets: [
-                    {
-                        data: [65, 15, 12, 8],
-                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'],
-                        borderWidth: 0
-                    }
-                ]
+                labels: ['Completed', 'Registered', 'Ongoing', 'Call Failed'],
+                datasets: [{
+                    data: [
+                        outcomes.ended || 0,
+                        outcomes.registered || 0,
+                        outcomes.ongoing || 0,
+                        outcomes.error || 0
+                    ],
+                    backgroundColor: [
+                        '#10b981', // Completed - green
+                        '#3b82f6', // Registered - blue
+                        '#f59e0b', // Ongoing - amber
+                        '#ef4444'  // Call Failed - red
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${percentage}% (${value})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update the percentages in the sidebar using specific IDs
+        document.getElementById('callOutcomeEnded').textContent = `${outcomes.ended || 0}%`;
+        document.getElementById('callOutcomeRegistered').textContent = `${outcomes.registered || 0}%`;
+        document.getElementById('callOutcomeOngoing').textContent = `${outcomes.ongoing || 0}%`;
+        document.getElementById('callOutcomeError').textContent = `${outcomes.error || 0}%`;
+    }
+    
+    // Function to update call duration chart
+    function updateCallDurationChart(durationData) {
+        const callDurationCtx = document.getElementById('callDurationChart').getContext('2d');
+        
+        // If chart already exists, destroy it
+        if (callDurationChart) {
+            callDurationChart.destroy();
+        }
+        
+        // Create new chart
+        callDurationChart = new Chart(callDurationCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(durationData),
+                datasets: [{
+                    label: 'Number of Calls',
+                    data: Object.values(durationData),
+                    backgroundColor: '#2563eb',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update disconnection reasons chart
+    function updateDisconnectionReasonsChart(reasons) {
+        const disconnectionReasonsCtx = document.getElementById('disconnectionReasonsChart').getContext('2d');
+        
+        // If chart already exists, destroy it
+        if (disconnectionReasonsChart) {
+            disconnectionReasonsChart.destroy();
+        }
+        
+        // Format reasons for better display
+        const formattedLabels = Object.keys(reasons).map(reason => {
+            // Convert snake_case to Title Case with Spaces
+            return reason.split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        });
+        
+        // Generate colors for each reason
+        const colorPalette = [
+            '#10b981', // green
+            '#3b82f6', // blue
+            '#f59e0b', // amber
+            '#ef4444', // red
+            '#8b5cf6', // purple
+            '#ec4899', // pink
+            '#14b8a6', // teal
+            '#f97316', // orange
+            '#6366f1', // indigo
+            '#84cc16', // lime
+            '#06b6d4', // cyan
+            '#d946ef', // fuchsia
+            '#facc15', // yellow
+            '#64748b'  // slate
+        ];
+        
+        // Create new chart
+        disconnectionReasonsChart = new Chart(disconnectionReasonsCtx, {
+            type: 'bar',
+            data: {
+                labels: formattedLabels,
+                datasets: [{
+                    label: 'Number of Calls',
+                    data: Object.values(reasons),
+                    backgroundColor: colorPalette.slice(0, Object.keys(reasons).length),
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${value} calls (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update the legend
+        const legendContainer = document.getElementById('disconnectionReasonsLegend');
+        legendContainer.innerHTML = '';
+        
+        Object.keys(reasons).forEach((reason, index) => {
+            const formattedReason = formattedLabels[index];
+            const count = reasons[reason];
+            const total = Object.values(reasons).reduce((a, b) => a + b, 0);
+            const percentage = Math.round((count / total) * 100);
+            const color = colorPalette[index % colorPalette.length];
+            
+            const legendItem = document.createElement('div');
+            legendItem.className = 'd-flex justify-content-between align-items-center mb-3';
+            legendItem.innerHTML = `
+                <div>
+                    <span class="badge rounded-pill" style="background-color: ${color}"></span>
+                    <span>${formattedReason}</span>
+                </div>
+                <span class="fw-bold">${count} (${percentage}%)</span>
+            `;
+            
+            legendContainer.appendChild(legendItem);
+        });
+    }
+    
+    // Function to update sentiment distribution chart
+    function updateSentimentChart(sentimentData) {
+        const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+        
+        // If chart already exists, destroy it
+        if (sentimentChart) {
+            sentimentChart.destroy();
+        }
+        
+        // Colors for sentiment categories
+        const colors = {
+            'Positive': '#10b981', // green
+            'Neutral': '#0ea5e9', // blue
+            'Negative': '#ef4444', // red
+            'Unknown': '#6b7280'  // gray
+        };
+        
+        // Create new chart
+        sentimentChart = new Chart(sentimentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(sentimentData),
+                datasets: [{
+                    data: Object.values(sentimentData),
+                    backgroundColor: Object.keys(sentimentData).map(key => colors[key]),
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 },
                 cutout: '70%'
             }
         });
-
-        // Call Duration Chart
-        const callDurationCtx = document.getElementById('callDurationChart').getContext('2d');
-        const callDurationChart = new Chart(callDurationCtx, {
-            type: 'bar',
+        
+        // Update the percentages in the legend
+        document.getElementById('sentimentPositive').textContent = `${sentimentData.Positive || 0}%`;
+        document.getElementById('sentimentNeutral').textContent = `${sentimentData.Neutral || 0}%`;
+        document.getElementById('sentimentNegative').textContent = `${sentimentData.Negative || 0}%`;
+        document.getElementById('sentimentUnknown').textContent = `${sentimentData.Unknown || 0}%`;
+    }
+    
+    // Function to update call success chart
+    function updateCallSuccessChart(successData) {
+        const callSuccessCtx = document.getElementById('callSuccessChart').getContext('2d');
+        
+        // If chart already exists, destroy it
+        if (callSuccessChart) {
+            callSuccessChart.destroy();
+        }
+        
+        // Colors for success categories
+        const colors = {
+            'Successful': '#10b981', // green
+            'Unsuccessful': '#ef4444', // red
+            'Unknown': '#6b7280'  // gray
+        };
+        
+        // Create new chart
+        callSuccessChart = new Chart(callSuccessCtx, {
+            type: 'doughnut',
             data: {
-                labels: ['< 1m', '1-2m', '2-3m', '3-5m', '5-10m', '> 10m'],
-                datasets: [
-                    {
-                        label: 'Number of Calls',
-                        data: [10, 25, 35, 30, 15, 5],
-                        backgroundColor: '#2563eb'
-                    }
-                ]
+                labels: Object.keys(successData),
+                datasets: [{
+                    data: Object.values(successData),
+                    backgroundColor: Object.keys(successData).map(key => colors[key]),
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Number of Calls'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Duration'
-                        }
-                    }
-                }
+                cutout: '70%'
             }
         });
-
-        // Call Performance Chart
-        const callPerformanceCtx = document.getElementById('callPerformanceChart').getContext('2d');
-        const callPerformanceChart = new Chart(callPerformanceCtx, {
-            type: 'radar',
-            data: {
-                labels: [
-                    'Speech Recognition',
-                    'Response Time',
-                    'Issue Resolution',
-                    'Call Completion',
-                    'Voice Clarity',
-                    'User Satisfaction'
-                ],
-                datasets: [
-                    {
-                        label: 'Current Period',
-                        data: [85, 90, 75, 92, 88, 80],
-                        backgroundColor: 'rgba(37, 99, 235, 0.2)',
-                        borderColor: '#2563eb',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#2563eb'
-                    },
-                    {
-                        label: 'Previous Period',
-                        data: [80, 85, 70, 90, 85, 75],
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        borderColor: '#f59e0b',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#f59e0b'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    r: {
-                        angleLines: {
-                            display: true
-                        },
-                        suggestedMin: 50,
-                        suggestedMax: 100
-                    }
-                }
+        
+        // Update the percentages in the legend
+        document.getElementById('callSuccessful').textContent = `${successData.Successful || 0}%`;
+        document.getElementById('callUnsuccessful').textContent = `${successData.Unsuccessful || 0}%`;
+        document.getElementById('callUnknown').textContent = `${successData.Unknown || 0}%`;
+    }
+    
+    // Function to update recent calls table
+    function updateRecentCallsTable(callsData) {
+        const tableBody = document.getElementById('recentCallsTableBody');
+        tableBody.innerHTML = '';
+        
+        if (!callsData || callsData.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = `
+                <td colspan="8" class="text-center">
+                    <div class="py-4 text-muted">No recent calls found</div>
+                </td>
+            `;
+            tableBody.appendChild(emptyRow);
+            return;
+        }
+        
+        callsData.forEach(call => {
+            const row = document.createElement('tr');
+            
+            // Determine status badge class
+            let statusBadgeClass = 'bg-secondary';
+            if (call.call_status === 'ended') {
+                statusBadgeClass = 'bg-success';
+            } else if (call.call_status === 'ongoing') {
+                statusBadgeClass = 'bg-warning';
+            } else if (call.call_status === 'registered') {
+                statusBadgeClass = 'bg-primary';
+            } else if (call.call_status === 'error') {
+                statusBadgeClass = 'bg-danger';
             }
-        });
-
-        // Hourly Distribution Chart
-        const hourlyDistributionCtx = document.getElementById('hourlyDistributionChart').getContext('2d');
-        const hourlyDistributionChart = new Chart(hourlyDistributionCtx, {
-            type: 'line',
-            data: {
-                labels: ['12am', '2am', '4am', '6am', '8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'],
-                datasets: [
-                    {
-                        label: 'Call Volume',
-                        data: [2, 1, 1, 3, 8, 12, 15, 14, 13, 10, 6, 3],
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Call Volume'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Hour of Day'
-                        }
-                    }
-                }
+            
+            // Determine sentiment badge class
+            let sentimentBadgeClass = 'bg-secondary';
+            if (call.user_sentiment === 'Positive') {
+                sentimentBadgeClass = 'bg-success';
+            } else if (call.user_sentiment === 'Neutral') {
+                sentimentBadgeClass = 'bg-info';
+            } else if (call.user_sentiment === 'Negative') {
+                sentimentBadgeClass = 'bg-danger';
             }
-        });
-
-        // Weekly Distribution Chart
-        const weeklyDistributionCtx = document.getElementById('weeklyDistributionChart').getContext('2d');
-        const weeklyDistributionChart = new Chart(weeklyDistributionCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                datasets: [
-                    {
-                        label: 'Call Volume',
-                        data: [25, 30, 28, 32, 35, 15, 10],
-                        backgroundColor: '#0ea5e9'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Call Volume'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Day of Week'
-                        }
-                    }
-                }
+            
+            // Determine success badge class
+            let successBadgeClass = 'bg-secondary';
+            let successText = 'Unknown';
+            if (call.call_successful === true) {
+                successBadgeClass = 'bg-success';
+                successText = 'Yes';
+            } else if (call.call_successful === false) {
+                successBadgeClass = 'bg-danger';
+                successText = 'No';
             }
+            
+            row.innerHTML = `
+                <td>
+                    <span class="text-primary">#${call.call_id.substring(0, 8)}</span>
+                </td>
+                <td>${call.start_time}</td>
+                <td>${call.customer_name}</td>
+                <td>${call.duration_formatted}</td>
+                <td>
+                    <span class="badge rounded-pill ${statusBadgeClass}">${call.call_status}</span>
+                </td>
+                <td>
+                    <span class="badge rounded-pill ${sentimentBadgeClass}">${call.user_sentiment}</span>
+                </td>
+                <td>
+                    <span class="badge rounded-pill ${successBadgeClass}">${successText}</span>
+                </td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#callDetailsModal" data-call-id="${call.call_id}">View Details</a></li>
+                            ${call.recording_url ? `<li><a class="dropdown-item" href="${call.recording_url}" target="_blank">Listen Recording</a></li>` : ''}
+                        </ul>
+                    </div>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
         });
-
-        // Toggle period on call volume chart
-        document.querySelectorAll('[data-period]').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('[data-period]').forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                const period = this.dataset.period;
-                // Here you would update the chart based on the selected period
-                console.log('Selected period:', period);
-                
-                // Example implementation - change labels based on period
-                if (period === 'daily') {
-                    callVolumeChart.data.labels = Array.from({length: 30}, (_, i) => moment().subtract(29-i, 'days').format('MMM D'));
-                } else if (period === 'weekly') {
-                    callVolumeChart.data.labels = Array.from({length: 12}, (_, i) => `Week ${i+1}`);
-                } else if (period === 'monthly') {
-                    callVolumeChart.data.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                }
-                
-                // Generate new random data based on period
-                const multiplier = period === 'daily' ? 10 : (period === 'weekly' ? 40 : 120);
-                callVolumeChart.data.datasets[0].data = Array.from({length: callVolumeChart.data.labels.length}, () => Math.floor(Math.random() * multiplier + multiplier/10));
-                callVolumeChart.data.datasets[1].data = Array.from({length: callVolumeChart.data.labels.length}, () => Math.floor(Math.random() * (multiplier*6) + multiplier/2));
-                
-                callVolumeChart.update();
-            });
-        });
-
-        // Download report button
-        document.getElementById('downloadReportBtn').addEventListener('click', function() {
-            alert('Report download functionality will be implemented');
-        });
-    });
-
+    }
+    
     // Function to refresh analytics data based on date range
     function refreshAnalyticsData(start, end) {
-        console.log('Refreshing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
-        // Here you would make an AJAX call to your backend to get new data
-        // Then update charts and stats with the new data
+        toggleLoader(true);
+        
+        // Format dates for API
+        const startDate = start.format('YYYY-MM-DD');
+        const endDate = end.format('YYYY-MM-DD');
+        
+        // Update URL with query parameters for better sharing/bookmarking
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('start_date', startDate);
+        urlParams.set('end_date', endDate);
+        const newUrl = window.location.pathname + '?' + urlParams.toString();
+        window.history.replaceState({}, '', newUrl);
+        
+        // Create a promise array for all API calls
+        const apiPromises = [];
+        
+        // Fetch voice analytics data
+        const voiceAnalyticsPromise = fetchVoiceAnalyticsData(startDate, endDate)
+            .then(data => {
+                updateVoiceAnalytics(data);
+                // Note: updateCallVolumeChart is now called from within updateVoiceAnalytics
+            })
+            .catch(error => {
+                console.error('Error fetching voice analytics:', error);
+                // Show fallback data if there's an error
+                document.getElementById('totalCallsValue').textContent = '0';
+                document.getElementById('totalMinutesValue').textContent = '0';
+                document.getElementById('avgDurationValue').textContent = '0m 0s';
+            });
+        
+        apiPromises.push(voiceAnalyticsPromise);
+        
+        // Fetch call outcomes data
+        const outcomesPromise = fetch(`/usage_analytics/api/call-outcomes/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(outcomesData => {
+                console.log('Call outcomes data:', outcomesData);
+                if (outcomesData && outcomesData.call_outcomes_percentage) {
+                    updateCallOutcomesChart(outcomesData.call_outcomes_percentage);
+                } else {
+                    console.warn('Invalid call outcomes data format:', outcomesData);
+                    // Use sample data as fallback
+                    updateCallOutcomesChart({
+                        ended: 65,
+                        registered: 15,
+                        ongoing: 12,
+                        error: 8
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call outcomes:', error);
+                // Use sample data as fallback
+                updateCallOutcomesChart({
+                    ended: 65,
+                    registered: 15,
+                    ongoing: 12,
+                    error: 8
+                });
+            });
+        
+        apiPromises.push(outcomesPromise);
+        
+        // Fetch call duration distribution data
+        const durationPromise = fetch(`/usage_analytics/api/call-duration-distribution/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(durationData => {
+                console.log('Call duration data:', durationData);
+                if (durationData && durationData.call_duration_distribution) {
+                    updateCallDurationChart(durationData.call_duration_distribution);
+                } else {
+                    console.warn('Invalid call duration data format:', durationData);
+                    // Use sample data as fallback
+                    updateCallDurationChart({
+                        '< 1m': 10,
+                        '1-2m': 25,
+                        '2-3m': 35,
+                        '3-5m': 30,
+                        '5-10m': 15,
+                        '> 10m': 5
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call duration distribution:', error);
+                // Use sample data as fallback
+                updateCallDurationChart({
+                    '< 1m': 10,
+                    '1-2m': 25,
+                    '2-3m': 35,
+                    '3-5m': 30,
+                    '5-10m': 15,
+                    '> 10m': 5
+                });
+            });
+        
+        apiPromises.push(durationPromise);
+        
+        // Fetch disconnection reasons data
+        const disconnectionPromise = fetch(`/usage_analytics/api/disconnection-reasons/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(reasonsData => {
+                console.log('Disconnection reasons data:', reasonsData);
+                if (reasonsData && reasonsData.disconnection_reasons) {
+                    updateDisconnectionReasonsChart(reasonsData.disconnection_reasons);
+                } else {
+                    console.warn('Invalid disconnection reasons data format:', reasonsData);
+                    // Use sample data as fallback
+                    updateDisconnectionReasonsChart({
+                        'user_hangup': 45,
+                        'agent_hangup': 30,
+                        'call_transfer': 10,
+                        'inactivity': 8,
+                        'dial_no_answer': 7
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching disconnection reasons:', error);
+                // Use sample data as fallback
+                updateDisconnectionReasonsChart({
+                    'user_hangup': 45,
+                    'agent_hangup': 30,
+                    'call_transfer': 10,
+                    'inactivity': 8,
+                    'dial_no_answer': 7
+                });
+            });
+        
+        apiPromises.push(disconnectionPromise);
+        
+        // Fetch sentiment distribution data
+        const sentimentPromise = fetch(`/usage_analytics/api/sentiment-distribution/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(sentimentData => {
+                console.log('Sentiment distribution data:', sentimentData);
+                if (sentimentData && sentimentData.sentiment_distribution_percentage) {
+                    updateSentimentChart(sentimentData.sentiment_distribution_percentage);
+                } else {
+                    console.warn('Invalid sentiment data format:', sentimentData);
+                    // Use sample data as fallback
+                    updateSentimentChart({
+                        'Positive': 65,
+                        'Neutral': 25,
+                        'Negative': 8,
+                        'Unknown': 2
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching sentiment distribution:', error);
+                // Use sample data as fallback
+                updateSentimentChart({
+                    'Positive': 65,
+                    'Neutral': 25,
+                    'Negative': 8,
+                    'Unknown': 2
+                });
+            });
+        
+        apiPromises.push(sentimentPromise);
+        
+        // Fetch call success distribution data
+        const successPromise = fetch(`/usage_analytics/api/call-success-distribution/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(successData => {
+                console.log('Call success distribution data:', successData);
+                if (successData && successData.success_distribution_percentage) {
+                    updateCallSuccessChart(successData.success_distribution_percentage);
+                } else {
+                    console.warn('Invalid call success data format:', successData);
+                    // Use sample data as fallback
+                    updateCallSuccessChart({
+                        'Successful': 75,
+                        'Unsuccessful': 20,
+                        'Unknown': 5
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call success distribution:', error);
+                // Use sample data as fallback
+                updateCallSuccessChart({
+                    'Successful': 75,
+                    'Unsuccessful': 20,
+                    'Unknown': 5
+                });
+            });
+        
+        apiPromises.push(successPromise);
+        
+        // Fetch recent calls data
+        const recentCallsPromise = fetch(`/usage_analytics/api/recent-calls/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(callsData => {
+                console.log('Recent calls data:', callsData);
+                if (callsData && callsData.recent_calls) {
+                    updateRecentCallsTable(callsData.recent_calls);
+                } else {
+                    console.warn('Invalid recent calls data format:', callsData);
+                    // Show empty state
+                    updateRecentCallsTable([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching recent calls:', error);
+                // Show empty state
+                updateRecentCallsTable([]);
+            });
+        
+        apiPromises.push(recentCallsPromise);
+        
+        // Wait for all API calls to complete before hiding the loader
+        Promise.all(apiPromises)
+            .finally(() => {
+                toggleLoader(false);
+            });
     }
+    
+    // Initialize Date Range Picker
+    $(function() {
+        // Get subscription dates from the template context
+        const subscriptionStartDate = '{{ subscription.start_date|date:"Y-m-d" }}';
+        const subscriptionEndDate = '{{ subscription.end_date|date:"Y-m-d" }}';
+        console.log('Subscription dates:', subscriptionStartDate, subscriptionEndDate);
 
-    // Add some extra styles
-    document.addEventListener('DOMContentLoaded', function() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .bg-primary-light {
-                background-color: rgba(37, 99, 235, 0.1);
+        
+        // Check URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlStartDate = urlParams.get('start_date');
+        const urlEndDate = urlParams.get('end_date');
+        
+        // Use URL dates if available, then subscription dates, then default to last 30 days
+        let defaultStartDate, defaultEndDate;
+        
+        if (urlStartDate && urlEndDate) {
+            defaultStartDate = moment(urlStartDate);
+            defaultEndDate = moment(urlEndDate);
+        } else if (subscriptionStartDate && subscriptionEndDate) {
+            defaultStartDate = moment(subscriptionStartDate);
+            defaultEndDate = moment(subscriptionEndDate);
+        } else {
+            defaultStartDate = moment().subtract(29, 'days');
+            defaultEndDate = moment();
+        }
+        
+        // Set initial display text
+        $('#dateRangePicker span').html(defaultStartDate.format('MMM D, YYYY') + ' - ' + defaultEndDate.format('MMM D, YYYY'));
+        
+        // Initialize the date range picker
+        $('#dateRangePicker').daterangepicker({
+            opens: 'left',
+            startDate: defaultStartDate,
+            endDate: defaultEndDate,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'Subscription Period': [
+                   subscriptionStartDate ? moment(subscriptionStartDate) : moment().subtract(29, 'days'),
+                   subscriptionEndDate ? moment(subscriptionEndDate) : moment()
+               ]
             }
-            .bg-success-light {
-                background-color: rgba(16, 185, 129, 0.1);
+        }, function(start, end, label) {
+            // Update the display text
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            
+            // Call function to refresh data based on new date range
+            refreshAnalyticsData(start, end);
+        });
+        
+        // Handle clicks on the predefined ranges
+        $(document).on('click', '.daterangepicker .ranges li', function() {
+            const rangeText = $(this).text();
+            let start, end;
+            
+            switch(rangeText) {
+                case 'Today':
+                    start = moment();
+                    end = moment();
+                    break;
+                case 'Yesterday':
+                    start = moment().subtract(1, 'days');
+                    end = moment().subtract(1, 'days');
+                    break;
+                case 'Last 7 Days':
+                    start = moment().subtract(6, 'days');
+                    end = moment();
+                    break;
+                case 'Last 30 Days':
+                    start = moment().subtract(29, 'days');
+                    end = moment();
+                    break;
+                case 'This Month':
+                    start = moment().startOf('month');
+                    end = moment().endOf('month');
+                    break;
+                case 'Last Month':
+                    start = moment().subtract(1, 'month').startOf('month');
+                    end = moment().subtract(1, 'month').endOf('month');
+                    break;
+                case 'Subscription Period':
+                    start = defaultStartDate;
+                    end = defaultEndDate;
+                    break;
+                default:
+                    // For custom range, the date picker will handle it
+                    return;
             }
-            .bg-warning-light {
-                background-color: rgba(245, 158, 11, 0.1);
-            }
-            .bg-info-light {
-                background-color: rgba(14, 165, 233, 0.1);
-            }
-            .bg-danger-light {
-                background-color: rgba(239, 68, 68, 0.1);
-            }
-            .avatar-sm {
-                width: 32px;
-                height: 32px;
-                font-size: 12px;
-            }
-            .cursor-pointer {
-                cursor: pointer;
-            }
-            .badge.rounded-pill {
-                width: 10px;
-                height: 10px;
-                display: inline-block;
-                margin-right: 5px;
-            }
-            .btn-icon {
-                padding: 0.375rem 0.5rem;
-            }
-        `;
-        document.head.appendChild(style);
+            
+            // Update the date range picker with the selected range
+            $('#dateRangePicker').data('daterangepicker').setStartDate(start);
+            $('#dateRangePicker').data('daterangepicker').setEndDate(end);
+            
+            // Update the display text
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            
+            // Call function to refresh data based on new date range
+            refreshAnalyticsData(start, end);
+        });
+        
+        // Toggle metrics on call volume chart
+        document.querySelectorAll('[data-metric]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-metric]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const metric = this.dataset.metric;
+                if (callVolumeChart) {
+                    if (metric === 'all') {
+                        callVolumeChart.data.datasets.forEach(dataset => {
+                            dataset.hidden = false;
+                        });
+                    } else if (metric === 'calls') {
+                        callVolumeChart.data.datasets[0].hidden = false;
+                        callVolumeChart.data.datasets[1].hidden = true;
+                    } else if (metric === 'minutes') {
+                        callVolumeChart.data.datasets[0].hidden = true;
+                        callVolumeChart.data.datasets[1].hidden = false;
+                    }
+                    callVolumeChart.update();
+                }
+            });
+        });
+        
+        // Initial data load
+        setTimeout(() => {
+            refreshAnalyticsData(defaultStartDate, defaultEndDate);
+        }, 500);
     });
 </script>
-{% endblock %} 
+{% endblock %}

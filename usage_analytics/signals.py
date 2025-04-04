@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-from .services import UsageService
+from .services.usage_service import UsageService
 
 # Example signal handlers - these need to be connected to actual models
 # that handle SMS and Voice communications in your application

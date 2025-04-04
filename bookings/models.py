@@ -102,9 +102,17 @@ class Booking(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
-
+    paymentReminderSentAt = models.DateTimeField(null=True, blank=True)
+    
     def __str__(self):
         return f"{self.bookingId} for {self.firstName} {self.lastName}"
+    
+    def is_paid(self):
+        """Check if booking has an invoice and is paid"""
+        if hasattr(self, 'invoice') and self.invoice:
+            notPaidStatus = ['PENDING', 'FAILED']
+            return False if self.invoice.status in notPaidStatus else True
+        return False
     
     def generateBookingId(self):
         prefix = "BK"

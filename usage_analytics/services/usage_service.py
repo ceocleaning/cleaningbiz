@@ -2,6 +2,13 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from subscription.models import UsageTracker
 from django.utils.timezone import make_aware, is_aware
+import requests
+import json
+import logging
+from django.conf import settings
+from retell_agent.models import RetellAgent
+
+logger = logging.getLogger(__name__)
 
 class UsageService:
     """Service class for tracking and retrieving usage metrics."""
@@ -86,12 +93,7 @@ class UsageService:
         Returns:
             List of activity items with type, contact, status, etc.
         """
-        import requests
-        import json
-        from django.conf import settings
-        from retell_agent.models import RetellAgent
         from ai_agent.models import Messages, Chat
-        from datetime import datetime
         
         activities = []
         
@@ -316,4 +318,4 @@ class UsageService:
                 'has_active_subscription': False,
                 'limits_exceeded': True,
                 'message': 'No active subscription found.'
-            } 
+            }
