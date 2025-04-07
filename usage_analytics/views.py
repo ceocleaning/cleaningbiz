@@ -31,7 +31,6 @@ def usage_overview(request):
             'next_billing_date': subscription.end_date,
             'start_date': subscription.start_date,  # Add start date for date range picker
             'voice_minutes_limit': subscription.plan.voice_minutes,
-            'voice_calls_limit': subscription.plan.voice_calls,
             'sms_messages_limit': subscription.plan.sms_messages,
         }
     except BusinessSubscription.DoesNotExist:
@@ -42,7 +41,6 @@ def usage_overview(request):
             'next_billing_date': None,
             'start_date': None,  # No start date if no subscription
             'voice_minutes_limit': 0,
-            'voice_calls_limit': 0,
             'sms_messages_limit': 0,
         }
     
@@ -56,7 +54,7 @@ def usage_overview(request):
     )
     
     # Calculate usage percentages
-    voice_calls_percentage = min(round((usage_summary['voice_calls'] / subscription_data['voice_calls_limit']) * 100, 0), 100) if subscription_data['voice_calls_limit'] > 0 else 0
+    # TODO: Has to get calls from retell api
     voice_minutes_percentage = min(round((usage_summary['voice_minutes'] / subscription_data['voice_minutes_limit']) * 100, 0), 100) if subscription_data['voice_minutes_limit'] > 0 else 0
     sms_messages_percentage = min(round((usage_summary['sms_messages'] / subscription_data['sms_messages_limit']) * 100, 0), 100) if subscription_data['sms_messages_limit'] > 0 else 0
     
@@ -88,15 +86,15 @@ def usage_overview(request):
         'voice_metrics': {
             'total_calls': usage_summary['voice_calls'],
             'total_minutes': usage_summary['voice_minutes'],
-            'avg_duration': f"{usage_summary['voice_minutes'] / usage_summary['voice_calls'] if usage_summary['voice_calls'] > 0 else 0:.1f}m",
-            'success_rate': '87%'
+            'avg_duration': f"{usage_summary['voice_minutes'] / 0}m",
+            'success_rate': '0%'
         },
         # SMS module key metrics
         'sms_metrics': {
             'total_messages': usage_summary['sms_messages'],
-            'response_rate': '85%',
-            'avg_response_time': '45s',
-            'conversion_rate': '32%'
+            'response_rate': '0%',
+            'avg_response_time': '0s',
+            'conversion_rate': '0%'
         },
         # Recent activities
         'recent_activities': recent_activities
@@ -225,6 +223,7 @@ def get_voice_analytics(request):
     )
     
     # Calculate average call duration
+    # TODO: Has to get calls from retell api
     avg_duration_minutes = usage_summary['voice_minutes'] / 0
     avg_duration_seconds = int(avg_duration_minutes * 60)
     avg_duration_formatted = f"{int(avg_duration_minutes)}m {avg_duration_seconds % 60}s"
