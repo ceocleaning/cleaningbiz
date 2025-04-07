@@ -429,6 +429,45 @@
                 {% endif %}
                 {% endfor %}
             </div>
+
+            {% if is_eligible_for_trial %}
+                <div class="col plan-card" data-plan-type="trial">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-transparent">
+                            <h5 class="card-title mb-0">{{ trial_plan.name }}</h5>
+                            <span class="badge bg-primary">Trial</span>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="price-tag text-center mb-3">
+                                <span class="currency">$</span>
+                                <span class="amount">{{ trial_plan.price }}</span>
+                                <span class="period">/month</span>
+                            </p>
+                            <ul class="list-group list-group-flush mb-4">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ trial_plan.voice_minutes }} Voice Minute
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ trial_plan.leads }} Lead
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ trial_plan.sms_messages }} SMS Message
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ trial_plan.agents }} Voice Agent
+                                </li>
+                            </ul>
+                            <div class="d-grid mt-auto">
+                                <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="btn btn-primary">Start Trial</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 

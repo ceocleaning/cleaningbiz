@@ -40,7 +40,10 @@ def subscription_management(request):
         next_plan = None
     
     # Get all available plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price').exclude(name='Trial Plan')
+
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name='Trial Plan').first()
+    is_eligible_for_trial = False if BusinessSubscription.objects.filter(business=business, plan=trial_plan).exists() else True
     
     # Get usage summary for current month
     if subscription:
@@ -61,6 +64,8 @@ def subscription_management(request):
     context = {
         'subscription': subscription,
         'plans': plans,
+        'trial_plan': trial_plan,
+        'is_eligible_for_trial': is_eligible_for_trial,
         'usage_summary': usage_summary,
         'billing_history': billing_history,
         'next_plan': next_plan,
@@ -433,7 +438,7 @@ def select_plan(request, plan_id=None):
                 if trial_already_availed:
                     messages.error(request, "You have already availed the trial plan.")
                     return redirect('subscription:subscription_management')
-                    
+
         except SubscriptionPlan.DoesNotExist:
             messages.error(request, "The selected plan is not available.")
             return redirect('subscription:subscription_management')
