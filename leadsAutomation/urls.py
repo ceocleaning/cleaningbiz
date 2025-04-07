@@ -29,7 +29,7 @@ urlpatterns = [
     path('integration/', include('integrations.urls')),
     path('analytics/', include('analytics.urls')),
     path('ai_agent/', include('ai_agent.urls')),
-    path('usage-analytics/', include('usage_analytics.urls')),
+    path('usage_analytics/', include('usage_analytics.urls')),
     path('subscription/', include('subscription.urls')),
     path('voice_agent/', include('retell_agent.urls')),
     path('admin-dashboard/', include('admin_dashbaord.urls')),
