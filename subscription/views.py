@@ -481,6 +481,7 @@ def select_plan(request, plan_id=None):
         'business': business,
         'card_details': card_details,
         'square_app_id': settings.SQUARE_APP_ID,
+        'environment': settings.SQUARE_ENVIRONMENT,
         'active_page': 'subscription',
         'title': 'Select Plan'
     }
@@ -596,23 +597,12 @@ def process_payment(request, plan_id):
         # Check if the business already has an active subscription
         with transaction.atomic():
             try:
-                current_subscription = BusinessSubscription.objects.filter(
-                    business=business,
-                    is_active=True
-                ).latest('created_at')
-                
-                # If this is a plan change for the next billing cycle
-                if request.POST.get('change_next_cycle') == 'true':
-                    # Just update the next_plan_id and don't end the current subscription
-                    current_subscription.next_plan_id = plan.id
-                    current_subscription.save()
-                    
-                    return redirect('subscription:subscription_management')
-                else:
-                    # End the current subscription
-                    current_subscription.is_active = False
-                    current_subscription.end_date = timezone.now()
-                    current_subscription.save()
+                current_subscription = business.active_subscription()
+               
+                # End the current subscription
+                current_subscription.is_active = False
+                current_subscription.end_date = timezone.now()
+                current_subscription.save()
                 
             except BusinessSubscription.DoesNotExist:
                 pass

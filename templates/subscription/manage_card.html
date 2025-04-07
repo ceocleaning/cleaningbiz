@@ -153,7 +153,11 @@
 
 {% block extra_js %}
 <!-- Square Web Payment SDK -->
+ {% if environment == 'production' %}
+<script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+ {% else %}
 <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+ {% endif %}
 
 <!-- Card Management JavaScript -->
 <script>
