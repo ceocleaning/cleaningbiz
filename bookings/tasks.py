@@ -1,5 +1,5 @@
 from .models import Booking
-from accounts.model import SMTPConfig
+from accounts.models import ApiCredential, SMTPConfig
 from django.core.mail import send_mail, EmailMultiAlternatives
 import datetime
 from django.conf import settings
