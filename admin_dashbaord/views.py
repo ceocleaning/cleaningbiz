@@ -5,9 +5,10 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.db.models import Q, Sum, Count
-import json
 import csv
 import datetime
+from django.core.mail import send_mail
+from django.conf import settings
 
 from accounts.models import ApiCredential, Business, User, BusinessSettings
 from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature
@@ -600,6 +601,27 @@ def approve_business(request):
         business.isApproved = True
         business.isActive = True
         business.save()
+
+        # Send email notification to business owner
+        try:
+            subject = 'Your Business Has Been Approved!'
+            message = f"""Hello {business.user.username},
+
+            Congratulations! Your business '{business.businessName}' has been approved by our team.
+
+            You now have full access to all features of CleaningBiz AI. Log in to your account to get started.
+
+            Thank you for choosing CleaningBiz AI!
+
+            Best regards,
+            The CleaningBiz AI Team
+            """
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [business.user.email]
+            send_mail(subject, message, from_email, recipient_list)
+        except Exception as e:
+            # Log the error but don't stop the approval process
+            print(f"Error sending approval email: {str(e)}")
         
         
         messages.success(request, f'Business "{business.businessName}" has been approved successfully.')
@@ -622,6 +644,25 @@ def reject_business(request):
         # Update approval status
         business.isRejected = True
         business.save()
+
+        # Send email notification to business owner
+        try:
+            subject = 'Your Business Has Been Rejected'
+            message = f"""Hello {business.user.username},
+
+            Your business '{business.businessName}' has been rejected by our team.
+
+            Thank you for choosing CleaningBiz AI!
+
+            Best regards,
+            The CleaningBiz AI Team
+            """
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [business.user.email]
+            send_mail(subject, message, from_email, recipient_list)
+        except Exception as e:
+            # Log the error but don't stop the rejection process
+            print(f"Error sending rejection email: {str(e)}")
         
         messages.success(request, f'Business "{business.businessName}" has been rejected.')
         
