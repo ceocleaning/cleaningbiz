@@ -218,7 +218,11 @@
 </div>
 
 <!-- JavaScript for Payment Page -->
+{% if environment == 'production' %}
 <script src="https://js.squareup.com/v2/paymentform"></script>
+{% else %}
+<script src="https://sandbox.js.squareup.com/v2/paymentform"></script>
+{% endif %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Coupon functionality

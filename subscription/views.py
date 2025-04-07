@@ -905,7 +905,7 @@ def manage_card(request):
                 'business': business,
                 'card_details': card_details,
                 'square_app_id': settings.SQUARE_APP_ID,
-                'square_location_id': settings.SQUARE_LOCATION_ID,
+                'environment': settings.SQUARE_ENVIRONMENT,
                 'redirect_url': redirect_url,
                 'active_page': 'subscription',
                 'title': 'Manage Payment Method'
@@ -942,7 +942,7 @@ def manage_card(request):
                     'business': business,
                     'card_details': card_details,
                     'square_app_id': settings.SQUARE_APP_ID,
-                    'square_location_id': settings.SQUARE_LOCATION_ID,
+                    'environment': settings.SQUARE_ENVIRONMENT,
                     'redirect_url': redirect_url,
                     'active_page': 'subscription',
                     'title': 'Manage Payment Method'
@@ -983,7 +983,7 @@ def manage_card(request):
                     'business': business,
                     'card_details': card_details,
                     'square_app_id': settings.SQUARE_APP_ID,
-                    'square_location_id': settings.SQUARE_LOCATION_ID,
+                    'environment': settings.SQUARE_ENVIRONMENT,
                     'redirect_url': redirect_url,
                     'active_page': 'subscription',
                     'title': 'Manage Payment Method'
@@ -994,7 +994,7 @@ def manage_card(request):
                 'business': business,
                 'card_details': card_details,
                 'square_app_id': settings.SQUARE_APP_ID,
-                'square_location_id': settings.SQUARE_LOCATION_ID,
+                'environment': settings.SQUARE_ENVIRONMENT,
                 'redirect_url': redirect_url,
                 'active_page': 'subscription',
                 'title': 'Manage Payment Method'
@@ -1011,7 +1011,7 @@ def manage_card(request):
         'business': business,
         'card_details': card_details,
         'square_app_id': settings.SQUARE_APP_ID,
-        'square_location_id': settings.SQUARE_LOCATION_ID,
+        'environment': settings.SQUARE_ENVIRONMENT,
         'redirect_url': redirect_url,
         'active_page': 'subscription',
         'title': 'Manage Payment Method'
