@@ -273,23 +273,31 @@
                     // Log tokenization attempt
                     console.log('Attempting to tokenize card...');
                     
-                    // Create tokenization payload with verification details
+                    // Create tokenization payload
                     const tokenResult = await card.tokenize();
                     
-                    console.log('Tokenization response received:', tokenResult.status);
+                    console.log('Tokenization response received:', tokenResult);
                     
                     if (tokenResult.status === 'OK') {
-                        console.log('Tokenization successful, received token');
+                        console.log('Tokenization successful, received token:', tokenResult.token);
                         document.getElementById('card-nonce').value = tokenResult.token;
-                        console.log('Submitting form with card token');
-                        cardForm.submit();
+                        
+                        // Add a small delay to ensure the token is properly set
+                        setTimeout(() => {
+                            console.log('Form submission token value:', document.getElementById('card-nonce').value);
+                            cardForm.submit();
+                        }, 100);
                     } else {
+                        console.error('Tokenization failed with status:', tokenResult.status);
+                        document.getElementById('card-errors').textContent = 'Card validation failed. Please check your card details and try again.';
+                        
                         // Reset button state
                         saveCardButton.disabled = false;
                         saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
                     }
                 } catch (error) {
                     console.error('Error tokenizing card:', error);
+                    document.getElementById('card-errors').textContent = 'An error occurred while processing your card. Please try again.';
                     
                     // Reset button state
                     saveCardButton.disabled = false;

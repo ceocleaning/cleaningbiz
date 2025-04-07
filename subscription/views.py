@@ -965,6 +965,7 @@ def manage_card(request):
         }
         
         try:
+            print(f"Creating card with source_id: {card_nonce}")
             card_result = square_client.cards.create_card(
                 body=card_request
             )
@@ -975,10 +976,21 @@ def manage_card(request):
                 business.square_card_id = card_id
                 business.save()
                 messages.success(request, "Card saved successfully.")
-            
-            if not card_result.is_success():
-                messages.error(request, "Failed to save card.")
+                
+                # Redirect to the provided URL or default to subscription management
+                if redirect_url:
+                    return redirect(redirect_url)
+                return redirect('subscription:subscription_management')
             else:
+                # Log detailed error information
+                errors = card_result.errors
+                error_message = "Failed to save card: "
+                for error in errors:
+                    error_message += f"{error.get('category')}: {error.get('detail')} "
+                    print(f"Square API Error: {error.get('category')} - {error.get('code')}: {error.get('detail')}")
+                
+                messages.error(request, error_message)
+                
                 context = {
                     'business': business,
                     'card_details': card_details,
@@ -990,6 +1002,10 @@ def manage_card(request):
                 }
                 return render(request, 'subscription/manage_card.html', context)
         except Exception as e:
+            error_message = f"Error processing card: {str(e)}"
+            print(error_message)
+            messages.error(request, "An error occurred while processing your card. Please try again.")
+            
             context = {
                 'business': business,
                 'card_details': card_details,
@@ -1000,11 +1016,6 @@ def manage_card(request):
                 'title': 'Manage Payment Method'
             }
             return render(request, 'subscription/manage_card.html', context)
-        
-        # Redirect to the provided URL or default to subscription management
-        if redirect_url:
-            return redirect(redirect_url)
-        return redirect('subscription:subscription_management')
     
     # For GET requests, render the card management page
     context = {
@@ -1017,10 +1028,6 @@ def manage_card(request):
         'title': 'Manage Payment Method'
     }
     return render(request, 'subscription/manage_card.html', context)
-
-
-
-
 
 @login_required
 @require_POST
