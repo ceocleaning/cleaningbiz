@@ -10,7 +10,16 @@
             <h1 class="h2 mb-0">Subscription & Plans</h1>
             <p class="text-muted">Manage your subscription and usage limits</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            {% if business.square_card_id %}
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#cardDetailsModal">
+                <i class="fas fa-credit-card me-2"></i> View Card Details
+            </button>
+            {% else %}
+            <a href="{% url 'subscription:manage_card' %}" class="btn btn-outline-primary">
+                <i class="fas fa-plus-circle me-2"></i> Add Card
+            </a>
+            {% endif %}
             <a href="{% url 'subscription:billing_history' %}" class="btn btn-outline-primary">
                 <i class="fas fa-history me-2"></i> Billing History
             </a>
@@ -538,6 +547,94 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card Details Modal -->
+<div class="modal fade" id="cardDetailsModal" tabindex="-1" aria-labelledby="cardDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="cardDetailsModalLabel">Payment Method Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Card Information -->
+                <h6 class="mb-3">Card Information</h6>
+                <div class="card border-0 bg-light p-4 mb-4">
+                    <div class="d-flex align-items-center">
+                        <div class="card-brand-icon text-primary me-4">
+                            {% if card_details.card_brand == 'VISA' %}
+                            <i class="fab fa-cc-visa fa-3x"></i>
+                            {% elif card_details.card_brand == 'MASTERCARD' %}
+                            <i class="fab fa-cc-mastercard fa-3x"></i>
+                            {% elif card_details.card_brand == 'AMEX' %}
+                            <i class="fab fa-cc-amex fa-3x"></i>
+                            {% elif card_details.card_brand == 'DISCOVER' %}
+                            <i class="fab fa-cc-discover fa-3x"></i>
+                            {% else %}
+                            <i class="far fa-credit-card fa-3x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="mb-2">Card ending in {{ card_details.last4 }}</h5>
+                            <p class="mb-0 text-muted">Expires {{ card_details.exp_month }}/{{ card_details.exp_year }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Information -->
+                {% if customer_details %}
+                <h6 class="mb-3">Billing Information</h6>
+                <div class="card border-0 bg-light p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Name</small>
+                                    <span>{{ customer_details.given_name }} {{ customer_details.family_name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Email</small>
+                                    <span>{{ customer_details.email }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-phone text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Phone</small>
+                                    <span>{{ customer_details.phone }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Added On</small>
+                                    <span>{{ customer_details.created_at|date:"F j, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'subscription:manage_card' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-2"></i> Update Card
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

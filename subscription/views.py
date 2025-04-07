@@ -2,20 +2,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db import transaction
-from django.db import models
 from django.utils import timezone
+from django.db import transaction
 from django.conf import settings
-import json
-from datetime import datetime, timedelta
-import uuid
+from django.urls import reverse
 from django.views.decorators.http import require_POST
-
+from datetime import datetime, timedelta
+import json
+import uuid
 from square.client import Client
 
-
+from .models import SubscriptionPlan, BusinessSubscription, BillingHistory, Feature, Coupon, CouponUsage, UsageTracker
 from accounts.models import Business
-from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Coupon, CouponUsage
+from usage_analytics.services.usage_service import UsageService
 
 @login_required
 def subscription_management(request):
@@ -61,6 +60,52 @@ def subscription_management(request):
         business=business
     ).order_by('-billing_date')[:5]
     
+    # Get card details from Square if available
+    card_details = None
+    customer_details = None
+    if business.square_card_id and business.square_customer_id:
+        try:
+            # Initialize Square client
+            square_client = Client(
+                access_token=settings.SQUARE_ACCESS_TOKEN,
+                environment=settings.SQUARE_ENVIRONMENT
+            )
+            
+            # Retrieve the card details
+            card_result = square_client.cards.retrieve_card(
+                card_id=business.square_card_id
+            )
+            
+            if card_result.is_success():
+                card = card_result.body.get('card', {})
+                card_details = {
+                    'last4': card.get('last_4'),
+                    'exp_month': card.get('exp_month'),
+                    'exp_year': card.get('exp_year'),
+                    'card_brand': card.get('card_brand')
+                }
+                
+            # Retrieve the customer details
+            customer_result = square_client.customers.retrieve_customer(
+                customer_id=business.square_customer_id
+            )
+            
+            if customer_result.is_success():
+                customer = customer_result.body.get('customer', {})
+                created_at = datetime.strptime(customer.get('created_at'), '%Y-%m-%dT%H:%M:%S.%f%z')
+
+            
+                customer_details = {
+                    'given_name': customer.get('given_name', ''),
+                    'family_name': customer.get('family_name', ''),
+                    'email': customer.get('email_address', ''),
+                    'phone': customer.get('phone_number', ''),
+                    'created_at': created_at
+                }
+        except Exception as e:
+            # Log the error but don't crash
+            print(f"Error retrieving card or customer details: {e}")
+    
     context = {
         'subscription': subscription,
         'plans': plans,
@@ -71,6 +116,8 @@ def subscription_management(request):
         'next_plan': next_plan,
         'payment_method': payment_method,
         'business': business,
+        'card_details': card_details,
+        'customer_details': customer_details,
         'active_page': 'subscription',
         'title': 'Subscription Management'
     }
@@ -236,6 +283,7 @@ def billing_history(request):
     return render(request, 'usage_analytics/billing_history.html', context)
 
 @login_required
+@require_POST
 def change_plan(request):
     """Handle plan changes to take effect at the next billing date."""
     # Only accept POST requests
