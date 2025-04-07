@@ -170,7 +170,7 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
         
         # Mark the old subscription as inactive
         old_subscription.is_active = False
-        old_subscription.status = 'cancelled'
+        old_subscription.status = 'ended'
         old_subscription.save()
         
         # Create a new subscription
@@ -249,8 +249,13 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
         )
         
         # Mark subscription as past_due
-        subscription.status = 'past_due'
-        subscription.save()
+        if subscription.end_date < timezone.now().date():
+            subscription.status = 'past_due'
+            subscription.save()
+        
+        if subscription.end_date < timezone.now().date() + timedelta(days=2):
+            subscription.is_active = False
+            subscription.save()
         
         # Send failure notification
         _send_failed_renewal_notification(business, subscription, plan, error_message)

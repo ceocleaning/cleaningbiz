@@ -164,7 +164,6 @@ class BusinessSubscription(models.Model):
         ('cancelled', 'Cancelled'),
         ('past_due', 'Past Due'),
         ('trialing', 'Trialing'),
-        ('trial', 'Trial'),
         ('ended', 'Ended')
     ]
     
@@ -181,10 +180,6 @@ class BusinessSubscription(models.Model):
     square_subscription_id = models.CharField(max_length=100, blank=True, null=True)
     square_customer_id = models.CharField(max_length=100, blank=True, null=True)
     
-    # Trial specific fields
-    is_trial = models.BooleanField(default=False, help_text="Whether this subscription is a trial")
-    trial_end_date = models.DateTimeField(null=True, blank=True, help_text="Date when the trial ends")
-    
     # Legacy fields - keeping for backward compatibility
     stripe_subscription_id = models.CharField(max_length=100, blank=True, null=True)
     stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
@@ -200,11 +195,9 @@ class BusinessSubscription(models.Model):
         """Check if the subscription is currently active."""
         if not self.is_active:
             return False
-        if self.status != 'active' and self.status != 'trialing' and self.status != 'trial':
+        if self.status == 'past_due':
             return False
         if self.end_date and self.end_date < timezone.now():
-            return False
-        if self.is_trial and self.trial_end_date and self.trial_end_date < timezone.now():
             return False
         return True
 
@@ -235,24 +228,6 @@ class BusinessSubscription(models.Model):
                     user=self.business.user,
                     subscription=self
                 )
-
-class TrialPlan(models.Model):
-    """Model for configuring the trial subscription."""
-    name = models.CharField(max_length=100, default="30-Day Trial")
-    description = models.TextField(default="Try our service for 30 days")
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=30.00)
-    duration_days = models.IntegerField(default=30)
-    voice_minutes = models.IntegerField(default=100)
-    sms_messages = models.IntegerField(default=100)
-    agents = models.IntegerField(default=1)
-    leads = models.IntegerField(default=50)
-    features = models.JSONField(default=dict)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} (${self.price} for {self.duration_days} days)"
 
 class UsageTracker(models.Model):
     """Model for tracking usage metrics for a business."""
@@ -319,13 +294,15 @@ class UsageTracker(models.Model):
         Returns:
             Dictionary with total usage metrics and daily breakdown
         """
+
+        # Get active subscription
+        active_subscription = business.active_subscription()    
         if start_date is None:
             # Default to start of current month
-            today = timezone.now().date()
-            start_date = today.replace(day=1)
+            start_date = active_subscription.start_date if active_subscription else timezone.now().date().replace(day=1)
         
         if end_date is None:
-            end_date = timezone.now().date()
+            end_date = active_subscription.end_date if active_subscription else timezone.now().date()
         
         # Get all usage records in the date range
         usage_records = cls.objects.filter(
@@ -335,11 +312,16 @@ class UsageTracker(models.Model):
         ).order_by('date')
         
         # Initialize summary with zero counts
+
+        # Get Active Agents
+        from retell_agent.models import RetellAgent
+        active_agents = RetellAgent.objects.filter(business=business).count()
+        
         summary = {
             'total': {
                 'voice_minutes': 0,
                 'sms_messages': 0,
-                'active_agents': 0,
+                'active_agents': active_agents,
                 'leads_generated': 0
             },
             'daily': []
@@ -350,7 +332,10 @@ class UsageTracker(models.Model):
             # Add to totals
             for metric, value in record.metrics.items():
                 if metric in summary['total']:
-                    summary['total'][metric] += value
+                    if metric == 'active_agents':
+                        summary['total'][metric] = active_agents
+                    else:
+                        summary['total'][metric] += value
                 else:
                     summary['total'][metric] = value
             
@@ -362,7 +347,6 @@ class UsageTracker(models.Model):
             summary['daily'].append(daily_entry)
         
         # Get subscription limits for comparison
-        active_subscription = business.active_subscription()
         if active_subscription:
             plan = active_subscription.plan
             summary['limits'] = {

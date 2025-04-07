@@ -25,13 +25,22 @@ logger = logging.getLogger(__name__)
 
 def LandingPage(request):
     # Import here to avoid circular imports
-    from subscription.models import SubscriptionPlan
+    from subscription.models import SubscriptionPlan, BusinessSubscription
     
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True, name__in=['Starter Plan', 'Professional Plan', 'Enterprise Plan']).order_by('price')
+
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name__icontains='Trial').first()
+    if request.user.is_authenticated:
+        business = request.user.business_set.first()
+        is_eligible_for_trial = BusinessSubscription.objects.filter(plan=trial_plan, business=business).exists()
+    else:
+        is_eligible_for_trial = True
     
     return render(request, 'LandingPage.html', {
         'plans': plans,
+        'trial_plan': trial_plan,
+        'is_eligible_for_trial': is_eligible_for_trial
     })
 
 def PricingPage(request):
@@ -39,13 +48,16 @@ def PricingPage(request):
     from subscription.models import SubscriptionPlan, Feature
    
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True, name__in=['Starter Plan', 'Professional Plan', 'Enterprise Plan']).order_by('price')
+
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name__icontains='Trial').first()
     
     # Get all active features
     features = Feature.objects.filter(is_active=True).order_by('display_name')
     
     return render(request, 'PricingPage.html', {
         'plans': plans,
+        'trial_plan': trial_plan,
         'feature_list': features
     })
 

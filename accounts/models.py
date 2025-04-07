@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.utils import timezone
 import random
 
 
@@ -52,11 +53,16 @@ class Business(models.Model):
             subscription = BusinessSubscription.objects.filter(
                 business=self,
                 is_active=True,
-                status__in=['active', 'cancelled']  # Include cancelled subscriptions that are still active
-            ).latest('created_at')
+                status__in=['active', 'cancelled'],
+                end_date__gte=timezone.now()
+            ).first()
+
+            print(subscription)
 
             if subscription and subscription.is_subscription_active():
+                print("Subscription is active")
                 return subscription
+            print("Subscription is not active")
             return None
 
         except Exception as e:

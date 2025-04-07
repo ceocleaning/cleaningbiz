@@ -15,7 +15,7 @@ from square.client import Client
 
 
 from accounts.models import Business
-from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Coupon, CouponUsage, TrialPlan
+from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Coupon, CouponUsage
 
 @login_required
 def subscription_management(request):
@@ -428,6 +428,12 @@ def select_plan(request, plan_id=None):
         # Get the specific plan
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
+            if "Trial" in plan.name:
+                trial_already_availed = BusinessSubscription.objects.filter(business=business, plan__name__icontains="Trial").exists()
+                if trial_already_availed:
+                    messages.error(request, "You have already availed the trial plan.")
+                    return redirect('subscription:subscription_management')
+                    
         except SubscriptionPlan.DoesNotExist:
             messages.error(request, "The selected plan is not available.")
             return redirect('subscription:subscription_management')
@@ -598,14 +604,14 @@ def process_payment(request, plan_id):
         with transaction.atomic():
             try:
                 current_subscription = business.active_subscription()
-               
-                # End the current subscription
-                current_subscription.is_active = False
-                current_subscription.end_date = timezone.now()
-                current_subscription.save()
+                if current_subscription:
+                    # End the current subscription
+                    current_subscription.is_active = False
+                    current_subscription.end_date = timezone.now()
+                    current_subscription.save()
                 
             except BusinessSubscription.DoesNotExist:
-                pass
+                print("No active subscription found for this business.")
             
             # Create new subscription
             end_date = timezone.now() + timedelta(days=30 if plan.billing_cycle == 'monthly' else 365)
@@ -665,6 +671,7 @@ def process_payment(request, plan_id):
         return redirect('subscription:subscription_success', subscription_id=new_subscription.id, transaction_id=transaction_id)
     
     except Exception as e:
+        print(f"Error processing payment: {str(e)}")
         return redirect('subscription:select_plan', plan_id=plan_id)
 
 @login_required
@@ -870,7 +877,6 @@ def manage_card(request):
             }
             
             customer_result = square_client.customers.create_customer(
-                idempotency_key=str(uuid.uuid4()),
                 body=customer_request
             )
             
@@ -959,210 +965,9 @@ def manage_card(request):
     }
     return render(request, 'subscription/manage_card.html', context)
 
-@login_required
-def start_trial(request):
-    """View for starting a 30-day trial subscription."""
-    business = request.user.business_set.first()
-    
-    # Check if user already has an active subscription
-    if business.active_subscription():
-        messages.info(request, "You already have an active subscription.")
-        return redirect('subscription:subscription_management')
-    
-    # Check if user has already used a trial
-    if BusinessSubscription.objects.filter(business=business, is_trial=True).exists():
-        messages.info(request, "You have already used your trial period.")
-        return redirect('subscription:subscription_management')
-    
-    # Get trial plan configuration
-    try:
-        trial_plan = TrialPlan.objects.filter(is_active=True).latest('created_at')
-    except TrialPlan.DoesNotExist:
-        # Create default trial plan if none exists
-        trial_plan = TrialPlan.objects.create(
-            name="30-Day Trial",
-            description="Try our service for 30 days",
-            price=30.00,
-            duration_days=30,
-            voice_minutes=100,
-            sms_messages=100,
-            agents=1,
-            leads=50,
-            features={"analytics": True, "custom_voice": True}
-        )
-    
-    # Get a standard plan to associate with the trial
-    try:
-        standard_plan = SubscriptionPlan.objects.filter(
-            name__icontains="Professional",
-            is_active=True
-        ).first()
-        
-        if not standard_plan:
-            standard_plan = SubscriptionPlan.objects.filter(is_active=True).order_by('price')[1]
-            
-        if not standard_plan:
-            standard_plan = SubscriptionPlan.objects.filter(is_active=True).first()
-    except:
-        messages.error(request, "No subscription plans are available. Please try again later.")
-        return redirect('subscription:subscription_management')
-    
-    if request.method == 'POST':
-        # Process the payment for the trial
-        card_nonce = request.POST.get('card-nonce')
-        
-        try:
-            # Initialize Square client
-            square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
-            )
-            
-            # Prepare payment amount
-            amount_money = {
-                "amount": int(trial_plan.price * 100),  # Convert to cents
-                "currency": "USD"
-            }
-            
-            # Generate a unique idempotency key for this payment
-            idempotency_key = str(uuid.uuid4())
-            
-            # Create customer if needed
-            customer_id = business.square_customer_id
-            
-            if not customer_id:
-                # Create a new customer in Square
-                customer_result = square_client.customers.create_customer(
-                    idempotency_key=str(uuid.uuid4()),
-                    given_name=request.user.first_name or business.businessName,
-                    family_name=request.user.last_name or "",
-                    email_address=request.user.email,
-                    reference_id=str(business.id)
-                )
-                
-                if customer_result.is_success():
-                    customer_id = customer_result.body.get('customer', {}).get('id')
-                    business.square_customer_id = customer_id
-                    business.save()
-                else:
-                    raise Exception(f"Error creating customer: {customer_result.errors}")
-            
-            # Create a card on file if nonce provided
-            card_id = business.square_card_id
-            
-            if card_nonce:
-                # Create a new card on file
-                card_result = square_client.cards.create_card(
-                    idempotency_key=str(uuid.uuid4()),
-                    source_id=card_nonce,
-                    card={
-                        "customer_id": customer_id,
-                        "reference_id": str(business.id)
-                    }
-                )
-                
-                if card_result.is_success():
-                    card_id = card_result.body.get('card', {}).get('id')
-                    business.square_card_id = card_id
-                    business.save()
-                else:
-                    raise Exception(f"Error creating card: {card_result.errors}")
-            
-            # Create the payment
-            payment_result = square_client.payments.create_payment(
-                source_id=card_id,
-                idempotency_key=idempotency_key,
-                amount_money=amount_money,
-                customer_id=customer_id,
-                reference_id=f"trial-{business.id}",
-                note=f"Trial subscription for {business.businessName}"
-            )
-            
-            if payment_result.is_success():
-                payment_id = payment_result.body.get('payment', {}).get('id')
-                
-                # Create trial subscription
-                with transaction.atomic():
-                    # Calculate trial end date
-                    trial_end_date = timezone.now() + timedelta(days=trial_plan.duration_days)
-                    
-                    # Create subscription record
-                    subscription = BusinessSubscription.objects.create(
-                        business=business,
-                        plan=standard_plan,
-                        status='trial',
-                        is_trial=True,
-                        start_date=timezone.now(),
-                        end_date=trial_end_date,
-                        next_billing_date=trial_end_date,
-                        trial_end_date=trial_end_date,
-                        square_customer_id=customer_id,
-                        square_subscription_id=f"trial-{payment_id}"
-                    )
-                    
-                    # Create billing history record
-                    billing_record = BillingHistory.objects.create(
-                        business=business,
-                        subscription=subscription,
-                        amount=trial_plan.price,
-                        status='paid',
-                        square_payment_id=payment_id,
-                        billing_date=timezone.now(),
-                        details={
-                            'type': 'trial',
-                            'duration_days': trial_plan.duration_days,
-                            'plan_name': trial_plan.name,
-                            'voice_minutes': trial_plan.voice_minutes,
-                            'sms_messages': trial_plan.sms_messages,
-                            'agents': trial_plan.agents,
-                            'leads': trial_plan.leads
-                        }
-                    )
-                
-                # Redirect to success page
-                return redirect('subscription:trial_success', subscription_id=subscription.id, transaction_id=payment_id)
-                
-            else:
-                raise Exception(f"Error processing payment: {payment_result.errors}")
-                
-        except Exception as e:
-            messages.error(request, f"Payment failed: {str(e)}")
-            return redirect('subscription:start_trial')
-    
-    # Prepare context for the template
-    context = {
-        'trial_plan': trial_plan,
-        'business': business,
-        'square_app_id': settings.SQUARE_APP_ID,
-        'environment': settings.SQUARE_ENVIRONMENT,
-        'active_page': 'subscription',
-        'title': 'Start Trial'
-    }
-    
-    return render(request, 'subscription/trial_payment.html', context)
 
-@login_required
-def trial_success(request, subscription_id, transaction_id):
-    """Show trial success page after successful payment."""
-    try:
-        subscription = get_object_or_404(
-            BusinessSubscription, 
-            id=subscription_id, 
-            business__in=request.user.business_set.all()
-        )
-        
-        context = {
-            'subscription': subscription,
-            'transaction_id': transaction_id,
-            'active_page': 'subscription',
-            'title': 'Trial Started'
-        }
-        
-        return render(request, 'subscription/trial_success.html', context)
-        
-    except BusinessSubscription.DoesNotExist:
-        messages.error(request, "Subscription not found.")
-        return redirect('subscription:subscription_management')
+
+
 
 @login_required
 @require_POST

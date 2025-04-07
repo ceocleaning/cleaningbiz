@@ -21,14 +21,10 @@
         <span class="badge bg-primary-600 text-white px-3 py-2 mb-3 fs-6" data-aos="fade-down">Flexible Plans</span>
         <h1 class="display-3 fw-bold text-white mb-4" data-aos="fade-up">Transparent Pricing for <span class="text-gradient">Every Business Size</span></h1>
         <p class="fs-4 text-white opacity-80 mx-auto mb-5 col-lg-8" data-aos="fade-up" data-aos-delay="100">Choose the plan that best fits your cleaning business needs and scale as you grow</p>
-        <div class="d-flex justify-content-center gap-3">
+        <div class="d-flex justify-content-center">
             <a href="#pricing-plans" class="btn btn-accent btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="200">
                 <span class="me-2">View Plans</span>
                 <i class="fas fa-arrow-down"></i>
-            </a>
-            <a href="{% url 'subscription:start_trial' %}" class="btn btn-primary btn-lg px-4 py-3 rounded-pill d-inline-flex align-items-center shadow-glow" data-aos="fade-up" data-aos-delay="300">
-                <span class="me-2">Try 30 Days for $30</span>
-                <i class="fas fa-rocket"></i>
             </a>
         </div>
     </div>
@@ -303,10 +299,9 @@
                                 Do you offer a free trial?
                             </button>
                         </h2>
-                        <div id="faqFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#pricingFAQ">
-                            <div class="accordion-body py-4 px-4">
-                                <p>We offer a 30-day trial for just $30, which gives you access to our platform with generous usage limits. This includes voice minutes, SMS messages, active agents, and leads generation. After your trial period ends, you can choose to subscribe to one of our regular plans or your access will be limited. The trial is a great way to experience the full capabilities of our platform before committing to a subscription.</p>
-                                <a href="{% url 'subscription:start_trial' %}" class="btn btn-sm btn-primary mt-2">Start Your Trial</a>
+                        <div id="faqFour" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                            <div class="accordion-body py-4 px-4 text-white opacity-80">
+                                Yes, we offer a 30-day trial for just $30 USD. This gives you a full month to experience all the features of our AI Voice Agent platform with your actual customers. The trial includes all features of your chosen plan so you can see the real benefits for your cleaning business. After the trial period, you'll automatically transition to your selected subscription plan.
                             </div>
                         </div>
                     </div>

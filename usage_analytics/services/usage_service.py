@@ -101,16 +101,10 @@ class UsageService:
             Dict with limit details
         """
         import traceback
-        from subscription.models import BusinessSubscription
-        from datetime import datetime
         
         try:
             # Get active subscription
-            active_subscription = BusinessSubscription.objects.filter(
-                business=business,
-                is_active=True,
-                status__in=['active', 'trialing', 'past_due', 'canceled']
-            ).first()
+            active_subscription = business.active_subscription()
             
             # If no subscription, return no limit exceeded
             if not active_subscription:
@@ -178,11 +172,7 @@ class UsageService:
         
         try:
             # Get active subscription
-            active_subscription = BusinessSubscription.objects.filter(
-                business=business,
-                is_active=True,
-                status__in=['active', 'trialing', 'past_due', 'canceled']
-            ).first()
+            active_subscription = business.active_subscription()
             
             # If no subscription, return no limit exceeded
             if not active_subscription:
@@ -247,11 +237,7 @@ class UsageService:
         
         try:
             # Get active subscription
-            active_subscription = BusinessSubscription.objects.filter(
-                business=business,
-                is_active=True,
-                status__in=['active', 'trialing', 'past_due', 'canceled']
-            ).first()
+            active_subscription = business.active_subscription()
             
             # If no subscription, return no limit exceeded
             if not active_subscription:
@@ -312,11 +298,7 @@ class UsageService:
         
         try:
             # Get active subscription
-            active_subscription = BusinessSubscription.objects.filter(
-                business=business,
-                is_active=True,
-                status__in=['active', 'trialing', 'past_due', 'canceled']
-            ).first()
+            active_subscription = business.active_subscription()
             
             # If no subscription, return no limit exceeded
             if not active_subscription:
