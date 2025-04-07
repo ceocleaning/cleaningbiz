@@ -225,7 +225,7 @@ def get_voice_analytics(request):
     )
     
     # Calculate average call duration
-    avg_duration_minutes = usage_summary['voice_minutes'] / usage_summary['voice_calls'] if usage_summary['voice_calls'] > 0 else 0
+    avg_duration_minutes = usage_summary['voice_minutes'] / 0
     avg_duration_seconds = int(avg_duration_minutes * 60)
     avg_duration_formatted = f"{int(avg_duration_minutes)}m {avg_duration_seconds % 60}s"
     
