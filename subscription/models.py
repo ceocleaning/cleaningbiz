@@ -164,6 +164,8 @@ class BusinessSubscription(models.Model):
         ('cancelled', 'Cancelled'),
         ('past_due', 'Past Due'),
         ('trialing', 'Trialing'),
+        ('trial', 'Trial'),
+        ('ended', 'Ended')
     ]
     
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='subscriptions')
@@ -178,6 +180,10 @@ class BusinessSubscription(models.Model):
     # Payment provider fields
     square_subscription_id = models.CharField(max_length=100, blank=True, null=True)
     square_customer_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Trial specific fields
+    is_trial = models.BooleanField(default=False, help_text="Whether this subscription is a trial")
+    trial_end_date = models.DateTimeField(null=True, blank=True, help_text="Date when the trial ends")
     
     # Legacy fields - keeping for backward compatibility
     stripe_subscription_id = models.CharField(max_length=100, blank=True, null=True)
@@ -194,9 +200,11 @@ class BusinessSubscription(models.Model):
         """Check if the subscription is currently active."""
         if not self.is_active:
             return False
-        if self.status != 'active' and self.status != 'trialing':
+        if self.status != 'active' and self.status != 'trialing' and self.status != 'trial':
             return False
         if self.end_date and self.end_date < timezone.now():
+            return False
+        if self.is_trial and self.trial_end_date and self.trial_end_date < timezone.now():
             return False
         return True
 
@@ -227,6 +235,24 @@ class BusinessSubscription(models.Model):
                     user=self.business.user,
                     subscription=self
                 )
+
+class TrialPlan(models.Model):
+    """Model for configuring the trial subscription."""
+    name = models.CharField(max_length=100, default="30-Day Trial")
+    description = models.TextField(default="Try our service for 30 days")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=30.00)
+    duration_days = models.IntegerField(default=30)
+    voice_minutes = models.IntegerField(default=100)
+    sms_messages = models.IntegerField(default=100)
+    agents = models.IntegerField(default=1)
+    leads = models.IntegerField(default=50)
+    features = models.JSONField(default=dict)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} (${self.price} for {self.duration_days} days)"
 
 class UsageTracker(models.Model):
     """Model for tracking usage metrics for a business."""

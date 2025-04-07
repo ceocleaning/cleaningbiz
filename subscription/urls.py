@@ -17,6 +17,10 @@ urlpatterns = [
     path('process-payment/<int:plan_id>/', views.process_payment, name='process_payment'),
     path('success/<int:subscription_id>/<str:transaction_id>/', views.subscription_success, name='subscription_success'),
     
+    # Trial subscription URLs
+    path('start-trial/', views.start_trial, name='start_trial'),
+    path('trial-success/<int:subscription_id>/<str:transaction_id>/', views.trial_success, name='trial_success'),
+    
     # Coupon validation
     path('validate-coupon/', views.validate_coupon, name='validate_coupon'),
     path('update-auto-upgrade/', views.update_auto_upgrade, name='update_auto_upgrade'),

@@ -531,10 +531,6 @@
             <div class="yearly-savings badge bg-accent text-white px-3 py-2 mt-2" data-aos="fade-up" data-aos-delay="100">Save 20% with annual billing</div>
         </div>
         
-        <!-- Load subscription plans data -->
-        {% load subscription_plans %}
-        {% get_subscription_plans as plans %}
-        
         <!-- Dynamic Pricing Cards with Subscription Plans data -->
         <div class="row g-4 justify-content-center">
             {% for plan in plans %}
@@ -588,72 +584,24 @@
                                     </div>
                                     <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
                                 </li>
-                                <!-- <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">{{ plan.voice_calls }} Voice Calls</span>
-                                </li> -->
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
                                     <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
                                 </li>
-                                
-                                {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">Basic Analytics</span>
+                                    <span class="text-white opacity-80">{{ plan.agents }} Active Voice Agents</span>
                                 </li>
-                                {% endif %}
-                                
-                                {% if plan.features.advanced_analytics %}
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">Advanced Analytics</span>
+                                    <span class="text-white opacity-80">{{ plan.leads }} Leads</span>
                                 </li>
-                                {% endif %}
-                                
-                                {% if plan.features.email_support %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Email Support</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.priority_support %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Priority Support</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.dedicated_account_manager %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Dedicated Account Manager</span>
-                                </li>
-                                {% endif %}
-
-                                {% if plan.features.custom_integrations %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Custom Integrations</span>
-                                </li>
-                                {% endif %}
                             </ul>
                         </div>
                         

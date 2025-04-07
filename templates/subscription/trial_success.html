@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Trial Started Successfully{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-icon {
+        font-size: 5rem;
+        color: #28a745;
+        margin-bottom: 1.5rem;
+    }
+    .success-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .trial-details {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .trial-details-item {
+        margin-bottom: 0.75rem;
+    }
+    .trial-details-item:last-child {
+        margin-bottom: 0;
+    }
+    .trial-details-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    .next-steps {
+        margin-top: 2rem;
+    }
+    .next-steps-item {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'subscription:subscription_management' %}">Subscription</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Trial Started</li>
+                </ol>
+            </nav>
+
+            <!-- Success Card -->
+            <div class="card success-card">
+                <div class="card-body text-center p-5">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h1 class="h2 mb-3">Your Trial Has Started!</h1>
+                    <p class="text-muted mb-4">Thank you for trying our service. Your 30-day trial is now active.</p>
+                    
+                    <div class="trial-details text-start">
+                        <h5 class="mb-3">Trial Details</h5>
+                        <div class="row trial-details-item">
+                            <div class="col-md-4 trial-details-label">Status:</div>
+                            <div class="col-md-8">
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="row trial-details-item">
+                            <div class="col-md-4 trial-details-label">Start Date:</div>
+                            <div class="col-md-8">{{ subscription.start_date|date:"F j, Y" }}</div>
+                        </div>
+                        <div class="row trial-details-item">
+                            <div class="col-md-4 trial-details-label">End Date:</div>
+                            <div class="col-md-8">{{ subscription.trial_end_date|date:"F j, Y" }}</div>
+                        </div>
+                        <div class="row trial-details-item">
+                            <div class="col-md-4 trial-details-label">Transaction ID:</div>
+                            <div class="col-md-8">{{ transaction_id }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Your trial will expire on <strong>{{ subscription.trial_end_date|date:"F j, Y" }}</strong>. After this date, you can choose to subscribe to one of our regular plans or your access will be limited.
+                    </div>
+                    
+                    <div class="next-steps">
+                        <h5 class="mb-3">Next Steps</h5>
+                        <div class="next-steps-item d-flex align-items-start">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-robot fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Set Up Your AI Voice Agent</h6>
+                                <p class="text-muted mb-0">Configure your AI Voice Agent to start handling customer calls and booking appointments.</p>
+                            </div>
+                        </div>
+                        <div class="next-steps-item d-flex align-items-start">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-calendar-alt fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Set Your Business Hours</h6>
+                                <p class="text-muted mb-0">Update your business hours to ensure the AI Agent schedules appointments correctly.</p>
+                            </div>
+                        </div>
+                        <div class="next-steps-item d-flex align-items-start">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-phone-alt fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Test Your First Call</h6>
+                                <p class="text-muted mb-0">Make a test call to ensure everything is working as expected.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-home me-2"></i>Go to Dashboard
+                        </a>
+                        <a href="{% url 'subscription:subscription_management' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Manage Subscription
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,7 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 def LandingPage(request):
-    return render(request, 'LandingPage.html')
+    # Import here to avoid circular imports
+    from subscription.models import SubscriptionPlan
+    
+    # Get all plans
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    
+    return render(request, 'LandingPage.html', {
+        'plans': plans,
+    })
 
 def PricingPage(request):
     # Import here to avoid circular imports
@@ -34,7 +42,7 @@ def PricingPage(request):
     plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
     
     # Get all active features
-    features = Feature.objects.filter(is_active=True).order_by('category', 'display_name')
+    features = Feature.objects.filter(is_active=True).order_by('display_name')
     
     return render(request, 'PricingPage.html', {
         'plans': plans,

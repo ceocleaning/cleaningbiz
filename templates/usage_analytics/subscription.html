@@ -276,36 +276,16 @@
                                 </li>
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.agents }} AI Agents
+                                    {{ plan.leads }} Leads
                                 </li>
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
                                     {{ plan.sms_messages }} SMS Messages
                                 </li>
-                                {% if plan.features.basic_analytics %}
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    Basic Analytics
+                                    {{ plan.agents }} Voice Agents
                                 </li>
-                                {% endif %}
-                                {% if plan.features.advanced_analytics %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Advanced Analytics
-                                </li>
-                                {% endif %}
-                                {% if plan.features.custom_voice %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Custom Voice Options
-                                </li>
-                                {% endif %}
-                                {% if plan.features.priority_support %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Priority Support
-                                </li>
-                                {% endif %}
                             </ul>
                             <div class="d-grid mt-auto">
                                 {% if subscription and subscription.status != 'cancelled' %}
