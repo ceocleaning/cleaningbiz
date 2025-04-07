@@ -1233,6 +1233,13 @@ def chat_api(request):
                 'error': str(e)
             }, status=500)
     
+    # Checking SMS Usage Limits
+
+    
+
+
+
+
     # Handle POST requests for chat interaction
     try:
         # Parse the request data
@@ -1241,6 +1248,14 @@ def chat_api(request):
         client_phone_number = data.get('client_phone_number')
         session_key = data.get('session_key')
         message_text = data.get('message')
+
+        from usage_analytics.services.usage_service import UsageService
+        check_limit = UsageService.check_sms_messages_limit(Business.objects.get(businessId=business_id))
+        if check_limit.get('exceeded'):
+            print("SMS Limit reached for your Plan")
+            return JsonResponse({
+                'error': 'SMS limit exceeded'
+            }, status=400)
         
         print(f"\n[DEBUG] Chat API request")
         print(f"[DEBUG] Business ID: {business_id}")

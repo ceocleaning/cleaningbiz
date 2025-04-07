@@ -130,6 +130,43 @@
                             </div>
                         </div>
                         
+                        <!-- Payment Details Section -->
+                        <div class="card bg-light border-0 shadow-sm mb-4">
+                            <div class="card-body p-3">
+                                <h6 class="card-title text-primary mb-3">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i>Payment Details
+                                </h6>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted">Base Price:</td>
+                                                <td class="text-end fw-bold">${{ payment_details.original_price }}</td>
+                                            </tr>
+                                            
+                                            {% if payment_details.coupon_applied %}
+                                            <tr>
+                                                <td class="text-muted">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-ticket-alt text-success me-2"></i>
+                                                        Coupon Discount ({{ payment_details.coupon_code }}):
+                                                    </div>
+                                                </td>
+                                                <td class="text-end fw-bold text-success">-${{ payment_details.discount_amount }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            <tr class="border-top">
+                                                <td class="text-muted fw-bold">Total Charged:</td>
+                                                <td class="text-end fw-bold fs-5">${{ payment_details.final_amount }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-grid gap-3 d-md-flex justify-content-center mb-5">
                             <a href="{% url 'subscription:subscription_management' %}" class="btn btn-primary btn-lg px-4 py-3">
                                 <i class="fas fa-cog me-2"></i>Manage Subscription

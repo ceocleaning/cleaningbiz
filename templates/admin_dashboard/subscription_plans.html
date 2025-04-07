@@ -1,0 +1,253 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Subscription Plans Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Subscription Plans</h1>
+    <a href="{% url 'admin_dashboard:add_plan' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Add New Plan
+    </a>
+</div>
+
+<!-- Subscription Plans Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Plans</h5>
+        <div class="d-flex">
+            <div class="input-group me-2">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="planSearch" class="form-control border-start-0" placeholder="Search plans...">
+            </div>
+            <select class="form-select" id="planFilter" style="width: auto;">
+                <option value="all">All Plans</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="plansTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Billing Cycle</th>
+                        <th>Voice Minutes</th>
+                        <th>SMS Messages</th>
+                        <th>AI Agents</th>
+                        <th>Leads</th>
+                        <th>Features</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in plans %}
+                    <tr>
+                        <td>{{ plan.name }}</td>
+                        <td>${{ plan.price }}</td>
+                        <td>{{ plan.get_billing_cycle_display }}</td>
+                        <td>{{ plan.voice_minutes }}</td>
+                        <td>{{ plan.sms_messages }}</td>
+                        <td>{{ plan.agents }}</td>
+                        <td>{{ plan.leads }}</td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary">{{ plan.features.count }}</span>
+                            {% if plan.features.count > 0 %}
+                            <a href="#" class="ms-1 text-decoration-none" data-bs-toggle="tooltip" 
+                               title="{% for feature in plan.features.all %}{{ feature.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if plan.is_active %}
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'admin_dashboard:edit_plan' %}?id={{ plan.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-plan-btn"
+                                        data-id="{{ plan.id }}"
+                                        data-name="{{ plan.name }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deletePlanModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-3">No subscription plans found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if plans.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if plans.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ plans.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in plans.paginator.page_range %}
+                    {% if plans.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > plans.number|add:'-3' and i < plans.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if plans.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ plans.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ plans.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Plan Modal -->
+<div class="modal fade" id="deletePlanModal" tabindex="-1" aria-labelledby="deletePlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePlanModalLabel">Delete Subscription Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the subscription plan <strong id="deletePlanName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. Any active subscriptions using this plan will be affected.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'admin_dashboard:delete_plan' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan_id" id="deletePlanId">
+                    <button type="submit" class="btn btn-danger">Delete Plan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const planSearch = document.getElementById('planSearch');
+        const planFilter = document.getElementById('planFilter');
+        const plansTable = document.getElementById('plansTable');
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Table filtering function
+        function filterTable() {
+            const searchTerm = planSearch.value.toLowerCase();
+            const filterValue = planFilter.value;
+            
+            const rows = plansTable.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const billingCycle = row.cells[2].textContent.toLowerCase();
+                const isActive = row.cells[8].textContent.trim().toLowerCase() === 'active';
+                
+                let showRow = true;
+                
+                // Apply search filter
+                if (searchTerm && !name.includes(searchTerm)) {
+                    showRow = false;
+                }
+                
+                // Apply dropdown filter
+                if (filterValue === 'monthly' && !billingCycle.includes('monthly')) {
+                    showRow = false;
+                } else if (filterValue === 'yearly' && !billingCycle.includes('yearly')) {
+                    showRow = false;
+                } else if (filterValue === 'active' && !isActive) {
+                    showRow = false;
+                } else if (filterValue === 'inactive' && isActive) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        planSearch.addEventListener('input', filterTable);
+        planFilter.addEventListener('change', filterTable);
+        
+        // Handle delete plan modal
+        const deletePlanBtns = document.querySelectorAll('.delete-plan-btn');
+        deletePlanBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                
+                document.getElementById('deletePlanId').value = id;
+                document.getElementById('deletePlanName').textContent = name;
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -246,6 +246,8 @@
                                 </div>
                             </a>
                         </div>
+                        
+                        {% endif %}
                         <!-- New Subscription Management Button -->
                         <div class="col-md-4">
                             <a href="{% url 'subscription:subscription_management' %}" class="card border-0 shadow-sm bg-warning text-white text-decoration-none h-100">
@@ -262,7 +264,6 @@
                                 </div>
                             </a>
                         </div>
-                        {% endif %}
                         <!-- Retell AI Agent Setup Button -->
                         <div class="col-md-4">
                             <a href="{% url 'list_retell_agents' %}" class="card border-0 shadow-sm bg-purple text-white text-decoration-none h-100" style="background-color: #6f42c1;">

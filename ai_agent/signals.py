@@ -32,6 +32,17 @@ def save_chat_summary(sender, instance, **kwargs):
 @receiver(post_save, sender=Messages)
 def track_usage(sender, instance,created, **kwargs):
     if created:
-        # Track SMS usage
-        UsageTracker.increment_metric(instance.chat.business, 'sms_messages')
+        if instance.role == 'assistant':
+            UsageTracker.increment_agents(instance.chat.business, 1)
+        
 
+@receiver(pre_save, sender=Messages)
+def check_sms_limits(sender, instance, created, **kwargs):
+    if created:
+        from usage_analytics.services.usage_service import UsageService
+        check_limit = UsageService.check_sms_messages_limit(instance.chat.business)
+        if check_limit.get('exceeded'):
+            print("SMS Limit reached for your Plan")
+        
+        return
+            

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Application Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #2563eb;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .highlight {
+            color: #2563eb;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CEO Cleaners</h1>
+    </div>
+    
+    <div class="content">
+        <h2>Hello, {{ user.first_name }}</h2>
+        
+        <p>Thank you for your interest in joining our platform with your business <span class="highlight">{{ business.businessName }}</span>.</p>
+        
+        <p>After careful review, we regret to inform you that your business application has not been approved at this time. This may be due to one of the following reasons:</p>
+        
+        <ul>
+            <li>Incomplete business information</li>
+            <li>Service area not currently supported</li>
+            <li>Business type not aligned with our platform focus</li>
+            <li>Verification requirements not met</li>
+        </ul>
+        
+        <p>We encourage you to update your business information and reapply. If you have any questions or need clarification about the requirements, please contact our support team.</p>
+        
+        <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'accounts:login' %}" class="button">Log In to Update Your Information</a>
+        
+        <p>We appreciate your understanding and hope to welcome you to our platform in the future.</p>
+        
+        <p>Best regards,<br>
+        The CEO Cleaners Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; {% now "Y" %} CEO Cleaners. All rights reserved.</p>
+        <p>This email was sent to {{ user.email }}</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,319 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Subscription Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Subscription Management</h1>
+    <div>
+        <button class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-calendar-alt me-1"></i> {{ today|date:"F j, Y" }}
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-csv me-2"></i> CSV</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Subscriptions Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Subscriptions</h5>
+        <div class="d-flex">
+            <div class="input-group me-2">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="subscriptionSearch" class="form-control border-start-0" placeholder="Search subscriptions...">
+            </div>
+            <select class="form-select" id="subscriptionFilter" style="width: auto;">
+                <option value="all">All Subscriptions</option>
+                <option value="active">Active</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="past_due">Past Due</option>
+                <option value="trialing">Trialing</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="subscriptionsTable">
+                <thead>
+                    <tr>
+                        <th>Business</th>
+                        <th>Plan</th>
+                        <th>Status</th>
+                        <th>Start Date</th>
+                        <th>Next Billing</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in subscriptions %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'admin_dashboard:business_detail' subscription.business.id %}">
+                                {{ subscription.business.businessName }}
+                            </a>
+                        </td>
+                        <td>{{ subscription.plan.name }}</td>
+                        <td>
+                            {% if subscription.status == 'active' %}
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                            {% elif subscription.status == 'cancelled' %}
+                            <span class="badge bg-danger-subtle text-danger">Cancelled</span>
+                            {% elif subscription.status == 'past_due' %}
+                            <span class="badge bg-warning-subtle text-warning">Past Due</span>
+                            {% elif subscription.status == 'trialing' %}
+                            <span class="badge bg-info-subtle text-info">Trialing</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary">{{ subscription.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ subscription.start_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if subscription.next_billing_date and subscription.status == 'active' %}
+                                {{ subscription.next_billing_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>${{ subscription.plan.price|floatformat:2 }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'admin_dashboard:business_detail' subscription.business.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if subscription.status == 'active' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger cancel-subscription-btn" 
+                                        data-id="{{ subscription.id }}"
+                                        data-business="{{ subscription.business.businessName }}"
+                                        data-plan="{{ subscription.plan.name }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#cancelSubscriptionModal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning change-subscription-btn"
+                                        data-id="{{ subscription.id }}"
+                                        data-business="{{ subscription.business.businessName }}"
+                                        data-plan="{{ subscription.plan.name }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#changeSubscriptionModal">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-3">No subscriptions found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if subscriptions.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if subscriptions.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ subscriptions.previous_page_number }}" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in subscriptions.paginator.page_range %}
+                    {% if subscriptions.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% elif num > subscriptions.number|add:'-3' and num < subscriptions.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if subscriptions.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ subscriptions.next_page_number }}" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ subscriptions.paginator.num_pages }}" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Cancel Subscription Modal -->
+<div class="modal fade" id="cancelSubscriptionModal" tabindex="-1" aria-labelledby="cancelSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelSubscriptionModalLabel">Cancel Subscription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:cancel_subscription' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="cancel_subscription_id" name="subscription_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel the subscription for <strong id="cancel_business_name"></strong> to the <strong id="cancel_plan_name"></strong> plan?</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Cancelling a subscription will immediately end access to premium features.
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_cancellation_email" name="send_cancellation_email" checked>
+                        <label class="form-check-label" for="send_cancellation_email">
+                            Send cancellation email notification
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Subscription Modal -->
+<div class="modal fade" id="changeSubscriptionModal" tabindex="-1" aria-labelledby="changeSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeSubscriptionModalLabel">Change Subscription Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:change_subscription' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="change_subscription_id" name="subscription_id">
+                <div class="modal-body">
+                    <p>Change the subscription plan for <strong id="change_business_name"></strong>:</p>
+                    
+                    <div class="mb-3">
+                        <label for="new_plan" class="form-label">New Subscription Plan</label>
+                        <select class="form-select" id="new_plan" name="plan" required>
+                            <option value="">Select a plan</option>
+                            {% for plan in subscription_plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }} - ${{ plan.price|floatformat:2 }}/{{ plan.get_billing_cycle_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_change_email" name="send_change_email" checked>
+                        <label class="form-check-label" for="send_change_email">
+                            Send plan change email notification
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Change Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search and filter functionality
+        const subscriptionSearch = document.getElementById('subscriptionSearch');
+        const subscriptionFilter = document.getElementById('subscriptionFilter');
+        const table = document.getElementById('subscriptionsTable');
+        const rows = table.querySelectorAll('tbody tr');
+        
+        function filterTable() {
+            const searchTerm = subscriptionSearch.value.toLowerCase();
+            const filterValue = subscriptionFilter.value;
+            
+            rows.forEach(row => {
+                const business = row.cells[0].textContent.toLowerCase();
+                const plan = row.cells[1].textContent.toLowerCase();
+                const status = row.cells[2].textContent.toLowerCase();
+                
+                const matchesSearch = business.includes(searchTerm) || plan.includes(searchTerm);
+                const matchesFilter = filterValue === 'all' || status.includes(filterValue);
+                
+                row.style.display = matchesSearch && matchesFilter ? '' : 'none';
+            });
+        }
+        
+        subscriptionSearch.addEventListener('input', filterTable);
+        subscriptionFilter.addEventListener('change', filterTable);
+        
+        // Handle cancel subscription modal
+        document.querySelectorAll('.cancel-subscription-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const business = this.dataset.business;
+                const plan = this.dataset.plan;
+                
+                document.getElementById('cancel_subscription_id').value = id;
+                document.getElementById('cancel_business_name').textContent = business;
+                document.getElementById('cancel_plan_name').textContent = plan;
+            });
+        });
+        
+        // Handle change subscription modal
+        document.querySelectorAll('.change-subscription-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const business = this.dataset.business;
+                
+                document.getElementById('change_subscription_id').value = id;
+                document.getElementById('change_business_name').textContent = business;
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -43,7 +43,7 @@ Time: {error_time}
             subject=subject,
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],  # Send to admin email
+            recipient_list=['ceocleaningacademy@gmail.com'],  # Send to admin email
             fail_silently=True,
         )
     except Exception as e:
@@ -77,7 +77,7 @@ def handler404(request, exception=None):
     Custom 404 error handler.
     """
     # Send notification and get error time
-    error_time = send_error_notification(request, '404')
+    # error_time = send_error_notification(request, '404')
     
     return render(request, 'error_page.html', {
         'error_code': '404',

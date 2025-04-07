@@ -1,3 +1,4 @@
+from tkinter.constants import FALSE
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -27,6 +28,12 @@ def setup_retell_agent(request):
     
     # Get the user's business
     business = request.user.business_set.first()
+
+    from usage_analytics.services.usage_service import UsageService
+    check_limit = UsageService.check_active_agents_limit(business)
+    if check_limit.get('exceeded'):
+        messages.error(request, 'You have reached the maximum number of Retell agents allowed in your subscription plan.')
+        return redirect('list_retell_agents')
     
     # Check if business has any existing LLMs (if llm_id not provided)
     existing_llm = None
@@ -164,6 +171,10 @@ def setup_retell_agent(request):
                 )
                 agent.save()
                 
+                # Track the active agent in usage metrics
+                from usage_analytics.services.usage_service import UsageService
+                UsageService.track_active_agent(business)
+                
                 messages.success(request, 'Retell Agent created successfully!')
                 return redirect('list_retell_agents')  # Redirect to agent list
             else:
@@ -206,7 +217,7 @@ def create_retell_llm(request):
         return redirect(f'{reverse("setup_retell_agent")}?llm_id={existing_llm.llm_id}')
     
     try:
-        from .prompt_and_tools import custom_tools, default_prompt
+        from .prompt_and_tools import get_retell_prompt, get_retell_tools
         
         # Define default LLM configuration with custom tools included
         payload = {
@@ -214,8 +225,8 @@ def create_retell_llm(request):
             "model_temperature": 0.7,
             "model_high_priority": False,
             "tool_call_strict_mode": True,
-            "general_prompt": default_prompt,
-            "general_tools": custom_tools,
+            "general_prompt": get_retell_prompt(business),
+            "general_tools": get_retell_tools(business),
             "begin_message": "Hello, this is your cleaning service virtual assistant. How can I help you today?",
             "default_dynamic_variables": {
                 "business_name": business.name if hasattr(business, 'name') else "Cleaning Service",
@@ -309,12 +320,19 @@ def list_retell_agents(request):
     """
     # Get the user's business
     business = request.user.business_set.first()
+    agent_limit_reached = False
+
+    from usage_analytics.services.usage_service import UsageService
+    check_limit = UsageService.check_active_agents_limit(business)
+    if check_limit.get('exceeded'):
+        agent_limit_reached = True
     
     # Get all agents for this business
     agents = RetellAgent.objects.filter(business=business).order_by('-created_at')
     
     return render(request, 'retell_agent/list_agents.html', {
-        'agents': agents
+        'agents': agents,
+        'agent_limit_reached': agent_limit_reached
     })
 
 @login_required
@@ -870,4 +888,3 @@ def assign_phone_number(request):
             messages.error(request, f"An error occurred: {str(e)}")
             
     return redirect('list_retell_agents')
-

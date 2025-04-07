@@ -109,14 +109,14 @@ def process_webhook_data(webhook_data):
                 minutes = max(1, round(duration.total_seconds() / 60))
                 
                 # Track usage
-                UsageTracker.increment_metric(businessObj, 'voice_minutes', minutes)
+                UsageTracker.increment_minutes(businessObj, minutes)
                 print(f"Call {call_id} lasted {minutes} minutes")
                 
                 # Log the details for debugging
                 print(f"Start time: {start_time}, End time: {end_time}, Duration: {duration}")
             else:
                 # Fallback to a default value if timestamps are missing
-                UsageTracker.increment_metric(businessObj, 'voice_minutes', 1)
+                UsageTracker.increment_minutes(businessObj, 1)
                 print(f"Used fallback duration of 1 minute for call {call_id} (missing timestamps)")
     
     except Exception as e:

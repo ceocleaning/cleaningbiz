@@ -13,7 +13,7 @@ from ai_agent.models import AgentConfiguration, Messages, Chat
 from subscription.models import BusinessSubscription, SubscriptionPlan, UsageTracker
 from .tasks import send_call_to_lead
 from django_q.tasks import schedule
-
+from django_q.models import Schedule
 import datetime
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
@@ -33,17 +33,35 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
         schedule(
             "ai_agent.tasks.check_chat_status",
             schedule_type=Schedule.MINUTES,
-            minutes=10,
+            minutes=30,
             repeats=-1,  # Run indefinitely
         )
         
     if created:
         try:
-            apiCred = ApiCredential.objects.get(business=instance.business)
-            agentConfig = AgentConfiguration.objects.get(business=instance.business)
+            # Check if both ApiCredential and AgentConfiguration exist for the business
+            try:
+                apiCred = ApiCredential.objects.get(business=instance.business)
+                agentConfig = AgentConfiguration.objects.get(business=instance.business)
+            except (ApiCredential.DoesNotExist, AgentConfiguration.DoesNotExist):
+                # If either doesn't exist, just skip sending the SMS
+                print(f"Skipping SMS for lead {instance.leadId}: Missing API credentials or agent configuration")
+                return
+                
+            # Only proceed if we have both configurations
             print(f"Twilio Account SID: {apiCred.twilioAccountSid}")
             print(f"Twilio Auth Token: {apiCred.twilioAuthToken}")
             print(f"Twilio SMS Number: {apiCred.twilioSmsNumber}")
+
+            # Check if Twilio credentials are properly set
+            if not apiCred.twilioAccountSid or not apiCred.twilioAuthToken or not apiCred.twilioSmsNumber:
+                print(f"Skipping SMS for lead {instance.leadId}: Incomplete Twilio credentials")
+                return
+                
+            # Check if phone number is valid
+            if not instance.phone_number or len(instance.phone_number) < 10:
+                print(f"Skipping SMS for lead {instance.leadId}: Invalid phone number")
+                return
 
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
 

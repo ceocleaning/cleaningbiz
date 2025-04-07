@@ -1,0 +1,111 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Add Business{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Add New Business</h1>
+        <a href="{% url 'admin_dashboard:businesses' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Businesses
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Business Information</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'admin_dashboard:add_business' %}">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="businessName" class="form-label">Business Name*</label>
+                        <input type="text" class="form-control" id="businessName" name="businessName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="user" class="form-label">Business Owner*</label>
+                        <select class="form-select" id="user" name="user" required>
+                            <option value="">Select Owner</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isApproved" name="isApproved">
+                            <label class="form-check-label" for="isApproved">
+                                Approve Business
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isActive" name="isActive">
+                            <label class="form-check-label" for="isActive">
+                                Active Business
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="useCall" name="useCall">
+                            <label class="form-check-label" for="useCall">
+                                Use Call Feature
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="timeToWait" class="form-label">Time to Wait (seconds)</label>
+                        <input type="number" class="form-control" id="timeToWait" name="timeToWait" value="0" min="0">
+                        <small class="text-muted">Time to wait before connecting to AI agent</small>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Business
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any JavaScript for form validation if needed
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const businessName = document.getElementById('businessName').value;
+            const user = document.getElementById('user').value;
+            
+            if (!businessName || !user) {
+                event.preventDefault();
+                alert('Please fill in all required fields.');
+            }
+        });
+    });
+</script>
+{% endblock %}

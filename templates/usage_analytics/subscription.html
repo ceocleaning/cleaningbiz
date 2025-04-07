@@ -21,27 +21,38 @@
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'usage_analytics:usage_overview' %}">Usage Overview</a></li>
             <li class="breadcrumb-item active" aria-current="page">Subscription & Plans</li>
         </ol>
     </nav>
 
+    {% if subscription %}
     <!-- Current Plan Card -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white">
             <h5 class="m-0 fw-bold">Current Plan</h5>
         </div>
         <div class="card-body">
-            {% if subscription %}
             <div class="d-flex align-items-center mb-3">
                 <div>
-                    <h4 class="text-primary mb-1">{{ subscription.plan.name }}</h4>
+                    <h5 class="mb-0">{{ subscription.plan.name }}</h5>
                     <p class="text-muted mb-0">
-                        {{ subscription.plan.billing_cycle|title }} billing • ${{ subscription.plan.price }}/{{ subscription.plan.billing_cycle }}
+                        ${{ subscription.plan.price }}{% if subscription.plan.billing_cycle == 'monthly' %}/month{% else %}/year{% endif %}
                     </p>
+                    {% if subscription.status == 'cancelled' %}
+                    <div class="mt-2">
+                        <span class="badge bg-warning">Cancelled</span>
+                        <small class="text-muted d-block mt-1">
+                            Valid until {{ subscription.end_date|date:"F d, Y" }}
+                        </small>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="ms-auto">
-                    <span class="badge bg-success p-2">Active</span>
+                    {% if subscription.status == 'cancelled' %}
+                        <span class="badge bg-warning p-2">Cancelled</span>
+                    {% else %}
+                        <span class="badge bg-success p-2">Active</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="included-features mb-3">
@@ -49,55 +60,71 @@
                     <div class="col-md-6">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>{{ subscription.plan.voice_minutes }} voice minutes/month</span>
+                            <span>{{ subscription.plan.voice_minutes }} Voice Minutes</span>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>{{ subscription.plan.voice_calls }} voice calls/month</span>
+                            <span>{{ subscription.plan.agents }} AI Agents</span>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>{{ subscription.plan.sms_messages }} SMS messages/month</span>
+                            <span>{{ subscription.plan.sms_messages }} SMS Messages</span>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Advanced Analytics</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Priority Support</span>
+                            <span>{{ subscription.plan.leads }} Leads</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'subscription:select_plan' %}" class="btn btn-primary">
-                    <i class="fas fa-arrow-circle-up me-2"></i>Upgrade Plan
-                </a>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal">
-                    <i class="fas fa-times-circle me-2"></i>Cancel Subscription
-                </button>
+            <div class="d-flex align-items-center">
+                {% if subscription.status != 'cancelled' %}
+                <div>
+                    <p class="text-muted mb-0">
+                        <i class="far fa-calendar-alt me-2"></i>
+                        Next billing date: {{ subscription.end_date|date:"F j, Y" }}
+                    </p>
+                </div>
+                {% endif %}
+                <div class="ms-auto">
+                 
+                    {% if subscription.status != 'cancelled' %}
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" data-plan-id="{{ subscription.plan.id }}" data-plan-name="{{ subscription.plan.name }}">
+                        <i class="fas fa-times-circle me-1"></i> Cancel
+                    </button>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-exclamation-circle text-warning mb-3" style="font-size: 3rem;"></i>
-                <h5>No Active Subscription</h5>
-                <p class="text-muted mb-4">You don't have an active subscription plan. Choose one of our plans to get started.</p>
-                <a href="{% url 'subscription:select_plan' %}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-tags me-2"></i>View Available Plans
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
+
+    {% if next_plan and subscription.status != 'cancelled' %}
+    <div class="alert alert-info mt-3">
+        <div class="d-flex align-items-center">
+            <div>
+                <h6 class="mb-0">Future Plan Change Scheduled</h6>
+                <p class="mb-0">Your subscription will change to <strong>{{ next_plan.name }}</strong> 
+                (${{ next_plan.price }}{% if next_plan.billing_cycle == 'monthly' %}/month{% else %}/year{% endif %}) 
+                on your next billing date: 
+                <strong>{{ subscription.end_date|date:"F d, Y" }}</strong>.</p>
+            </div>
+            <div class="ms-auto">
+                <form method="post" class="cancel-plan-change-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Cancel Change
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Usage Status -->
     <div class="row mb-4">
@@ -109,35 +136,69 @@
                 <div class="card-body">
                     <div class="row">
                         <!-- Voice Minutes Usage -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span>Voice Minutes</span>
-                                <span class="fw-bold">450 / 1000</span>
+                                <span class="fw-bold">{{ usage_summary.total.voice_minutes }} / {{ subscription.plan.voice_minutes }}</span>
                             </div>
                             <div class="progress mb-4" style="height: 10px;">
-                                <div class="progress-bar bg-info" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% if usage_summary.usage_percentage.voice_minutes >= 80 %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% elif usage_summary.usage_percentage.voice_minutes >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endif %}
                             </div>
                         </div>
                         
                         <!-- Voice Calls Usage -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>Voice Calls</span>
-                                <span class="fw-bold">38 / 100</span>
+                                <span>SMS</span>
+                                <span class="fw-bold">{{ usage_summary.total.sms_messages }} / {{ subscription.plan.sms_messages }}</span>
                             </div>
                             <div class="progress mb-4" style="height: 10px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: 38%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% if usage_summary.usage_percentage.sms_messages >= 80 %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% elif usage_summary.usage_percentage.sms_messages >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endif %}
                             </div>
                         </div>
                         
                         <!-- SMS Messages Usage -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>SMS Messages</span>
-                                <span class="fw-bold">2150 / 5000</span>
+                                <span>Leads</span>
+                                <span class="fw-bold">{{ usage_summary.total.leads_generated }} / {{ subscription.plan.leads }}</span>
                             </div>
                             <div class="progress mb-4" style="height: 10px;">
-                                <div class="progress-bar bg-warning" role="progressbar" style="width: 43%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% if usage_summary.usage_percentage.leads_generated >= 80 %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% elif usage_summary.usage_percentage.leads_generated >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Active Agents</span>
+                                <span class="fw-bold">{{usage_summary.total.active_agents}} / {{subscription.plan.agents}}</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 10px;">
+                                {% if usage_summary.usage_percentage.active_agents >= 80 %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% elif usage_summary.usage_percentage.active_agents >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -146,6 +207,14 @@
                             <i class="fas fa-info-circle fa-lg me-3"></i>
                             <div>
                                 <p class="mb-0">Your current usage is within plan limits. You can view detailed analytics in the <a href="#" class="alert-link">Analytics Dashboard</a>.</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto-upgrade"
+                                    {% if business.auto_upgrade %}checked{% endif %}
+                                    >
+                                    <label class="form-check-label" for="auto-upgrade">
+                                        Auto-upgrade to the next plan when usage exceeds limits
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -153,6 +222,19 @@
             </div>
         </div>
     </div>
+
+    {% else %}
+    <!-- No Active Subscription Alert -->
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading">No Active Subscription</h5>
+                <p class="mb-0">You don't currently have an active subscription. Select a plan below to access all features of the AI Voice Agent and other premium services.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Available Plans -->
     <div class="card shadow-sm mb-4">
@@ -171,14 +253,17 @@
                 {% for plan in plans %}
                 {% if plan.billing_cycle == 'monthly' %}
                 <div class="col plan-card" data-plan-type="monthly">
-                    <div class="card h-100 {% if plan.name == 'Professional Plan' %}border-primary{% endif %}">
-                        {% if plan.name == 'Professional Plan' %}
-                        <div class="card-header bg-primary text-white text-center">Popular Choice</div>
-                        {% else %}
-                        <div class="card-header bg-light text-center">{{ plan.name }}</div>
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title text-center {% if plan.name == 'Professional Plan' %}text-primary{% endif %}">{{ plan.name }}</h5>
+                    <div class="card h-100 {% if plan.id == subscription.plan.id %}border-primary{% endif %}">
+                        <div class="card-header bg-transparent">
+                            <h5 class="card-title mb-0">{{ plan.name }}</h5>
+                            {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
+                                <span class="badge bg-primary">Current Plan</span>
+                            {% endif %}
+                            {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
+                                <span class="badge bg-info">Future Plan</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
                             <p class="price-tag text-center mb-3">
                                 <span class="currency">$</span>
                                 <span class="amount">{{ plan.price }}</span>
@@ -191,7 +276,7 @@
                                 </li>
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.voice_calls }} Voice Calls
+                                    {{ plan.agents }} AI Agents
                                 </li>
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
@@ -209,6 +294,12 @@
                                     Advanced Analytics
                                 </li>
                                 {% endif %}
+                                {% if plan.features.custom_voice %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Custom Voice Options
+                                </li>
+                                {% endif %}
                                 {% if plan.features.priority_support %}
                                 <li class="list-group-item">
                                     <i class="fas fa-check-circle text-success me-2"></i>
@@ -216,79 +307,147 @@
                                 </li>
                                 {% endif %}
                             </ul>
-                            <div class="d-grid">
-                                <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                                    Select Plan
-                                </a>
+                            <div class="d-grid mt-auto">
+                                {% if subscription and subscription.status != 'cancelled' %}
+                                    {% if subscription.plan.id == plan.id %}
+                                        {% if subscription.status != 'cancelled' %}
+                                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" data-plan-id="{{ plan.id }}" data-plan-name="{{ plan.name }}">
+                                            <i class="fas fa-times-circle me-1"></i> Cancel Plan
+                                        </button>
+                                        {% else %}
+                                        <button type="button" class="btn btn-secondary" disabled>Cancelled</button>
+                                        {% endif %}
+                                    {% elif next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
+                                        <button type="button" class="btn btn-secondary" disabled>Future Plan</button>
+                                    {% else %}
+                                        <form method="post" class="change-plan-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="new_plan_id" value="{{ plan.id }}">
+                                            <input type="hidden" name="current_plan_id" value="{{ subscription.plan.id }}">
+                                            <button type="submit" 
+                                                class="btn change-plan-btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                                                data-plan-name="{{ plan.name }}"
+                                            >
+                                                Change Plan
+                                            </button>
+                                            <div class="plan-loader" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                            </div>
+                                            <div class="plan-message" style="display: none;"></div>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}">Select Plan</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if plan.billing_cycle == 'yearly' %}
+                <div class="col plan-card" data-plan-type="yearly" style="display: none;">
+                    <div class="card h-100 {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}border-primary{% endif %}">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ plan.name }}</h5>
+                            {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
+                                <span class="badge bg-primary">Current</span>
+                            {% endif %}
+                            {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
+                                <span class="badge bg-info">Future</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="price-tag text-center mb-1">
+                                <span class="currency">$</span>
+                                <span class="amount-monthly">{{ plan.price|floatformat:2 }}</span>
+                                <span class="period">/month</span>
+                            </p>
+                            <p class="text-center text-muted small mb-3">
+                                <span>billed annually</span>
+                                <span class="badge bg-success ms-1">Save 20%</span>
+                            </p>
+                            <ul class="list-group list-group-flush mb-4">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.voice_minutes }} Voice Minutes
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.agents }} AI Agents
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.sms_messages }} SMS Messages
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ plan.leads }} Leads
+                                </li>
+                                {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Basic Analytics
+                                </li>
+                                {% endif %}
+                                {% if plan.features.advanced_analytics %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Advanced Analytics
+                                </li>
+                                {% endif %}
+                                {% if plan.features.custom_voice %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Custom Voice Options
+                                </li>
+                                {% endif %}
+                                {% if plan.features.priority_support %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Priority Support
+                                </li>
+                                {% endif %}
+                            </ul>
+                            <div class="d-grid mt-auto">
+                                {% if subscription %}
+                                    {% if subscription.plan.id == plan.id %}
+                                        {% if subscription.status != 'cancelled' %}
+                                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" data-plan-id="{{ plan.id }}" data-plan-name="{{ plan.name }}">
+                                            <i class="fas fa-times-circle me-1"></i> Cancel Plan
+                                        </button>
+                                        {% endif %}
+                                    {% elif next_plan and plan.id == next_plan.id %}
+                                        <button type="button" class="btn btn-secondary" disabled>Future Plan</button>
+                                    {% else %}
+                                        <form method="post" class="change-plan-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="new_plan_id" value="{{ plan.id }}">
+                                            <input type="hidden" name="current_plan_id" value="{{ subscription.plan.id }}">
+                                            <button type="submit" 
+                                                class="btn change-plan-btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                                                data-plan-name="{{ plan.name }}"
+                                            >
+                                                Change Plan
+                                            </button>
+                                            <div class="plan-loader" style="display: none;">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                            </div>
+                                            <div class="plan-message" style="display: none;"></div>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}">Select Plan</a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
                 {% endif %}
                 {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Overage Rates -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Overage Rates</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted mb-4">The following rates apply for usage beyond your plan limits:</p>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-light mb-3">
-                                <div class="card-body py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-phone text-primary me-2"></i>
-                                            <span>Voice Minutes</span>
-                                        </div>
-                                        <span class="fw-bold">$0.05/minute</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-light mb-3">
-                                <div class="card-body py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-headset text-primary me-2"></i>
-                                            <span>Voice Calls</span>
-                                        </div>
-                                        <span class="fw-bold">$1.00/call</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-light mb-3">
-                                <div class="card-body py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-comment text-primary me-2"></i>
-                                            <span>SMS Messages</span>
-                                        </div>
-                                        <span class="fw-bold">$0.01/message</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-warning mb-0">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
-                            <div>
-                                <p class="mb-0">Overage charges are billed at the end of your billing cycle. You can monitor your usage in real-time from the <a href="#" class="alert-link">Usage Dashboard</a>.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -348,68 +507,424 @@
                         </div>
                     </div>
                 </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFive">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                            What features are restricted without a subscription?
+                        </button>
+                    </h2>
+                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#subscriptionFAQ">
+                        <div class="accordion-body">
+                            Without an active subscription, you'll have limited access to the platform. You can still view your dashboard and basic account information, but you won't be able to use the AI Voice Agent, make outbound calls, send SMS messages, or access advanced analytics features. A subscription is required to use the core functionality of the platform.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Cancel Subscription Modal -->
+<div class="modal fade" id="cancelSubscriptionModal" tabindex="-1" aria-labelledby="cancelSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelSubscriptionModalLabel">Cancel Subscription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="cancelSubscriptionForm">
+                {% csrf_token %}
+                <input type="hidden" id="plan-id" name="plan_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel your subscription to <strong id="plan-name"></strong>?</p>
+                    <p>Your subscription will be cancelled immediately and you will lose access to premium features.</p>
+                    
+                    <div class="loader" style="display: none; text-align: center; margin: 15px 0;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="message" style="display: none; margin-top: 15px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Toggle between monthly and yearly pricing
+        // Toggle between monthly and yearly plans
         const billingToggle = document.getElementById('billingToggle');
-        const prices = document.querySelectorAll('.display-5');
-        const originalPrices = Array.from(prices).map(price => parseInt(price.textContent.replace('$', '')));
-        const periods = document.querySelectorAll('.text-muted:not(p.text-muted)');
+        const billingCycleText = document.getElementById('billingCycle');
+        const yearlySavings = document.getElementById('yearlySavings');
+        const monthlyCards = document.querySelectorAll('.plan-card[data-plan-type="monthly"]');
+        const yearlyCards = document.querySelectorAll('.plan-card[data-plan-type="yearly"]');
         
         billingToggle.addEventListener('change', function() {
             if (this.checked) {
-                // Yearly pricing (20% discount)
-                prices.forEach((price, index) => {
-                    const yearlyPrice = Math.round(originalPrices[index] * 12 * 0.8);
-                    price.textContent = '$' + yearlyPrice;
-                });
-                periods.forEach(period => {
-                    if (period.textContent === '/month') {
-                        period.textContent = '/year';
-                    }
-                });
+                // Show yearly plans
+                monthlyCards.forEach(card => card.style.display = 'none');
+                yearlyCards.forEach(card => card.style.display = 'block');
+                billingCycleText.textContent = 'Yearly';
+                yearlySavings.style.display = 'inline';
             } else {
-                // Monthly pricing
-                prices.forEach((price, index) => {
-                    price.textContent = '$' + originalPrices[index];
-                });
-                periods.forEach(period => {
-                    if (period.textContent === '/year') {
-                        period.textContent = '/month';
-                    }
-                });
+                // Show monthly plans
+                monthlyCards.forEach(card => card.style.display = 'block');
+                yearlyCards.forEach(card => card.style.display = 'none');
+                billingCycleText.textContent = 'Monthly';
+                yearlySavings.style.display = 'none';
             }
         });
         
-        // Style enhancements
+        // Function to equalize card heights
+        function equalizeCardHeights() {
+            const cards = document.querySelectorAll('.plan-card .card');
+            let maxHeight = 0;
+            
+            // Reset heights
+            cards.forEach(card => {
+                card.style.height = 'auto';
+                maxHeight = Math.max(maxHeight, card.offsetHeight);
+            });
+            
+            // Set all cards to max height
+            cards.forEach(card => {
+                card.style.height = maxHeight + 'px';
+            });
+        }
+        
+        // Initial equalization
+        window.addEventListener('load', equalizeCardHeights);
+        window.addEventListener('resize', equalizeCardHeights);
+
+        // Add CSS for the loader
         const style = document.createElement('style');
         style.textContent = `
-            .bg-primary-light {
-                background-color: rgba(37, 99, 235, 0.1);
+            .plan-loader {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 10px;
             }
-            .shadow-sm {
-                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+            .plan-message {
+                margin-top: 10px;
+                padding: 8px;
+                border-radius: 4px;
             }
-            .shadow {
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-            }
-            .form-switch .form-check-input {
-                cursor: pointer;
-            }
-            .accordion-button:not(.collapsed) {
-                background-color: rgba(37, 99, 235, 0.1);
-                color: #2563eb;
-            }
-            .accordion-button:focus {
-                box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+            .btn:disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
             }
         `;
         document.head.appendChild(style);
+
+        // Handle cancel plan change
+        const cancelPlanChangeForm = document.querySelector('.cancel-plan-change-form');
+        if (cancelPlanChangeForm) {
+            cancelPlanChangeForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const button = this.querySelector('button[type="submit"]');
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                
+                fetch('{% url "subscription:cancel_plan_change" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        const alertContainer = document.createElement('div');
+                        alertContainer.className = 'alert alert-success mt-3';
+                        alertContainer.textContent = data.message;
+                        
+                        // Insert the alert before the form's parent (the alert-info div)
+                        const alertInfo = this.closest('.alert-info');
+                        alertInfo.parentNode.insertBefore(alertContainer, alertInfo);
+                        
+                        // Remove the plan change info after a delay
+                        setTimeout(() => {
+                            alertInfo.remove();
+                            // Reload the page after another delay
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 500);
+                        }, 1500);
+                    } else {
+                        // Show error message
+                        const alertContainer = document.createElement('div');
+                        alertContainer.className = 'alert alert-danger mt-3';
+                        alertContainer.textContent = data.error;
+                        this.closest('.alert-info').appendChild(alertContainer);
+                        
+                        // Reset button
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-times me-1"></i> Cancel Change';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Show error message
+                    const alertContainer = document.createElement('div');
+                    alertContainer.className = 'alert alert-danger mt-3';
+                    alertContainer.textContent = 'An error occurred. Please try again.';
+                    this.closest('.alert-info').appendChild(alertContainer);
+                    
+                    // Reset button
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-times me-1"></i> Cancel Change';
+                });
+            });
+        }
+
+        // Change plan functionality
+        document.querySelectorAll('.change-plan-form').forEach(form => {
+            form.addEventListener('submit', function(event) {
+                const button = this.querySelector('button[type="submit"]');
+                const planName = button.getAttribute('data-plan-name');
+                const loader = this.querySelector('.plan-loader');
+                const messageEl = this.querySelector('.plan-message');
+                
+                // Disable the button and show loading state
+                button.disabled = true;
+                loader.style.display = 'block';
+                
+                // Remove any existing messages
+                messageEl.style.display = 'none';
+                messageEl.textContent = '';
+                
+                // Send AJAX request
+                fetch('{% url "subscription:change_plan" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        new_plan_id: this.querySelector('input[name="new_plan_id"]').value,
+                        current_plan_id: this.querySelector('input[name="current_plan_id"]').value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Create message element
+                    messageEl.className = `plan-message alert ${data.success ? 'alert-success' : 'alert-danger'}`;
+                    messageEl.textContent = data.success ? data.message : data.error;
+                    messageEl.style.display = 'block';
+                    
+                    // Reset button state
+                    button.disabled = false;
+                    loader.style.display = 'none';
+                    
+                    // If successful, reload page after 2 seconds to show updated state
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                    
+                    // If redirect needed
+                    if (!data.success && data.redirect_url) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect_url;
+                        }, 1500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Create error message
+                    messageEl.className = 'plan-message alert alert-danger';
+                    messageEl.textContent = 'An error occurred. Please try again.';
+                    messageEl.style.display = 'block';
+                    
+                    // Reset button state
+                    button.disabled = false;
+                    loader.style.display = 'none';
+                });
+                
+                // Prevent default form submission
+                event.preventDefault();
+            });
+        });
+
+        // Cancel subscription functionality
+        const cancelSubscriptionModal = document.getElementById('cancelSubscriptionModal');
+        if (cancelSubscriptionModal) {
+            const cancelSubscriptionForm = document.getElementById('cancelSubscriptionForm');
+            const cancelButton = cancelSubscriptionForm.querySelector('button[type="submit"]');
+            const loader = cancelSubscriptionForm.querySelector('.loader');
+            const messageEl = cancelSubscriptionForm.querySelector('.message');
+            const planIdInput = cancelSubscriptionForm.querySelector('input[name="plan_id"]');
+            const planNameEl = cancelSubscriptionForm.querySelector('strong#plan-name');
+            
+            cancelSubscriptionModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const planId = button.getAttribute('data-plan-id');
+                const planName = button.getAttribute('data-plan-name');
+                
+                planIdInput.value = planId;
+                planNameEl.textContent = planName;
+            });
+            
+            cancelSubscriptionForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Disable the button and show loading state
+                cancelButton.disabled = true;
+                loader.style.display = 'block';
+                
+                // Remove any existing messages
+                messageEl.style.display = 'none';
+                messageEl.textContent = '';
+                
+                // Send AJAX request
+                fetch('{% url "subscription:cancel_subscription" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        plan_id: planIdInput.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Create message element
+                    messageEl.className = `alert ${data.success ? 'alert-success' : 'alert-danger'}`;
+                    messageEl.textContent = data.success ? data.message : data.error;
+                    messageEl.style.display = 'block';
+                    
+                    // If successful, reload page after 2 seconds
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // Reset button state
+                        cancelButton.disabled = false;
+                        loader.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Create error message
+                    messageEl.className = 'alert alert-danger';
+                    messageEl.textContent = 'An error occurred. Please try again.';
+                    messageEl.style.display = 'block';
+                    
+                    // Reset button state
+                    cancelButton.disabled = false;
+                    loader.style.display = 'none';
+                });
+            });
+        }
+
+        // Auto-upgrade checkbox functionality
+        const autoUpgradeCheckbox = document.getElementById('auto-upgrade');
+        if (autoUpgradeCheckbox) {
+            autoUpgradeCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                
+                // Create a loading indicator
+                let loadingIndicator = document.createElement('span');
+                loadingIndicator.className = 'ms-2 spinner-border spinner-border-sm';
+                loadingIndicator.setAttribute('role', 'status');
+                loadingIndicator.innerHTML = '<span class="visually-hidden">Loading...</span>';
+                
+                // Add the loading indicator next to the checkbox
+                this.parentNode.appendChild(loadingIndicator);
+                
+                // Disable the checkbox during the request
+                this.disabled = true;
+                
+                // Send AJAX request to update auto-upgrade setting
+                fetch('{% url "subscription:update_auto_upgrade" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        auto_upgrade: isChecked
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove the loading indicator
+                    loadingIndicator.remove();
+                    
+                    // Re-enable the checkbox
+                    this.disabled = false;
+                    
+                    if (data.success) {
+                        // Show a success message
+                        const successMessage = document.createElement('div');
+                        successMessage.className = 'alert alert-success mt-2';
+                        successMessage.textContent = data.message;
+                        this.parentNode.appendChild(successMessage);
+                        
+                        // Remove the success message after 3 seconds
+                        setTimeout(() => {
+                            successMessage.remove();
+                        }, 3000);
+                    } else {
+                        // Show an error message
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'alert alert-danger mt-2';
+                        errorMessage.textContent = data.message;
+                        this.parentNode.appendChild(errorMessage);
+                        
+                        // Reset the checkbox to its previous state
+                        this.checked = !isChecked;
+                        
+                        // Remove the error message after 3 seconds
+                        setTimeout(() => {
+                            errorMessage.remove();
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Remove the loading indicator
+                    loadingIndicator.remove();
+                    
+                    // Re-enable the checkbox
+                    this.disabled = false;
+                    
+                    // Reset the checkbox to its previous state
+                    this.checked = !isChecked;
+                    
+                    // Show an error message
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'alert alert-danger mt-2';
+                    errorMessage.textContent = 'An error occurred. Please try again.';
+                    this.parentNode.appendChild(errorMessage);
+                    
+                    // Remove the error message after 3 seconds
+                    setTimeout(() => {
+                        errorMessage.remove();
+                    }, 3000);
+                });
+            });
+        }
     });
 </script>
-{% endblock %} 
+{% endblock %}

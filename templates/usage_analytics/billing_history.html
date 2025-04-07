@@ -111,15 +111,31 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Payment Method</h5>
-                    <button class="btn btn-sm btn-outline-primary">Update Payment Method</button>
+                    <a href="" class="btn btn-sm btn-outline-primary">Update Payment Method</a>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="me-3">
-                            <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                            {% if payment_method.card_brand|lower == 'visa' %}
+                                <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                            {% elif payment_method.card_brand|lower == 'mastercard' %}
+                                <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                            {% elif payment_method.card_brand|lower == 'american_express' %}
+                                <i class="fab fa-cc-amex fa-2x text-info"></i>
+                            {% elif payment_method.card_brand|lower == 'discover' %}
+                                <i class="fab fa-cc-discover fa-2x text-warning"></i>
+                            {% else %}
+                                <i class="fas fa-credit-card fa-2x text-secondary"></i>
+                            {% endif %}
                         </div>
                         <div>
-                            <h6 class="mb-0">Visa ending in {{ payment_method.last4|default:"4242" }}</h6>
+                            <h6 class="mb-0">
+                                {% if payment_method.card_brand %}
+                                    {{ payment_method.card_brand|title }} ending in {{ payment_method.last4|default:"4242" }}
+                                {% else %}
+                                    Card ending in {{ payment_method.last4|default:"4242" }}
+                                {% endif %}
+                            </h6>
                             <p class="text-muted mb-0">Expires {{ payment_method.exp_month|default:"12" }}/{{ payment_method.exp_year|default:"2025" }}</p>
                         </div>
                     </div>
@@ -142,6 +158,8 @@
                                 <tr>
                                     <th>Invoice #</th>
                                     <th>Date</th>
+                                    <th>Plan</th>
+                                    <th>Payment ID</th>
                                     <th>Billing Period</th>
                                     <th>Amount</th>
                                     <th>Status</th>
@@ -149,11 +167,25 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for invoice in billing_records %}
+                                {% for invoice in invoices %}
                                 <tr>
                                     <td><a href="{{ invoice.invoice_url }}" class="text-primary">{{ invoice.id }}</a></td>
-                                    <td>{{ invoice.billing_date|date:"M d, Y" }}</td>
-                                    <td>{{ invoice.details.period_start|date:"M d" }} - {{ invoice.details.period_end|date:"M d, Y" }}</td>
+                                    <td>{{ invoice.date|date:"M d, Y" }}</td>
+                                    <td>{{ invoice.plan }}</td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 120px;" title="{{ invoice.square_payment_id }}">
+                                            {{ invoice.square_payment_id|default:"-" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if invoice.details.period_start %}
+                                            {{ invoice.details.period_start|date:"M d" }} - {{ invoice.details.period_end|date:"M d, Y" }}
+                                        {% elif invoice.details.billing_cycle %}
+                                            {{ invoice.date|date:"M d" }} ({{ invoice.details.billing_cycle|title }})
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                     <td>${{ invoice.amount }}</td>
                                     <td>
                                         {% if invoice.status == 'paid' %}
@@ -168,22 +200,47 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="{{ invoice.invoice_url }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button type="button" class="btn btn-sm btn-outline-primary view-invoice-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#invoiceDetailModal"
+                                                    data-invoice-id="{{ invoice.id }}"
+                                                    data-invoice-date="{{ invoice.date|date:'M d, Y' }}"
+                                                    data-invoice-amount="{{ invoice.amount }}"
+                                                    data-invoice-status="{{ invoice.status }}"
+                                                    data-invoice-payment-id="{{ invoice.square_payment_id }}">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </button>
                                             <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
                                         </div>
                                     </td>
                                 </tr>
+                                
+                                <!-- Store invoice details in a script tag for easy access -->
+                                <script id="invoice-details-{{ invoice.id }}" type="application/json">
+{{ invoice.details_json|safe }}
+</script>
                                 {% empty %}
                                 <!-- Default sample data for display -->
                                 <tr>
                                     <td><a href="#" class="text-primary">INV-2023-004</a></td>
                                     <td>Mar 15, 2023</td>
+                                    <td>Premium Plan</td>
+                                    <td>pay_123456789</td>
                                     <td>Mar 15 - Apr 14, 2023</td>
                                     <td>$99.00</td>
                                     <td><span class="badge bg-success-light text-success">Paid</span></td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button type="button" class="btn btn-sm btn-outline-primary view-invoice-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#invoiceDetailModal"
+                                                    data-invoice-id="INV-2023-004"
+                                                    data-invoice-date="Mar 15, 2023"
+                                                    data-invoice-amount="99.00"
+                                                    data-invoice-status="paid"
+                                                    data-invoice-payment-id="pay_123456789">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </button>
                                             <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
                                         </div>
                                     </td>
@@ -191,64 +248,23 @@
                                 <tr>
                                     <td><a href="#" class="text-primary">INV-2023-003</a></td>
                                     <td>Feb 15, 2023</td>
+                                    <td>Premium Plan</td>
+                                    <td>pay_987654321</td>
                                     <td>Feb 15 - Mar 14, 2023</td>
                                     <td>$99.00</td>
                                     <td><span class="badge bg-success-light text-success">Paid</span></td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
-                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><a href="#" class="text-primary">INV-2023-002</a></td>
-                                    <td>Jan 15, 2023</td>
-                                    <td>Jan 15 - Feb 14, 2023</td>
-                                    <td>$99.00</td>
-                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
-                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><a href="#" class="text-primary">INV-2023-001</a></td>
-                                    <td>Dec 15, 2022</td>
-                                    <td>Dec 15 - Jan 14, 2023</td>
-                                    <td>$99.00</td>
-                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
-                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><a href="#" class="text-primary">INV-2022-012</a></td>
-                                    <td>Nov 15, 2022</td>
-                                    <td>Nov 15 - Dec 14, 2022</td>
-                                    <td>$99.00</td>
-                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
-                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><a href="#" class="text-primary">INV-2022-011</a></td>
-                                    <td>Oct 15, 2022</td>
-                                    <td>Oct 15 - Nov 14, 2022</td>
-                                    <td>$99.00</td>
-                                    <td><span class="badge bg-success-light text-success">Paid</span></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> View</a>
+                                            <button type="button" class="btn btn-sm btn-outline-primary view-invoice-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#invoiceDetailModal"
+                                                    data-invoice-id="INV-2023-003"
+                                                    data-invoice-date="Feb 15, 2023"
+                                                    data-invoice-amount="99.00"
+                                                    data-invoice-status="paid"
+                                                    data-invoice-payment-id="pay_987654321">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </button>
                                             <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download me-1"></i> PDF</button>
                                         </div>
                                     </td>
@@ -261,7 +277,7 @@
                         <div>
                             <p class="text-muted mb-0">Showing 1-6 of 24 invoices</p>
                         </div>
-                        <nav aria-label="Page navigation">
+                        <nav aria-label="Invoice pagination">
                             <ul class="pagination mb-0">
                                 <li class="page-item disabled">
                                     <a class="page-link" href="#" aria-label="Previous">
@@ -271,7 +287,6 @@
                                 <li class="page-item active"><a class="page-link" href="#">1</a></li>
                                 <li class="page-item"><a class="page-link" href="#">2</a></li>
                                 <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item"><a class="page-link" href="#">4</a></li>
                                 <li class="page-item">
                                     <a class="page-link" href="#" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
@@ -286,82 +301,250 @@
     </div>
 </div>
 
+<!-- Invoice Detail Modal -->
+<div class="modal fade" id="invoiceDetailModal" tabindex="-1" aria-labelledby="invoiceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="invoiceDetailModalLabel">Invoice Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Invoice Number</h6>
+                        <p class="mb-0 invoice-id">-</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted mb-2">Date</h6>
+                        <p class="mb-0 invoice-date">-</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Payment ID</h6>
+                        <p class="mb-0 invoice-payment-id">-</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted mb-2">Status</h6>
+                        <p class="mb-0">
+                            <span class="invoice-status badge bg-success-light text-success">-</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="table-responsive mb-4">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <p class="mb-0 invoice-description">-</p>
+                                    <small class="text-muted invoice-period-description">-</small>
+                                </td>
+                                <td class="text-end invoice-amount">-</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th class="text-end invoice-amount">-</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-2">Additional Details</h6>
+                        <div class="card">
+                            <div class="card-body p-0">
+                                <table class="table table-sm mb-0">
+                                    <tbody id="invoice-details-table">
+                                        <!-- Details will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary download-invoice-btn">
+                    <i class="fas fa-download me-1"></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Initialize Date Range Picker
     $(function() {
+        var start = moment().subtract(6, 'month');
+        var end = moment();
+        
+        function cb(start, end) {
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            refreshBillingData(start, end);
+        }
+        
         $('#dateRangePicker').daterangepicker({
-            opens: 'left',
-            startDate: moment().subtract(6, 'month'),
-            endDate: moment(),
+            startDate: start,
+            endDate: end,
             ranges: {
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
                'Last 3 Months': [moment().subtract(3, 'month'), moment()],
                'Last 6 Months': [moment().subtract(6, 'month'), moment()],
-               'This Year': [moment().startOf('year'), moment()],
+               'Year to Date': [moment().startOf('year'), moment()],
                'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
             }
-        }, function(start, end, label) {
-            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
-            // Call function to refresh data based on new date range
-            refreshBillingData(start, end);
-        });
+        }, cb);
+        
+        cb(start, end);
     });
-
-    // Download invoices button
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('downloadReportBtn').addEventListener('click', function() {
-            alert('Export functionality will be implemented');
-        });
-    });
-
+    
     // Function to refresh billing data based on date range
     function refreshBillingData(start, end) {
-        console.log('Refreshing billing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
-        // Here you would make an AJAX call to your backend to get new data
-        // Then update the table with the new data
+        // This would be an AJAX call to fetch billing data for the selected date range
+        console.log('Fetching billing data from ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
     }
+
+    // Handle invoice detail modal
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners to view invoice buttons
+        document.querySelectorAll('.view-invoice-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const modal = document.getElementById('invoiceDetailModal');
+                
+                // Get invoice ID
+                const invoiceId = this.dataset.invoiceId;
+                
+                // Set invoice details in modal
+                modal.querySelector('.invoice-id').textContent = invoiceId;
+                modal.querySelector('.invoice-date').textContent = this.dataset.invoiceDate;
+                modal.querySelector('.invoice-payment-id').textContent = this.dataset.invoicePaymentId;
+                
+                // Set status with appropriate badge class
+                const statusEl = modal.querySelector('.invoice-status');
+                statusEl.textContent = this.dataset.invoiceStatus.charAt(0).toUpperCase() + this.dataset.invoiceStatus.slice(1);
+                statusEl.className = 'invoice-status badge';
+                
+                if (this.dataset.invoiceStatus === 'paid') {
+                    statusEl.classList.add('bg-success-light', 'text-success');
+                } else if (this.dataset.invoiceStatus === 'pending') {
+                    statusEl.classList.add('bg-warning-light', 'text-warning');
+                } else if (this.dataset.invoiceStatus === 'failed') {
+                    statusEl.classList.add('bg-danger-light', 'text-danger');
+                } else {
+                    statusEl.classList.add('bg-secondary-light', 'text-secondary');
+                }
+                
+                // Parse the JSON details
+                let details = {};
+                try {
+                    // Get the details from the script tag
+                    const detailsScript = document.getElementById(`invoice-details-${invoiceId}`);
+                    
+                    if (detailsScript) {
+                        console.log('Found details script:', detailsScript.textContent);
+                        details = JSON.parse(detailsScript.textContent);
+                        console.log('Successfully parsed details:', details);
+                    }
+                } catch (e) {
+                    console.error('Error parsing invoice details:', e);
+                }
+                
+                // Set description based on details
+                const planName = details.plan_name || 'Subscription';
+                modal.querySelector('.invoice-description').textContent = planName;
+                
+                // Set period description if available
+                let periodText = '';
+                if (details.billing_cycle) {
+                    periodText = `${details.billing_cycle.charAt(0).toUpperCase() + details.billing_cycle.slice(1)} billing`;
+                }
+                if (details.renewal_type) {
+                    periodText += periodText ? ` (${details.renewal_type} renewal)` : `${details.renewal_type.charAt(0).toUpperCase() + details.renewal_type.slice(1)} renewal`;
+                }
+                modal.querySelector('.invoice-period-description').textContent = periodText;
+                
+                // Set amount
+                const amountElements = modal.querySelectorAll('.invoice-amount');
+                amountElements.forEach(el => {
+                    el.textContent = '$' + parseFloat(this.dataset.invoiceAmount).toFixed(2);
+                });
+                
+                // Populate details table
+                const detailsTable = modal.querySelector('#invoice-details-table');
+                detailsTable.innerHTML = '';
+                
+                // Loop through all properties in the details object
+                Object.entries(details).forEach(([key, value]) => {
+                    console.log(`Adding row for ${key}: ${value}`);
+                    const row = document.createElement('tr');
+                    
+                    // Format the key for display (convert snake_case to Title Case)
+                    const formattedKey = key.replace(/_/g, ' ')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                    
+                    // Format the value based on its type
+                    let formattedValue = value;
+                    if (typeof value === 'boolean') {
+                        formattedValue = value ? 'Yes' : 'No';
+                    } else if (Array.isArray(value)) {
+                        formattedValue = value.join(', ');
+                    } else if (typeof value === 'object' && value !== null) {
+                        formattedValue = JSON.stringify(value);
+                    }
+                    
+                    row.innerHTML = `
+                        <th scope="row" style="width: 40%;">${formattedKey}</th>
+                        <td>${formattedValue}</td>
+                    `;
+                    detailsTable.appendChild(row);
+                });
+                
+                // If no details, show a message
+                if (Object.keys(details).length === 0) {
+                    console.log('No details found, showing empty message');
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="2" class="text-center text-muted">No additional details available</td>';
+                    detailsTable.appendChild(row);
+                }
+            });
+        });
+        
+        // Add event listener to download button
+        document.querySelector('.download-invoice-btn').addEventListener('click', function() {
+            const invoiceId = document.querySelector('.invoice-id').textContent;
+            alert('Downloading invoice ' + invoiceId + '...');
+            // This would be an AJAX call to download the invoice
+        });
+    });
 
     // Add some extra styles
     document.addEventListener('DOMContentLoaded', function() {
         const style = document.createElement('style');
         style.textContent = `
-            .bg-primary-light {
-                background-color: rgba(37, 99, 235, 0.1);
-            }
-            .bg-success-light {
-                background-color: rgba(16, 185, 129, 0.1);
-            }
-            .bg-warning-light {
-                background-color: rgba(245, 158, 11, 0.1);
-            }
-            .bg-info-light {
-                background-color: rgba(14, 165, 233, 0.1);
-            }
-            .bg-danger-light {
-                background-color: rgba(239, 68, 68, 0.1);
-            }
-            .bg-secondary-light {
-                background-color: rgba(107, 114, 128, 0.1);
-            }
-            .text-primary {
-                color: #2563eb !important;
-            }
-            .text-success {
-                color: #10b981 !important;
-            }
-            .text-warning {
-                color: #f59e0b !important;
-            }
-            .text-info {
-                color: #0ea5e9 !important;
-            }
-            .text-danger {
-                color: #ef4444 !important;
-            }
-            .cursor-pointer {
-                cursor: pointer;
-            }
+            .bg-primary-light { background-color: rgba(13, 110, 253, 0.1); }
+            .bg-success-light { background-color: rgba(25, 135, 84, 0.1); }
+            .bg-warning-light { background-color: rgba(255, 193, 7, 0.1); }
+            .bg-danger-light { background-color: rgba(220, 53, 69, 0.1); }
+            .bg-info-light { background-color: rgba(13, 202, 240, 0.1); }
+            .bg-secondary-light { background-color: rgba(108, 117, 125, 0.1); }
+            .cursor-pointer { cursor: pointer; }
         `;
         document.head.appendChild(style);
     });
 </script>
-{% endblock %} 
+{% endblock %}

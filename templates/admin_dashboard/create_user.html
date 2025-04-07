@@ -1,0 +1,180 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Add New User{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Add New User</h1>
+    <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Users
+    </a>
+</div>
+
+<!-- Create User Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">User Details</h5>
+    </div>
+    <div class="card-body">
+        <form action="{% url 'admin_dashboard:add_user' %}" method="post">
+            {% csrf_token %}
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                    <div class="form-text">Username must be unique and cannot be changed later.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email">
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name">
+                </div>
+                <div class="col-md-6">
+                    <label for="last_name" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name">
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="passwordFeedback" class="invalid-feedback"></div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">User Type</label>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="is_staff" name="is_staff">
+                                <label class="form-check-label" for="is_staff">
+                                    Staff User
+                                </label>
+                                <div class="form-text">Staff users can access the admin dashboard but have limited permissions.</div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_superuser" name="is_superuser">
+                                <label class="form-check-label" for="is_superuser">
+                                    Superuser
+                                </label>
+                                <div class="form-text">Superusers have full access to all features and data.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Groups</label>
+                    <div class="card" style="max-height: 200px; overflow-y: auto;">
+                        <div class="card-body">
+                            {% for group in groups %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="group_{{ group.id }}" name="groups" value="{{ group.id }}">
+                                <label class="form-check-label" for="group_{{ group.id }}">
+                                    {{ group.name }}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">No groups available.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
+        const passwordFeedback = document.getElementById('passwordFeedback');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.querySelector('form');
+        
+        // Toggle password visibility
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+        
+        toggleConfirmPasswordBtn.addEventListener('click', function() {
+            const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPasswordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+        
+        // Validate password match
+        function validatePassword() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.classList.add('is-invalid');
+                passwordFeedback.textContent = 'Passwords do not match';
+                return false;
+            } else {
+                confirmPasswordInput.classList.remove('is-invalid');
+                passwordFeedback.textContent = '';
+                return true;
+            }
+        }
+        
+        confirmPasswordInput.addEventListener('input', validatePassword);
+        passwordInput.addEventListener('input', validatePassword);
+        
+        // Form submission validation
+        form.addEventListener('submit', function(event) {
+            if (!validatePassword()) {
+                event.preventDefault();
+            }
+        });
+        
+        // User type checkboxes logic
+        const isStaffCheckbox = document.getElementById('is_staff');
+        const isSuperuserCheckbox = document.getElementById('is_superuser');
+        
+        isSuperuserCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                isStaffCheckbox.checked = true;
+                isStaffCheckbox.disabled = true;
+            } else {
+                isStaffCheckbox.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

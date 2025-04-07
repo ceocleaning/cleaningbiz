@@ -15,9 +15,13 @@ class Business(models.Model):
     businessName = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
+    square_card_id = models.CharField(max_length=255, null=True, blank=True, help_text="Square payment card ID for recurring payments")
+    square_customer_id = models.CharField(max_length=255, null=True, blank=True, help_text="Square customer ID for recurring payments")
+    auto_upgrade = models.BooleanField(default=False, help_text="Automatically upgrade to next plan when usage exceeds limits")
 
     isActive = models.BooleanField(default=False)
     isApproved = models.BooleanField(default=False)
+    isRejected = models.BooleanField(default=False)
 
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
@@ -35,6 +39,30 @@ class Business(models.Model):
 
     def generateBusinessId(self):
         return f"BUS-{random.randint(1000, 9999)}"
+        
+    def active_subscription(self):
+        """
+        Returns the active subscription for this business if one exists.
+        Used by the UsageTracker to compare usage against plan limits.
+        """
+        # Import here to avoid circular imports
+        from subscription.models import BusinessSubscription
+        
+        try:
+            subscription = BusinessSubscription.objects.filter(
+                business=self,
+                is_active=True,
+                status__in=['active', 'cancelled']  # Include cancelled subscriptions that are still active
+            ).latest('created_at')
+
+            if subscription and subscription.is_subscription_active():
+                return subscription
+            return None
+
+        except Exception as e:
+            # Log the error but don't crash
+            print(f"Error getting active subscription: {e}")
+            return None
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)

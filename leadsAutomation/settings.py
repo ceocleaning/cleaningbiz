@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 
 BASE_URL = 'https://cleaningbizai.com'
@@ -40,6 +40,19 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = False
 CSRF_COOKIE_SECURE = not DEBUG  # Secure CSRF Cookies in production
 SESSION_COOKIE_SECURE = not DEBUG  # Secure Session Cookies in production
+
+# Square Payment Configuration
+SQUARE_APP_ID = os.getenv('SQUARE_APP_ID')
+if not SQUARE_APP_ID:
+    # Provide a default value for development or raise a warning
+    if DEBUG:
+        # For sandbox environment
+        SQUARE_APP_ID = 'sandbox-sq0idp-your-sandbox-app-id'
+        import warnings
+        warnings.warn("SQUARE_APP_ID environment variable not set. Using default sandbox value.")
+SQUARE_ACCESS_TOKEN = os.getenv('SQUARE_ACCESS_TOKEN')
+SQUARE_LOCATION_ID = os.getenv('SQUARE_LOCATION_ID')
+SQUARE_ENVIRONMENT = os.getenv('SQUARE_ENVIRONMENT', 'sandbox')
 
 # Additional security settings for production
 if not DEBUG:
@@ -65,6 +78,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',  # Add WhiteNoise
     'django.contrib.staticfiles',
     'django_extensions',
+    'sslserver',
     'django_q',
     'automation',
     'rest_framework',
@@ -90,6 +104,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
+    'subscription.middleware.SubscriptionRequiredMiddleware',  # Add subscription middleware
 ]
 
 ROOT_URLCONF = 'leadsAutomation.urls'
@@ -204,17 +219,9 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
 
-
-
-
-SQUARE_ACCESS_TOKEN = os.getenv('SQUARE_ACCESS_TOKEN', '')
-SQUARE_APP_ID = os.getenv('SQUARE_APP_ID', '')
-SQUARE_LOCATION_ID = os.getenv('SQUARE_LOCATION_ID', '')
-SQUARE_ENVIRONMENT = os.getenv('SQUARE_ENVIRONMENT', 'sandbox')
-
-
-
-
+# Retell Settings
+RETELL_API_KEY = os.getenv('RETELL_API_KEY', '')
+RETELL_BASE_URL = 'https://api.retellai.com'
 
 # settings.py example
 Q_CLUSTER = {
@@ -231,8 +238,3 @@ Q_CLUSTER = {
     'orm': 'default',
     'max_attempts': 3,
 }
-
-
-# Retell Settings
-RETELL_API_KEY = os.getenv('RETELL_API_KEY', '')
-RETELL_BASE_URL = 'https://api.retellai.com'

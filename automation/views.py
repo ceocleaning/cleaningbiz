@@ -17,6 +17,7 @@ import pytz
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from usage_analytics.services.usage_service import UsageService
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +28,18 @@ def LandingPage(request):
 
 def PricingPage(request):
     # Import here to avoid circular imports
-    from subscription.models import SubscriptionPlan
-    from subscription.views import create_dummy_plans
-    
-    # Check if plans exist, if not create them
-    if SubscriptionPlan.objects.count() == 0:
-        create_dummy_plans()
-    
+    from subscription.models import SubscriptionPlan, Feature
+   
     # Get all plans
     plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
-
     
-    return render(request, 'PricingPage.html', {'plans': plans})
+    # Get all active features
+    features = Feature.objects.filter(is_active=True).order_by('category', 'display_name')
+    
+    return render(request, 'PricingPage.html', {
+        'plans': plans,
+        'feature_list': features
+    })
 
 def FeaturesPage(request):
     return render(request, 'FeaturesPage.html')
@@ -253,8 +254,16 @@ def lead_detail(request, leadId):
 def create_lead(request):
     if request.method == 'POST':
         try:
+            # Check if usage limit has reached
+            from usage_analytics.services.usage_service import UsageService  # Import here to avoid any circular import issues
+            business = request.user.business_set.first()
+            usage_status = UsageService.check_leads_limit(business)
+            if usage_status.get('exceeded', False):
+                messages.error(request, 'You have reached the maximum number of leads allowed in your subscription plan.')
+                return redirect('create_lead')
+
+
             lead = Lead.objects.create(
-              
                 name=request.POST.get('name'),
                 email=request.POST.get('email'),
                 phone_number=request.POST.get('phone_number'),
@@ -263,6 +272,10 @@ def create_lead(request):
                 content=request.POST.get('content'),
                 business=request.user.business_set.first()
             )
+            
+            # Track the lead generation in usage metrics
+            UsageService.track_lead_generated(lead.business)
+            
             messages.success(request, f'Lead {lead.leadId} created successfully!')
             return redirect('lead_detail', leadId=lead.leadId)
         except Exception as e:

@@ -1,0 +1,277 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Coupon Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Coupon Management</h1>
+    <a href="{% url 'admin_dashboard:add_coupon' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Create New Coupon
+    </a>
+</div>
+
+<!-- Coupons Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Coupons</h5>
+        <div class="d-flex">
+            <div class="input-group me-2">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="couponSearch" class="form-control border-start-0" placeholder="Search coupons...">
+            </div>
+            <select class="form-select" id="couponFilter" style="width: auto;">
+                <option value="all">All Coupons</option>
+                <option value="active">Active Only</option>
+                <option value="expired">Expired Only</option>
+                <option value="percentage">Percentage Discount</option>
+                <option value="fixed">Fixed Amount Discount</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="couponsTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Discount</th>
+                        <th>Type</th>
+                        <th>Valid For</th>
+                        <th>Limit Type</th>
+                        <th>Usage Limit</th>
+                        <th>Used</th>
+                        <th>Expiry Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td><strong>{{ coupon.code }}</strong></td>
+                        <td>
+                            {% if coupon.discount_type == 'percentage' %}
+                            {{ coupon.discount_value }}%
+                            {% else %}
+                            ${{ coupon.discount_value }}
+                            {% endif %}
+                        </td>
+                        <td>{{ coupon.get_discount_type_display }}</td>
+                        <td>
+                            {% if coupon.applicable_plans.exists %}
+                            <span class="badge bg-primary-subtle text-primary">{{ coupon.applicable_plans.count }}</span>
+                            <a href="#" class="ms-1 text-decoration-none" data-bs-toggle="tooltip" 
+                               title="{% for plan in coupon.applicable_plans.all %}{{ plan.name }} ({{ plan.get_billing_cycle_display }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">All Plans</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ coupon.get_limit_type_display }}</td>
+                        <td>
+                            {% if coupon.usage_limit %}
+                            {{ coupon.usage_limit }}
+                            {% else %}
+                            <span class="text-muted">Unlimited</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ coupon.times_used }}</td>
+                        <td>
+                            {% if coupon.expiry_date %}
+                            {{ coupon.expiry_date }}
+                            {% if coupon.is_expired %}
+                            <span class="badge bg-danger-subtle text-danger ms-1">Expired</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">No Expiry</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if coupon.is_active %}
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'admin_dashboard:edit_coupon' %}?id={{ coupon.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-coupon-btn"
+                                        data-id="{{ coupon.id }}"
+                                        data-code="{{ coupon.code }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteCouponModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-3">No coupons found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if coupons.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if coupons.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ coupons.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in coupons.paginator.page_range %}
+                    {% if coupons.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > coupons.number|add:'-3' and i < coupons.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if coupons.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ coupons.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ coupons.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Coupon Modal -->
+<div class="modal fade" id="deleteCouponModal" tabindex="-1" aria-labelledby="deleteCouponModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCouponModalLabel">Delete Coupon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the coupon <strong id="deleteCouponCode"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. Any active subscriptions using this coupon will not be affected.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'admin_dashboard:delete_coupon' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="coupon_id" id="deleteCouponId">
+                    <button type="submit" class="btn btn-danger">Delete Coupon</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const couponSearch = document.getElementById('couponSearch');
+        const couponFilter = document.getElementById('couponFilter');
+        const couponsTable = document.getElementById('couponsTable');
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Table filtering function
+        function filterTable() {
+            const searchTerm = couponSearch.value.toLowerCase();
+            const filterValue = couponFilter.value;
+            
+            const rows = couponsTable.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const code = row.cells[0].textContent.toLowerCase();
+                const discountType = row.cells[2].textContent.toLowerCase();
+                const isActive = row.cells[8].textContent.trim().toLowerCase().includes('active');
+                const isExpired = row.cells[7].textContent.toLowerCase().includes('expired');
+                
+                let showRow = true;
+                
+                // Apply search filter
+                if (searchTerm && !code.includes(searchTerm)) {
+                    showRow = false;
+                }
+                
+                // Apply dropdown filter
+                if (filterValue === 'active' && !isActive) {
+                    showRow = false;
+                } else if (filterValue === 'expired' && !isExpired) {
+                    showRow = false;
+                } else if (filterValue === 'percentage' && !discountType.includes('percentage')) {
+                    showRow = false;
+                } else if (filterValue === 'fixed' && !discountType.includes('fixed')) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        couponSearch.addEventListener('input', filterTable);
+        couponFilter.addEventListener('change', filterTable);
+        
+        // Handle delete coupon modal
+        const deleteCouponBtns = document.querySelectorAll('.delete-coupon-btn');
+        deleteCouponBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const code = this.getAttribute('data-code');
+                
+                document.getElementById('deleteCouponId').value = id;
+                document.getElementById('deleteCouponCode').textContent = code;
+            });
+        });
+    });
+</script>
+{% endblock %}

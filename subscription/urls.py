@@ -6,10 +6,10 @@ app_name = 'subscription'
 urlpatterns = [
     path('', views.subscription_management, name='subscription_management'),
     path('billing-history/', views.billing_history, name='billing_history'),
-    path('change-plan/<int:plan_id>/', views.change_plan, name='change_plan'),
+    path('change-plan/', views.change_plan, name='change_plan'),
+    path('cancel-plan-change/', views.cancel_plan_change, name='cancel_plan_change'),
     path('cancel/', views.cancel_subscription, name='cancel_subscription'),
     path('api/subscription-data/', views.get_subscription_data, name='get_subscription_data'),
-    path('api/track/<str:metric_type>/', views.track_usage, name='track_usage'),
     
     # New payment URLs
     path('select-plan/', views.select_plan, name='select_plan'),
@@ -17,6 +17,8 @@ urlpatterns = [
     path('process-payment/<int:plan_id>/', views.process_payment, name='process_payment'),
     path('success/<int:subscription_id>/<str:transaction_id>/', views.subscription_success, name='subscription_success'),
     
-
+    # Coupon validation
+    path('validate-coupon/', views.validate_coupon, name='validate_coupon'),
+    path('update-auto-upgrade/', views.update_auto_upgrade, name='update_auto_upgrade'),
+    path('manage-card/', views.manage_card, name='manage_card'),  # New URL for card management
 ]
-

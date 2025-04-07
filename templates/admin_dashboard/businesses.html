@@ -1,0 +1,592 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Business Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Business Management</h1>
+    <div>
+        <a href="{% url 'admin_dashboard:export_businesses' %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-download me-1"></i> Export
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBusinessModal">
+            <i class="fas fa-plus me-1"></i> Add New Business
+        </button>
+    </div>
+</div>
+
+<!-- Businesses Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Businesses</h5>
+        <div class="d-flex">
+            <div class="input-group me-2">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="businessSearch" class="form-control border-start-0" placeholder="Search businesses...">
+            </div>
+            <select class="form-select" id="businessFilter" style="width: auto;">
+                <option value="all">All Businesses</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending Approval</option>
+                <option value="subscribed">With Subscription</option>
+                <option value="unsubscribed">Without Subscription</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="businessesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Business Name</th>
+                        <th>Owner</th>
+                        <th>Contact</th>
+                        <th>Subscription</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in businesses %}
+                    <tr style="{% if business.isApproved %}background-color: #d4edda;{% elif business.isRejected %}background-color: #f8d7da;{% else %}background-color: #fff;{% endif %}">
+                        <td>{{ business.businessId }}</td>
+                        <td>{{ business.businessName }}</td>
+                        <td>{{ business.user.get_full_name|default:business.user.username }}</td>
+                        <td>
+                            <div>{{ business.email }}</div>
+                            <div>{{ business.phone }}</div>
+                        </td>
+                        <td>
+                            {% if business.active_subscription %}
+                                <span class="badge bg-success-subtle text-success">
+                                    {{ business.active_subscription.plan.name }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger">No Subscription</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ business.createdAt|date:"M d, Y" }}</td>
+                        <td>
+                            {% if business.isApproved %}
+                                <span class="badge bg-success-subtle text-success">Approved</span>
+                            {% elif business.isRejected %}
+                                <span class="badge bg-danger-subtle text-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'admin_dashboard:business_detail' business.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary edit-business-btn" 
+                                        data-id="{{ business.id }}"
+                                        data-name="{{ business.businessName }}"
+                                        data-email="{{ business.email }}"
+                                        data-phone="{{ business.phone }}"
+                                        data-address="{{ business.address }}"
+                                        data-city="{{ business.city }}"
+                                        data-state="{{ business.state }}"
+                                        data-zip="{{ business.zipCode }}"
+                                        data-is-approved="{{ business.isApproved|yesno:'true,false' }}"
+                                        data-is-active="{{ business.isActive|yesno:'true,false' }}"
+                                        data-use-call="{{ business.useCall|yesno:'true,false' }}"
+                                        data-time-to-wait="{{ business.timeToWait }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editBusinessModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if not business.isApproved and not business.isRejected %}
+                                <button type="button" class="btn btn-sm btn-outline-success approve-business-btn"
+                                        data-id="{{ business.id }}"
+                                        data-name="{{ business.businessName }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#approveBusinessModal">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                {% if not business.isRejected and not business.isApproved %}
+                                <button type="button" class="btn btn-sm btn-outline-danger reject-business-btn"
+                                        data-id="{{ business.id }}"
+                                        data-name="{{ business.businessName }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#rejectBusinessModal">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-business-btn"
+                                        data-id="{{ business.id }}"
+                                        data-name="{{ business.businessName }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteBusinessModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-3">No businesses found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if businesses.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if businesses.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ businesses.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in businesses.paginator.page_range %}
+                    {% if businesses.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > businesses.number|add:'-3' and i < businesses.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if businesses.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ businesses.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ businesses.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Business Modal -->
+<div class="modal fade" id="addBusinessModal" tabindex="-1" aria-labelledby="addBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBusinessModalLabel">Add New Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:add_business' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="businessName" class="form-label">Business Name</label>
+                            <input type="text" class="form-control" id="businessName" name="businessName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="user" class="form-label">Owner</label>
+                            <select class="form-select" id="user" name="user" required>
+                                <option value="">Select Owner</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }} ({{ user.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isApproved" name="isApproved" checked>
+                                <label class="form-check-label" for="isApproved">
+                                    Approve Business
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
+                                <label class="form-check-label" for="isActive">
+                                    Active Business
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="useCall" name="useCall">
+                                <label class="form-check-label" for="useCall">
+                                    Use Call Feature
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="timeToWait" class="form-label">Time to Wait (seconds)</label>
+                            <input type="number" class="form-control" id="timeToWait" name="timeToWait" value="0" min="0">
+                            <small class="text-muted">Time to wait before connecting to AI agent</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Business Modal -->
+<div class="modal fade" id="editBusinessModal" tabindex="-1" aria-labelledby="editBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBusinessModalLabel">Edit Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:edit_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="edit_business_id" name="business_id">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="edit_businessName" class="form-label">Business Name</label>
+                            <input type="text" class="form-control" id="edit_businessName" name="businessName" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="edit_phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="edit_address" name="address">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_isApproved" name="isApproved">
+                                <label class="form-check-label" for="edit_isApproved">
+                                    Approve Business
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_isActive" name="isActive">
+                                <label class="form-check-label" for="edit_isActive">
+                                    Active Business
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_useCall" name="useCall">
+                                <label class="form-check-label" for="edit_useCall">
+                                    Use Call Feature
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_timeToWait" class="form-label">Time to Wait (seconds)</label>
+                            <input type="number" class="form-control" id="edit_timeToWait" name="timeToWait" value="0" min="0">
+                            <small class="text-muted">Time to wait before connecting to AI agent</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="edit_send_approval_email" name="send_approval_email">
+                                <label class="form-check-label" for="edit_send_approval_email">
+                                    Send approval email if approved
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Business Modal -->
+<div class="modal fade" id="approveBusinessModal" tabindex="-1" aria-labelledby="approveBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveBusinessModalLabel">Approve Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:approve_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="approve_business_id" name="business_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to approve <strong id="approve_business_name"></strong>?</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Approving this business will allow them to access all platform features and services.
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_approval_email" name="send_approval_email" checked>
+                        <label class="form-check-label" for="send_approval_email">
+                            Send approval notification email
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Business Modal -->
+<div class="modal fade" id="rejectBusinessModal" tabindex="-1" aria-labelledby="rejectBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectBusinessModalLabel">Reject Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:reject_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="reject_business_id" name="business_id">
+                <div class="modal-body">
+                    <p id="reject-business-message"></p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Rejecting a business will prevent them from using the platform's services.
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_rejection_email" name="send_rejection_email" checked>
+                        <label class="form-check-label" for="send_rejection_email">
+                            Send rejection email notification
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Business Modal -->
+<div class="modal fade" id="deleteBusinessModal" tabindex="-1" aria-labelledby="deleteBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBusinessModalLabel">Delete Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:delete_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="delete_business_id" name="business_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="delete_business_name"></strong>?</p>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action cannot be undone. Deleting this business will remove all associated data, including subscriptions, settings, and analytics.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Business Detail View -->
+<div class="modal fade" id="businessDetailModal" tabindex="-1" aria-labelledby="businessDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="businessDetailModalLabel">Business Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="businessDetailContent">
+                <!-- Content will be loaded via AJAX -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading business details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle search functionality
+        const businessSearch = document.getElementById('businessSearch');
+        const businessFilter = document.getElementById('businessFilter');
+        const businessesTable = document.getElementById('businessesTable');
+        const tableRows = businessesTable.querySelectorAll('tbody tr');
+        
+        function filterTable() {
+            const searchTerm = businessSearch.value.toLowerCase();
+            const filterValue = businessFilter.value;
+            
+            tableRows.forEach(row => {
+                if (row.cells.length <= 1) return; // Skip empty state row
+                
+                const name = row.cells[1].textContent.toLowerCase();
+                const owner = row.cells[2].textContent.toLowerCase();
+                const contact = row.cells[3].textContent.toLowerCase();
+                const hasSubscription = !row.cells[4].textContent.includes('No Subscription');
+                const isApproved = row.cells[6].textContent.trim() === 'Approved';
+                
+                let showRow = name.includes(searchTerm) || owner.includes(searchTerm) || contact.includes(searchTerm);
+                
+                if (filterValue === 'approved') {
+                    showRow = showRow && isApproved;
+                } else if (filterValue === 'pending') {
+                    showRow = showRow && !isApproved;
+                } else if (filterValue === 'subscribed') {
+                    showRow = showRow && hasSubscription;
+                } else if (filterValue === 'unsubscribed') {
+                    showRow = showRow && !hasSubscription;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        businessSearch.addEventListener('input', filterTable);
+        businessFilter.addEventListener('change', filterTable);
+        
+        // Handle edit business modal
+        document.querySelectorAll('.edit-business-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const phone = this.dataset.phone;
+                const address = this.dataset.address;
+                const isApproved = this.dataset.isApproved === 'true';
+                const isActive = this.dataset.isActive === 'true';
+                const useCall = this.dataset.useCall === 'true';
+                const timeToWait = this.dataset.timeToWait || 0;
+                
+                document.getElementById('edit_business_id').value = id;
+                document.getElementById('edit_businessName').value = name;
+                document.getElementById('edit_phone').value = phone;
+                document.getElementById('edit_address').value = address;
+                document.getElementById('edit_isApproved').checked = isApproved;
+                document.getElementById('edit_isActive').checked = isActive;
+                document.getElementById('edit_useCall').checked = useCall;
+                document.getElementById('edit_timeToWait').value = timeToWait;
+                
+                // If the business is already approved, hide the send approval email checkbox
+                const sendApprovalEmailCheckbox = document.getElementById('edit_send_approval_email');
+                if (isApproved) {
+                    sendApprovalEmailCheckbox.checked = false;
+                    sendApprovalEmailCheckbox.parentElement.style.display = 'none';
+                } else {
+                    sendApprovalEmailCheckbox.parentElement.style.display = 'block';
+                }
+            });
+        });
+        
+        // Handle approve business modal
+        const approveBusinessBtns = document.querySelectorAll('.approve-business-btn');
+        approveBusinessBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                
+                document.getElementById('approve_business_id').value = id;
+                document.getElementById('approve_business_name').textContent = name;
+            });
+        });
+        
+        // Handle reject business modal
+        const rejectBusinessBtns = document.querySelectorAll('.reject-business-btn');
+        rejectBusinessBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                
+                document.getElementById('reject_business_id').value = id;
+                document.querySelector('#rejectBusinessModal .modal-body p').innerHTML = 
+                    `Are you sure you want to reject <strong>${name}</strong>? This will change the business status to "Not Approved".`;
+            });
+        });
+        
+        // Handle delete business modal
+        const deleteBusinessBtns = document.querySelectorAll('.delete-business-btn');
+        deleteBusinessBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                
+                document.getElementById('delete_business_id').value = id;
+                document.getElementById('delete_business_name').textContent = name;
+            });
+        });
+    });
+</script>
+{% endblock %}

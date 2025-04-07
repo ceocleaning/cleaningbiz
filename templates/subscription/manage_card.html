@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0">
+                        {% if business.square_card_id %}
+                        Update Payment Method
+                        {% else %}
+                        Add Payment Method
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="{% url 'subscription:manage_card' %}" id="card-management-form">
+                        {% csrf_token %}
+                        
+                        {% if redirect_url %}
+                        <input type="hidden" name="redirect_url" value="{{ redirect_url }}">
+                        {% endif %}
+                        
+                        {% if business.square_card_id and card_details %}
+                        <!-- Display current card -->
+                        <div class="current-card mb-4">
+                            <h6 class="mb-3">Current Card</h6>
+                            <div class="card border-0 bg-light p-3 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-brand-icon text-primary me-3">
+                                        {% if card_details.card_brand == 'VISA' %}
+                                        <i class="fab fa-cc-visa fa-2x"></i>
+                                        {% elif card_details.card_brand == 'MASTERCARD' %}
+                                        <i class="fab fa-cc-mastercard fa-2x"></i>
+                                        {% elif card_details.card_brand == 'AMEX' %}
+                                        <i class="fab fa-cc-amex fa-2x"></i>
+                                        {% elif card_details.card_brand == 'DISCOVER' %}
+                                        <i class="fab fa-cc-discover fa-2x"></i>
+                                        {% else %}
+                                        <i class="far fa-credit-card fa-2x"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">Card ending in {{ card_details.last4 }}</div>
+                                        <div class="card-details">
+                                            Expires {{ card_details.exp_month }}/{{ card_details.exp_year }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-muted small">Enter new card details below to update your payment method.</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Custom Card Form -->
+                        <div class="custom-card-form">
+                            <!-- Cardholder Information -->
+                            <h6 class="mb-3">Cardholder Information</h6>
+                            <div class="mb-4">
+                                <label for="cardholder-name" class="form-label fw-medium">Full Name</label>
+                                <input type="text" class="form-control" id="cardholder-name" placeholder="John Doe" required>
+                                <div class="invalid-feedback" id="cardholder-name-error"></div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="cardholder-email" class="form-label fw-medium">Email Address</label>
+                                <input type="email" class="form-control" id="cardholder-email" placeholder="john@example.com" required>
+                                <div class="invalid-feedback" id="cardholder-email-error"></div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="cardholder-phone" class="form-label fw-medium">Phone Number</label>
+                                <input type="tel" class="form-control" id="cardholder-phone" placeholder="(123) 456-7890" required>
+                                <div class="invalid-feedback" id="cardholder-phone-error"></div>
+                            </div>
+                            
+                            <!-- Square Card Form -->
+                            <h6 class="mb-3">Card Information</h6>
+                            <div class="mb-4">
+                                <div id="card-container" class="sq-card-container"></div>
+                                <div id="card-errors" class="text-danger mt-2"></div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="postal-code" class="form-label fw-medium">Postal Code</label>
+                                <input type="text" class="form-control" id="postal-code" placeholder="12345" required>
+                                <div class="invalid-feedback" id="postal-code-error"></div>
+                            </div>
+                            
+                            <!-- Hidden field for the card nonce -->
+                            <input type="hidden" name="card-nonce" id="card-nonce">
+                        </div>
+                        
+                        <!-- Status messages -->
+                        <div id="card-management-status-container" class="mb-4">
+                            {% if messages %}
+                            <div class="messages">
+                                {% for message in messages %}
+                                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-3">
+                                    <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            {% if redirect_url %}
+                            <a href="{{ redirect_url }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i> Back
+                            </a>
+                            {% else %}
+                            <a href="{% url 'subscription:subscription_management' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Subscription
+                            </a>
+                            {% endif %}
+                            
+                            <button type="button" class="btn btn-primary" id="save-card-button">
+                                <i class="fas fa-save me-2"></i>
+                                {% if business.square_card_id %}
+                                Update Card
+                                {% else %}
+                                Save Card
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Information -->
+            <div class="card mt-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lock text-primary me-2"></i>
+                        Secure Payment Processing
+                    </h5>
+                    <p class="card-text text-muted">
+                        Your payment information is securely processed and stored by Square, a leading payment processor. 
+                        We never store your full card details on our servers. All transactions are encrypted and protected 
+                        according to PCI DSS standards.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<!-- Square Web Payment SDK -->
+<script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+
+<!-- Card Management JavaScript -->
+<script>
+    // Ensure the script only runs once
+    if (typeof window.cardFormInitialized === 'undefined') {
+        window.cardFormInitialized = true;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form elements
+            const cardForm = document.getElementById('card-management-form');
+            const postalCodeInput = document.getElementById('postal-code');
+            const saveCardButton = document.getElementById('save-card-button');
+            const statusContainer = document.getElementById('card-management-status-container');
+            
+            // Initialize Square
+            let card = null;
+            
+            try {
+                const appId = '{{ square_app_id }}';
+                
+                if (!appId || appId === 'None') {
+                    throw new Error('Square payment credentials are missing or invalid');
+                }
+                
+                // Log the app ID for debugging
+                console.log('Using Square App ID:', appId);
+                
+                // Initialize the Square payments object
+                const payments = window.Square.payments(appId);
+                console.log('Square payments initialized successfully');
+                
+                async function initializeCard() {
+                    try {
+                        card = await payments.card();
+                        await card.attach('#card-container');
+                        console.log('Square card form attached successfully');
+                    } catch (e) {
+                        console.error('Error attaching Square card form:', e);
+                        statusContainer.innerHTML = '<div class="alert alert-danger">Error initializing payment form. Please try again later.</div>';
+                    }
+                }
+                
+                // Initialize the card
+                initializeCard();
+                
+            } catch (error) {
+                console.error('Error initializing Square:', error);
+                statusContainer.innerHTML = '<div class="alert alert-danger">Payment processing is currently unavailable. Please try again later.</div>';
+            }
+            
+            // Validate cardholder details
+            function validateCardholderDetails() {
+                let isValid = true;
+                
+                // Validate cardholder name
+                const cardholderName = document.getElementById('cardholder-name').value.trim();
+                if (cardholderName.length < 3) {
+                    document.getElementById('cardholder-name').classList.add('is-invalid');
+                    document.getElementById('cardholder-name-error').textContent = 'Please enter the cardholder name';
+                    isValid = false;
+                } else {
+                    document.getElementById('cardholder-name').classList.remove('is-invalid');
+                }
+                
+                // Validate email
+                const email = document.getElementById('cardholder-email').value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    document.getElementById('cardholder-email').classList.add('is-invalid');
+                    document.getElementById('cardholder-email-error').textContent = 'Please enter a valid email address';
+                    isValid = false;
+                } else {
+                    document.getElementById('cardholder-email').classList.remove('is-invalid');
+                }
+                
+                // Validate phone (simple validation)
+                const phone = document.getElementById('cardholder-phone').value.trim();
+                if (phone.length < 10) {
+                    document.getElementById('cardholder-phone').classList.add('is-invalid');
+                    document.getElementById('cardholder-phone-error').textContent = 'Please enter a valid phone number';
+                    isValid = false;
+                } else {
+                    document.getElementById('cardholder-phone').classList.remove('is-invalid');
+                }
+                
+                // Validate postal code
+                const postalCode = postalCodeInput.value.trim();
+                if (postalCode.length < 5) {
+                    postalCodeInput.classList.add('is-invalid');
+                    document.getElementById('postal-code-error').textContent = 'Please enter a valid postal code';
+                    isValid = false;
+                } else {
+                    postalCodeInput.classList.remove('is-invalid');
+                }
+                
+                return isValid;
+            }
+            
+            // Handle save card button click
+            saveCardButton.addEventListener('click', async function(event) {
+                event.preventDefault();
+                
+                // Validate cardholder details
+                if (!validateCardholderDetails()) {
+                    return;
+                }
+                
+                // Show processing state
+                saveCardButton.disabled = true;
+                saveCardButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                
+                try {
+                    // Log tokenization attempt
+                    console.log('Attempting to tokenize card...');
+                    
+                    // Create tokenization payload with verification details
+                    const tokenResult = await card.tokenize();
+                    
+                    console.log('Tokenization response received:', tokenResult.status);
+                    
+                    if (tokenResult.status === 'OK') {
+                        console.log('Tokenization successful, received token');
+                        document.getElementById('card-nonce').value = tokenResult.token;
+                        console.log('Submitting form with card token');
+                        cardForm.submit();
+                    } else {
+                        // Reset button state
+                        saveCardButton.disabled = false;
+                        saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
+                    }
+                } catch (error) {
+                    console.error('Error tokenizing card:', error);
+                    
+                    // Reset button state
+                    saveCardButton.disabled = false;
+                    saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
+                }
+            });
+        });
+    }
+</script>
+
+<style>
+    .sq-card-container {
+        min-height: 100px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 10px;
+        background-color: #fff;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .sq-card-container:focus-within {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+{% endblock %}
+{% endblock %}

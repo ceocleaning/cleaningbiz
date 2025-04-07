@@ -1,0 +1,673 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Business Details: {{ business.businessName }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">{{ business.businessName }}</h1>
+        <p class="text-muted mb-0">ID: {{ business.businessId }}</p>
+    </div>
+    <div>
+        <a href="{% url 'admin_dashboard:businesses' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Back to List
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-cog me-1"></i> Actions
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <button class="dropdown-item edit-business-btn" 
+                            data-id="{{ business.id }}"
+                            data-name="{{ business.businessName }}"
+                            data-phone="{{ business.phone }}"
+                            data-address="{{ business.address }}"
+                            data-is-approved="{{ business.isApproved|yesno:'true,false' }}"
+                            data-is-active="{{ business.isActive|yesno:'true,false' }}"
+                            data-use-call="{{ business.useCall|yesno:'true,false' }}"
+                            data-time-to-wait="{{ business.timeToWait }}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editBusinessModal">
+                        <i class="fas fa-edit me-2"></i> Edit Business
+                    </button>
+                </li>
+                {% if not business.isApproved %}
+                <li>
+                    <button class="dropdown-item approve-business-btn"
+                            data-id="{{ business.id }}"
+                            data-name="{{ business.businessName }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#approveBusinessModal">
+                        <i class="fas fa-check me-2"></i> Approve Business
+                    </button>
+                </li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item text-danger delete-business-btn"
+                            data-id="{{ business.id }}"
+                            data-name="{{ business.businessName }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteBusinessModal">
+                        <i class="fas fa-trash me-2"></i> Delete Business
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Business Information -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Business Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-placeholder bg-primary-subtle text-primary rounded-circle me-3">
+                        {{ business.businessName|slice:":1" }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ business.businessName }}</h6>
+                        <p class="text-muted mb-0">
+                            {% if business.isApproved %}
+                            <span class="badge bg-success-subtle text-success">Approved</span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning">Pending Approval</span>
+                            {% endif %}
+                            
+                            {% if business.isActive %}
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Contact Information</h6>
+                    <div class="mb-2">
+                        <i class="fas fa-phone text-muted me-2"></i> {{ business.phone|default:"Not provided" }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Address</h6>
+                    <address class="mb-0">
+                        {{ business.address|default:"Not provided" }}
+                    </address>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Account Details</h6>
+                    <div class="mb-2">
+                        <span class="text-muted">Owner:</span> 
+                        {{ business.user.get_full_name|default:business.user.username }}
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted">Created:</span> 
+                        {{ business.createdAt|date:"F j, Y" }}
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted">Last Updated:</span> 
+                        {{ business.updatedAt|date:"F j, Y" }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Voice Agent Settings</h6>
+                    <div class="mb-2">
+                        <span class="text-muted">Use Call:</span> 
+                        {% if business.useCall %}
+                        <span class="badge bg-success-subtle text-success">Enabled</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger">Disabled</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted">Time to Wait:</span> 
+                        {{ business.timeToWait }} seconds
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Information (only shown if business is approved and active) -->
+    <div class="col-lg-8">
+        {% if business.isApproved and business.isActive %}
+        <!-- Subscription Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Subscription Information</h5>
+            </div>
+            <div class="card-body">
+                {% if business.active_subscription %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="subscription-badge bg-success-subtle text-success rounded-circle me-3">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ business.active_subscription.plan.name }}</h6>
+                        <p class="text-muted mb-0">
+                            <span class="badge bg-success-subtle text-success">{{ business.active_subscription.status|title }}</span>
+                            {% if business.active_subscription.plan.billing_cycle == 'monthly' %}
+                            <span class="badge bg-info-subtle text-info">Monthly</span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info">Yearly</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">Price:</span> 
+                            ${{ business.active_subscription.plan.price }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">Start Date:</span> 
+                            {{ business.active_subscription.start_date|date:"M d, Y" }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">Next Billing:</span> 
+                            {{ business.active_subscription.next_billing_date|date:"M d, Y" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">Voice Minutes:</span> 
+                            {{ business.active_subscription.plan.voice_minutes }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">SMS Messages:</span> 
+                            {{ business.active_subscription.plan.sms_messages }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <span class="text-muted">AI Agents:</span> 
+                            {{ business.active_subscription.plan.agents }}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This business does not have an active subscription.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- API Credentials -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">API Credentials</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i> Regenerate Keys
+                </button>
+            </div>
+            <div class="card-body">
+                {% if api_credentials %}
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    These API credentials are sensitive. Do not share them with unauthorized users.
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label text-muted">Secret Key</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" value="{{ api_credentials.secretKey }}" readonly id="secretKey">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="secretKey">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#secretKey">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="text-muted mb-3">Twilio Credentials</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label text-muted">Twilio SMS Number</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ api_credentials.twilioSmsNumber|default:'Not configured' }}" readonly id="twilioSmsNumber">
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#twilioSmsNumber">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label text-muted">Twilio Account SID</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" value="{{ api_credentials.twilioAccountSid|default:'Not configured' }}" readonly id="twilioAccountSid">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="twilioAccountSid">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#twilioAccountSid">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label text-muted">Twilio Auth Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" value="{{ api_credentials.twilioAuthToken|default:'Not configured' }}" readonly id="twilioAuthToken">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="twilioAuthToken">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#twilioAuthToken">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label text-muted">TwiML App SID</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" value="{{ api_credentials.twimlAppSid|default:'Not configured' }}" readonly id="twimlAppSid">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="twimlAppSid">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#twimlAppSid">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No API credentials found for this business. API credentials will be generated when the business is approved.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Business Pricing Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Business Pricing Settings</h5>
+            </div>
+            <div class="card-body">
+                {% if business_settings %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Base Pricing</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td>Bedroom Price</td>
+                                        <td class="text-end">${{ business_settings.bedroomPrice|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bathroom Price</td>
+                                        <td class="text-end">${{ business_settings.bathroomPrice|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Deposit Fee</td>
+                                        <td class="text-end">${{ business_settings.depositFee|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Tax Percentage</td>
+                                        <td class="text-end">{{ business_settings.taxPercent|floatformat:2 }}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Square Feet Multipliers</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td>Standard Cleaning</td>
+                                        <td class="text-end">{{ business_settings.sqftMultiplierStandard|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Deep Cleaning</td>
+                                        <td class="text-end">{{ business_settings.sqftMultiplierDeep|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Move In/Out</td>
+                                        <td class="text-end">{{ business_settings.sqftMultiplierMoveinout|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Airbnb</td>
+                                        <td class="text-end">{{ business_settings.sqftMultiplierAirbnb|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Add-on Prices</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Add-on</th>
+                                        <th class="text-end">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Dishes</td>
+                                        <td class="text-end">${{ business_settings.addonPriceDishes|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Laundry</td>
+                                        <td class="text-end">${{ business_settings.addonPriceLaundry|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Window</td>
+                                        <td class="text-end">${{ business_settings.addonPriceWindow|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pets</td>
+                                        <td class="text-end">${{ business_settings.addonPricePets|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fridge</td>
+                                        <td class="text-end">${{ business_settings.addonPriceFridge|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Oven</td>
+                                        <td class="text-end">${{ business_settings.addonPriceOven|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Baseboard</td>
+                                        <td class="text-end">${{ business_settings.addonPriceBaseboard|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Blinds</td>
+                                        <td class="text-end">${{ business_settings.addonPriceBlinds|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Green</td>
+                                        <td class="text-end">${{ business_settings.addonPriceGreen|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cabinets</td>
+                                        <td class="text-end">${{ business_settings.addonPriceCabinets|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No pricing settings found for this business. Pricing settings will be configured when the business is set up.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Message when business is not approved or not active -->
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Limited Information Available</strong>
+                    <p class="mb-0 mt-2">
+                        {% if not business.isApproved %}
+                        This business is pending approval. Additional information and settings will be available once the business is approved.
+                        {% elif not business.isActive %}
+                        This business is not active. Additional information and settings will be available once the business is activated.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Business Modal -->
+<div class="modal fade" id="editBusinessModal" tabindex="-1" aria-labelledby="editBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBusinessModalLabel">Edit Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:edit_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="edit_business_id" name="business_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_businessName" class="form-label">Business Name</label>
+                        <input type="text" class="form-control" id="edit_businessName" name="businessName" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="edit_phone" name="phone" value="{{ business.phone }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="edit_address" name="address" value="{{ business.address }}" required>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit_isApproved" name="isApproved" {% if business.isApproved %}checked{% endif %}>
+                        <label class="form-check-label" for="edit_isApproved">
+                            Approved
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit_isActive" name="isActive" {% if business.isActive %}checked{% endif %}>
+                        <label class="form-check-label" for="edit_isActive">
+                            Active
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit_useCall" name="useCall" {% if business.useCall %}checked{% endif %}>
+                        <label class="form-check-label" for="edit_useCall">
+                            Use Call
+                        </label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_timeToWait" class="form-label">Time to Wait</label>
+                        <input type="number" class="form-control" id="edit_timeToWait" name="timeToWait" value="{{ business.timeToWait }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Business Modal -->
+<div class="modal fade" id="approveBusinessModal" tabindex="-1" aria-labelledby="approveBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveBusinessModalLabel">Approve Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:approve_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="approve_business_id" name="business_id" value="{{ business.id }}">
+                <div class="modal-body">
+                    <p>Are you sure you want to approve <strong>{{ business.businessName }}</strong>?</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Approving this business will allow them to access all platform features and services.
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_approval_email" name="send_approval_email" checked>
+                        <label class="form-check-label" for="send_approval_email">
+                            Send approval notification email
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Business Modal -->
+<div class="modal fade" id="deleteBusinessModal" tabindex="-1" aria-labelledby="deleteBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBusinessModalLabel">Delete Business</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:delete_business' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="delete_business_id" name="business_id" value="{{ business.id }}">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>{{ business.businessName }}</strong>?</p>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action cannot be undone. Deleting this business will remove all associated data, including subscriptions, settings, and analytics.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .subscription-badge {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.querySelector('i').classList.remove('fa-eye');
+                    this.querySelector('i').classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    this.querySelector('i').classList.remove('fa-eye-slash');
+                    this.querySelector('i').classList.add('fa-eye');
+                }
+            });
+        });
+        
+        // Copy to clipboard functionality
+        document.querySelectorAll('.copy-to-clipboard').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetSelector = this.getAttribute('data-clipboard-target');
+                const input = document.querySelector(targetSelector);
+                
+                // Select the text
+                input.select();
+                input.setSelectionRange(0, 99999); // For mobile devices
+                
+                // Copy the text
+                document.execCommand('copy');
+                
+                // Show feedback
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                
+                setTimeout(() => {
+                    this.innerHTML = originalIcon;
+                }, 1500);
+            });
+        });
+        
+        // Edit business modal
+        document.querySelector('.edit-business-btn').addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const phone = this.getAttribute('data-phone');
+            const address = this.getAttribute('data-address');
+            const isApproved = this.getAttribute('data-is-approved') === 'true';
+            const isActive = this.getAttribute('data-is-active') === 'true';
+            const useCall = this.getAttribute('data-use-call') === 'true';
+            const timeToWait = this.getAttribute('data-time-to-wait');
+            
+            document.getElementById('edit_business_id').value = id;
+            document.getElementById('edit_businessName').value = name;
+            document.getElementById('edit_phone').value = phone;
+            document.getElementById('edit_address').value = address;
+            document.getElementById('edit_isApproved').checked = isApproved;
+            document.getElementById('edit_isActive').checked = isActive;
+            document.getElementById('edit_useCall').checked = useCall;
+            document.getElementById('edit_timeToWait').value = timeToWait;
+        });
+    });
+</script>
+{% endblock %}

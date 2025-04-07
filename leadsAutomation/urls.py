@@ -32,6 +32,7 @@ urlpatterns = [
     path('usage_analytics/', include('usage_analytics.urls')),
     path('subscription/', include('subscription.urls')),
     path('retell_agent/', include('retell_agent.urls')),
+    path('admin-dashboard/', include('admin_dashbaord.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

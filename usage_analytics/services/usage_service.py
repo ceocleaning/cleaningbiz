@@ -58,6 +58,318 @@ class UsageService:
         return True
     
     @staticmethod
+    def track_active_agent(business, count=1):
+        """
+        Track active Retell agent usage.
+        
+        Args:
+            business: The business using the agent
+            count: Number of agents to track (default: 1)
+        """
+        UsageTracker.increment_agents(
+            business=business,
+            increment_by=count
+        )
+        
+        return True
+    
+    @staticmethod
+    def track_lead_generated(business, count=1):
+        """
+        Track leads generated.
+        
+        Args:
+            business: The business generating the lead
+            count: Number of leads to track (default: 1)
+        """
+        UsageTracker.increment_leads(
+            business=business,
+            increment_by=count
+        )
+        
+        return True
+    
+    @staticmethod
+    def check_voice_minutes_limit(business):
+        """
+        Check if a business has exceeded its voice minutes limit.
+        
+        Args:
+            business: The business to check
+            
+        Returns:
+            Dict with limit details
+        """
+        import traceback
+        from subscription.models import BusinessSubscription
+        from datetime import datetime
+        
+        try:
+            # Get active subscription
+            active_subscription = BusinessSubscription.objects.filter(
+                business=business,
+                is_active=True,
+                status__in=['active', 'trialing', 'past_due', 'canceled']
+            ).first()
+            
+            # If no subscription, return no limit exceeded
+            if not active_subscription:
+                print(f"[DEBUG] No active subscription found for {business.businessName}")
+                return {
+                    'limit': 0,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get plan
+            plan = active_subscription.plan
+            voice_minutes_limit = getattr(plan, 'voice_minutes', 0)
+            
+            if voice_minutes_limit <= 0:  # No limit or invalid limit
+                return {
+                    'limit': voice_minutes_limit,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get usage data
+            start_date = active_subscription.start_date
+            end_date = active_subscription.end_date
+            usage = UsageTracker.get_usage_summary(
+                business=business,
+                start_date=start_date,
+                end_date=end_date
+            )
+                
+            voice_minutes_used = usage.get('total', {}).get('voice_minutes', 0)
+            exceeded = voice_minutes_used > voice_minutes_limit
+            
+            print(f"[DEBUG] Voice minutes: Used {voice_minutes_used}/{voice_minutes_limit} - Exceeded: {exceeded}")
+            
+            return {
+                'limit': voice_minutes_limit,
+                'used': voice_minutes_used,
+                'exceeded': exceeded
+            }
+        except Exception as e:
+            print(f"[ERROR] Error checking voice minutes limit: {str(e)}")
+            print(traceback.format_exc())
+            return {
+                'limit': 0,
+                'used': 0,
+                'exceeded': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
+    def check_sms_messages_limit(business):
+        """
+        Check if a business has exceeded its SMS messages limit.
+        
+        Args:
+            business: The business to check
+            
+        Returns:
+            Dict with limit details
+        """
+        import traceback
+        from subscription.models import BusinessSubscription
+        from datetime import datetime
+        
+        try:
+            # Get active subscription
+            active_subscription = BusinessSubscription.objects.filter(
+                business=business,
+                is_active=True,
+                status__in=['active', 'trialing', 'past_due', 'canceled']
+            ).first()
+            
+            # If no subscription, return no limit exceeded
+            if not active_subscription:
+                print(f"[DEBUG] No active subscription found for {business.businessName}")
+                return {
+                    'limit': 0,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get plan
+            plan = active_subscription.plan
+            sms_messages_limit = getattr(plan, 'sms_messages', 0)
+            
+            if sms_messages_limit <= 0:  # No limit or invalid limit
+                return {
+                    'limit': sms_messages_limit,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get usage data
+            start_date = datetime.now().replace(day=1)
+            usage = UsageTracker.get_usage_summary(
+                business=business,
+                start_date=start_date
+            )
+                
+            sms_messages_used = usage.get('total', {}).get('sms_messages', 0)
+            exceeded = sms_messages_used > sms_messages_limit
+            
+            print(f"[DEBUG] SMS messages: Used {sms_messages_used}/{sms_messages_limit} - Exceeded: {exceeded}")
+            
+            return {
+                'limit': sms_messages_limit,
+                'used': sms_messages_used,
+                'exceeded': exceeded
+            }
+        except Exception as e:
+            print(f"[ERROR] Error checking SMS messages limit: {str(e)}")
+            print(traceback.format_exc())
+            return {
+                'limit': 0,
+                'used': 0,
+                'exceeded': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
+    def check_active_agents_limit(business):
+        """
+        Check if a business has exceeded its active agents limit.
+        
+        Args:
+            business: The business to check
+            
+        Returns:
+            Dict with limit details
+        """
+        import traceback
+        from subscription.models import BusinessSubscription
+        
+        try:
+            # Get active subscription
+            active_subscription = BusinessSubscription.objects.filter(
+                business=business,
+                is_active=True,
+                status__in=['active', 'trialing', 'past_due', 'canceled']
+            ).first()
+            
+            # If no subscription, return no limit exceeded
+            if not active_subscription:
+                print(f"[DEBUG] No active subscription found for {business.businessName}")
+                return {
+                    'limit': 0,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get plan
+            plan = active_subscription.plan
+            agents_limit = getattr(plan, 'agents', 0)
+            
+            if agents_limit <= 0:  # No limit or invalid limit
+                return {
+                    'limit': agents_limit,
+                    'used': 0,
+                    'exceeded': False
+                }
+                
+            # Count active agents directly from the database
+            from retell_agent.models import RetellAgent
+            active_agents = RetellAgent.objects.filter(business=business).count()
+            exceeded = active_agents >= agents_limit
+            
+            print(f"[DEBUG] Active agents: Used {active_agents}/{agents_limit} - Exceeded: {exceeded}")
+            
+            return {
+                'limit': agents_limit,
+                'used': active_agents,
+                'exceeded': exceeded
+            }
+        except Exception as e:
+            print(f"[ERROR] Error checking active agents limit: {str(e)}")
+            print(traceback.format_exc())
+            return {
+                'limit': 0,
+                'used': 0,
+                'exceeded': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
+    def check_leads_limit(business):
+        """
+        Check if a business has exceeded its leads limit.
+        
+        Args:
+            business: The business to check
+            
+        Returns:
+            Dict with limit details
+        """
+        import traceback
+        from subscription.models import BusinessSubscription
+        from datetime import datetime
+        
+        try:
+            # Get active subscription
+            active_subscription = BusinessSubscription.objects.filter(
+                business=business,
+                is_active=True,
+                status__in=['active', 'trialing', 'past_due', 'canceled']
+            ).first()
+            
+            # If no subscription, return no limit exceeded
+            if not active_subscription:
+                print(f"[DEBUG] No active subscription found for {business.businessName}")
+                return {
+                    'limit': 0,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get plan
+            plan = active_subscription.plan
+            leads_limit = plan.leads
+            
+            if leads_limit <= 0:  # No limit or invalid limit
+                return {
+                    'limit': leads_limit,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get usage data
+            start_date = active_subscription.start_date
+            end_date = active_subscription.end_date
+            usage = UsageTracker.get_usage_summary(
+                business=business,
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            print(f"[DEBUG] Usage data: {usage}")
+                
+            leads_generated = usage.get('total', {}).get('leads_generated', 0)
+            exceeded = leads_generated > leads_limit
+            
+            print(f"[DEBUG] Leads generated: Used {leads_generated}/{leads_limit} - Exceeded: {exceeded}")
+            
+            return {
+                'limit': leads_limit,
+                'used': leads_generated,
+                'exceeded': exceeded
+            }
+        except Exception as e:
+            print(f"[ERROR] Error checking leads limit: {str(e)}")
+            print(traceback.format_exc())
+            return {
+                'limit': 0,
+                'used': 0,
+                'exceeded': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
     def get_business_usage(business, start_date=None, end_date=None):
         """
         Get usage metrics for a business within a date range.

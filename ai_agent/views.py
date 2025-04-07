@@ -246,6 +246,16 @@ def twilio_webhook(request, secretKey):
     body = request.POST.get('Body', '')
     to_number = request.POST.get('To', '')
 
+    from usage_analytics.services.usage_service import UsageService
+    apiCred = ApiCredential.objects.filter(secretKey=secretKey).first()
+    business = apiCred.business
+    check_limit = UsageService.check_sms_messages_limit(business)
+    if check_limit.get('exceeded'):
+        print("SMS Limit reached for your Plan")
+        return JsonResponse({
+            'error': 'SMS limit exceeded'
+        }, status=400)
+
     print(f"[DEBUG] SMS received - From: {from_number}, To: {to_number}")
     print(f"[DEBUG] Message body: {body}")
     

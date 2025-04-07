@@ -1,0 +1,151 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Activity Log Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Activity Log Detail</h1>
+    <a href="{% url 'admin_dashboard:activity_logs' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Activities
+    </a>
+</div>
+
+<!-- Activity Log Detail Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Activity Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">User</label>
+                    <p>{{ log.user.username }} ({{ log.user.get_full_name|default:"No name provided" }})</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Activity Type</label>
+                    <p>
+                        {% if log.activity_type == 'create' %}
+                            <span class="badge bg-success-subtle text-success">Create</span>
+                        {% elif log.activity_type == 'update' %}
+                            <span class="badge bg-info-subtle text-info">Update</span>
+                        {% elif log.activity_type == 'delete' %}
+                            <span class="badge bg-danger-subtle text-danger">Delete</span>
+                        {% elif log.activity_type == 'login' %}
+                            <span class="badge bg-primary-subtle text-primary">Login</span>
+                        {% elif log.activity_type == 'logout' %}
+                            <span class="badge bg-secondary-subtle text-secondary">Logout</span>
+                        {% elif log.activity_type == 'payment' %}
+                            <span class="badge bg-warning-subtle text-warning">Payment</span>
+                        {% elif log.activity_type == 'subscription' %}
+                            <span class="badge bg-purple-subtle text-purple">Subscription</span>
+                        {% else %}
+                            <span class="badge bg-dark-subtle text-dark">{{ log.get_activity_type_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Timestamp</label>
+                    <p>{{ log.timestamp|date:"F d, Y H:i:s" }}</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">IP Address</label>
+                    <p>{{ log.ip_address|default:"Not recorded" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Related Object</label>
+                    <p>
+                        {% if log.content_type %}
+                            {{ log.content_type.model|title }} (ID: {{ log.object_id }})
+                        {% else %}
+                            No related object
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label fw-bold">Description</label>
+            <div class="p-3 bg-light rounded">
+                {{ log.description|linebreaks }}
+            </div>
+        </div>
+        
+        {% if log.metadata %}
+        <div class="mb-3">
+            <label class="form-label fw-bold">Additional Data</label>
+            <div class="p-3 bg-light rounded">
+                <pre class="mb-0"><code>{{ log.metadata|pprint }}</code></pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Related Activities Card -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Related Activities</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Activity Type</th>
+                        <th>Description</th>
+                        <th>Timestamp</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for related_log in log.user.activities.all|slice:":5" %}
+                        {% if related_log.id != log.id %}
+                        <tr>
+                            <td>
+                                {% if related_log.activity_type == 'create' %}
+                                    <span class="badge bg-success-subtle text-success">Create</span>
+                                {% elif related_log.activity_type == 'update' %}
+                                    <span class="badge bg-info-subtle text-info">Update</span>
+                                {% elif related_log.activity_type == 'delete' %}
+                                    <span class="badge bg-danger-subtle text-danger">Delete</span>
+                                {% elif related_log.activity_type == 'login' %}
+                                    <span class="badge bg-primary-subtle text-primary">Login</span>
+                                {% elif related_log.activity_type == 'logout' %}
+                                    <span class="badge bg-secondary-subtle text-secondary">Logout</span>
+                                {% elif related_log.activity_type == 'payment' %}
+                                    <span class="badge bg-warning-subtle text-warning">Payment</span>
+                                {% elif related_log.activity_type == 'subscription' %}
+                                    <span class="badge bg-purple-subtle text-purple">Subscription</span>
+                                {% else %}
+                                    <span class="badge bg-dark-subtle text-dark">{{ related_log.get_activity_type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ related_log.description|truncatechars:50 }}</td>
+                            <td>{{ related_log.timestamp|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'admin_dashboard:activity_log_detail' related_log.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-3">No related activities found</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer text-center">
+        <a href="{% url 'admin_dashboard:activity_logs' %}?user_id={{ log.user.id }}" class="btn btn-outline-primary">
+            View All Activities by {{ log.user.username }}
+        </a>
+    </div>
+</div>
+{% endblock %}

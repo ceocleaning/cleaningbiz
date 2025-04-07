@@ -1,0 +1,137 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Edit Coupon{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Edit Coupon</h1>
+    <a href="{% url 'admin_dashboard:coupons' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Coupons
+    </a>
+</div>
+
+<!-- Edit Coupon Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Coupon Details</h5>
+    </div>
+    <div class="card-body">
+        <form action="{% url 'admin_dashboard:edit_coupon' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="coupon_id" value="{{ coupon.id }}">
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="code" class="form-label">Coupon Code</label>
+                    <input type="text" class="form-control" id="code" name="code" value="{{ coupon.code }}" required>
+                    <div class="form-text">The code will be automatically converted to uppercase.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="is_active" class="form-label">Status</label>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if coupon.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">Active</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="discount_type" class="form-label">Discount Type</label>
+                    <select class="form-select" id="discount_type" name="discount_type" required>
+                        <option value="percentage" {% if coupon.discount_type == 'percentage' %}selected{% endif %}>Percentage Discount</option>
+                        <option value="fixed" {% if coupon.discount_type == 'fixed' %}selected{% endif %}>Fixed Amount Discount</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="discount_value" class="form-label">Discount Value</label>
+                    <div class="input-group">
+                        <span class="input-group-text discount-symbol">{% if coupon.discount_type == 'percentage' %}%{% else %}${% endif %}</span>
+                        <input type="number" class="form-control" id="discount_value" name="discount_value" step="0.01" min="0" value="{{ coupon.discount_value }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="limit_type" class="form-label">Limit Type</label>
+                    <select class="form-select" id="limit_type" name="limit_type">
+                        <option value="overall" {% if coupon.limit_type == 'overall' %}selected{% endif %}>Overall Usage Limit</option>
+                        <option value="per_user" {% if coupon.limit_type == 'per_user' %}selected{% endif %}>Per User Usage Limit</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="usage_limit" class="form-label">Usage Limit</label>
+                    <input type="number" class="form-control" id="usage_limit" name="usage_limit" min="1" value="{{ coupon.usage_limit|default:'' }}">
+                    <div class="form-text">Leave empty for unlimited uses. Currently used: {{ coupon.times_used }} times.</div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="expiry_date" class="form-label">Expiry Date</label>
+                    <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{{ coupon.expiry_date|date:'Y-m-d' }}">
+                    <div class="form-text">Leave empty for no expiry date.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ coupon.description }}</textarea>
+                </div>
+            </div>
+            
+            <h5 class="mb-3">Applicable Plans</h5>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                {% for plan in subscription_plans %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="plan_{{ plan.id }}" name="applicable_plans" value="{{ plan.id }}" 
+                                            {% if plan in coupon.applicable_plans.all %}checked{% endif %}>
+                                        <label class="form-check-label" for="plan_{{ plan.id }}">
+                                            {{ plan.name }} ({{ plan.get_billing_cycle_display }}) - ${{ plan.price }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="col-12">
+                                    <p class="text-muted">No subscription plans available. Please create plans first.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'admin_dashboard:coupons' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Update Coupon</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const discountTypeSelect = document.getElementById('discount_type');
+        const discountSymbol = document.querySelector('.discount-symbol');
+        
+        // Update discount symbol based on discount type
+        function updateDiscountSymbol() {
+            if (discountTypeSelect.value === 'percentage') {
+                discountSymbol.textContent = '%';
+            } else {
+                discountSymbol.textContent = '$';
+            }
+        }
+        
+        // Update on change
+        discountTypeSelect.addEventListener('change', updateDiscountSymbol);
+    });
+</script>
+{% endblock %}

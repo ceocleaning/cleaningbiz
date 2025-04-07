@@ -99,72 +99,36 @@
                                     </div>
                                     <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
                                 </li>
-                                <!-- <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">{{ plan.voice_calls }} Voice Calls</span>
-                                </li> -->
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
                                     <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
                                 </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.agents }} Active Agents</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
+                                    <span class="text-white opacity-80">{{ plan.leads }} Leads</span>
+                                </li>
                                 
-                                {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Basic Analytics</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.advanced_analytics %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Advanced Analytics</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.email_support %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Email Support</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.priority_support %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Priority Support</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% if plan.features.dedicated_account_manager %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Dedicated Account Manager</span>
-                                </li>
-                                {% endif %}
-
-                                {% if plan.features.custom_integrations %}
-                                <li class="d-flex align-items-center mb-3">
-                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
-                                        <i class="fas fa-check text-success fs-6"></i>
-                                    </div>
-                                    <span class="text-white opacity-80">Custom Integrations</span>
-                                </li>
-                                {% endif %}
+                                <!-- Dynamic Features -->
+                                {% for feature in plan.features.all %}
+                                    {% if feature.is_active %}
+                                    <li class="d-flex align-items-center mb-3">
+                                        <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                            <i class="fas fa-check text-success fs-6"></i>
+                                        </div>
+                                        <span class="text-white opacity-80">{{ feature.display_name }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
                             </ul>
                         </div>
                         
@@ -191,7 +155,7 @@
         
         <div class="comparison-table-wrapper" data-aos="fade-up">
             <div class="comparison-table">
-                <!-- Header Row -->
+                <!-- Headers -->
                 <div class="comparison-row header">
                     <div class="comparison-cell feature-name">Feature</div>
                     <div class="comparison-cell text-center">Starter</div>
@@ -199,131 +163,76 @@
                     <div class="comparison-cell text-center">Enterprise</div>
                 </div>
                 
-                <!-- AI Voice Agent -->
+                {% with starter_plan=plans|filter_plans:'Starter'|first %}
+                {% with professional_plan=plans|filter_plans:'Professional'|first %}
+                {% with enterprise_plan=plans|filter_plans:'Enterprise'|first %}
+                
+                <!-- Usage Metrics -->
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">AI Voice Agent</div>
-                    {% for plan in plans %}
-                        {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.voice_minutes }} mins/mo</div>
-                        {% endif %}
-                        {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center highlight">{{ plan.voice_minutes }} mins/mo</div>
-                        {% endif %}
-                        {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.voice_minutes }} mins/mo</div>
-                        {% endif %}
-                    {% endfor %}
+                    <div class="comparison-cell text-center">{{ starter_plan.voice_minutes }} mins/mo</div>
+                    <div class="comparison-cell text-center highlight">{{ professional_plan.voice_minutes }} mins/mo</div>
+                    <div class="comparison-cell text-center">{{ enterprise_plan.voice_minutes }} mins/mo</div>
                 </div>
                 
-                <!-- Voice Calls -->
-                <div class="comparison-row">
-                    <div class="comparison-cell feature-name">Voice Calls</div>
-                    {% for plan in plans %}
-                        {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.voice_calls }}</div>
-                        {% endif %}
-                        {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center highlight">{{ plan.voice_calls }}</div>
-                        {% endif %}
-                        {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.voice_calls }}</div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                
-                <!-- SMS Messages -->
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">SMS Messages</div>
-                    {% for plan in plans %}
-                        {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.sms_messages }}</div>
-                        {% endif %}
-                        {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center highlight">{{ plan.sms_messages }}</div>
-                        {% endif %}
-                        {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                            <div class="comparison-cell text-center">{{ plan.sms_messages }}</div>
-                        {% endif %}
-                    {% endfor %}
+                    <div class="comparison-cell text-center">{{ starter_plan.sms_messages }}</div>
+                    <div class="comparison-cell text-center highlight">{{ professional_plan.sms_messages }}</div>
+                    <div class="comparison-cell text-center">{{ enterprise_plan.sms_messages }}</div>
                 </div>
                 
-                <!-- Analytics -->
                 <div class="comparison-row">
-                    <div class="comparison-cell feature-name">Analytics</div>
-                    <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.basic_analytics %}Basic{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="comparison-cell text-center highlight">
-                        {% for plan in plans %}
-                            {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.advanced_analytics %}Advanced{% elif plan.features.basic_analytics %}Basic{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.advanced_analytics %}Custom{% elif plan.features.basic_analytics %}Basic{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+                    <div class="comparison-cell feature-name">Active Agents</div>
+                    <div class="comparison-cell text-center">{{ starter_plan.agents }}</div>
+                    <div class="comparison-cell text-center highlight">{{ professional_plan.agents }}</div>
+                    <div class="comparison-cell text-center">{{ enterprise_plan.agents }}</div>
                 </div>
                 
-                <!-- Support -->
                 <div class="comparison-row">
-                    <div class="comparison-cell feature-name">Support</div>
+                    <div class="comparison-cell feature-name">Leads</div>
+                    <div class="comparison-cell text-center">{{ starter_plan.leads }}</div>
+                    <div class="comparison-cell text-center highlight">{{ professional_plan.leads }}</div>
+                    <div class="comparison-cell text-center">{{ enterprise_plan.leads }}</div>
+                </div>
+                {% for feature in feature_list %}
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">{{ feature.display_name }}</div>
+
+                    <!-- Starter Plan -->
                     <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.email_support %}Email{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
+                        {% if feature in starter_plan.features.all %}
+                            <i class="fas fa-check text-success"></i>
+                        {% else %}
+                            <i class="fas fa-times text-dark-text-secondary"></i>
+                        {% endif %}
                     </div>
+                    
+                    <!-- Professional Plan -->
                     <div class="comparison-cell text-center highlight">
-                        {% for plan in plans %}
-                            {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.priority_support %}Priority{% elif plan.features.email_support %}Email{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
+                        {% if feature in professional_plan.features.all %}
+                            <i class="fas fa-check text-success"></i>
+                        {% else %}
+                            <i class="fas fa-times text-dark-text-secondary"></i>
+                        {% endif %}
                     </div>
+                    
+                    <!-- Enterprise Plan -->
                     <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.dedicated_account_manager %}Dedicated Manager{% elif plan.features.priority_support %}Priority{% elif plan.features.email_support %}Email{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
+                        {% if feature in enterprise_plan.features.all %}
+                            <i class="fas fa-check text-success"></i>
+                        {% else %}
+                            <i class="fas fa-times text-dark-text-secondary"></i>
+                        {% endif %}
                     </div>
                 </div>
+                {% endfor %}
                 
-                <!-- Custom Integrations -->
-                <div class="comparison-row">
-                    <div class="comparison-cell feature-name">Custom Integrations</div>
-                    <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Starter' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.custom_integrations %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="comparison-cell text-center highlight">
-                        {% for plan in plans %}
-                            {% if 'Professional' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.custom_integrations %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="comparison-cell text-center">
-                        {% for plan in plans %}
-                            {% if 'Enterprise' in plan.name and plan.billing_cycle == 'monthly' %}
-                                {% if plan.features.custom_integrations %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-dark-text-secondary"></i>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
+        
+                
+                {% endwith %}
+                {% endwith %}
+                {% endwith %}
             </div>
         </div>
     </div>
@@ -498,11 +407,11 @@
         border-radius: 50%;
     }
     
-    #pricing-toggle:checked + .pricing-slider {
+    .pricing-toggle input:checked + .pricing-slider {
         background-color: var(--primary-color);
     }
     
-    #pricing-toggle:checked + .pricing-slider:before {
+    .pricing-toggle input:checked + .pricing-slider:before {
         transform: translateX(26px);
     }
     
@@ -536,8 +445,54 @@
         z-index: 1;
     }
     
-    .feature-icon {
-        min-width: 24px;
+    .rounded-4 {
+        border-radius: 1rem;
+    }
+    
+    /* Accent color for badges and buttons */
+    .bg-accent {
+        background-color: #FF6B35;
+    }
+    
+    .text-accent {
+        color: #FF6B35;
+    }
+    
+    .btn-accent {
+        background-color: #FF6B35;
+        border-color: #FF6B35;
+        color: white;
+    }
+    
+    .btn-accent:hover {
+        background-color: #e55a2a;
+        border-color: #e55a2a;
+        color: white;
+    }
+    
+    .btn-outline-accent {
+        background-color: transparent;
+        border-color: #FF6B35;
+        color: #FF6B35;
+    }
+    
+    .btn-outline-accent:hover {
+        background-color: #FF6B35;
+        color: white;
+    }
+    
+    /* Primary color for text */
+    .text-primary-color {
+        color: #2D5BFF;
+    }
+    
+    /* Feature list styling */
+    .feature-list li {
+        transition: all 0.2s ease;
+    }
+    
+    .feature-list li:hover {
+        transform: translateX(5px);
     }
     
     /* Pricing card equal height and button alignment */
@@ -555,95 +510,16 @@
         margin-top: auto;
     }
     
-    /* Custom Comparison Table Styling */
-    .comparison-table-wrapper {
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        margin-bottom: 3rem;
-    }
-    
-    .comparison-table {
-        width: 100%;
-        display: table;
-        border-collapse: collapse;
-        background-color: var(--dark-surface-2);
-        color: var(--dark-text-primary);
-    }
-    
-    .comparison-row {
-        display: table-row;
-        transition: background-color 0.3s ease;
-    }
-    
-    .comparison-row:not(.header):hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .comparison-row.header {
-        background-color: var(--dark-surface-3);
-        font-weight: bold;
-    }
-    
-    .comparison-cell {
-        display: table-cell;
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        vertical-align: middle;
-    }
-    
-    .comparison-cell.feature-name {
-        font-weight: 500;
-        color: var(--dark-text-primary);
-    }
-    
-    .comparison-cell.highlight {
-        background-color: rgba(33, 150, 243, 0.05);
-        border-top: 2px solid var(--primary-color);
-        border-bottom: 2px solid var(--primary-color);
-    }
-    
-    .comparison-row:first-child .comparison-cell.highlight {
-        border-top: none;
-    }
-    
-    .comparison-row:last-child .comparison-cell.highlight {
-        border-bottom: none;
-    }
-    
-    .comparison-row.header .comparison-cell.highlight {
-        background-color: var(--primary-color);
-        color: white;
-    }
-    
-    @media (max-width: 991.98px) {
-        .comparison-table-wrapper {
-            overflow-x: auto;
-        }
-        
-        .comparison-table {
-            min-width: 800px;
-        }
-    }
-    
     /* Accordion styling */
     .accordion-button:not(.collapsed) {
-        color: var(--white);
-        background-color: var(--dark-surface-3);
+        background-color: rgba(45, 91, 255, 0.05);
+        color: var(--bs-primary);
         box-shadow: none;
-    }
-    
-    .accordion-button:not(.collapsed)::after {
-        filter: brightness(10);
-    }
-    
-    .accordion-button::after {
-        filter: brightness(10);
     }
     
     .accordion-button:focus {
         box-shadow: none;
-        border-color: transparent;
+        border-color: rgba(45, 91, 255, 0.1);
     }
 
     /* Background gradient */
@@ -686,19 +562,19 @@
                     document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
                         card.style.display = 'block';
                     });
-                    
-                    // Toggle active class for labels
-                monthlyLabel.classList.remove('active');
-                yearlyLabel.classList.add('active');
-                yearlySavings.style.display = 'inline-block';
                 
-                // Apply 20% discount to yearly prices
-                document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                    const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
-                    const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
-                    priceElement.textContent = discountedPrice;
-                });
-            } else {
+                // Toggle active class for labels
+                    monthlyLabel.classList.remove('active');
+                    yearlyLabel.classList.add('active');
+                    yearlySavings.style.display = 'inline-block';
+                    
+                    // Apply 20% discount to yearly prices
+                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
+                        const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
+                        const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
+                        priceElement.textContent = discountedPrice;
+                    });
+                } else {
                     // Show monthly plans
                     document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
                         card.style.display = 'block';
@@ -708,20 +584,168 @@
                     });
                     
                     // Toggle active class for labels
-                yearlyLabel.classList.remove('active');
+                    yearlyLabel.classList.remove('active');
                     monthlyLabel.classList.add('active');
-                yearlySavings.style.display = 'none';
-                
-                // Restore original prices
-                document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                    const originalPrice = priceElement.getAttribute('data-original-price');
-                    if (originalPrice) {
-                        priceElement.textContent = originalPrice;
-                    }
-                });
-            }
-        });
+                    yearlySavings.style.display = 'none';
+                    
+                    // Restore original prices
+                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
+                        const originalPrice = priceElement.getAttribute('data-original-price');
+                        if (originalPrice) {
+                            priceElement.textContent = originalPrice;
+                        }
+                    });
+                }
+            });
+            
+            // Trigger initial display setup
+            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                card.style.display = 'none';
+            });
+        }
+    });
+</script>
+
+<style>
+    /* Custom Comparison Table Styling */
+    .comparison-table-wrapper {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        margin-bottom: 3rem;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        display: table;
+        border-collapse: collapse;
+        background-color: var(--dark-surface-2);
+        color: var(--dark-text-primary);
+    }
+    
+    .comparison-row {
+        display: table-row;
+        transition: background-color 0.3s ease;
+    }
+    
+    .comparison-row:not(.header):not(.category-header):hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .comparison-row.header {
+        background-color: var(--dark-surface-3);
+        font-weight: bold;
+    }
+    
+    .comparison-row.category-header {
+        background-color: rgba(0, 0, 0, 0.2);
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .comparison-cell {
+        display: table-cell;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        vertical-align: middle;
+    }
+    
+    .comparison-cell.feature-name {
+        font-weight: 500;
+        color: var(--dark-text-primary);
+    }
+    
+    .comparison-cell.highlight {
+        background-color: rgba(33, 150, 243, 0.05);
+        border-top: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .comparison-row:first-child .comparison-cell.highlight {
+        border-top: none;
+    }
+    
+    .comparison-row:last-child .comparison-cell.highlight {
+        border-bottom: none;
+    }
+    
+    .comparison-row.header .comparison-cell.highlight {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    @media (max-width: 991.98px) {
+        .comparison-table-wrapper {
+            overflow-x: auto;
+        }
         
+        .comparison-table {
+            min-width: 800px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize toggle functionality
+        const pricingToggle = document.getElementById('pricing-toggle');
+        const monthlyLabel = document.getElementById('monthly-label');
+        const yearlyLabel = document.getElementById('yearly-label');
+        const yearlySavings = document.querySelector('.yearly-savings');
+        
+        // Create variables to track displayed cards
+        const monthlyCards = document.querySelectorAll('[data-plan-type="monthly"]');
+        const yearlyCards = document.querySelectorAll('[data-plan-type="yearly"]');
+        
+        if (pricingToggle) {
+            // Set initial state
+            monthlyLabel.classList.add('active');
+            
+            pricingToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    // Show yearly plans
+                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
+                        card.style.display = 'none';
+                    });
+                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                        card.style.display = 'block';
+                    });
+                
+                // Toggle active class for labels
+                    monthlyLabel.classList.remove('active');
+                    yearlyLabel.classList.add('active');
+                    yearlySavings.style.display = 'inline-block';
+                    
+                    // Apply 20% discount to yearly prices
+                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
+                        const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
+                        const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
+                        priceElement.textContent = discountedPrice;
+                    });
+                } else {
+                    // Show monthly plans
+                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
+                        card.style.display = 'block';
+                    });
+                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
+                        card.style.display = 'none';
+                    });
+                    
+                    // Toggle active class for labels
+                    yearlyLabel.classList.remove('active');
+                    monthlyLabel.classList.add('active');
+                    yearlySavings.style.display = 'none';
+                    
+                    // Restore original prices
+                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
+                        const originalPrice = priceElement.getAttribute('data-original-price');
+                        if (originalPrice) {
+                            priceElement.textContent = originalPrice;
+                        }
+                    });
+                }
+            });
+            
             // Trigger initial display setup
             document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
                 card.style.display = 'none';

@@ -1,20 +1,44 @@
 from django.contrib import admin
-from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory
+from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Feature, Coupon, CouponUsage
 
-@admin.register(SubscriptionPlan)
+class FeatureAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'name', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'display_name', 'description')
+    ordering = ('display_name',)
+
 class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'billing_cycle', 'voice_minutes', 'sms_messages', 'is_active')
+    list_display = ('name', 'price', 'billing_cycle', 'is_active')
     list_filter = ('billing_cycle', 'is_active')
-    search_fields = ('name',)
+    filter_horizontal = ('features',)  # This adds a nice widget for managing many-to-many relationships
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'description', 'price', 'billing_cycle', 'is_active')
+        }),
+        ('Usage Metrics', {
+            'fields': ('voice_minutes', 'sms_messages', 'agents', 'leads')
+        }),
+        ('Features', {
+            'fields': ('features',)
+        }),
+    )
 
-@admin.register(BusinessSubscription)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_type', 'discount_value', 'is_active', 'expiry_date', 'times_used')
+    list_filter = ('discount_type', 'is_active')
+    search_fields = ('code',)
+
+class CouponUsageAdmin(admin.ModelAdmin):
+    list_display = ('coupon', 'user', 'used_at')
+    list_filter = ('used_at',)
+    search_fields = ('coupon__code', 'user__email')
+
 class BusinessSubscriptionAdmin(admin.ModelAdmin):
     list_display = ('business', 'plan', 'status', 'start_date', 'end_date', 'is_active')
     list_filter = ('status', 'is_active', 'plan')
     search_fields = ('business__name', 'stripe_subscription_id')
     date_hierarchy = 'start_date'
 
-@admin.register(UsageTracker)
 class UsageTrackerAdmin(admin.ModelAdmin):
     list_display = ('business', 'date', 'get_voice_minutes', 'get_voice_calls', 'get_sms_messages')
     list_filter = ('date',)
@@ -33,9 +57,16 @@ class UsageTrackerAdmin(admin.ModelAdmin):
         return obj.metrics.get('sms_messages', 0)
     get_sms_messages.short_description = 'SMS Messages'
 
-@admin.register(BillingHistory)
 class BillingHistoryAdmin(admin.ModelAdmin):
     list_display = ('business', 'amount', 'status', 'billing_date')
     list_filter = ('status', 'billing_date')
     search_fields = ('business__name', 'stripe_invoice_id')
     date_hierarchy = 'billing_date'
+
+admin.site.register(Feature, FeatureAdmin)
+admin.site.register(SubscriptionPlan, SubscriptionPlanAdmin)
+admin.site.register(Coupon, CouponAdmin)
+admin.site.register(CouponUsage, CouponUsageAdmin)
+admin.site.register(BusinessSubscription, BusinessSubscriptionAdmin)
+admin.site.register(UsageTracker, UsageTrackerAdmin)
+admin.site.register(BillingHistory, BillingHistoryAdmin)

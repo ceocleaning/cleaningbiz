@@ -1,0 +1,367 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Feature Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Features</h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFeatureModal">
+        <i class="fas fa-plus me-1"></i> Add New Feature
+    </button>
+</div>
+
+<!-- Features Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Features</h5>
+        <div class="d-flex">
+            <div class="input-group me-2">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="featureSearch" class="form-control border-start-0" placeholder="Search features...">
+            </div>
+            <select class="form-select" id="featureFilter" style="width: auto;">
+                <option value="all">All Features</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="featuresTable">
+                <thead>
+                    <tr>
+                        <th>Display Name</th>
+                        <th>Internal Name</th>
+                        <th>Description</th>
+                        <th>Used In Plans</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feature in features %}
+                    <tr>
+                        <td>{{ feature.display_name }}</td>
+                        <td><code>{{ feature.name }}</code></td>
+                        <td>{{ feature.description|default:"-"|truncatechars:50 }}</td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary">{{ feature.subscription_plans.count }}</span>
+                            {% if feature.subscription_plans.count > 0 %}
+                            <a href="#" class="ms-1 text-decoration-none" data-bs-toggle="tooltip" 
+                               title="{% for plan in feature.subscription_plans.all %}{{ plan.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if feature.is_active %}
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary edit-feature-btn" 
+                                        data-id="{{ feature.id }}"
+                                        data-name="{{ feature.name }}"
+                                        data-display-name="{{ feature.display_name }}"
+                                        data-description="{{ feature.description|default:'' }}"
+                                        data-is-active="{{ feature.is_active|yesno:'true,false' }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editFeatureModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-feature-btn"
+                                        data-id="{{ feature.id }}"
+                                        data-name="{{ feature.display_name }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteFeatureModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-3">No features found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if features.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if features.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ features.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in features.paginator.page_range %}
+                    {% if features.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > features.number|add:'-3' and i < features.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if features.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ features.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ features.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Feature Modal -->
+<div class="modal fade" id="addFeatureModal" tabindex="-1" aria-labelledby="addFeatureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFeatureModalLabel">Add New Feature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:add_feature' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="display_name" class="form-label">Display Name</label>
+                        <input type="text" class="form-control" id="display_name" name="display_name" required>
+                        <div class="form-text">This is the name that will be shown to users.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Internal Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="form-text">This is the internal identifier used in code (lowercase, no spaces).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">Active</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Feature</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Feature Modal -->
+<div class="modal fade" id="editFeatureModal" tabindex="-1" aria-labelledby="editFeatureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFeatureModalLabel">Edit Feature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:edit_feature' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="edit_feature_id" name="feature_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_display_name" class="form-label">Display Name</label>
+                        <input type="text" class="form-control" id="edit_display_name" name="display_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Internal Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                        <div class="form-text">Changing this may affect existing code that references this feature.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active">
+                            <label class="form-check-label" for="edit_is_active">Active</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Feature Modal -->
+<div class="modal fade" id="deleteFeatureModal" tabindex="-1" aria-labelledby="deleteFeatureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFeatureModalLabel">Delete Feature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the feature <strong id="deleteFeatureName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. If this feature is used in any subscription plans, it will be removed from those plans.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'admin_dashboard:delete_feature' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="feature_id" id="deleteFeatureId">
+                    <button type="submit" class="btn btn-danger">Delete Feature</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const featureSearch = document.getElementById('featureSearch');
+        const featureFilter = document.getElementById('featureFilter');
+        const featuresTable = document.getElementById('featuresTable');
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Table filtering function
+        function filterTable() {
+            const searchTerm = featureSearch.value.toLowerCase();
+            const filterValue = featureFilter.value;
+            
+            const rows = featuresTable.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const displayName = row.cells[0].textContent.toLowerCase();
+                const internalName = row.cells[1].textContent.toLowerCase();
+                const description = row.cells[2].textContent.toLowerCase();
+                const isActive = row.cells[4].textContent.trim().toLowerCase() === 'active';
+                
+                let showRow = true;
+                
+                // Apply search filter
+                if (searchTerm && !(displayName.includes(searchTerm) || internalName.includes(searchTerm) || description.includes(searchTerm))) {
+                    showRow = false;
+                }
+                
+                // Apply dropdown filter
+                if (filterValue === 'active' && !isActive) {
+                    showRow = false;
+                } else if (filterValue === 'inactive' && isActive) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        featureSearch.addEventListener('input', filterTable);
+        featureFilter.addEventListener('change', filterTable);
+        
+        // Handle edit feature modal
+        document.querySelectorAll('.edit-feature-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const displayName = this.getAttribute('data-display-name');
+                const description = this.getAttribute('data-description');
+                const isActive = this.getAttribute('data-is-active') === 'true';
+                
+                document.getElementById('edit_feature_id').value = id;
+                document.getElementById('edit_name').value = name;
+                document.getElementById('edit_display_name').value = displayName;
+                document.getElementById('edit_description').value = description;
+                document.getElementById('edit_is_active').checked = isActive;
+            });
+        });
+        
+        // Handle delete feature modal
+        document.querySelectorAll('.delete-feature-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                
+                document.getElementById('deleteFeatureId').value = id;
+                document.getElementById('deleteFeatureName').textContent = name;
+            });
+        });
+        
+        // Auto-generate internal name from display name
+        const displayNameInput = document.getElementById('display_name');
+        const nameInput = document.getElementById('name');
+        
+        if (displayNameInput && nameInput) {
+            displayNameInput.addEventListener('input', function() {
+                // Only auto-generate if the internal name field is empty or hasn't been manually edited
+                if (!nameInput.dataset.manuallyEdited) {
+                    nameInput.value = this.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9_]/g, '_')
+                        .replace(/_+/g, '_')
+                        .replace(/^_|_$/g, '');
+                }
+            });
+            
+            nameInput.addEventListener('input', function() {
+                // Mark as manually edited
+                this.dataset.manuallyEdited = 'true';
+            });
+        }
+    });
+</script>
+{% endblock %}

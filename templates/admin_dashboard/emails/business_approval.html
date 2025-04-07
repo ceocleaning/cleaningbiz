@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Approval</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #2563eb;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .highlight {
+            color: #2563eb;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CEO Cleaners</h1>
+    </div>
+    
+    <div class="content">
+        <h2>Congratulations, {{ user.first_name }}!</h2>
+        
+        <p>We're pleased to inform you that your business <span class="highlight">{{ business.businessName }}</span> has been approved on our platform.</p>
+        
+        <p>You can now access all the features and benefits of our platform, including:</p>
+        
+        <ul>
+            <li>AI Voice Agent (Sarah) for handling customer calls</li>
+            <li>Automated booking management</li>
+            <li>Invoice generation and payment processing</li>
+            <li>Analytics and reporting tools</li>
+            <li>And much more!</li>
+        </ul>
+        
+        <p>To get started, log in to your account and set up your business profile to ensure customers can find all the information they need.</p>
+        
+        <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'accounts:login' %}" class="button">Log In to Your Account</a>
+        
+        <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+        
+        <p>Thank you for choosing CEO Cleaners!</p>
+        
+        <p>Best regards,<br>
+        The CEO Cleaners Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; {% now "Y" %} CEO Cleaners. All rights reserved.</p>
+        <p>This email was sent to {{ user.email }}</p>
+    </div>
+</body>
+</html>
