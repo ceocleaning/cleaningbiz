@@ -499,6 +499,7 @@ def get_chat_data(request, chat_id):
             }, status=403)
             
         # Get the chat and make sure it belongs to this business
+        print(f"[DEBUG] Getting chat data for chat ID: {chat_id}")
         chat = get_object_or_404(Chat, id=chat_id, business=business)
         
         # Get messages
