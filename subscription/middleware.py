@@ -72,10 +72,11 @@ class SubscriptionRequiredMiddleware:
         # Check if user has a business
         if hasattr(request.user, 'business_set') and request.user.business_set.exists():
             business = request.user.business_set.first()
+            if request.user.is_superuser:
+                return self.get_response(request)
             
             # Get active subscription
             subscription = business.active_subscription()
-            print(subscription)
             
             # If no active subscription or subscription is not active, redirect to subscription page
             if not subscription or not subscription.is_subscription_active():
