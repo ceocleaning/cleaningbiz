@@ -245,7 +245,9 @@ def create_booking(request):
             booking.save()
 
             for addon in customAddons:
-                quantity = int(request.POST.get(f'custom_addon_qty_{addon.id}', 0))
+                quantity_str = request.POST.get(f'custom_addon_qty_{addon.id}', '0').strip()
+                # Handle empty string case by defaulting to 0
+                quantity = int(quantity_str) if quantity_str else 0
                 if quantity > 0:
                     newCustomBookingAddon = BookingCustomAddons.objects.create(
                         addon=addon,
@@ -363,7 +365,9 @@ def edit_booking(request, bookingId):
 
             # Add new custom add-ons
             for addon in customAddons:
-                quantity = int(request.POST.get(f'custom_addon_qty_{addon.id}', 0))
+                quantity_str = request.POST.get(f'custom_addon_qty_{addon.id}', '0').strip()
+                # Handle empty string case by defaulting to 0
+                quantity = int(quantity_str) if quantity_str else 0
                 if quantity > 0:
                     newCustomBookingAddon = BookingCustomAddons.objects.create(
                         addon=addon,
