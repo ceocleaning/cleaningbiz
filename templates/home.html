@@ -197,7 +197,6 @@
                                 </div>
                             </a>
                         </div>
-                        {% if user.is_superuser %}
                         <!-- New Usage Analytics Overview Button -->
                         <div class="col-md-4">
                             <a href="{% url 'usage_analytics:usage_overview' %}" class="card border-0 shadow-sm bg-primary text-white text-decoration-none h-100">
@@ -247,7 +246,6 @@
                             </a>
                         </div>
                         
-                        {% endif %}
                         <!-- New Subscription Management Button -->
                         <div class="col-md-4">
                             <a href="{% url 'subscription:subscription_management' %}" class="card border-0 shadow-sm bg-warning text-white text-decoration-none h-100">
