@@ -1040,24 +1040,14 @@ def assign_subscription(request):
         plan = get_object_or_404(SubscriptionPlan, id=plan_id)
         
         # Check if business already has an active subscription
-        try:
-            current_subscription = business.active_subscription()
+       
+        current_subscription = business.active_subscription()
 
-            if current_subscription:
-                messages.info(request, f'Business {business.businessName} already has an active subscription.')
-                return redirect('admin_dashboard:businesses')
+        if current_subscription:
+            messages.info(request, f'Business {business.businessName} already has an active subscription.')
+            return redirect('admin_dashboard:businesses')
 
-            
-            # If there's an active subscription, cancel it first
-            current_subscription.status = 'cancelled'
-            current_subscription.is_active = False
-            current_subscription.end_date = timezone.now()
-            current_subscription.save()
-            
-            messages.info(request, f'Previous subscription for {business.businessName} has been cancelled.')
-        except BusinessSubscription.DoesNotExist:
-            pass
-        
+
         # Create new subscription
         start_date = timezone.now()
         

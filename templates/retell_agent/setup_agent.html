@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Setup Retell Agent{% endblock %}
+{% block title %}Setup AI Voice Agent{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -8,7 +8,7 @@
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Setup Retell AI Agent</h3>
+                    <h3 class="mb-0">Setup AI Voice Agent</h3>
                     <a href="{% url 'list_retell_agents' %}" class="btn btn-outline-primary btn-sm">View All Agents</a>
                 </div>
                 <div class="card-body">
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         voiceSelect.add(loadingOption);
         
         // Fetch voices from the API
-        fetch('/retell_agent/list-voices/')
+        fetch('/voice_agent/list-voices/')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
