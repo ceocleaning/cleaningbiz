@@ -61,22 +61,26 @@
 <div class="row g-4">
     <!-- Business Information -->
     <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0">Business Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar-placeholder bg-primary-subtle text-primary rounded-circle me-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0 rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 20px;">
                         {{ business.businessName|slice:":1" }}
                     </div>
-                    <div>
-                        <h6 class="mb-0">{{ business.businessName }}</h6>
-                        <p class="text-muted mb-0">
+                    <div class="ms-3">
+                        <h5 class="mb-0">Business Profile</h5>
+                        <p class="text-muted small mb-0">Created {{ business.createdAt|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="row g-0 mb-3 pb-2 border-bottom">
+                        <div class="col-4 text-muted">Status</div>
+                        <div class="col-8">
                             {% if business.isApproved %}
                             <span class="badge bg-success-subtle text-success">Approved</span>
                             {% else %}
-                            <span class="badge bg-warning-subtle text-warning">Pending Approval</span>
+                            <span class="badge bg-warning-subtle text-warning">Pending</span>
                             {% endif %}
                             
                             {% if business.isActive %}
@@ -84,54 +88,47 @@
                             {% else %}
                             <span class="badge bg-danger-subtle text-danger">Inactive</span>
                             {% endif %}
-                        </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-0 mb-3">
+                        <div class="col-4 text-muted">Phone</div>
+                        <div class="col-8">{{ business.phone|default:"Not provided" }}</div>
+                    </div>
+                    
+                    <div class="row g-0 mb-3">
+                        <div class="col-4 text-muted">Address</div>
+                        <div class="col-8">{{ business.address|default:"Not provided" }}</div>
+                    </div>
+                    
+                    <div class="row g-0 mb-3">
+                        <div class="col-4 text-muted">Owner</div>
+                        <div class="col-8">{{ business.user.get_full_name|default:business.user.username }}</div>
+                    </div>
+                    
+                    <div class="row g-0 mb-3">
+                        <div class="col-4 text-muted">Updated</div>
+                        <div class="col-8">{{ business.updatedAt|date:"M d, Y" }}</div>
                     </div>
                 </div>
                 
-                <div class="mb-3">
-                    <h6 class="text-muted mb-2">Contact Information</h6>
-                    <div class="mb-2">
-                        <i class="fas fa-phone text-muted me-2"></i> {{ business.phone|default:"Not provided" }}
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <h6 class="text-muted mb-2">Address</h6>
-                    <address class="mb-0">
-                        {{ business.address|default:"Not provided" }}
-                    </address>
-                </div>
-                
-                <div class="mb-3">
-                    <h6 class="text-muted mb-2">Account Details</h6>
-                    <div class="mb-2">
-                        <span class="text-muted">Owner:</span> 
-                        {{ business.user.get_full_name|default:business.user.username }}
-                    </div>
-                    <div class="mb-2">
-                        <span class="text-muted">Created:</span> 
-                        {{ business.createdAt|date:"F j, Y" }}
-                    </div>
-                    <div class="mb-2">
-                        <span class="text-muted">Last Updated:</span> 
-                        {{ business.updatedAt|date:"F j, Y" }}
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <h6 class="text-muted mb-2">Voice Agent Settings</h6>
-                    <div class="mb-2">
-                        <span class="text-muted">Use Call:</span> 
+                <h6 class="mb-3 border-bottom pb-2 d-flex align-items-center">
+                    <i class="fas fa-microphone-alt me-2 text-primary"></i>
+                    Voice Agent Settings
+                </h6>
+                <div class="row g-0 mb-3">
+                    <div class="col-4 text-muted">Use Call</div>
+                    <div class="col-8">
                         {% if business.useCall %}
                         <span class="badge bg-success-subtle text-success">Enabled</span>
                         {% else %}
                         <span class="badge bg-danger-subtle text-danger">Disabled</span>
                         {% endif %}
                     </div>
-                    <div class="mb-2">
-                        <span class="text-muted">Time to Wait:</span> 
-                        {{ business.timeToWait }} seconds
-                    </div>
+                </div>
+                <div class="row g-0">
+                    <div class="col-4 text-muted">Wait Time</div>
+                    <div class="col-8">{{ business.timeToWait }} seconds</div>
                 </div>
             </div>
         </div>
@@ -142,73 +139,72 @@
         {% if business.isApproved and business.isActive %}
         <!-- Subscription Information -->
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Subscription Information</h5>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignSubscriptionModal">
+                    <i class="fas fa-plus-circle me-1"></i> Assign Subscription Plan
+                </button>
             </div>
             <div class="card-body">
-                {% if business.active_subscription %}
-                <div class="d-flex align-items-center mb-3">
-                    <div class="subscription-badge bg-success-subtle text-success rounded-circle me-3">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div>
-                        <h6 class="mb-0">{{ business.active_subscription.plan.name }}</h6>
-                        <p class="text-muted mb-0">
-                            <span class="badge bg-success-subtle text-success">{{ business.active_subscription.status|title }}</span>
-                            {% if business.active_subscription.plan.billing_cycle == 'monthly' %}
-                            <span class="badge bg-info-subtle text-info">Monthly</span>
-                            {% else %}
-                            <span class="badge bg-info-subtle text-info">Yearly</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">Price:</span> 
-                            ${{ business.active_subscription.plan.price }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">Start Date:</span> 
-                            {{ business.active_subscription.start_date|date:"M d, Y" }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">Next Billing:</span> 
-                            {{ business.active_subscription.next_billing_date|date:"M d, Y" }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">Voice Minutes:</span> 
-                            {{ business.active_subscription.plan.voice_minutes }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">SMS Messages:</span> 
-                            {{ business.active_subscription.plan.sms_messages }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-2">
-                            <span class="text-muted">AI Agents:</span> 
-                            {{ business.active_subscription.plan.agents }}
-                        </div>
-                    </div>
+                {% if business.all_subscriptions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Billing Cycle</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subscription in business.all_subscriptions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ subscription.plan.name }}</strong>
+                                    {% if subscription == business.active_subscription %}
+                                    <span class="badge bg-primary ms-1">Primary</span>
+                                    {% endif %}
+                                    {% if subscription.status == 'trialing' %}
+                                    <span class="badge bg-warning ms-1">Trial</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-{{ subscription.status|yesno:'success,danger' }}-subtle text-{{ subscription.status|yesno:'success,danger' }}">{{ subscription.status|title }}</span></td>
+                                <td>{{ subscription.plan.billing_cycle|title }}</td>
+                                <td>{{ subscription.start_date|date:"M d, Y" }}</td>
+                                <td>{{ subscription.end_date|date:"M d, Y"|default:"N/A" }}</td>
+                                <td>${{ subscription.plan.price }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger cancel-plan-btn" 
+                                            data-id="{{ subscription.id }}"
+                                            data-name="{{ subscription.plan.name }}"
+                                            data-business="{{ business.businessName }}"
+                                            data-status="{{ subscription.status }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#cancelPlanModal">
+                                        <i class="fas fa-ban me-1"></i> Cancel
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary change-plan-btn"
+                                            data-id="{{ subscription.id }}"
+                                            data-name="{{ subscription.plan.name }}"
+                                            data-business="{{ business.businessName }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#changePlanModal">
+                                        <i class="fas fa-exchange-alt me-1"></i> Change
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 {% else %}
                 <div class="alert alert-warning mb-0">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    This business does not have an active subscription.
+                    This business does not have any active subscriptions.
                 </div>
                 {% endif %}
             </div>
@@ -315,59 +311,72 @@
         </div>
         
         <!-- Business Pricing Settings -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Business Pricing Settings</h5>
-            </div>
-            <div class="card-body">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0 rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 16px;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="mb-0">Pricing Configuration</h5>
+                        <p class="text-muted small mb-0">Service rates and multipliers</p>
+                    </div>
+                </div>
+                
                 {% if business_settings %}
                 <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-muted mb-3">Base Pricing</h6>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="border-bottom pb-2 mb-3 d-flex align-items-center">
+                            <i class="fas fa-tag me-2 text-primary"></i>
+                            Base Pricing
+                        </h6>
                         <div class="table-responsive">
-                            <table class="table table-sm">
+                            <table class="table table-sm table-borderless">
                                 <tbody>
                                     <tr>
-                                        <td>Bedroom Price</td>
-                                        <td class="text-end">${{ business_settings.bedroomPrice|floatformat:2 }}</td>
+                                        <td class="text-muted">Bedroom</td>
+                                        <td class="text-end fw-medium">${{ business_settings.bedroomPrice|floatformat:2 }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Bathroom Price</td>
-                                        <td class="text-end">${{ business_settings.bathroomPrice|floatformat:2 }}</td>
+                                        <td class="text-muted">Bathroom</td>
+                                        <td class="text-end fw-medium">${{ business_settings.bathroomPrice|floatformat:2 }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Deposit Fee</td>
-                                        <td class="text-end">${{ business_settings.depositFee|floatformat:2 }}</td>
+                                        <td class="text-muted">Deposit Fee</td>
+                                        <td class="text-end fw-medium">${{ business_settings.depositFee|floatformat:2 }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Tax Percentage</td>
-                                        <td class="text-end">{{ business_settings.taxPercent|floatformat:2 }}%</td>
+                                        <td class="text-muted">Tax Rate</td>
+                                        <td class="text-end fw-medium">{{ business_settings.taxPercent|floatformat:2 }}%</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     
-                    <div class="col-md-6">
-                        <h6 class="text-muted mb-3">Square Feet Multipliers</h6>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="border-bottom pb-2 mb-3 d-flex align-items-center">
+                            <i class="fas fa-calculator me-2 text-primary"></i>
+                            Square Feet Multipliers
+                        </h6>
                         <div class="table-responsive">
-                            <table class="table table-sm">
+                            <table class="table table-sm table-borderless">
                                 <tbody>
                                     <tr>
-                                        <td>Standard Cleaning</td>
-                                        <td class="text-end">{{ business_settings.sqftMultiplierStandard|floatformat:2 }}</td>
+                                        <td class="text-muted">Standard Cleaning</td>
+                                        <td class="text-end fw-medium">{{ business_settings.sqftMultiplierStandard|floatformat:2 }}x</td>
                                     </tr>
                                     <tr>
-                                        <td>Deep Cleaning</td>
-                                        <td class="text-end">{{ business_settings.sqftMultiplierDeep|floatformat:2 }}</td>
+                                        <td class="text-muted">Deep Cleaning</td>
+                                        <td class="text-end fw-medium">{{ business_settings.sqftMultiplierDeep|floatformat:2 }}x</td>
                                     </tr>
                                     <tr>
-                                        <td>Move In/Out</td>
-                                        <td class="text-end">{{ business_settings.sqftMultiplierMoveinout|floatformat:2 }}</td>
+                                        <td class="text-muted">Move In/Out</td>
+                                        <td class="text-end fw-medium">{{ business_settings.sqftMultiplierMoveinout|floatformat:2 }}x</td>
                                     </tr>
                                     <tr>
-                                        <td>Airbnb</td>
-                                        <td class="text-end">{{ business_settings.sqftMultiplierAirbnb|floatformat:2 }}</td>
+                                        <td class="text-muted">Airbnb</td>
+                                        <td class="text-end fw-medium">{{ business_settings.sqftMultiplierAirbnb|floatformat:2 }}x</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -375,67 +384,79 @@
                     </div>
                 </div>
                 
-                <div class="row mt-4">
+                <div class="row">
                     <div class="col-12">
-                        <h6 class="text-muted mb-3">Add-on Prices</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Add-on</th>
-                                        <th class="text-end">Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Dishes</td>
-                                        <td class="text-end">${{ business_settings.addonPriceDishes|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Laundry</td>
-                                        <td class="text-end">${{ business_settings.addonPriceLaundry|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Window</td>
-                                        <td class="text-end">${{ business_settings.addonPriceWindow|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Pets</td>
-                                        <td class="text-end">${{ business_settings.addonPricePets|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Fridge</td>
-                                        <td class="text-end">${{ business_settings.addonPriceFridge|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Oven</td>
-                                        <td class="text-end">${{ business_settings.addonPriceOven|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Baseboard</td>
-                                        <td class="text-end">${{ business_settings.addonPriceBaseboard|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Blinds</td>
-                                        <td class="text-end">${{ business_settings.addonPriceBlinds|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Green</td>
-                                        <td class="text-end">${{ business_settings.addonPriceGreen|floatformat:2 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Cabinets</td>
-                                        <td class="text-end">${{ business_settings.addonPriceCabinets|floatformat:2 }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <h6 class="border-bottom pb-2 mb-3 d-flex align-items-center">
+                            <i class="fas fa-plus-circle me-2 text-primary"></i>
+                            Add-on Services
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted">Dishes</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceDishes|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Laundry</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceLaundry|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Window</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceWindow|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Pets</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPricePets|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Fridge</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceFridge|floatformat:2 }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted">Oven</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceOven|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Baseboard</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceBaseboard|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Blinds</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceBlinds|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Green</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceGreen|floatformat:2 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Cabinets</td>
+                                                <td class="text-end fw-medium">${{ business_settings.addonPriceCabinets|floatformat:2 }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                <div class="alert alert-info mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No pricing settings found for this business. Pricing settings will be configured when the business is set up.
+                <div class="alert alert-info mb-0 d-flex align-items-center">
+                    <i class="fas fa-info-circle me-3 fs-4"></i>
+                    <div>
+                        <p class="mb-0">No pricing settings found for this business.</p>
+                        <p class="mb-0 small">Pricing settings will be configured when the business is set up.</p>
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -579,6 +600,107 @@
     </div>
 </div>
 
+<!-- Assign Subscription Modal -->
+<div class="modal fade" id="assignSubscriptionModal" tabindex="-1" aria-labelledby="assignSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignSubscriptionModalLabel">Assign Subscription Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:assign_subscription' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="assign_subscription_business_id" name="business_id" value="{{ business.id }}">
+                <div class="modal-body">
+                    <p>Assign a subscription plan to <strong>{{ business.businessName }}</strong>:</p>
+                    <div class="form-group mb-3">
+                        <label for="assign_subscription_plan" class="form-label">Subscription Plan</label>
+                        <select class="form-select" id="assign_subscription_plan" name="subscription_plan">
+                            {% for plan in subscription_plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Subscription Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Plan Modal -->
+<div class="modal fade" id="cancelPlanModal" tabindex="-1" aria-labelledby="cancelPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelPlanModalLabel">Cancel Subscription Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:admin_cancel_plan' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="cancel_subscription_id" name="subscription_id">
+                <div class="modal-body">
+                    <p>You are about to cancel the following subscription:</p>
+                    <div class="mb-3 p-3 border rounded bg-light">
+                        <p class="mb-1"><strong>Plan:</strong> <span id="cancel_plan_name"></span> <span id="cancel_plan_badge" class="badge bg-warning ms-1 d-none">Trial</span></p>
+                        <p class="mb-1"><strong>Business:</strong> <span id="cancel_plan_business_name"></span></p>
+                    </div>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will immediately terminate the subscription. The business will lose access to all premium features associated with this plan right away.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Terminate Subscription</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Plan Modal -->
+<div class="modal fade" id="changePlanModal" tabindex="-1" aria-labelledby="changePlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePlanModalLabel">Change Subscription Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'admin_dashboard:admin_change_plan' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="change_subscription_id" name="subscription_id">
+                <div class="modal-body">
+                    <p>You are about to change the following subscription:</p>
+                    <div class="mb-3 p-3 border rounded bg-light">
+                        <p class="mb-1"><strong>Current Plan:</strong> <span id="change_current_plan"></span></p>
+                        <p class="mb-1"><strong>Business:</strong> <span id="change_business_name"></span></p>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="new_plan_id" class="form-label">New Subscription Plan</label>
+                        <select class="form-select" id="new_plan_id" name="new_plan_id">
+                            {% for plan in subscription_plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }} ({{ plan.billing_cycle|title }}) - ${{ plan.price }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will immediately end the current subscription and create a new one with the selected plan.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Subscription Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_css %}
@@ -667,6 +789,35 @@
             document.getElementById('edit_isActive').checked = isActive;
             document.getElementById('edit_useCall').checked = useCall;
             document.getElementById('edit_timeToWait').value = timeToWait;
+        });
+        
+        // Cancel plan modal
+        document.querySelector('.cancel-plan-btn').addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const business = this.getAttribute('data-business');
+            const status = this.getAttribute('data-status');
+            
+            document.getElementById('cancel_subscription_id').value = id;
+            document.getElementById('cancel_plan_business_name').innerText = business;
+            document.getElementById('cancel_plan_name').innerText = name;
+            
+            if (status === 'trialing') {
+                document.getElementById('cancel_plan_badge').classList.remove('d-none');
+            } else {
+                document.getElementById('cancel_plan_badge').classList.add('d-none');
+            }
+        });
+        
+        // Change plan modal
+        document.querySelector('.change-plan-btn').addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const business = this.getAttribute('data-business');
+            
+            document.getElementById('change_subscription_id').value = id;
+            document.getElementById('change_current_plan').innerText = name;
+            document.getElementById('change_business_name').innerText = business;
         });
     });
 </script>

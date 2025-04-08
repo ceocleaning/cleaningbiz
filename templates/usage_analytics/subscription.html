@@ -297,7 +297,6 @@
                                 </li>
                             </ul>
                             <div class="d-grid mt-auto">
-                                {% if subscription and subscription.status != 'cancelled' %}
                                     {% if subscription.plan.id == plan.id %}
                                         {% if subscription.status != 'cancelled' %}
                                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" data-plan-id="{{ plan.id }}" data-plan-name="{{ plan.name }}">
@@ -308,7 +307,7 @@
                                         {% endif %}
                                     {% elif next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
                                         <button type="button" class="btn btn-secondary" disabled>Future Plan</button>
-                                    {% else %}
+                                    {% elif subscription.is_active %}
                                         <form method="post" class="change-plan-form">
                                             {% csrf_token %}
                                             <input type="hidden" name="new_plan_id" value="{{ plan.id }}">
@@ -326,10 +325,11 @@
                                             </div>
                                             <div class="plan-message" style="display: none;"></div>
                                         </form>
-                                    {% endif %}
-                                {% else %}
+                                        {% else %}
                                     <a href="{% url 'subscription:select_plan' plan.id %}" class="btn {% if plan.name == 'Professional Plan' %}btn-primary{% else %}btn-outline-primary{% endif %}">Select Plan</a>
-                                {% endif %}
+                                    
+                                    {% endif %}
+                               
                             </div>
                         </div>
                     </div>
@@ -350,55 +350,57 @@
                         <div class="card-body d-flex flex-column">
                             <p class="price-tag text-center mb-1">
                                 <span class="currency">$</span>
-                                <span class="amount-monthly">{{ plan.price|floatformat:2 }}</span>
+                                <span class="amount-monthly">{{ plan.get_monthly_display_price|floatformat:2 }}</span>
                                 <span class="period">/month</span>
                             </p>
                             <p class="text-center text-muted small mb-3">
-                                <span>billed annually</span>
+                                <span>billed annually at ${{ plan.price|floatformat:2 }}</span>
                                 <span class="badge bg-success ms-1">Save 20%</span>
                             </p>
-                            <ul class="list-group list-group-flush mb-4">
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.voice_minutes }} Voice Minutes
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.agents }} AI Agents
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.sms_messages }} SMS Messages
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.leads }} Leads
-                                </li>
-                                {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Basic Analytics
-                                </li>
-                                {% endif %}
-                                {% if plan.features.advanced_analytics %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Advanced Analytics
-                                </li>
-                                {% endif %}
-                                {% if plan.features.custom_voice %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Custom Voice Options
-                                </li>
-                                {% endif %}
-                                {% if plan.features.priority_support %}
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    Priority Support
-                                </li>
-                                {% endif %}
-                            </ul>
+                            <div class="features mb-4">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ plan.get_monthly_display_limits.voice_minutes }} Voice Minutes/month</span>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ plan.agents }} AI Agents</span>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ plan.get_monthly_display_limits.sms_messages }} SMS Messages/month</span>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ plan.get_monthly_display_limits.leads }} Leads/month</span>
+                                    </li>
+                                    {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Basic Analytics
+                                    </li>
+                                    {% endif %}
+                                    {% if plan.features.advanced_analytics %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Advanced Analytics
+                                    </li>
+                                    {% endif %}
+                                    {% if plan.features.custom_voice %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Custom Voice Options
+                                    </li>
+                                    {% endif %}
+                                    {% if plan.features.priority_support %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Priority Support
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                             <div class="d-grid mt-auto">
                                 {% if subscription %}
                                     {% if subscription.plan.id == plan.id %}

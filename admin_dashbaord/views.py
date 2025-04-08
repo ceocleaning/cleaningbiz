@@ -9,9 +9,10 @@ import csv
 import datetime
 from django.core.mail import send_mail
 from django.conf import settings
-
+from django.db import transaction
+from datetime import timedelta
 from accounts.models import ApiCredential, Business, User, BusinessSettings
-from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature
+from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature, BillingHistory
 
 # Helper function to check if user is admin
 def is_admin(user):
@@ -480,12 +481,17 @@ def business_detail(request, business_id):
     
     # Get active subscription
     try:
-        business.active_subscription = BusinessSubscription.objects.filter(
-            business=business, 
-            status='active'
-        ).latest('start_date')
+        business.active_subscription = business.active_subscription()
     except BusinessSubscription.DoesNotExist:
         business.active_subscription = None
+    
+    # Get all active subscriptions (including trial plans)
+    business.all_subscriptions = BusinessSubscription.objects.filter(
+        business=business,
+        is_active=True
+    ).exclude(status='ended').order_by('-start_date')
+
+    print(business.all_subscriptions)
     
     # Get subscription plans for the add subscription form
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
@@ -601,6 +607,10 @@ def approve_business(request):
         business.isApproved = True
         business.isActive = True
         business.save()
+
+        # Create ApiConfig and BusinessSettings
+        ApiCredential.objects.create(business=business)
+        BusinessSettings.objects.create(business=business)
 
         # Send email notification to business owner
         try:
@@ -721,121 +731,22 @@ def export_businesses(request):
 # Subscription Management Views
 @login_required
 @user_passes_test(is_admin)
-def add_subscription(request):
-    if request.method == 'POST':
-        business_id = request.POST.get('business_id')
-        plan_id = request.POST.get('plan')
-        status = request.POST.get('status')
-        start_date = request.POST.get('start_date')
-        
-        business = get_object_or_404(Business, id=business_id)
-        plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-        
-        # Calculate next billing date based on billing cycle
-        start_date_obj = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-        if plan.billing_cycle == 'monthly':
-            next_billing_date = start_date_obj + datetime.timedelta(days=30)
-        else:  # yearly
-            next_billing_date = start_date_obj + datetime.timedelta(days=365)
-        
-        # Cancel any existing active subscriptions
-        BusinessSubscription.objects.filter(business=business, status='active').update(
-            status='cancelled',
-            end_date=timezone.now().date()
-        )
-        
-        # Create new subscription
-        subscription = BusinessSubscription.objects.create(
-            business=business,
-            plan=plan,
-            status=status,
-            start_date=start_date,
-            next_billing_date=next_billing_date
-        )
-        
-        # Send notification if requested
-        if 'send_notification' in request.POST:
-            # TODO: Implement notification sending functionality
-            pass
-        
-        messages.success(request, f'Subscription has been added to "{business.businessName}" successfully.')
-        return redirect('admin_dashboard:business_detail', business_id=business.id)
-    
-    return redirect('admin_dashboard:businesses')
-
-@login_required
-@user_passes_test(is_admin)
-def cancel_subscription(request):
-    if request.method == 'POST':
-        subscription_id = request.POST.get('subscription_id')
-        end_date = request.POST.get('end_date')
-        
-        subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
-        
-        subscription.status = 'cancelled'
-        subscription.end_date = end_date
-        subscription.save()
-        
-        # Send notification if requested
-        if 'send_notification' in request.POST:
-            # TODO: Implement notification sending functionality
-            pass
-        
-        messages.success(request, f'Subscription for "{subscription.business.businessName}" has been cancelled successfully.')
-        return redirect('admin_dashboard:business_detail', business_id=subscription.business.id)
-    
-    return redirect('admin_dashboard:businesses')
-
-@login_required
-@user_passes_test(is_admin)
-def change_subscription(request):
-    if request.method == 'POST':
-        subscription_id = request.POST.get('subscription_id')
-        plan_id = request.POST.get('plan')
-        effective_date = request.POST.get('effective_date')
-        
-        subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
-        new_plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-        
-        # Calculate next billing date based on billing cycle
-        effective_date_obj = datetime.datetime.strptime(effective_date, '%Y-%m-%d').date()
-        if new_plan.billing_cycle == 'monthly':
-            next_billing_date = effective_date_obj + datetime.timedelta(days=30)
-        else:  # yearly
-            next_billing_date = effective_date_obj + datetime.timedelta(days=365)
-        
-        # Update subscription
-        subscription.plan = new_plan
-        subscription.start_date = effective_date
-        subscription.next_billing_date = next_billing_date
-        subscription.save()
-        
-        # Send notification if requested
-        if 'send_notification' in request.POST:
-            # TODO: Implement notification sending functionality
-            pass
-        
-        messages.success(request, f'Subscription for "{subscription.business.businessName}" has been changed to "{new_plan.name}" successfully.')
-        return redirect('admin_dashboard:business_detail', business_id=subscription.business.id)
-    
-    return redirect('admin_dashboard:businesses')
-
-# Subscriptions View
-@login_required
-@user_passes_test(is_admin)
 def subscriptions(request):
     """View to display all business subscriptions"""
-    from subscription.models import BusinessSubscription
+    from subscription.models import BusinessSubscription, SubscriptionPlan
     
-    subscriptions = BusinessSubscription.objects.all().order_by('-start_date')
+    all_subscriptions = BusinessSubscription.objects.all().order_by('-start_date')
+    subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
     
     # Pagination
-    paginator = Paginator(subscriptions, 10)
+    paginator = Paginator(all_subscriptions, 10)
     page_number = request.GET.get('page', 1)
     subscriptions = paginator.get_page(page_number)
     
     context = {
         'subscriptions': subscriptions,
+        'subscription_plans': subscription_plans,
+        'today': timezone.now(),
     }
     
     return render(request, 'admin_dashboard/subscriptions.html', context)
@@ -1116,3 +1027,168 @@ def activity_log_detail(request, log_id):
     }
     
     return render(request, 'admin_dashboard/activity_log_detail.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def assign_subscription(request):
+    """Assign a subscription plan to a business without requiring payment (admin only)."""
+    if request.method == 'POST':
+        business_id = request.POST.get('business_id')
+        plan_id = request.POST.get('subscription_plan')
+        
+        business = get_object_or_404(Business, id=business_id)
+        plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+        
+        # Check if business already has an active subscription
+        try:
+            current_subscription = business.active_subscription()
+
+            if current_subscription:
+                messages.info(request, f'Business {business.businessName} already has an active subscription.')
+                return redirect('admin_dashboard:businesses')
+
+            
+            # If there's an active subscription, cancel it first
+            current_subscription.status = 'cancelled'
+            current_subscription.is_active = False
+            current_subscription.end_date = timezone.now()
+            current_subscription.save()
+            
+            messages.info(request, f'Previous subscription for {business.businessName} has been cancelled.')
+        except BusinessSubscription.DoesNotExist:
+            pass
+        
+        # Create new subscription
+        start_date = timezone.now()
+        
+        # Set end date based on billing cycle
+        if plan.billing_cycle == 'monthly':
+            end_date = start_date + timezone.timedelta(days=30)
+        else:  # yearly
+            end_date = start_date + timezone.timedelta(days=365)
+        
+        # Create the subscription
+        subscription = BusinessSubscription.objects.create(
+            business=business,
+            plan=plan,
+            status='active',
+            start_date=start_date,
+            end_date=end_date,
+            next_billing_date=end_date,
+            is_active=True
+        )
+        
+        # Create a billing record for this assignment
+        BillingHistory.objects.create(
+            business=business,
+            subscription=subscription,
+            amount=plan.price,
+            status='paid',
+            billing_date=timezone.now(),
+            details={
+                'payment_method': 'admin_assignment',
+                'payment_date': timezone.now().isoformat(),
+                'payment_status': 'COMPLETED',
+                'assigned_by_admin': True
+            }
+        )
+        
+        messages.success(
+            request, 
+            f'Subscription plan "{plan.name}" has been assigned to {business.businessName} successfully.'
+        )
+        
+        return redirect('admin_dashboard:business_detail', business_id=business.id)
+    
+    # If not POST, redirect to businesses list
+    return redirect('admin_dashboard:businesses')
+
+@login_required
+@user_passes_test(is_admin)
+def admin_cancel_plan(request):
+    """Immediately cancel a subscription plan for a business (admin only)."""
+
+    redirect_url = request.META.get('HTTP_REFERER', 'admin_dashboard:businesses')
+    
+    if request.method == 'POST':
+        subscription_id = request.POST.get('subscription_id')
+        if not subscription_id:
+            messages.error(request, 'No subscription specified for cancellation.')
+            return redirect(redirect_url)
+        
+        subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
+        business = subscription.business
+        
+        # Immediately terminate the subscription
+        subscription.status = 'ended'
+        subscription.is_active = False
+        subscription.end_date = timezone.now()
+        subscription.save()
+        
+        messages.success(request, f'Subscription for "{business.businessName}" has been terminated immediately.')
+        return redirect(redirect_url)
+    
+    return redirect('admin_dashboard:businesses')
+
+@login_required
+@user_passes_test(is_admin)
+def admin_change_plan(request):
+    """Immediately change a business's subscription plan (admin only)."""
+    redirect_url = request.META.get('HTTP_REFERER', 'admin_dashboard:businesses')
+    
+    if request.method == 'POST':
+        subscription_id = request.POST.get('subscription_id')
+        new_plan_id = request.POST.get('new_plan_id')
+
+        if not subscription_id or not new_plan_id:
+            messages.error(request, 'No subscription or new plan specified for change.')
+            return redirect(redirect_url)
+        
+        # Get the current subscription and new plan
+        subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
+        new_plan = get_object_or_404(SubscriptionPlan, id=new_plan_id)
+        business = subscription.business
+
+        subscriptions = BusinessSubscription.objects.filter(business=business, is_active=True)
+        
+        with transaction.atomic():
+            for subcription in subscriptions:
+                # End the current subscription
+                subcription.status = 'ended'
+                subcription.is_active = False
+                subcription.end_date = timezone.now()
+                subcription.save()
+            
+            # Create a new subscription with the new plan
+            end_date = timezone.now() + timedelta(days=30 if new_plan.billing_cycle == 'monthly' else 365)
+            
+            new_subscription = BusinessSubscription.objects.create(
+                business=business,
+                plan=new_plan,
+                status='active',
+                start_date=timezone.now(),
+                end_date=end_date,
+                next_billing_date=end_date,
+                is_active=True
+            )
+            
+            # Create a billing record for this change
+            BillingHistory.objects.create(
+                business=business,
+                subscription=new_subscription,
+                amount=new_plan.price,
+                status='paid',
+                billing_date=timezone.now(),
+                details={
+                    'payment_method': 'admin_change',
+                    'payment_date': timezone.now().isoformat(),
+                    'payment_status': 'COMPLETED',
+                    'changed_from_plan': subscription.plan.name,
+                    'changed_by_admin': True
+                }
+            )
+        
+        messages.success(request, f'Subscription for "{business.businessName}" has been changed from {subscription.plan.name} to {new_plan.name}.')
+        return redirect(redirect_url)
+    
+    return redirect(redirect_url)

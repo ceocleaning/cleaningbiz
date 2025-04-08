@@ -80,8 +80,13 @@
                         </td>
                         <td>{{ subscription.start_date|date:"M d, Y" }}</td>
                         <td>
-                            {% if subscription.next_billing_date and subscription.status == 'active' %}
-                                {{ subscription.next_billing_date|date:"M d, Y" }}
+                            {% if subscription.status == 'active' %}
+                                {% if subscription.next_billing_date %}
+                                    {{ subscription.next_billing_date|date:"M d, Y" }}
+                                {% elif subscription.end_date %}
+                                    <span class="text-muted">{{ subscription.end_date|date:"M d, Y" }}</span>
+                                
+                                {% endif %}
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
@@ -92,7 +97,7 @@
                                 <a href="{% url 'admin_dashboard:business_detail' subscription.business.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                {% if subscription.status == 'active' %}
+                                {% if subscription.status == 'active' or subscription.status == 'trialing' or subscription.status == 'past_due' %}
                                 <button type="button" class="btn btn-sm btn-outline-danger cancel-subscription-btn" 
                                         data-id="{{ subscription.id }}"
                                         data-business="{{ subscription.business.businessName }}"
@@ -195,27 +200,24 @@
                 <h5 class="modal-title" id="cancelSubscriptionModalLabel">Cancel Subscription</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_dashboard:cancel_subscription' %}" method="post">
+            <form action="{% url 'admin_dashboard:admin_cancel_plan' %}" method="post">
                 {% csrf_token %}
                 <input type="hidden" id="cancel_subscription_id" name="subscription_id">
                 <div class="modal-body">
-                    <p>Are you sure you want to cancel the subscription for <strong id="cancel_business_name"></strong> to the <strong id="cancel_plan_name"></strong> plan?</p>
-                    
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Cancelling a subscription will immediately end access to premium features.
+                    <p>You are about to cancel the following subscription:</p>
+                    <div class="mb-3 p-3 border rounded bg-light">
+                        <p class="mb-1"><strong>Plan:</strong> <span id="cancel_plan_name"></span></p>
+                        <p class="mb-1"><strong>Business:</strong> <span id="cancel_business_name"></span></p>
                     </div>
                     
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="send_cancellation_email" name="send_cancellation_email" checked>
-                        <label class="form-check-label" for="send_cancellation_email">
-                            Send cancellation email notification
-                        </label>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will immediately terminate the subscription. The business will lose access to all premium features right away.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Terminate Subscription</button>
                 </div>
             </form>
         </div>
@@ -230,15 +232,19 @@
                 <h5 class="modal-title" id="changeSubscriptionModalLabel">Change Subscription Plan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_dashboard:change_subscription' %}" method="post">
+            <form action="{% url 'admin_dashboard:admin_change_plan' %}" method="post">
                 {% csrf_token %}
                 <input type="hidden" id="change_subscription_id" name="subscription_id">
                 <div class="modal-body">
-                    <p>Change the subscription plan for <strong id="change_business_name"></strong>:</p>
+                    <p>You are about to change the following subscription:</p>
+                    <div class="mb-3 p-3 border rounded bg-light">
+                        <p class="mb-1"><strong>Current Plan:</strong> <span id="change_current_plan"></span></p>
+                        <p class="mb-1"><strong>Business:</strong> <span id="change_business_name"></span></p>
+                    </div>
                     
                     <div class="mb-3">
-                        <label for="new_plan" class="form-label">New Subscription Plan</label>
-                        <select class="form-select" id="new_plan" name="plan" required>
+                        <label for="new_plan_id" class="form-label">New Subscription Plan</label>
+                        <select class="form-select" id="new_plan_id" name="new_plan_id" required>
                             <option value="">Select a plan</option>
                             {% for plan in subscription_plans %}
                             <option value="{{ plan.id }}">{{ plan.name }} - ${{ plan.price|floatformat:2 }}/{{ plan.get_billing_cycle_display }}</option>
@@ -246,16 +252,14 @@
                         </select>
                     </div>
                     
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="send_change_email" name="send_change_email" checked>
-                        <label class="form-check-label" for="send_change_email">
-                            Send plan change email notification
-                        </label>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will immediately end the current subscription and create a new one with the selected plan.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Change Plan</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Subscription</button>
                 </div>
             </form>
         </div>
@@ -309,9 +313,11 @@
             btn.addEventListener('click', function() {
                 const id = this.dataset.id;
                 const business = this.dataset.business;
+                const plan = this.dataset.plan;
                 
                 document.getElementById('change_subscription_id').value = id;
                 document.getElementById('change_business_name').textContent = business;
+                document.getElementById('change_current_plan').textContent = plan;
             });
         });
     });

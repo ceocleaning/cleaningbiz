@@ -159,6 +159,7 @@
                                     <th>Invoice #</th>
                                     <th>Date</th>
                                     <th>Plan</th>
+                                    <th>Payment Method</th>
                                     <th>Payment ID</th>
                                     <th>Billing Period</th>
                                     <th>Amount</th>
@@ -172,6 +173,29 @@
                                     <td><a href="{{ invoice.invoice_url }}" class="text-primary">{{ invoice.id }}</a></td>
                                     <td>{{ invoice.date|date:"M d, Y" }}</td>
                                     <td>{{ invoice.plan }}</td>
+                                    <td>
+                                        {% if invoice.details.payment_method == 'admin_assignment' %}
+                                            <span class="badge bg-purple-light text-purple">
+                                                <i class="fas fa-user-shield me-1"></i> Assigned by Admin
+                                            </span>
+                                        {% elif invoice.details.payment_method == 'admin_change' %}
+                                            <span class="badge bg-info-light text-info">
+                                                <i class="fas fa-exchange-alt me-1"></i> Changed by Admin
+                                            </span>
+                                        {% elif invoice.details.payment_method == 'square' %}
+                                            <span>
+                                                <i class="fas fa-credit-card me-1"></i> Square Payment
+                                            </span>
+                                        {% elif invoice.details.payment_method == 'stripe' %}
+                                            <span>
+                                                <i class="fab fa-stripe me-1"></i> Stripe Payment
+                                            </span>
+                                        {% else %}
+                                            <span>
+                                                <i class="fas fa-money-bill-wave me-1"></i> {{ invoice.details.payment_method|default:"Standard Payment" }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <span class="text-truncate d-inline-block" style="max-width: 120px;" title="{{ invoice.square_payment_id }}">
                                             {{ invoice.square_payment_id|default:"-" }}
@@ -225,6 +249,7 @@
                                     <td><a href="#" class="text-primary">INV-2023-004</a></td>
                                     <td>Mar 15, 2023</td>
                                     <td>Premium Plan</td>
+                                    <td>Visa</td>
                                     <td>pay_123456789</td>
                                     <td>Mar 15 - Apr 14, 2023</td>
                                     <td>$99.00</td>
@@ -249,6 +274,7 @@
                                     <td><a href="#" class="text-primary">INV-2023-003</a></td>
                                     <td>Feb 15, 2023</td>
                                     <td>Premium Plan</td>
+                                    <td>Mastercard</td>
                                     <td>pay_987654321</td>
                                     <td>Feb 15 - Mar 14, 2023</td>
                                     <td>$99.00</td>

@@ -34,6 +34,37 @@ class SubscriptionPlan(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.billing_cycle})"
+    
+    def get_monthly_display_price(self):
+        """Get the monthly display price for yearly plans with 20% discount applied."""
+        if self.billing_cycle == 'yearly' or self.billing_cycle == 'Yearly':
+            print("Returning discounted price")
+            print("Price:", self.price)
+            # Calculate monthly price (yearly price / 12)
+            monthly_price = float(self.price) / 12
+            # Apply 20% discount
+            discounted_price = monthly_price * 0.8
+            print("Discounted Price:", discounted_price)
+            return round(discounted_price, 2)
+        
+        print("Returning original price")
+        return float(self.price)
+    
+    def get_monthly_display_limits(self):
+        """Get the monthly limits for yearly plans (yearly limits / 12)."""
+        if self.billing_cycle == 'yearly' or self.billing_cycle == 'Yearly':
+            return {
+                'voice_minutes': round(self.voice_minutes / 12),
+                'sms_messages': round(self.sms_messages / 12),
+                'agents': self.agents,  # Agents don't change
+                'leads': round(self.leads / 12)
+            }
+        return {
+            'voice_minutes': self.voice_minutes,
+            'sms_messages': self.sms_messages,
+            'agents': self.agents,
+            'leads': self.leads
+        }
 
 
 class Feature(models.Model):

@@ -8,6 +8,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from datetime import datetime, timedelta
+from django.db import models
 import json
 import uuid
 from square.client import Client
@@ -151,10 +152,7 @@ def billing_history(request):
     
     # Get current subscription for next billing info
     try:
-        subscription = BusinessSubscription.objects.get(
-            business=business,
-            is_active=True
-        )
+        subscription = business.active_subscription()
         
         # Check if there's a next plan scheduled
         next_plan_price = subscription.plan.price
@@ -476,7 +474,7 @@ def get_subscription_data(request):
 def select_plan(request, plan_id=None):
     """View for selecting a plan and proceeding to payment."""
     business = request.user.business_set.first()
-    
+
     if plan_id:
         # Get the specific plan
         try:
@@ -495,16 +493,15 @@ def select_plan(request, plan_id=None):
         return redirect('subscription:subscription_management')
     
     # Get current subscription
-    try:
-        subscription = BusinessSubscription.objects.filter(business=business, is_active=True).latest('created_at')
-        
-        # If user already has this plan, redirect to subscription management
-        if subscription.plan.id == plan.id and not subscription.next_plan_id:
-            messages.info(request, "You are already subscribed to this plan.")
-            return redirect('subscription:subscription_management')
+   
+    subscription = business.active_subscription()
+    
+    # If user already has this plan, redirect to subscription management
+    if subscription:
+        messages.info(request, f"You already have an active subscription. with status {subscription.status} ending on {subscription.end_date}")
+        return redirect('subscription:subscription_management')
             
-    except BusinessSubscription.DoesNotExist:
-        subscription = None
+  
     
     # Get card details from Square if available
     card_details = None
@@ -570,10 +567,7 @@ def process_payment(request, plan_id):
         
         # Apply yearly discount (20% off annual price)
         if plan.billing_cycle == 'yearly':
-            # Calculate yearly price (12 months)
-            yearly_price = original_price * 12
-            # Apply 20% discount
-            final_price = yearly_price * 0.8
+            final_price = original_price * 0.8
         
         # Apply coupon if valid
         if coupon_code:

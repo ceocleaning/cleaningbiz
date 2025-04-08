@@ -86,7 +86,14 @@
                         </div>
                         <div class="pricing-amount d-flex align-items-baseline mb-4">
                             <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
-                            <span class="display-4 fw-bold text-primary-color" data-original-price="{{ plan.price }}">{{ plan.price|floatformat:0 }}</span>
+                            <span class="display-4 fw-bold text-primary-color" 
+                            data-original-price="{% if plan.billing_cycle == 'yearly' %}{{ plan.price|floatformat:0 }}{% else %}{{ plan.price|floatformat:0 }}{% endif %}">
+                                {% if plan.billing_cycle == 'yearly' %}
+                                {{ plan.get_monthly_display_price|floatformat:0 }}
+                                {% else %}
+                                {{ plan.price|floatformat:0 }}
+                                {% endif %}
+                            </span>
                             <span class="text-dark-text-secondary ms-2">
                                 {% if plan.billing_cycle == 'monthly' %}/month{% else %}/month, billed annually{% endif %}
                             </span>
@@ -97,13 +104,25 @@
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.voice_minutes }} Voice Minutes/month
+                                        {% else %}
+                                        {{ plan.voice_minutes }} Voice Minutes
+                                        {% endif %}
+                                    </span>
                                 </li>
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.sms_messages }} SMS Messages/month
+                                        {% else %}
+                                        {{ plan.sms_messages }} SMS Messages
+                                        {% endif %}
+                                    </span>
                                 </li>
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
@@ -115,7 +134,13 @@
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.leads }} Leads</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.leads }} Leads/month
+                                        {% else %}
+                                        {{ plan.leads }} Leads
+                                        {% endif %}
+                                    </span>
                                 </li>
                                 
                                 <!-- Dynamic Features -->
@@ -170,16 +195,52 @@
                 <!-- Usage Metrics -->
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">AI Voice Agent</div>
-                    <div class="comparison-cell text-center">{{ starter_plan.voice_minutes }} mins/mo</div>
-                    <div class="comparison-cell text-center highlight">{{ professional_plan.voice_minutes }} mins/mo</div>
-                    <div class="comparison-cell text-center">{{ enterprise_plan.voice_minutes }} mins/mo</div>
+                    <div class="comparison-cell text-center">
+                        {% if starter_plan.billing_cycle == 'yearly' %}
+                        {{ starter_plan.get_monthly_display_limits.voice_minutes }} mins/mo
+                        {% else %}
+                        {{ starter_plan.voice_minutes }} mins/mo
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center highlight">
+                        {% if professional_plan.billing_cycle == 'yearly' %}
+                        {{ professional_plan.get_monthly_display_limits.voice_minutes }} mins/mo
+                        {% else %}
+                        {{ professional_plan.voice_minutes }} mins/mo
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center">
+                        {% if enterprise_plan.billing_cycle == 'yearly' %}
+                        {{ enterprise_plan.get_monthly_display_limits.voice_minutes }} mins/mo
+                        {% else %}
+                        {{ enterprise_plan.voice_minutes }} mins/mo
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">SMS Messages</div>
-                    <div class="comparison-cell text-center">{{ starter_plan.sms_messages }}</div>
-                    <div class="comparison-cell text-center highlight">{{ professional_plan.sms_messages }}</div>
-                    <div class="comparison-cell text-center">{{ enterprise_plan.sms_messages }}</div>
+                    <div class="comparison-cell text-center">
+                        {% if starter_plan.billing_cycle == 'yearly' %}
+                        {{ starter_plan.get_monthly_display_limits.sms_messages }}
+                        {% else %}
+                        {{ starter_plan.sms_messages }}
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center highlight">
+                        {% if professional_plan.billing_cycle == 'yearly' %}
+                        {{ professional_plan.get_monthly_display_limits.sms_messages }}
+                        {% else %}
+                        {{ professional_plan.sms_messages }}
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center">
+                        {% if enterprise_plan.billing_cycle == 'yearly' %}
+                        {{ enterprise_plan.get_monthly_display_limits.sms_messages }}
+                        {% else %}
+                        {{ enterprise_plan.sms_messages }}
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <div class="comparison-row">
@@ -191,9 +252,27 @@
                 
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">Leads</div>
-                    <div class="comparison-cell text-center">{{ starter_plan.leads }}</div>
-                    <div class="comparison-cell text-center highlight">{{ professional_plan.leads }}</div>
-                    <div class="comparison-cell text-center">{{ enterprise_plan.leads }}</div>
+                    <div class="comparison-cell text-center">
+                        {% if starter_plan.billing_cycle == 'yearly' %}
+                        {{ starter_plan.get_monthly_display_limits.leads }}
+                        {% else %}
+                        {{ starter_plan.leads }}
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center highlight">
+                        {% if professional_plan.billing_cycle == 'yearly' %}
+                        {{ professional_plan.get_monthly_display_limits.leads }}
+                        {% else %}
+                        {{ professional_plan.leads }}
+                        {% endif %}
+                    </div>
+                    <div class="comparison-cell text-center">
+                        {% if enterprise_plan.billing_cycle == 'yearly' %}
+                        {{ enterprise_plan.get_monthly_display_limits.leads }}
+                        {% else %}
+                        {{ enterprise_plan.leads }}
+                        {% endif %}
+                    </div>
                 </div>
                 {% for feature in feature_list %}
                 <div class="comparison-row">
@@ -408,7 +487,7 @@
     }
     
     .pricing-toggle input:checked + .pricing-slider {
-        background-color: var(--primary-color);
+        background-color: var(--bs-primary);
     }
     
     .pricing-toggle input:checked + .pricing-slider:before {
@@ -426,7 +505,7 @@
     }
     
     #monthly-label.active, #yearly-label.active {
-        background-color: var(--primary-color);
+        background-color: var(--bs-primary);
         color: white;
     }
     
@@ -568,12 +647,7 @@
                     yearlyLabel.classList.add('active');
                     yearlySavings.style.display = 'inline-block';
                     
-                    // Apply 20% discount to yearly prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
-                        const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
-                        priceElement.textContent = discountedPrice;
-                    });
+                  
                 } else {
                     // Show monthly plans
                     document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
@@ -588,13 +662,6 @@
                     monthlyLabel.classList.add('active');
                     yearlySavings.style.display = 'none';
                     
-                    // Restore original prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = priceElement.getAttribute('data-original-price');
-                        if (originalPrice) {
-                            priceElement.textContent = originalPrice;
-                        }
-                    });
                 }
             });
             
@@ -606,403 +673,6 @@
     });
 </script>
 
-<style>
-    /* Custom Comparison Table Styling */
-    .comparison-table-wrapper {
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        margin-bottom: 3rem;
-    }
-    
-    .comparison-table {
-        width: 100%;
-        display: table;
-        border-collapse: collapse;
-        background-color: var(--dark-surface-2);
-        color: var(--dark-text-primary);
-    }
-    
-    .comparison-row {
-        display: table-row;
-        transition: background-color 0.3s ease;
-    }
-    
-    .comparison-row:not(.header):not(.category-header):hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .comparison-row.header {
-        background-color: var(--dark-surface-3);
-        font-weight: bold;
-    }
-    
-    .comparison-row.category-header {
-        background-color: rgba(0, 0, 0, 0.2);
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-    
-    .comparison-cell {
-        display: table-cell;
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        vertical-align: middle;
-    }
-    
-    .comparison-cell.feature-name {
-        font-weight: 500;
-        color: var(--dark-text-primary);
-    }
-    
-    .comparison-cell.highlight {
-        background-color: rgba(33, 150, 243, 0.05);
-        border-top: 2px solid var(--primary-color);
-        border-bottom: 2px solid var(--primary-color);
-    }
-    
-    .comparison-row:first-child .comparison-cell.highlight {
-        border-top: none;
-    }
-    
-    .comparison-row:last-child .comparison-cell.highlight {
-        border-bottom: none;
-    }
-    
-    .comparison-row.header .comparison-cell.highlight {
-        background-color: var(--primary-color);
-        color: white;
-    }
-    
-    @media (max-width: 991.98px) {
-        .comparison-table-wrapper {
-            overflow-x: auto;
-        }
-        
-        .comparison-table {
-            min-width: 800px;
-        }
-    }
-</style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize toggle functionality
-        const pricingToggle = document.getElementById('pricing-toggle');
-        const monthlyLabel = document.getElementById('monthly-label');
-        const yearlyLabel = document.getElementById('yearly-label');
-        const yearlySavings = document.querySelector('.yearly-savings');
-        
-        // Create variables to track displayed cards
-        const monthlyCards = document.querySelectorAll('[data-plan-type="monthly"]');
-        const yearlyCards = document.querySelectorAll('[data-plan-type="yearly"]');
-        
-        if (pricingToggle) {
-            // Set initial state
-            monthlyLabel.classList.add('active');
-            
-            pricingToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    // Show yearly plans
-                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
-                        card.style.display = 'none';
-                    });
-                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                        card.style.display = 'block';
-                    });
-                
-                // Toggle active class for labels
-                    monthlyLabel.classList.remove('active');
-                    yearlyLabel.classList.add('active');
-                    yearlySavings.style.display = 'inline-block';
-                    
-                    // Apply 20% discount to yearly prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
-                        const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
-                        priceElement.textContent = discountedPrice;
-                    });
-                } else {
-                    // Show monthly plans
-                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
-                        card.style.display = 'block';
-                    });
-                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                        card.style.display = 'none';
-                    });
-                    
-                    // Toggle active class for labels
-                    yearlyLabel.classList.remove('active');
-                    monthlyLabel.classList.add('active');
-                    yearlySavings.style.display = 'none';
-                    
-                    // Restore original prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = priceElement.getAttribute('data-original-price');
-                        if (originalPrice) {
-                            priceElement.textContent = originalPrice;
-                        }
-                    });
-                }
-            });
-            
-            // Trigger initial display setup
-            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                card.style.display = 'none';
-            });
-        }
-    });
-</script>
 {% endblock %}
 
-{% block scripts %}
-<style>
-    /* Custom pricing toggle styling */
-    .pricing-toggle {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 30px;
-    }
-    
-    .pricing-toggle .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-    
-    .pricing-toggle .pricing-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #e0e0e0;
-        transition: .4s;
-        border-radius: 34px;
-    }
-    
-    .pricing-toggle .pricing-slider:before {
-        position: absolute;
-        content: "";
-        height: 22px;
-        width: 22px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-    
-    .pricing-toggle input:checked + .pricing-slider {
-        background-color: var(--bs-primary);
-    }
-    
-    .pricing-toggle input:focus + .pricing-slider {
-        box-shadow: 0 0 1px var(--bs-primary);
-    }
-    
-    .pricing-toggle input:checked + .pricing-slider:before {
-        transform: translateX(26px);
-    }
-    
-    /* Pricing switch container */
-    .pricing-switch-container {
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-    }
-    
-    .pricing-switch-label {
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    #monthly-label.active, #yearly-label.active {
-        background-color: var(--bs-primary);
-        color: white;
-    }
-    
-    /* Custom card styling */
-    .pricing-card {
-        transition: all 0.3s ease;
-        border-radius: 1rem;
-    }
-    
-    .pricing-card:hover {
-        transform: translateY(-10px);
-    }
-    
-    .pricing-card.featured {
-        border: 2px solid var(--bs-primary);
-        z-index: 1;
-    }
-    
-    .rounded-4 {
-        border-radius: 1rem;
-    }
-    
-    /* Accent color for badges and buttons */
-    .bg-accent {
-        background-color: #FF6B35;
-    }
-    
-    .text-accent {
-        color: #FF6B35;
-    }
-    
-    .btn-accent {
-        background-color: #FF6B35;
-        border-color: #FF6B35;
-        color: white;
-    }
-    
-    .btn-accent:hover {
-        background-color: #e55a2a;
-        border-color: #e55a2a;
-        color: white;
-    }
-    
-    .btn-outline-accent {
-        background-color: transparent;
-        border-color: #FF6B35;
-        color: #FF6B35;
-    }
-    
-    .btn-outline-accent:hover {
-        background-color: #FF6B35;
-        color: white;
-    }
-    
-    /* Primary color for text */
-    .text-primary-color {
-        color: #2D5BFF;
-    }
-    
-    /* Feature list styling */
-    .feature-list li {
-        transition: all 0.2s ease;
-    }
-    
-    .feature-list li:hover {
-        transform: translateX(5px);
-    }
-    
-    /* Pricing card equal height and button alignment */
-    .pricing-card .card-body {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-    
-    .pricing-card .feature-list {
-        flex-grow: 1;
-    }
-    
-    .pricing-card .btn {
-        margin-top: auto;
-    }
-    
-    /* Accordion styling */
-    .accordion-button:not(.collapsed) {
-        background-color: rgba(45, 91, 255, 0.05);
-        color: var(--bs-primary);
-        box-shadow: none;
-    }
-    
-    .accordion-button:focus {
-        box-shadow: none;
-        border-color: rgba(45, 91, 255, 0.1);
-    }
-
-    /* Background gradient */
-    .bg-gradient {
-        background: linear-gradient(135deg, #2D5BFF 0%, #1a237e 100%);
-    }
-    
-    /* Opacity classes */
-    .opacity-10 {
-        opacity: 0.1;
-    }
-    
-    .opacity-70 {
-        opacity: 0.7;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize toggle functionality
-        const pricingToggle = document.getElementById('pricing-toggle');
-        const monthlyLabel = document.getElementById('monthly-label');
-        const yearlyLabel = document.getElementById('yearly-label');
-        const yearlySavings = document.querySelector('.yearly-savings');
-        
-        // Create variables to track displayed cards
-        const monthlyCards = document.querySelectorAll('[data-plan-type="monthly"]');
-        const yearlyCards = document.querySelectorAll('[data-plan-type="yearly"]');
-        
-        if (pricingToggle) {
-            // Set initial state
-            monthlyLabel.classList.add('active');
-            
-            pricingToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    // Show yearly plans
-                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
-                        card.style.display = 'none';
-                    });
-                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                        card.style.display = 'block';
-                    });
-                
-                // Toggle active class for labels
-                    monthlyLabel.classList.remove('active');
-                    yearlyLabel.classList.add('active');
-                    yearlySavings.style.display = 'inline-block';
-                    
-                    // Apply 20% discount to yearly prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
-                        const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
-                        priceElement.textContent = discountedPrice;
-                    });
-                } else {
-                    // Show monthly plans
-                    document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
-                        card.style.display = 'block';
-                    });
-                    document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                        card.style.display = 'none';
-                    });
-                    
-                    // Toggle active class for labels
-                    yearlyLabel.classList.remove('active');
-                    monthlyLabel.classList.add('active');
-                    yearlySavings.style.display = 'none';
-                    
-                    // Restore original prices
-                    document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                        const originalPrice = priceElement.getAttribute('data-original-price');
-                        if (originalPrice) {
-                            priceElement.textContent = originalPrice;
-                        }
-                    });
-                }
-            });
-            
-            // Trigger initial display setup
-            document.querySelectorAll('[data-plan-type="yearly"]').forEach(card => {
-                card.style.display = 'none';
-            });
-        }
-    });
-</script>
-{% endblock %}

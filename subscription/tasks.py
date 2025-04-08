@@ -23,20 +23,17 @@ def process_subscription_renewals():
     """
     print("Starting subscription renewal process")
     
-    # Get tomorrow's date and 5 days ago
-    tomorrow = timezone.now() + timedelta(days=1)
-    five_days_ago = timezone.now() - timedelta(days=5)
+    # Get 2 days ago
+    two_days_ago = timezone.now() - timedelta(days=2)
     
     # Find subscriptions that:
     # 1. Are marked as active in the database
     # 2. Have status 'active' or 'past_due'
-    # 3. End date is between 5 days ago and tomorrow
+    # 3. End date is between 2 days ago
     subscriptions_to_renew = BusinessSubscription.objects.filter(
         is_active=True,
-        end_date__lte=tomorrow,
-        end_date__gte=five_days_ago
     ).filter(
-        Q(status='past_due') | Q(status='active')
+        Q(status='past_due') | Q(status='active') & Q(end_date__lte=two_days_ago)
     )
     
     print(f"Found {subscriptions_to_renew.count()} subscriptions to renew")
@@ -101,10 +98,16 @@ def _process_renewal_payment(business, subscription, plan, square_client):
     try:
         # Create a unique idempotency key for this payment
         idempotency_key = str(uuid.uuid4())
+
+        # Apply yearly discount (20% off annual price)
+        original_price = plan.price
+        final_price = original_price
+        if plan.billing_cycle == 'yearly':
+            final_price = original_price * 0.8
         
         # Calculate amount in cents
         amount_money = {
-            "amount": int(float(plan.price) * 100),
+            "amount": int(float(final_price) * 100),
             "currency": "USD"
         }
         

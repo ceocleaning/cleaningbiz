@@ -571,7 +571,13 @@
                         </div>
                         <div class="pricing-amount d-flex align-items-baseline mb-4">
                             <span class="currency fs-5 text-dark-text-secondary me-1">$</span>
-                            <span class="display-4 fw-bold text-primary-color" data-original-price="{{ plan.price }}">{{ plan.price|floatformat:0 }}</span>
+                            <span class="display-4 fw-bold text-primary-color">
+                                {% if plan.billing_cycle == 'yearly' %}
+                                {{ plan.get_monthly_display_price|floatformat:0 }}
+                                {% else %}
+                                {{ plan.price|floatformat:0 }}
+                                {% endif %}
+                            </span>
                             <span class="text-dark-text-secondary ms-2">
                                 {% if plan.billing_cycle == 'monthly' %}/month{% else %}/month, billed annually{% endif %}
                             </span>
@@ -582,13 +588,25 @@
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.voice_minutes }} Voice Minutes</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.voice_minutes }} Voice Minutes/month
+                                        {% else %}
+                                        {{ plan.voice_minutes }} Voice Minutes
+                                        {% endif %}
+                                    </span>
                                 </li>
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.sms_messages }} SMS Messages</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.sms_messages }} SMS Messages/month
+                                        {% else %}
+                                        {{ plan.sms_messages }} SMS Messages
+                                        {% endif %}
+                                    </span>
                                 </li>
                                 <li class="d-flex align-items-center mb-3">
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
@@ -600,7 +618,13 @@
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
-                                    <span class="text-white opacity-80">{{ plan.leads }} Leads</span>
+                                    <span class="text-white opacity-80">
+                                        {% if plan.billing_cycle == 'yearly' %}
+                                        {{ plan.get_monthly_display_limits.leads }} Leads/month
+                                        {% else %}
+                                        {{ plan.leads }} Leads
+                                        {% endif %}
+                                    </span>
                                 </li>
                             </ul>
                         </div>
@@ -813,13 +837,6 @@
             monthlyLabel.classList.remove('active');
             yearlyLabel.classList.add('active');
             yearlySavings.style.display = 'inline-block';
-            
-            // Apply 20% discount to yearly prices
-            document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                const originalPrice = parseFloat(priceElement.getAttribute('data-original-price') || priceElement.textContent);
-                const discountedPrice = (originalPrice * 0.8).toFixed(0); // 20% discount
-                priceElement.textContent = discountedPrice;
-            });
         } else {
             // Show monthly plans
             document.querySelectorAll('[data-plan-type="monthly"]').forEach(card => {
@@ -833,14 +850,6 @@
             yearlyLabel.classList.remove('active');
             monthlyLabel.classList.add('active');
             yearlySavings.style.display = 'none';
-            
-            // Restore original prices
-            document.querySelectorAll('.display-4.fw-bold.text-primary-color').forEach(priceElement => {
-                const originalPrice = priceElement.getAttribute('data-original-price');
-                if (originalPrice) {
-                    priceElement.textContent = originalPrice;
-                }
-            });
         }
     }
 </script>
