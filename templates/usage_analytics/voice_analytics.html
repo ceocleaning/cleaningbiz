@@ -48,7 +48,8 @@
                             <i class="fas fa-phone-alt text-primary"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1" id="totalCallsValue">{{ voice_stats.total_calls }}</h2>
+                    <h2 class="mb-1" id="totalCallsValue">0</h2>
+                    <p class="no-data-message" style="display: none;">No data for this time period</p>
                 </div>
             </div>
         </div>
@@ -63,7 +64,8 @@
                             <i class="fas fa-clock text-success"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1" id="totalMinutesValue">{{ voice_stats.total_minutes }}</h2>
+                    <h2 class="mb-1" id="totalMinutesValue">0</h2>
+                    <p class="no-data-message" style="display: none;">No data for this time period</p>
                 </div>
             </div>
         </div>
@@ -78,7 +80,8 @@
                             <i class="fas fa-hourglass-half text-warning"></i>
                         </div>
                     </div>
-                    <h2 class="mb-1" id="avgDurationValue">{{ voice_stats.avg_duration }}</h2>
+                    <h2 class="mb-1" id="avgDurationValue">0m</h2>
+                    <p class="no-data-message" style="display: none;">No data for this time period</p>
                 </div>
             </div>
         </div>
@@ -197,20 +200,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Call Performance Metrics -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Call Performance Metrics</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="callPerformanceChart" height="250"></canvas>
                 </div>
             </div>
         </div>
@@ -352,18 +341,10 @@
         width: 100%;
         height: 100%;
         background-color: rgba(255, 255, 255, 0.7);
-        display: flex;
+        display: none;
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        visibility: hidden;
-        opacity: 0;
-        transition: visibility 0s, opacity 0.3s linear;
-    }
-    
-    .loader-overlay.active {
-        visibility: visible;
-        opacity: 1;
     }
     
     .loader {
@@ -382,165 +363,710 @@
 </style>
 
 <script>
-    // Global chart variables
+    // Initialize chart variables
     let callVolumeChart = null;
     let callOutcomesChart = null;
     let callDurationChart = null;
-    let callPerformanceChart = null;
     let disconnectionReasonsChart = null;
     let sentimentChart = null;
     let callSuccessChart = null;
+    let isDataLoading = false;
     
-    // Show/hide loader function
+    // Function to show/hide loader
     function toggleLoader(show) {
         const loader = document.getElementById('loaderOverlay');
         if (show) {
-            loader.classList.add('active');
+            loader.style.display = 'flex';
         } else {
-            loader.classList.remove('active');
+            loader.style.display = 'none';
         }
     }
     
-    // Function to fetch voice analytics data from the API
-    function fetchVoiceAnalyticsData(startDate, endDate) {
-        // Build the API URL with optional date parameters
-        let apiUrl = '{% url "usage_analytics:get_voice_analytics" %}';
-        if (startDate && endDate) {
-            apiUrl += `?start_date=${startDate}&end_date=${endDate}`;
-        }
-        
-        return fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Ensure the data has the expected structure
-                if (!data.date_range) {
-                    // Add date_range if missing
-                    data.date_range = {
-                        start_date: startDate || '',
-                        end_date: endDate || ''
-                    };
-                }
-                return data;
-            });
+    // Function to fetch voice analytics summary data from the API
+    function fetchVoiceAnalyticsSummary(startDate, endDate) {
+        return fetch(`/usage_analytics/api/voice-analytics/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
     }
     
-    // Function to update voice analytics display
-    function updateVoiceAnalytics(data) {
+    // Function to fetch call volume data from the API
+    function fetchCallVolumeData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/call-volume/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch call outcomes data from the API
+    function fetchCallOutcomesData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/call-outcomes/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch call duration distribution data from the API
+    function fetchCallDurationData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/call-duration-distribution/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch disconnection reasons data from the API
+    function fetchDisconnectionReasonsData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/disconnection-reasons/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch sentiment distribution data from the API
+    function fetchSentimentData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/sentiment-distribution/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch call success distribution data from the API
+    function fetchCallSuccessData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/call-success-distribution/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to fetch recent calls data from the API
+    function fetchRecentCallsData(startDate, endDate) {
+        return fetch(`/usage_analytics/api/recent-calls/?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        });
+    }
+    
+    // Function to update voice analytics summary cards
+    function updateVoiceAnalyticsSummary(data) {
         // Update summary cards
-        if (data && data.voice_metrics) {
-            document.getElementById('totalCallsValue').textContent = data.voice_metrics.total_calls;
-            document.getElementById('totalMinutesValue').textContent = data.voice_metrics.total_minutes;
-            document.getElementById('avgDurationValue').textContent = data.voice_metrics.avg_duration;
-        }
-        
-        // Get date range parameters for API calls
-        const urlParams = new URLSearchParams(window.location.search);
-        const startDate = urlParams.get('start_date') || '';
-        const endDate = urlParams.get('end_date') || '';
-        
-        // Fetch success rate separately
-        fetch(`/usage_analytics/api/call-success-rate/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(successData => {
-                document.getElementById('successRateValue').textContent = `${successData.success_rate}%`;
-            })
-            .catch(error => {
-                console.error('Error fetching success rate:', error);
-                document.getElementById('successRateValue').textContent = '87%'; // Fallback value
-            });
+        if (data && data.total_calls !== undefined) {
+            document.getElementById('totalCallsValue').textContent = data.total_calls;
+            document.getElementById('totalMinutesValue').textContent = Math.round(data.total_minutes);  // Ensure integer display
+            document.getElementById('avgDurationValue').textContent = data.avg_duration + 'm';
             
-        // Update call volume chart - fixed condition to check for dates and voice_calls
-        if (data && data.dates && data.voice_calls) {
-            updateCallVolumeChart(data);
+            // Show/hide no data message
+            document.querySelectorAll('.no-data-message').forEach(el => {
+                el.style.display = 'none';
+            });
         } else {
-            console.warn('Missing data for call volume chart:', data);
+            // No data available, show message
+            document.getElementById('totalCallsValue').textContent = '0';
+            document.getElementById('totalMinutesValue').textContent = '0';
+            document.getElementById('avgDurationValue').textContent = '0m';
+            
+            // Show no data message
+            document.querySelectorAll('.no-data-message').forEach(el => {
+                el.style.display = 'block';
+            });
         }
     }
     
     // Function to update call volume chart
     function updateCallVolumeChart(data) {
-        const callVolumeCtx = document.getElementById('callVolumeChart').getContext('2d');
+        const ctx = document.getElementById('callVolumeChart').getContext('2d');
         
-        // If chart already exists, destroy it
+        // Check if chart already exists and destroy it
         if (callVolumeChart) {
             callVolumeChart.destroy();
         }
         
-        // Create new chart
-        callVolumeChart = new Chart(callVolumeCtx, {
-            type: 'line',
-            data: {
-                labels: data.dates.map(date => moment(date).format('MMM D')),
-                datasets: [
-                    {
-                        label: 'Voice Calls',
-                        data: data.voice_calls,
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Voice Minutes',
-                        data: data.voice_minutes,
-                        borderColor: '#0ea5e9',
-                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
+        // Check if we have data to display
+        if (data.dates && data.call_volume && data.dates.length > 0) {
+            // Get the active metric button
+            const activeMetricButton = document.querySelector('[data-metric].active');
+            const activeMetric = activeMetricButton ? activeMetricButton.getAttribute('data-metric') : 'all';
+            
+            // Create datasets based on active metric
+            let datasets = [];
+            
+            if (activeMetric === 'all' || activeMetric === 'calls') {
+                datasets.push({
+                    label: 'Voice Calls',
+                    data: data.call_volume,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y'
+                });
+            }
+            
+            if (activeMetric === 'all' || activeMetric === 'minutes') {
+                datasets.push({
+                    label: 'Voice Minutes',
+                    data: data.voice_minutes,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                });
+            }
+            
+            // Create new chart
+            callVolumeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates.map(date => moment(date).format('MMM D')),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
                         }
                     },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        padding: 10,
-                        boxPadding: 5
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                precision: 0
+                            },
+                            display: activeMetric === 'all' || activeMetric === 'calls'
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            position: 'right',
+                            display: activeMetric === 'all' || activeMetric === 'minutes'
+                        }
                     }
+                }
+            });
+            
+            // Hide no data message if it exists
+            const noDataMsg = document.getElementById('callVolumeNoData');
+            if (noDataMsg) {
+                noDataMsg.style.display = 'none';
+            }
+        } else {
+            // No data available, show message
+            // Check if the no data message element exists
+            let noDataMsg = document.getElementById('callVolumeNoData');
+            
+            // If it doesn't exist, create it
+            if (!noDataMsg) {
+                noDataMsg = document.createElement('div');
+                noDataMsg.id = 'callVolumeNoData';
+                noDataMsg.className = 'text-center py-5 text-muted';
+                noDataMsg.innerHTML = '<i class="fas fa-info-circle me-2"></i>No call data available for the selected time period';
+                
+                // Insert it after the canvas
+                const canvas = document.getElementById('callVolumeChart');
+                canvas.parentNode.insertBefore(noDataMsg, canvas.nextSibling);
+            }
+            
+            // Show the message
+            noDataMsg.style.display = 'block';
+            
+            // Create an empty chart
+            callVolumeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: []
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: {
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
                             display: false
                         }
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
                         }
                     }
-                },
-                interaction: {
-                    mode: 'nearest',
-                    axis: 'x',
-                    intersect: false
                 }
-            }
-        });
+            });
+        }
     }
+    
+    // Function to refresh analytics data based on date range
+    function refreshAnalyticsData(start, end) {
+        if (isDataLoading) {
+            return;
+        }
+        
+        isDataLoading = true;
+        toggleLoader(true);
+        
+        // Format dates for API
+        const startDate = typeof start === 'object' && start.format ? start.format('YYYY-MM-DD') : start;
+        const endDate = typeof end === 'object' && end.format ? end.format('YYYY-MM-DD') : end;
+        
+        console.log(`Refreshing analytics for period: ${startDate} to ${endDate}`);
+        
+        // Update URL with query parameters for better sharing/bookmarking
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('start_date', startDate);
+        urlParams.set('end_date', endDate);
+        const newUrl = window.location.pathname + '?' + urlParams.toString();
+        window.history.replaceState({}, '', newUrl);
+        
+        // Create a promise array for all API calls
+        const apiPromises = [];
+        
+        // 1. Fetch voice analytics summary data
+        const summaryPromise = fetchVoiceAnalyticsSummary(startDate, endDate)
+            .then(data => {
+                updateVoiceAnalyticsSummary(data);
+            })
+            .catch(error => {
+                console.error('Error fetching voice analytics summary:', error);
+                // Show fallback data if there's an error
+                document.getElementById('totalCallsValue').textContent = '0';
+                document.getElementById('totalMinutesValue').textContent = '0';
+                document.getElementById('avgDurationValue').textContent = '0m';
+            });
+        
+        apiPromises.push(summaryPromise);
+        
+        // 2. Fetch call volume data
+        const volumePromise = fetchCallVolumeData(startDate, endDate)
+            .then(data => {
+                updateCallVolumeChart(data);
+            })
+            .catch(error => {
+                console.error('Error fetching call volume data:', error);
+                // Use empty data as fallback
+                updateCallVolumeChart({
+                    dates: [],
+                    call_volume: [],
+                    voice_minutes: []
+                });
+            });
+        
+        apiPromises.push(volumePromise);
+        
+        // 3. Fetch call outcomes data
+        const outcomesPromise = fetchCallOutcomesData(startDate, endDate)
+            .then(outcomesData => {
+                console.log('Call outcomes data:', outcomesData);
+                if (outcomesData && outcomesData.call_outcomes_percentage) {
+                    updateCallOutcomesChart(outcomesData.call_outcomes_percentage);
+                } else {
+                    console.warn('Invalid call outcomes data format:', outcomesData);
+                    // Use sample data as fallback
+                    updateCallOutcomesChart({
+                        ended: 65,
+                        registered: 15,
+                        ongoing: 12,
+                        error: 8
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call outcomes:', error);
+                // Use sample data as fallback
+                updateCallOutcomesChart({
+                    ended: 65,
+                    registered: 15,
+                    ongoing: 12,
+                    error: 8
+                });
+            });
+        
+        apiPromises.push(outcomesPromise);
+        
+        // 4. Fetch call duration distribution data
+        const durationPromise = fetchCallDurationData(startDate, endDate)
+            .then(durationData => {
+                console.log('Call duration data:', durationData);
+                if (durationData && durationData.call_duration_distribution) {
+                    updateCallDurationChart(durationData.call_duration_distribution);
+                } else {
+                    console.warn('Invalid call duration data format:', durationData);
+                    // Use sample data as fallback
+                    updateCallDurationChart({
+                        '< 1m': 10,
+                        '1-2m': 25,
+                        '2-3m': 35,
+                        '3-5m': 30,
+                        '5-10m': 15,
+                        '> 10m': 5
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call duration distribution:', error);
+                // Use sample data as fallback
+                updateCallDurationChart({
+                    '< 1m': 10,
+                    '1-2m': 25,
+                    '2-3m': 35,
+                    '3-5m': 30,
+                    '5-10m': 15,
+                    '> 10m': 5
+                });
+            });
+        
+        apiPromises.push(durationPromise);
+        
+        // 5. Fetch disconnection reasons data
+        const disconnectionPromise = fetchDisconnectionReasonsData(startDate, endDate)
+            .then(reasonsData => {
+                console.log('Disconnection reasons data:', reasonsData);
+                if (reasonsData && reasonsData.disconnection_reasons) {
+                    updateDisconnectionReasonsChart(reasonsData.disconnection_reasons);
+                } else {
+                    console.warn('Invalid disconnection reasons data format:', reasonsData);
+                    // Use sample data as fallback
+                    updateDisconnectionReasonsChart({
+                        'user_hangup': 45,
+                        'agent_hangup': 30,
+                        'call_transfer': 10,
+                        'inactivity': 8,
+                        'dial_no_answer': 7
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching disconnection reasons:', error);
+                // Use sample data as fallback
+                updateDisconnectionReasonsChart({
+                    'user_hangup': 45,
+                    'agent_hangup': 30,
+                    'call_transfer': 10,
+                    'inactivity': 8,
+                    'dial_no_answer': 7
+                });
+            });
+        
+        apiPromises.push(disconnectionPromise);
+        
+        // 6. Fetch sentiment distribution data
+        const sentimentPromise = fetchSentimentData(startDate, endDate)
+            .then(sentimentData => {
+                console.log('Sentiment distribution data:', sentimentData);
+                if (sentimentData && sentimentData.sentiment_distribution_percentage) {
+                    updateSentimentChart(sentimentData.sentiment_distribution_percentage);
+                } else {
+                    console.warn('Invalid sentiment data format:', sentimentData);
+                    // Use sample data as fallback
+                    updateSentimentChart({
+                        'Positive': 65,
+                        'Neutral': 25,
+                        'Negative': 8,
+                        'Unknown': 2
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching sentiment distribution:', error);
+                // Use sample data as fallback
+                updateSentimentChart({
+                    'Positive': 65,
+                    'Neutral': 25,
+                    'Negative': 8,
+                    'Unknown': 2
+                });
+            });
+        
+        apiPromises.push(sentimentPromise);
+        
+        // 7. Fetch call success distribution data
+        const successPromise = fetchCallSuccessData(startDate, endDate)
+            .then(successData => {
+                console.log('Call success distribution data:', successData);
+                if (successData && successData.call_success_distribution) {
+                    updateCallSuccessChart(successData.call_success_distribution);
+                } else {
+                    console.warn('Invalid call success data format:', successData);
+                    // Use sample data as fallback
+                    updateCallSuccessChart({
+                        'Successful': 75,
+                        'Failed': 25
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching call success distribution:', error);
+                // Use sample data as fallback
+                updateCallSuccessChart({
+                    'Successful': 75,
+                    'Failed': 25
+                });
+            });
+        
+        apiPromises.push(successPromise);
+        
+        // 8. Fetch recent calls data
+        const recentCallsPromise = fetchRecentCallsData(startDate, endDate)
+            .then(recentCallsData => {
+                console.log('Recent calls data:', recentCallsData);
+                if (recentCallsData && recentCallsData.recent_calls) {
+                    updateRecentCallsTable(recentCallsData.recent_calls);
+                } else {
+                    console.warn('Invalid recent calls data format:', recentCallsData);
+                    // Show empty table or message
+                    updateRecentCallsTable([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching recent calls:', error);
+                // Show empty table or message
+                updateRecentCallsTable([]);
+            });
+        
+        apiPromises.push(recentCallsPromise);
+        
+        // Wait for all API calls to complete
+        Promise.all(apiPromises)
+            .finally(() => {
+                isDataLoading = false;
+                toggleLoader(false);
+            });
+    }
+    
+    // Debounce function to prevent multiple rapid calls
+    let dateRangeTimeout = null;
+    function debouncedRefresh(start, end) {
+        if (dateRangeTimeout) {
+            clearTimeout(dateRangeTimeout);
+        }
+        
+        // Show loader immediately
+        toggleLoader(true);
+        
+        dateRangeTimeout = setTimeout(() => {
+            refreshAnalyticsData(start, end);
+            dateRangeTimeout = null;
+        }, 300);
+    }
+    
+    // Initialize Date Range Picker
+    $(function() {
+        // Get subscription dates from the template context
+        let subscriptionStartDate = '{{ subscription.start_date|date:"Y-m-d" }}';
+        let subscriptionEndDate = '{{ subscription.next_billing_date|date:"Y-m-d" }}';
+        console.log('Subscription dates:', subscriptionStartDate, subscriptionEndDate);
+        
+        // Convert to moment objects if valid, otherwise use defaults
+        subscriptionStartDate = subscriptionStartDate ? moment(subscriptionStartDate) : moment().subtract(29, 'days');
+        subscriptionEndDate = subscriptionEndDate ? moment(subscriptionEndDate) : moment();
+        
+        // Use subscription dates if available, otherwise use last 30 days
+        const defaultStartDate = moment().subtract(29, 'days');
+        const defaultEndDate = moment();
+        
+        // Set initial display text
+        $('#dateRangePicker span').html(defaultStartDate.format('MMM D, YYYY') + ' - ' + defaultEndDate.format('MMM D, YYYY'));
+        
+        // Initialize the date range picker
+        $('#dateRangePicker').daterangepicker({
+            opens: 'left',
+            startDate: defaultStartDate,
+            endDate: defaultEndDate,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'Subscription Period': [subscriptionStartDate, subscriptionEndDate]
+            }
+        }, function(start, end, label) {
+            // Update the display text
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            
+            // Call debounced function to refresh data based on new date range
+            debouncedRefresh(start, end);
+        });
+        
+        // Handle clicks on the predefined ranges
+        $(document).on('click', '.daterangepicker .ranges li', function() {
+            const rangeText = $(this).text();
+            let start, end;
+            
+            switch(rangeText) {
+                case 'Today':
+                    start = moment();
+                    end = moment();
+                    break;
+                case 'Yesterday':
+                    start = moment().subtract(1, 'days');
+                    end = moment().subtract(1, 'days');
+                    break;
+                case 'Last 7 Days':
+                    start = moment().subtract(6, 'days');
+                    end = moment();
+                    break;
+                case 'Last 30 Days':
+                    start = moment().subtract(29, 'days');
+                    end = moment();
+                    break;
+                case 'This Month':
+                    start = moment().startOf('month');
+                    end = moment().endOf('month');
+                    break;
+                case 'Last Month':
+                    start = moment().subtract(1, 'month').startOf('month');
+                    end = moment().subtract(1, 'month').endOf('month');
+                    break;
+                case 'Subscription Period':
+                    start = subscriptionStartDate;
+                    end = subscriptionEndDate;
+                    break;
+                default:
+                    // For custom range, the date picker will handle it
+                    return;
+            }
+            
+            // Update the date range picker with the selected range
+            $('#dateRangePicker').data('daterangepicker').setStartDate(start);
+            $('#dateRangePicker').data('daterangepicker').setEndDate(end);
+            
+            // Update the display text
+            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
+            
+            // Call debounced function to refresh data based on new date range
+            debouncedRefresh(start, end);
+        });
+        
+        // Add click event listeners to metric buttons
+        document.querySelectorAll('[data-metric]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-metric]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Get current date range
+                const dateRangePicker = $('#dateRangePicker').data('daterangepicker');
+                const startDate = dateRangePicker.startDate.format('YYYY-MM-DD');
+                const endDate = dateRangePicker.endDate.format('YYYY-MM-DD');
+                
+                // Only refresh the call volume chart
+                fetchCallVolumeData(startDate, endDate)
+                    .then(data => {
+                        updateCallVolumeChart(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching call volume data:', error);
+                    });
+            });
+        });
+        
+        // Initial data load
+        setTimeout(() => {
+            refreshAnalyticsData(defaultStartDate, defaultEndDate);
+        }, 500);
+    });
     
     // Function to update call outcomes chart
     function updateCallOutcomesChart(outcomes) {
@@ -576,7 +1102,6 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '70%',
                 plugins: {
                     legend: {
                         display: false
@@ -592,7 +1117,8 @@
                             }
                         }
                     }
-                }
+                },
+                cutout: '70%'
             }
         });
         
@@ -827,7 +1353,7 @@
         // Colors for success categories
         const colors = {
             'Successful': '#10b981', // green
-            'Unsuccessful': '#ef4444', // red
+            'Failed': '#ef4444', // red
             'Unknown': '#6b7280'  // gray
         };
         
@@ -868,8 +1394,10 @@
         
         // Update the percentages in the legend
         document.getElementById('callSuccessful').textContent = `${successData.Successful || 0}%`;
-        document.getElementById('callUnsuccessful').textContent = `${successData.Unsuccessful || 0}%`;
-        document.getElementById('callUnknown').textContent = `${successData.Unknown || 0}%`;
+        document.getElementById('callUnsuccessful').textContent = `${successData.Failed || 0}%`;
+        if (successData.Unknown) {
+            document.getElementById('callUnknown').textContent = `${successData.Unknown || 0}%`;
+        }
     }
     
     // Function to update recent calls table
@@ -956,391 +1484,5 @@
             tableBody.appendChild(row);
         });
     }
-    
-    // Function to refresh analytics data based on date range
-    function refreshAnalyticsData(start, end) {
-        toggleLoader(true);
-        
-        // Format dates for API
-        const startDate = start.format('YYYY-MM-DD');
-        const endDate = end.format('YYYY-MM-DD');
-        
-        // Update URL with query parameters for better sharing/bookmarking
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('start_date', startDate);
-        urlParams.set('end_date', endDate);
-        const newUrl = window.location.pathname + '?' + urlParams.toString();
-        window.history.replaceState({}, '', newUrl);
-        
-        // Create a promise array for all API calls
-        const apiPromises = [];
-        
-        // Fetch voice analytics data
-        const voiceAnalyticsPromise = fetchVoiceAnalyticsData(startDate, endDate)
-            .then(data => {
-                updateVoiceAnalytics(data);
-                // Note: updateCallVolumeChart is now called from within updateVoiceAnalytics
-            })
-            .catch(error => {
-                console.error('Error fetching voice analytics:', error);
-                // Show fallback data if there's an error
-                document.getElementById('totalCallsValue').textContent = '0';
-                document.getElementById('totalMinutesValue').textContent = '0';
-                document.getElementById('avgDurationValue').textContent = '0m 0s';
-            });
-        
-        apiPromises.push(voiceAnalyticsPromise);
-        
-        // Fetch call outcomes data
-        const outcomesPromise = fetch(`/usage_analytics/api/call-outcomes/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(outcomesData => {
-                console.log('Call outcomes data:', outcomesData);
-                if (outcomesData && outcomesData.call_outcomes_percentage) {
-                    updateCallOutcomesChart(outcomesData.call_outcomes_percentage);
-                } else {
-                    console.warn('Invalid call outcomes data format:', outcomesData);
-                    // Use sample data as fallback
-                    updateCallOutcomesChart({
-                        ended: 65,
-                        registered: 15,
-                        ongoing: 12,
-                        error: 8
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching call outcomes:', error);
-                // Use sample data as fallback
-                updateCallOutcomesChart({
-                    ended: 65,
-                    registered: 15,
-                    ongoing: 12,
-                    error: 8
-                });
-            });
-        
-        apiPromises.push(outcomesPromise);
-        
-        // Fetch call duration distribution data
-        const durationPromise = fetch(`/usage_analytics/api/call-duration-distribution/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(durationData => {
-                console.log('Call duration data:', durationData);
-                if (durationData && durationData.call_duration_distribution) {
-                    updateCallDurationChart(durationData.call_duration_distribution);
-                } else {
-                    console.warn('Invalid call duration data format:', durationData);
-                    // Use sample data as fallback
-                    updateCallDurationChart({
-                        '< 1m': 10,
-                        '1-2m': 25,
-                        '2-3m': 35,
-                        '3-5m': 30,
-                        '5-10m': 15,
-                        '> 10m': 5
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching call duration distribution:', error);
-                // Use sample data as fallback
-                updateCallDurationChart({
-                    '< 1m': 10,
-                    '1-2m': 25,
-                    '2-3m': 35,
-                    '3-5m': 30,
-                    '5-10m': 15,
-                    '> 10m': 5
-                });
-            });
-        
-        apiPromises.push(durationPromise);
-        
-        // Fetch disconnection reasons data
-        const disconnectionPromise = fetch(`/usage_analytics/api/disconnection-reasons/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(reasonsData => {
-                console.log('Disconnection reasons data:', reasonsData);
-                if (reasonsData && reasonsData.disconnection_reasons) {
-                    updateDisconnectionReasonsChart(reasonsData.disconnection_reasons);
-                } else {
-                    console.warn('Invalid disconnection reasons data format:', reasonsData);
-                    // Use sample data as fallback
-                    updateDisconnectionReasonsChart({
-                        'user_hangup': 45,
-                        'agent_hangup': 30,
-                        'call_transfer': 10,
-                        'inactivity': 8,
-                        'dial_no_answer': 7
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching disconnection reasons:', error);
-                // Use sample data as fallback
-                updateDisconnectionReasonsChart({
-                    'user_hangup': 45,
-                    'agent_hangup': 30,
-                    'call_transfer': 10,
-                    'inactivity': 8,
-                    'dial_no_answer': 7
-                });
-            });
-        
-        apiPromises.push(disconnectionPromise);
-        
-        // Fetch sentiment distribution data
-        const sentimentPromise = fetch(`/usage_analytics/api/sentiment-distribution/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(sentimentData => {
-                console.log('Sentiment distribution data:', sentimentData);
-                if (sentimentData && sentimentData.sentiment_distribution_percentage) {
-                    updateSentimentChart(sentimentData.sentiment_distribution_percentage);
-                } else {
-                    console.warn('Invalid sentiment data format:', sentimentData);
-                    // Use sample data as fallback
-                    updateSentimentChart({
-                        'Positive': 65,
-                        'Neutral': 25,
-                        'Negative': 8,
-                        'Unknown': 2
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching sentiment distribution:', error);
-                // Use sample data as fallback
-                updateSentimentChart({
-                    'Positive': 65,
-                    'Neutral': 25,
-                    'Negative': 8,
-                    'Unknown': 2
-                });
-            });
-        
-        apiPromises.push(sentimentPromise);
-        
-        // Fetch call success distribution data
-        const successPromise = fetch(`/usage_analytics/api/call-success-distribution/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(successData => {
-                console.log('Call success distribution data:', successData);
-                if (successData && successData.success_distribution_percentage) {
-                    updateCallSuccessChart(successData.success_distribution_percentage);
-                } else {
-                    console.warn('Invalid call success data format:', successData);
-                    // Use sample data as fallback
-                    updateCallSuccessChart({
-                        'Successful': 75,
-                        'Unsuccessful': 20,
-                        'Unknown': 5
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching call success distribution:', error);
-                // Use sample data as fallback
-                updateCallSuccessChart({
-                    'Successful': 75,
-                    'Unsuccessful': 20,
-                    'Unknown': 5
-                });
-            });
-        
-        apiPromises.push(successPromise);
-        
-        // Fetch recent calls data
-        const recentCallsPromise = fetch(`/usage_analytics/api/recent-calls/?start_date=${startDate}&end_date=${endDate}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(callsData => {
-                console.log('Recent calls data:', callsData);
-                if (callsData && callsData.recent_calls) {
-                    updateRecentCallsTable(callsData.recent_calls);
-                } else {
-                    console.warn('Invalid recent calls data format:', callsData);
-                    // Show empty state
-                    updateRecentCallsTable([]);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching recent calls:', error);
-                // Show empty state
-                updateRecentCallsTable([]);
-            });
-        
-        apiPromises.push(recentCallsPromise);
-        
-        // Wait for all API calls to complete before hiding the loader
-        Promise.all(apiPromises)
-            .finally(() => {
-                toggleLoader(false);
-            });
-    }
-    
-    // Initialize Date Range Picker
-    $(function() {
-        // Get subscription dates from the template context
-        const subscriptionStartDate = '{{ subscription.start_date|date:"Y-m-d" }}';
-        const subscriptionEndDate = '{{ subscription.end_date|date:"Y-m-d" }}';
-        console.log('Subscription dates:', subscriptionStartDate, subscriptionEndDate);
-
-        
-        // Check URL parameters first
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlStartDate = urlParams.get('start_date');
-        const urlEndDate = urlParams.get('end_date');
-        
-        // Use URL dates if available, then subscription dates, then default to last 30 days
-        let defaultStartDate, defaultEndDate;
-        
-        if (urlStartDate && urlEndDate) {
-            defaultStartDate = moment(urlStartDate);
-            defaultEndDate = moment(urlEndDate);
-        } else if (subscriptionStartDate && subscriptionEndDate) {
-            defaultStartDate = moment(subscriptionStartDate);
-            defaultEndDate = moment(subscriptionEndDate);
-        } else {
-            defaultStartDate = moment().subtract(29, 'days');
-            defaultEndDate = moment();
-        }
-        
-        // Set initial display text
-        $('#dateRangePicker span').html(defaultStartDate.format('MMM D, YYYY') + ' - ' + defaultEndDate.format('MMM D, YYYY'));
-        
-        // Initialize the date range picker
-        $('#dateRangePicker').daterangepicker({
-            opens: 'left',
-            startDate: defaultStartDate,
-            endDate: defaultEndDate,
-            ranges: {
-               'Today': [moment(), moment()],
-               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-               'This Month': [moment().startOf('month'), moment().endOf('month')],
-               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-               'Subscription Period': [
-                   subscriptionStartDate ? moment(subscriptionStartDate) : moment().subtract(29, 'days'),
-                   subscriptionEndDate ? moment(subscriptionEndDate) : moment()
-               ]
-            }
-        }, function(start, end, label) {
-            // Update the display text
-            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
-            
-            // Call function to refresh data based on new date range
-            refreshAnalyticsData(start, end);
-        });
-        
-        // Handle clicks on the predefined ranges
-        $(document).on('click', '.daterangepicker .ranges li', function() {
-            const rangeText = $(this).text();
-            let start, end;
-            
-            switch(rangeText) {
-                case 'Today':
-                    start = moment();
-                    end = moment();
-                    break;
-                case 'Yesterday':
-                    start = moment().subtract(1, 'days');
-                    end = moment().subtract(1, 'days');
-                    break;
-                case 'Last 7 Days':
-                    start = moment().subtract(6, 'days');
-                    end = moment();
-                    break;
-                case 'Last 30 Days':
-                    start = moment().subtract(29, 'days');
-                    end = moment();
-                    break;
-                case 'This Month':
-                    start = moment().startOf('month');
-                    end = moment().endOf('month');
-                    break;
-                case 'Last Month':
-                    start = moment().subtract(1, 'month').startOf('month');
-                    end = moment().subtract(1, 'month').endOf('month');
-                    break;
-                case 'Subscription Period':
-                    start = defaultStartDate;
-                    end = defaultEndDate;
-                    break;
-                default:
-                    // For custom range, the date picker will handle it
-                    return;
-            }
-            
-            // Update the date range picker with the selected range
-            $('#dateRangePicker').data('daterangepicker').setStartDate(start);
-            $('#dateRangePicker').data('daterangepicker').setEndDate(end);
-            
-            // Update the display text
-            $('#dateRangePicker span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
-            
-            // Call function to refresh data based on new date range
-            refreshAnalyticsData(start, end);
-        });
-        
-        // Toggle metrics on call volume chart
-        document.querySelectorAll('[data-metric]').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('[data-metric]').forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                const metric = this.dataset.metric;
-                if (callVolumeChart) {
-                    if (metric === 'all') {
-                        callVolumeChart.data.datasets.forEach(dataset => {
-                            dataset.hidden = false;
-                        });
-                    } else if (metric === 'calls') {
-                        callVolumeChart.data.datasets[0].hidden = false;
-                        callVolumeChart.data.datasets[1].hidden = true;
-                    } else if (metric === 'minutes') {
-                        callVolumeChart.data.datasets[0].hidden = true;
-                        callVolumeChart.data.datasets[1].hidden = false;
-                    }
-                    callVolumeChart.update();
-                }
-            });
-        });
-        
-        // Initial data load
-        setTimeout(() => {
-            refreshAnalyticsData(defaultStartDate, defaultEndDate);
-        }, 500);
-    });
 </script>
 {% endblock %}

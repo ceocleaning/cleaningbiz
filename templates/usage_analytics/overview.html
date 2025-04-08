@@ -77,30 +77,8 @@
 
     <!-- Usage Summary Cards Row -->
     <div class="row mb-4">
-        <!-- Voice Calls Card -->
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-subtitle text-muted">Voice Calls</h6>
-                        <div class="rounded-circle bg-primary-light p-2">
-                            <i class="fas fa-phone text-primary"></i>
-                        </div>
-                    </div>
-                    <h2 class="mb-1" id="voiceCallsUsed">{{ usage.voice_calls.used }} / {{ usage.voice_calls.limit }}</h2>
-                    <div class="progress mb-2" style="height: 8px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ usage.voice_calls.percentage }}%;" aria-valuenow="{{ usage.voice_calls.percentage }}" aria-valuemin="0" aria-valuemax="100" id="voiceCallsProgress"></div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <p class="text-muted small mb-0">{{ usage.voice_calls.percentage }}% of your monthly limit</p>
-                        <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <!-- Voice Minutes Card -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -122,7 +100,7 @@
         </div>
         
         <!-- SMS Messages Card -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -142,6 +120,50 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Agents Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Active Agents</h6>
+                        <div class="rounded-circle bg-primary-light p-2">
+                            <i class="fas fa-robot text-primary"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1" id="agentsUsed">{{ usage.agents.used }} / {{ usage.agents.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ usage.agents.percentage }}%;" aria-valuenow="{{ usage.agents.percentage }}" aria-valuemin="0" aria-valuemax="100" id="agentsProgress"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.agents.percentage }}% of your limit</p>
+                        <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leads Card -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Leads Generated</h6>
+                        <div class="rounded-circle bg-success-light p-2">
+                            <i class="fas fa-user-plus text-success"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1" id="leadsUsed">{{ usage.leads.used }} / {{ usage.leads.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage.leads.percentage }}%;" aria-valuenow="{{ usage.leads.percentage }}" aria-valuemin="0" aria-valuemax="100" id="leadsProgress"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.leads.percentage }}% of your limit</p>
+                        <a href="{% url 'usage_analytics:sms_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Usage Trends -->
@@ -154,6 +176,8 @@
                         <button type="button" class="btn btn-sm btn-outline-primary active" data-metric="all">All Metrics</button>
                         <button type="button" class="btn btn-sm btn-outline-primary" data-metric="voice">Voice</button>
                         <button type="button" class="btn btn-sm btn-outline-primary" data-metric="sms">SMS</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-metric="agents">Agents</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-metric="leads">Leads</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -190,7 +214,7 @@
                                 <h6 class="mb-3">Key Metrics</h6>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Total Calls</span>
-                                    <span class="fw-bold" id="totalCalls">{{ voice_metrics.total_calls }}</span>
+                                    <span class="fw-bold" id="totalCalls">{{ voice_metrics.total_calls_count }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Total Minutes</span>
@@ -210,7 +234,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- SMS Analytics Module -->
         <div class="col-md-6 mb-4">
             <div class="card h-100">
@@ -243,6 +267,86 @@
                                 <div class="d-flex justify-content-between">
                                     <span>Conversion Rate</span>
                                     <span class="fw-bold" id="conversionRate">{{ sms_metrics.conversion_rate }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Agents Analytics Module -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <div class="p-3 text-center">
+                                <div class="rounded-circle bg-primary-light p-3 mx-auto mb-3" style="width: fit-content;">
+                                    <i class="fas fa-robot text-primary fa-2x"></i>
+                                </div>
+                                <h5>Agent Analytics</h5>
+                                <a href="{% url 'usage_analytics:voice_analytics' %}" class="btn btn-primary mt-2">View Details</a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3">
+                                <h6 class="mb-3">Key Metrics</h6>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Active Agents</span>
+                                    <span class="fw-bold" id="activeAgents">{{ usage.agents.used }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Agent Limit</span>
+                                    <span class="fw-bold" id="agentLimit">{{ usage.agents.limit }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Usage Percentage</span>
+                                    <span class="fw-bold" id="agentPercentage">{{ usage.agents.percentage }}%</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Available Features</span>
+                                    <span class="fw-bold" id="agentFeatures">{{ subscription.features|length }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leads Analytics Module -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <div class="p-3 text-center">
+                                <div class="rounded-circle bg-success-light p-3 mx-auto mb-3" style="width: fit-content;">
+                                    <i class="fas fa-user-plus text-success fa-2x"></i>
+                                </div>
+                                <h5>Lead Analytics</h5>
+                                <a href="{% url 'usage_analytics:sms_analytics' %}" class="btn btn-success mt-2">View Details</a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3">
+                                <h6 class="mb-3">Key Metrics</h6>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Generated Leads</span>
+                                    <span class="fw-bold" id="generatedLeads">{{ usage.leads.used }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Lead Limit</span>
+                                    <span class="fw-bold" id="leadLimit">{{ usage.leads.limit }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Usage Percentage</span>
+                                    <span class="fw-bold" id="leadPercentage">{{ usage.leads.percentage }}%</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Conversion Rate</span>
+                                    <span class="fw-bold" id="leadConversionRate">{{ sms_metrics.conversion_rate }}</span>
                                 </div>
                             </div>
                         </div>
@@ -414,20 +518,12 @@
     // Initialize chart with actual data
     function initializeChart(data) {
         const usageTrendsCtx = document.getElementById('usageTrendsChart').getContext('2d');
+        
         usageTrendsChart = new Chart(usageTrendsCtx, {
             type: 'line',
             data: {
-                labels: data.dates.map(date => moment(date).format('MMM D')),
+                labels: data.dates,
                 datasets: [
-                    {
-                        label: 'Voice Calls',
-                        data: data.voice_calls,
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
                     {
                         label: 'Voice Minutes',
                         data: data.voice_minutes,
@@ -445,6 +541,24 @@
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true
+                    },
+                    {
+                        label: 'Active Agents',
+                        data: data.agents,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Leads Generated',
+                        data: data.leads,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
                     }
                 ]
             },
@@ -462,18 +576,20 @@
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        padding: 10,
-                        boxPadding: 5,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#333',
+                        bodyColor: '#666',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6,
+                        usePointStyle: true,
                         callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += context.parsed.y;
-                                }
-                                return label;
+                            labelPointStyle: function(context) {
+                                return {
+                                    pointStyle: 'circle',
+                                    rotation: 0
+                                };
                             }
                         }
                     }
@@ -482,12 +598,18 @@
                     x: {
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 10
                         }
                     },
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                            borderDash: [2, 4],
+                            drawBorder: false
                         }
                     }
                 },
@@ -498,35 +620,93 @@
                 }
             }
         });
+        
+        // Add click event listeners to metric buttons
+        const metricButtons = document.querySelectorAll('[data-metric]');
+        if (metricButtons) {
+            metricButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const metric = this.getAttribute('data-metric');
+                    updateChartVisibility(metric);
+                    
+                    // Update active state
+                    metricButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        }
     }
-    
+
     // Update existing chart with new data
     function updateChart(data) {
-        usageTrendsChart.data.labels = data.dates.map(date => moment(date).format('MMM D'));
-        usageTrendsChart.data.datasets[0].data = data.voice_calls;
-        usageTrendsChart.data.datasets[1].data = data.voice_minutes;
-        usageTrendsChart.data.datasets[2].data = data.sms_messages;
+        if (!usageTrendsChart) {
+            initializeChart(data);
+            return;
+        }
+        
+        usageTrendsChart.data.labels = data.dates;
+        usageTrendsChart.data.datasets[0].data = data.voice_minutes;
+        usageTrendsChart.data.datasets[1].data = data.sms_messages;
+        usageTrendsChart.data.datasets[2].data = data.agents;
+        usageTrendsChart.data.datasets[3].data = data.leads;
         usageTrendsChart.update();
     }
-    
+
+    // Function to update chart visibility based on selected metric
+    function updateChartVisibility(metric) {
+        if (!usageTrendsChart) return;
+        
+        if (metric === 'all') {
+            // Show all datasets
+            usageTrendsChart.data.datasets.forEach(dataset => {
+                dataset.hidden = false;
+            });
+        } else if (metric === 'voice') {
+            // Show only voice metrics
+            usageTrendsChart.data.datasets.forEach((dataset, index) => {
+                dataset.hidden = index !== 0;
+            });
+        } else if (metric === 'sms') {
+            // Show only SMS metrics
+            usageTrendsChart.data.datasets.forEach((dataset, index) => {
+                dataset.hidden = index !== 1;
+            });
+        } else if (metric === 'agents') {
+            // Show only agents metrics
+            usageTrendsChart.data.datasets.forEach((dataset, index) => {
+                dataset.hidden = index !== 2;
+            });
+        } else if (metric === 'leads') {
+            // Show only leads metrics
+            usageTrendsChart.data.datasets.forEach((dataset, index) => {
+                dataset.hidden = index !== 3;
+            });
+        }
+        
+        usageTrendsChart.update();
+    }
+
     // Fallback to initialize chart with dummy data if API fails
     function initializeChartWithDummyData() {
+        // Generate dummy dates for the last 30 days
+        const dummyDates = [];
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            dummyDates.push(date.toISOString().split('T')[0]);
+        }
+        
+        // Initialize chart with dummy data
         const usageTrendsCtx = document.getElementById('usageTrendsChart').getContext('2d');
-        const dummyDates = Array.from({length: 30}, (_, i) => moment().subtract(29-i, 'days').format('MMM D'));
+        
         usageTrendsChart = new Chart(usageTrendsCtx, {
             type: 'line',
             data: {
                 labels: dummyDates,
                 datasets: [
-                    {
-                        label: 'Voice Calls',
-                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 5) + 1),
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
                     {
                         label: 'Voice Minutes',
                         data: Array.from({length: 30}, () => Math.floor(Math.random() * 50) + 10),
@@ -544,6 +724,24 @@
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true
+                    },
+                    {
+                        label: 'Active Agents',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 3) + 1),
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Leads Generated',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 20) + 5),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
                     }
                 ]
             },
@@ -561,20 +759,32 @@
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        padding: 10,
-                        boxPadding: 5
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#333',
+                        bodyColor: '#666',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6,
+                        usePointStyle: true
                     }
                 },
                 scales: {
                     x: {
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 10
                         }
                     },
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                            borderDash: [2, 4],
+                            drawBorder: false
                         }
                     }
                 },
@@ -585,33 +795,36 @@
                 }
             }
         });
+        
+        // Add click event listeners to metric buttons
+        const metricButtons = document.querySelectorAll('[data-metric]');
+        if (metricButtons) {
+            metricButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const metric = this.getAttribute('data-metric');
+                    updateChartVisibility(metric);
+                    
+                    // Update active state
+                    metricButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        }
     }
 
     // Function to fetch usage data from the API
     function fetchUsageData(startDate, endDate) {
-        // Build the API URL with optional date parameters
-        let apiUrl = '{% url "usage_analytics:get_usage_data" %}';
-        if (startDate && endDate) {
-            apiUrl += `?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}`;
-        }
-        
-        // Show loading state
         toggleLoader(true);
         
-        if (usageTrendsChart) {
-            usageTrendsChart.data.datasets.forEach(dataset => {
-                dataset.data = [];
-            });
-            usageTrendsChart.update();
-        }
+        // Format dates properly for the API
+        const formattedStartDate = startDate.format ? startDate.format('YYYY-MM-DD') : startDate;
+        const formattedEndDate = endDate.format ? endDate.format('YYYY-MM-DD') : endDate;
         
-        // Update usage metrics display with loading state
-        document.querySelectorAll('.usage-metric-value').forEach(el => {
-            el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        });
+        console.log(`Fetching data for period: ${formattedStartDate} to ${formattedEndDate}`);
         
-        // Fetch data from the API
-        fetch(apiUrl)
+        return fetch(`/usage_analytics/api/usage-data/?start_date=${formattedStartDate}&end_date=${formattedEndDate}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -619,29 +832,118 @@
                 return response.json();
             })
             .then(data => {
-                // Initialize or update the chart with real data
-                if (usageTrendsChart) {
-                    updateChart(data);
-                } else {
-                    initializeChart(data);
-                }
+                toggleLoader(false);
                 
-                // Update usage metrics display
+                // Update chart with the fetched data
+                updateChart(data);
+                
+                // Update usage metrics
                 updateUsageMetrics(data);
                 
-                // Hide loader
-                toggleLoader(false);
+                return data;
             })
             .catch(error => {
                 console.error('Error fetching usage data:', error);
-                // If API fails, show a message or fallback to dummy data
-                if (!usageTrendsChart) {
-                    initializeChartWithDummyData();
-                }
-                
-                // Hide loader
                 toggleLoader(false);
+                
+                // Fallback to dummy data if API fails
+                initializeChartWithDummyData();
+                
+                return null;
             });
+    }
+
+    // Function to update usage metrics display
+    function updateUsageMetrics(data) {
+        if (!data || !data.usage_summary) {
+            console.warn('No usage data available to update metrics');
+            return;
+        }
+        
+        const usageSummary = data.usage_summary;
+        const total = usageSummary.total || {};
+        const subscription = data.subscription || {};
+        
+        // Update voice minutes
+        const voiceMinutesUsed = total.voice_minutes || 0;
+        const voiceMinutesLimit = subscription.voice_minutes_limit || 0;
+        const voiceMinutesPercentage = voiceMinutesLimit > 0 
+            ? Math.min(Math.round((voiceMinutesUsed / voiceMinutesLimit) * 100), 100) 
+            : 0;
+            
+        $('#voiceMinutesUsed').text(`${voiceMinutesUsed} / ${voiceMinutesLimit}`);
+        $('#voiceMinutesProgress').css('width', `${voiceMinutesPercentage}%`).attr('aria-valuenow', voiceMinutesPercentage);
+        
+        // Update SMS messages
+        const smsMessagesUsed = total.sms_messages || 0;
+        const smsMessagesLimit = subscription.sms_messages_limit || 0;
+        const smsMessagesPercentage = smsMessagesLimit > 0 
+            ? Math.min(Math.round((smsMessagesUsed / smsMessagesLimit) * 100), 100) 
+            : 0;
+            
+        $('#smsMessagesUsed').text(`${smsMessagesUsed} / ${smsMessagesLimit}`);
+        $('#smsMessagesProgress').css('width', `${smsMessagesPercentage}%`).attr('aria-valuenow', smsMessagesPercentage);
+        
+        // Update agents
+        const agentsUsed = total.active_agents || 0;
+        console.log("Agents Used: ", agentsUsed);
+        const agentsLimit = subscription.agents_limit || 0;
+        const agentsPercentage = agentsLimit > 0 
+            ? Math.min(Math.round((agentsUsed / agentsLimit) * 100), 100) 
+            : 0;
+            
+        $('#agentsUsed').text(`${agentsUsed} / ${agentsLimit}`);
+        $('#agentsProgress').css('width', `${agentsPercentage}%`).attr('aria-valuenow', agentsPercentage);
+        
+        // Update leads
+        const leadsUsed = total.leads_generated || 0;
+        const leadsLimit = subscription.leads_limit || 0;
+        const leadsPercentage = leadsLimit > 0 
+            ? Math.min(Math.round((leadsUsed / leadsLimit) * 100), 100) 
+            : 0;
+            
+        $('#leadsUsed').text(`${leadsUsed} / ${leadsLimit}`);
+        $('#leadsProgress').css('width', `${leadsPercentage}%`).attr('aria-valuenow', leadsPercentage);
+        
+        // Update voice metrics
+        const totalCalls = total.voice_calls || 0;
+        const totalMinutes = total.voice_minutes || 0;
+        const avgDuration = totalCalls > 0 ? `${(totalMinutes / totalCalls).toFixed(1)}m` : '0m';
+        const successRate = totalCalls > 0 
+            ? `${Math.round((total.successful_calls || 0) / totalCalls * 100)}%` 
+            : '0%';
+            
+        $('#totalCalls').text(totalCalls);
+        $('#totalMinutes').text(totalMinutes);
+        $('#avgDuration').text(avgDuration);
+        $('#successRate').text(successRate);
+        
+        // Update SMS metrics
+        const totalMessages = total.sms_messages || 0;
+        const responseRate = totalMessages > 0 
+            ? `${Math.round((total.sms_responses || 0) / totalMessages * 100)}%` 
+            : '0%';
+        const avgResponseTime = `${total.avg_response_time || 0}s`;
+        const conversionRate = totalMessages > 0 
+            ? `${Math.round((total.sms_conversions || 0) / totalMessages * 100)}%` 
+            : '0%';
+            
+        $('#totalMessages').text(totalMessages);
+        $('#responseRate').text(responseRate);
+        $('#avgResponseTime').text(avgResponseTime);
+        $('#conversionRate').text(conversionRate);
+        
+        // Update agent metrics
+        $('#activeAgents').text(agentsUsed);
+        $('#agentLimit').text(agentsLimit);
+        $('#agentPercentage').text(`${agentsPercentage}%`);
+        $('#agentFeatures').text(subscription.features ? subscription.features.length : 0);
+        
+        // Update lead metrics
+        $('#generatedLeads').text(leadsUsed);
+        $('#leadLimit').text(leadsLimit);
+        $('#leadPercentage').text(`${leadsPercentage}%`);
+        $('#leadConversionRate').text(conversionRate);
     }
 
     // Function to refresh analytics data based on date range
@@ -653,77 +955,95 @@
     
     // Function to update usage metrics display
     function updateUsageMetrics(data) {
-        // Update voice calls metrics
-        if (data.usage && data.usage.voice_calls) {
-            document.querySelector('#voiceCallsUsed').textContent = data.usage.voice_calls.used + ' / ' + data.usage.voice_calls.limit;
-            document.querySelector('#voiceCallsProgress').style.width = data.usage.voice_calls.percentage + '%';
+        if (!data || !data.usage_summary) {
+            console.warn('No usage data available to update metrics');
+            return;
+        }
+        
+        const usageSummary = data.usage_summary;
+        const total = usageSummary.total || {};
+        const subscription = data.subscription || {};
+        
+        // Update voice minutes
+        const voiceMinutesUsed = total.voice_minutes || 0;
+        const voiceMinutesLimit = subscription.voice_minutes_limit || 0;
+        const voiceMinutesPercentage = voiceMinutesLimit > 0 
+            ? Math.min(Math.round((voiceMinutesUsed / voiceMinutesLimit) * 100), 100) 
+            : 0;
             
-            // Update color based on percentage
-            const voiceCallsProgress = document.querySelector('#voiceCallsProgress');
-            if (data.usage.voice_calls.percentage > 90) {
-                voiceCallsProgress.classList.remove('bg-success', 'bg-warning', 'bg-primary');
-                voiceCallsProgress.classList.add('bg-danger');
-            } else if (data.usage.voice_calls.percentage > 70) {
-                voiceCallsProgress.classList.remove('bg-success', 'bg-danger', 'bg-primary');
-                voiceCallsProgress.classList.add('bg-warning');
-            } else {
-                voiceCallsProgress.classList.remove('bg-warning', 'bg-danger');
-                voiceCallsProgress.classList.add('bg-primary');
-            }
-        }
+        $('#voiceMinutesUsed').text(`${voiceMinutesUsed} / ${voiceMinutesLimit}`);
+        $('#voiceMinutesProgress').css('width', `${voiceMinutesPercentage}%`).attr('aria-valuenow', voiceMinutesPercentage);
         
-        // Update voice minutes metrics
-        if (data.usage && data.usage.voice_minutes) {
-            document.querySelector('#voiceMinutesUsed').textContent = data.usage.voice_minutes.used + ' / ' + data.usage.voice_minutes.limit;
-            document.querySelector('#voiceMinutesProgress').style.width = data.usage.voice_minutes.percentage + '%';
+        // Update SMS messages
+        const smsMessagesUsed = total.sms_messages || 0;
+        const smsMessagesLimit = subscription.sms_messages_limit || 0;
+        const smsMessagesPercentage = smsMessagesLimit > 0 
+            ? Math.min(Math.round((smsMessagesUsed / smsMessagesLimit) * 100), 100) 
+            : 0;
             
-            // Update color based on percentage
-            const voiceMinutesProgress = document.querySelector('#voiceMinutesProgress');
-            if (data.usage.voice_minutes.percentage > 90) {
-                voiceMinutesProgress.classList.remove('bg-success', 'bg-warning', 'bg-info');
-                voiceMinutesProgress.classList.add('bg-danger');
-            } else if (data.usage.voice_minutes.percentage > 70) {
-                voiceMinutesProgress.classList.remove('bg-success', 'bg-danger', 'bg-info');
-                voiceMinutesProgress.classList.add('bg-warning');
-            } else {
-                voiceMinutesProgress.classList.remove('bg-warning', 'bg-danger');
-                voiceMinutesProgress.classList.add('bg-info');
-            }
-        }
+        $('#smsMessagesUsed').text(`${smsMessagesUsed} / ${smsMessagesLimit}`);
+        $('#smsMessagesProgress').css('width', `${smsMessagesPercentage}%`).attr('aria-valuenow', smsMessagesPercentage);
         
-        // Update SMS messages metrics
-        if (data.usage && data.usage.sms_messages) {
-            document.querySelector('#smsMessagesUsed').textContent = data.usage.sms_messages.used + ' / ' + data.usage.sms_messages.limit;
-            document.querySelector('#smsMessagesProgress').style.width = data.usage.sms_messages.percentage + '%';
+        // Update agents
+        const agentsUsed = total.active_agents || 0;
+        console.log("Agents Used: ", agentsUsed);
+        const agentsLimit = subscription.agents_limit || 0;
+        const agentsPercentage = agentsLimit > 0 
+            ? Math.min(Math.round((agentsUsed / agentsLimit) * 100), 100) 
+            : 0;
             
-            // Update color based on percentage
-            const smsMessagesProgress = document.querySelector('#smsMessagesProgress');
-            if (data.usage.sms_messages.percentage > 90) {
-                smsMessagesProgress.classList.remove('bg-success', 'bg-warning');
-                smsMessagesProgress.classList.add('bg-danger');
-            } else if (data.usage.sms_messages.percentage > 70) {
-                smsMessagesProgress.classList.remove('bg-success', 'bg-danger');
-                smsMessagesProgress.classList.add('bg-warning');
-            } else {
-                smsMessagesProgress.classList.remove('bg-warning', 'bg-danger');
-                smsMessagesProgress.classList.add('bg-success');
-            }
-        }
+        $('#agentsUsed').text(`${agentsUsed} / ${agentsLimit}`);
+        $('#agentsProgress').css('width', `${agentsPercentage}%`).attr('aria-valuenow', agentsPercentage);
         
-        // Update module metrics if available
-        if (data.voice_metrics) {
-            document.querySelector('#totalCalls').textContent = data.voice_metrics.total_calls;
-            document.querySelector('#totalMinutes').textContent = data.voice_metrics.total_minutes;
-            document.querySelector('#avgDuration').textContent = data.voice_metrics.avg_duration;
-            document.querySelector('#successRate').textContent = data.voice_metrics.success_rate;
-        }
+        // Update leads
+        const leadsUsed = total.leads_generated || 0;
+        const leadsLimit = subscription.leads_limit || 0;
+        const leadsPercentage = leadsLimit > 0 
+            ? Math.min(Math.round((leadsUsed / leadsLimit) * 100), 100) 
+            : 0;
+            
+        $('#leadsUsed').text(`${leadsUsed} / ${leadsLimit}`);
+        $('#leadsProgress').css('width', `${leadsPercentage}%`).attr('aria-valuenow', leadsPercentage);
         
-        if (data.sms_metrics) {
-            document.querySelector('#totalMessages').textContent = data.sms_metrics.total_messages;
-            document.querySelector('#responseRate').textContent = data.sms_metrics.response_rate;
-            document.querySelector('#avgResponseTime').textContent = data.sms_metrics.avg_response_time;
-            document.querySelector('#conversionRate').textContent = data.sms_metrics.conversion_rate;
-        }
+        // Update voice metrics
+        const totalCalls = total.voice_calls || 0;
+        const totalMinutes = total.voice_minutes || 0;
+        const avgDuration = totalCalls > 0 ? `${(totalMinutes / totalCalls).toFixed(1)}m` : '0m';
+        const successRate = totalCalls > 0 
+            ? `${Math.round((total.successful_calls || 0) / totalCalls * 100)}%` 
+            : '0%';
+            
+        $('#totalCalls').text(totalCalls);
+        $('#totalMinutes').text(totalMinutes);
+        $('#avgDuration').text(avgDuration);
+        $('#successRate').text(successRate);
+        
+        // Update SMS metrics
+        const totalMessages = total.sms_messages || 0;
+        const responseRate = totalMessages > 0 
+            ? `${Math.round((total.sms_responses || 0) / totalMessages * 100)}%` 
+            : '0%';
+        const avgResponseTime = `${total.avg_response_time || 0}s`;
+        const conversionRate = totalMessages > 0 
+            ? `${Math.round((total.sms_conversions || 0) / totalMessages * 100)}%` 
+            : '0%';
+            
+        $('#totalMessages').text(totalMessages);
+        $('#responseRate').text(responseRate);
+        $('#avgResponseTime').text(avgResponseTime);
+        $('#conversionRate').text(conversionRate);
+        
+        // Update agent metrics
+        $('#activeAgents').text(agentsUsed);
+        $('#agentLimit').text(agentsLimit);
+        $('#agentPercentage').text(`${agentsPercentage}%`);
+        $('#agentFeatures').text(subscription.features ? subscription.features.length : 0);
+        
+        // Update lead metrics
+        $('#generatedLeads').text(leadsUsed);
+        $('#leadLimit').text(leadsLimit);
+        $('#leadPercentage').text(`${leadsPercentage}%`);
+        $('#leadConversionRate').text(conversionRate);
     }
 
     // Initialize Date Range Picker

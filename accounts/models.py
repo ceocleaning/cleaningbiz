@@ -57,12 +57,8 @@ class Business(models.Model):
                 end_date__gte=timezone.now()
             ).first()
 
-            print(subscription)
-
             if subscription and subscription.is_subscription_active():
-                print("Subscription is active")
                 return subscription
-            print("Subscription is not active")
             return None
 
         except Exception as e:

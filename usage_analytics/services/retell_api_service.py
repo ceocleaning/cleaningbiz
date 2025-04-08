@@ -50,12 +50,14 @@ class RetellAPIService:
             
             if start_date:
                 # Convert to milliseconds timestamp
-                start_timestamp = int(start_date.timestamp() * 1000)
+                start_datetime = datetime.combine(start_date, datetime.min.time())
+                start_timestamp = int(start_datetime.timestamp() * 1000)
                 timestamp_filter["lower_threshold"] = start_timestamp
                 
             if end_date:
                 # Convert to milliseconds timestamp
-                end_timestamp = int(end_date.timestamp() * 1000)
+                end_datetime = datetime.combine(end_date, datetime.min.time())
+                end_timestamp = int(end_datetime.timestamp() * 1000)
                 timestamp_filter["upper_threshold"] = end_timestamp
                 
             if timestamp_filter:

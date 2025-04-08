@@ -11,6 +11,7 @@ from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
 from accounts.models import ApiCredential, Business
 from invoice.models import Invoice, Payment
+from subscription.models import UsageTracker
 from retell import Retell
 import random
 import pytz
@@ -294,7 +295,7 @@ def create_lead(request):
             )
             
             # Track the lead generation in usage metrics
-            UsageService.track_lead_generated(lead.business)
+            UsageTracker.track_lead_generated(lead.business)
             
             messages.success(request, f'Lead {lead.leadId} created successfully!')
             return redirect('lead_detail', leadId=lead.leadId)

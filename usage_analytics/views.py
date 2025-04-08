@@ -17,31 +17,38 @@ def usage_overview(request):
     """Main usage overview dashboard."""
     business = request.user.business_set.first()
     
-    # Get current subscription
-    try:
-        subscription = BusinessSubscription.objects.filter(
-            business=business,
-            is_active=True
-        ).latest('created_at')
+    # Get current subscription using the active_subscription method
+    subscription = business.active_subscription()
+    
+    if subscription and subscription.is_subscription_active():
+        # Get features from M2M relationship
+        features = subscription.plan.features.filter(is_active=True)
+        feature_list = [feature.name for feature in features]
         
         subscription_data = {
             'name': subscription.plan.name,
             'price': subscription.plan.price,
             'status': subscription.status,
-            'next_billing_date': subscription.end_date,
-            'start_date': subscription.start_date,  # Add start date for date range picker
+            'next_billing_date': subscription.next_billing_date or subscription.end_date,
+            'start_date': subscription.start_date,
             'voice_minutes_limit': subscription.plan.voice_minutes,
             'sms_messages_limit': subscription.plan.sms_messages,
+            'agents_limit': subscription.plan.agents,
+            'leads_limit': subscription.plan.leads,
+            'features': feature_list
         }
-    except BusinessSubscription.DoesNotExist:
+    else:
         subscription_data = {
             'name': 'No Active Plan',
             'price': 0,
             'status': 'inactive',
             'next_billing_date': None,
-            'start_date': None,  # No start date if no subscription
+            'start_date': None,
             'voice_minutes_limit': 0,
             'sms_messages_limit': 0,
+            'agents_limit': 0,
+            'leads_limit': 0,
+            'features': []
         }
     
     # Get usage summary for current month
@@ -53,48 +60,60 @@ def usage_overview(request):
         end_date=today
     )
     
-    # Calculate usage percentages
-    # TODO: Has to get calls from retell api
-    voice_minutes_percentage = min(round((usage_summary['voice_minutes'] / subscription_data['voice_minutes_limit']) * 100, 0), 100) if subscription_data['voice_minutes_limit'] > 0 else 0
-    sms_messages_percentage = min(round((usage_summary['sms_messages'] / subscription_data['sms_messages_limit']) * 100, 0), 100) if subscription_data['sms_messages_limit'] > 0 else 0
+    # Calculate usage percentages with safety checks
+    voice_minutes_percentage = min(round((usage_summary.get('total', {}).get('voice_minutes', 0) / subscription_data['voice_minutes_limit']) * 100, 0), 100) if subscription_data['voice_minutes_limit'] > 0 else 0
+    sms_messages_percentage = min(round((usage_summary.get('total', {}).get('sms_messages', 0) / subscription_data['sms_messages_limit']) * 100, 0), 100) if subscription_data['sms_messages_limit'] > 0 else 0
+    agents_percentage = min(round((usage_summary.get('total', {}).get('active_agents', 0) / subscription_data['agents_limit']) * 100, 0), 100) if subscription_data['agents_limit'] > 0 else 0
+    leads_percentage = min(round((usage_summary.get('total', {}).get('leads_generated', 0) / subscription_data['leads_limit']) * 100, 0), 100) if subscription_data['leads_limit'] > 0 else 0
     
     # Get recent activities (calls and SMS)
     recent_activities = UsageService.get_recent_activities(business, limit=10)
+    
+    # Calculate average call duration properly
+    total_calls = RetellAPIService.list_calls(business=business, limit=100)
+    total_calls_count = len(total_calls)
+    total_minutes = usage_summary.get('total', {}).get('voice_minutes', 0)
+    avg_duration = f"{round(total_minutes / total_calls_count, 1)}m" if total_calls_count > 0 else "0m"
     
     context = {
         'active_page': 'usage_overview',
         'title': 'Usage Overview',
         'subscription': subscription_data,
         'usage': {
-            'voice_calls': {
-                'used': usage_summary['voice_calls'],
-                'limit': subscription_data['voice_calls_limit'],
-                'percentage': voice_calls_percentage
-            },
             'voice_minutes': {
-                'used': usage_summary['voice_minutes'],
+                'used': usage_summary.get('total', {}).get('voice_minutes', 0),
                 'limit': subscription_data['voice_minutes_limit'],
                 'percentage': voice_minutes_percentage
             },
             'sms_messages': {
-                'used': usage_summary['sms_messages'],
+                'used': usage_summary.get('total', {}).get('sms_messages', 0),
                 'limit': subscription_data['sms_messages_limit'],
                 'percentage': sms_messages_percentage
+            },
+            'agents': {
+                'used': usage_summary.get('total', {}).get('active_agents', 0),
+                'limit': subscription_data['agents_limit'],
+                'percentage': agents_percentage
+            },
+            'leads': {
+                'used': usage_summary.get('total', {}).get('leads_generated', 0),
+                'limit': subscription_data['leads_limit'],
+                'percentage': leads_percentage
             }
         },
         # Voice module key metrics
         'voice_metrics': {
-            'total_calls': usage_summary['voice_calls'],
-            'total_minutes': usage_summary['voice_minutes'],
-            'avg_duration': f"{usage_summary['voice_minutes'] / 0}m",
-            'success_rate': '0%'
+            'total_calls': total_calls_count,
+            'total_minutes': usage_summary.get('total', {}).get('voice_minutes', 0),
+            'avg_duration': avg_duration,
+            'success_rate': f"{round(usage_summary.get('total', {}).get('successful_calls', 0) / total_calls_count * 100 if total_calls_count > 0 else 0)}%"
         },
         # SMS module key metrics
         'sms_metrics': {
-            'total_messages': usage_summary['sms_messages'],
-            'response_rate': '0%',
-            'avg_response_time': '0s',
-            'conversion_rate': '0%'
+            'total_messages': usage_summary.get('total', {}).get('sms_messages', 0),
+            'response_rate': f"{round(usage_summary.get('total', {}).get('sms_responses', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100)}%",
+            'avg_response_time': f"{usage_summary.get('total', {}).get('avg_response_time', 0)}s",
+            'conversion_rate': f"{round(usage_summary.get('total', {}).get('sms_conversions', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100)}%"
         },
         # Recent activities
         'recent_activities': recent_activities
@@ -104,269 +123,93 @@ def usage_overview(request):
 
 @login_required
 def voice_analytics(request):
-    """Voice analytics dashboard."""
+    """View for voice analytics dashboard."""
     business = request.user.business_set.first()
     
-    # Get date range from query parameters or use defaults
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
+    # Get the current subscription for the business
+    subscription = business.active_subscription()
     
-    try:
-        if start_date_str:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        else:
-            # Default to subscription period if available, otherwise start of month
-            if hasattr(business, 'businesssubscription'):
-                start_date = business.businesssubscription.start_date
-            else:
-                start_date = timezone.now().date().replace(day=1)
-            
-        if end_date_str:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        else:
-            # Default to subscription end date if available, otherwise today
-            if hasattr(business, 'businesssubscription'):
-                end_date = business.businesssubscription.end_date
-            else:
-                end_date = timezone.now().date()
-    except ValueError:
-        # Handle invalid date format
-        start_date = timezone.now().date().replace(day=1)
-        end_date = timezone.now().date()
-    
-    # Convert date objects to datetime objects for Retell API
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    end_datetime = datetime.combine(end_date, datetime.max.time())
-    
-    # Get call data from Retell API
-    calls = RetellAPIService.list_calls(
-        business=business,
-        start_date=start_datetime,
-        end_date=end_datetime,
-        limit=100
-    )
-    
-    # Calculate voice statistics
-    total_calls = len(calls)
-    total_minutes = 0
-    avg_duration = "0m 0s"
-    success_rate = "0%"
-    
-    if total_calls > 0:
-        # Calculate total minutes
-        total_seconds = sum(call.get('duration', 0) for call in calls)
-        total_minutes = round(total_seconds / 60)
-        
-        # Calculate average duration
-        avg_seconds = total_seconds / total_calls
-        avg_minutes = int(avg_seconds // 60)
-        avg_remaining_seconds = int(avg_seconds % 60)
-        avg_duration = f"{avg_minutes}m {avg_remaining_seconds}s"
-        
-        # Calculate success rate
-        success_rate = f"{RetellAPIService.calculate_success_rate(calls)}%"
-    
-    subscription = BusinessSubscription.objects.filter(business=business).first()
-    
+    # Prepare context with only the subscription data
     context = {
-        'voice_stats': {
-            'total_calls': total_calls,
-            'total_minutes': total_minutes,
-            'avg_duration': avg_duration,
-            'success_rate': success_rate
-        },
         'subscription': subscription,
-        'date_range': {
-            'start_date': start_date.strftime('%Y-%m-%d'),
-            'end_date': end_date.strftime('%Y-%m-%d')
-        }
     }
     
     return render(request, 'usage_analytics/voice_analytics.html', context)
 
 @login_required
 def get_voice_analytics(request):
-    """API endpoint to get voice analytics data with date range filtering."""
+    """API endpoint to retrieve voice analytics summary data."""
     business = request.user.business_set.first()
     
-    # Get date range parameters
+    # Parse date range from request
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
     
-    # Parse date strings to date objects
     try:
         if start_date_str:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            # Handle different date formats
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                start_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d').date()
         else:
-            # Default to subscription period if available, otherwise start of month
-            if hasattr(business, 'businesssubscription'):
-                start_date = business.businesssubscription.start_date
-            else:
-                start_date = timezone.now().date().replace(day=1)
+            # Default to last 30 days
+            start_date = (timezone.now() - timedelta(days=30)).date()
             
         if end_date_str:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            # Handle different date formats
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                end_date = datetime.strptime(end_date_str.split(' ')[0], '%Y-%m-%d').date()
         else:
-            # Default to subscription end date if available, otherwise today
-            if hasattr(business, 'businesssubscription'):
-                end_date = business.businesssubscription.end_date
-            else:
-                end_date = timezone.now().date()
-    except ValueError:
+            end_date = timezone.now().date()
+            
+        print(f"Voice Analytics - Date range: {start_date} to {end_date}")
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        print(f"Received start_date: {start_date_str}")
+        print(f"Received end_date: {end_date_str}")
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
-    # Get usage summary for the specified date range
+    # Get usage summary for the date range
     usage_summary = UsageTracker.get_usage_summary(
         business=business,
         start_date=start_date,
         end_date=end_date
     )
     
+    # Get call data from Retell API
+    from .services.retell_api_service import RetellAPIService
+    calls = RetellAPIService.list_calls(
+        business=business, 
+        start_date=start_date, 
+        end_date=end_date,
+        limit=100
+    )
+    
+    # Calculate metrics
+    total_calls = len(calls)
+    total_data = usage_summary.get('total', {})
+    total_voice_minutes = int(total_data.get('voice_minutes', 0))  # Convert to integer to remove decimal points
+    
     # Calculate average call duration
-    # TODO: Has to get calls from retell api
-    avg_duration_minutes = usage_summary['voice_minutes'] / 0
-    avg_duration_seconds = int(avg_duration_minutes * 60)
-    avg_duration_formatted = f"{int(avg_duration_minutes)}m {avg_duration_seconds % 60}s"
+    avg_duration = round(total_voice_minutes / total_calls, 1) if total_calls > 0 else 0
     
-    # Generate daily data for the chart - using real data from UsageTracker
-    date_range = []
-    voice_calls = []
-    voice_minutes = []
-    
-    # Calculate the number of days in the range
-    delta = end_date - start_date
-    days_in_range = delta.days + 1
-    
-    # Get daily usage data from the database
-    daily_usage = UsageTracker.objects.filter(
-        business=business,
-        date__gte=start_date,
-        date__lte=end_date
-    ).order_by('date')
-    
-    # Check if we have any usage data
-    if not daily_usage.exists():
-        # Generate sample data for demonstration purposes
-        # In a real application, you would want to show actual data or zeros
-        print("No usage data found. Generating sample data for demonstration.")
-        
-        # Create sample data for Sarah's AI Voice Agent activities
-        current_date = start_date
-        while current_date <= end_date:
-            # Generate realistic sample data based on Sarah's expected usage patterns
-            # More calls during business hours (9 AM - 5 PM Central Time)
-            weekday = current_date.weekday()
-            
-            # Fewer calls on weekends
-            if weekday >= 5:  # Saturday or Sunday
-                daily_calls = random.randint(1, 3)
-            else:
-                daily_calls = random.randint(3, 8)
-                
-            # Average call duration for Sarah is 2-5 minutes
-            # This reflects time spent collecting customer details, discussing services, and scheduling
-            avg_call_duration = random.uniform(2, 5)
-            daily_minutes = round(daily_calls * avg_call_duration, 1)
-            
-            # Create or update the usage tracker entry
-            usage, created = UsageTracker.objects.get_or_create(
-                business=business,
-                date=current_date,
-                defaults={'metrics': {}}
-            )
-            
-            # Update metrics
-            metrics = usage.metrics
-            metrics['voice_calls'] = daily_calls
-            metrics['voice_minutes'] = daily_minutes
-            # Sarah also sends SMS confirmations after bookings
-            metrics['sms_messages'] = int(daily_calls * 0.8)  # Not every call results in an SMS
-            
-            usage.metrics = metrics
-            usage.save()
-            
-            current_date += timedelta(days=1)
-        
-        # Refresh the query to include our new sample data
-        daily_usage = UsageTracker.objects.filter(
-            business=business,
-            date__gte=start_date,
-            date__lte=end_date
-        ).order_by('date')
-    
-    # Create a dictionary to easily look up usage by date
-    usage_by_date = {usage.date.strftime('%Y-%m-%d'): usage for usage in daily_usage}
-    
-    # Fill in the data for each day in the range
-    current_date = start_date
-    while current_date <= end_date:
-        date_str = current_date.strftime('%Y-%m-%d')
-        date_range.append(date_str)
-        
-        # Get actual usage data if available, otherwise use 0
-        if date_str in usage_by_date:
-            usage = usage_by_date[date_str]
-            # Access the metrics from the JSONField
-            metrics = usage.metrics
-            voice_calls.append(metrics.get('voice_calls', 0))
-            voice_minutes.append(metrics.get('voice_minutes', 0))
-        else:
-            voice_calls.append(0)
-            voice_minutes.append(0)
-        
-        current_date += timedelta(days=1)
-    
-    # Recalculate usage summary with the new data
-    if not usage_summary['voice_calls'] and not usage_summary['voice_minutes']:
-        usage_summary = UsageTracker.get_usage_summary(
-            business=business,
-            start_date=start_date,
-            end_date=end_date
-        )
-        
-        # Recalculate average call duration
-        avg_duration_minutes = usage_summary['voice_minutes'] / usage_summary['voice_calls'] if usage_summary['voice_calls'] > 0 else 0
-        avg_duration_seconds = int(avg_duration_minutes * 60)
-        avg_duration_formatted = f"{int(avg_duration_minutes)}m {avg_duration_seconds % 60}s"
-    
-    # Call outcome breakdown - use real data if available
-    # For now, we'll use sample data based on Sarah's performance
-    call_outcomes = {
-        'completed': 65,  # Sarah successfully collects details and schedules appointments
-        'failed': 15,     # Technical issues or customer hangs up
-        'no_answer': 12,  # Customer doesn't pick up
-        'busy': 8         # Customer is busy
-    }
-    
-    # Call duration distribution - use real data if available
-    # For now, we'll use sample data based on Sarah's conversation flow
-    call_duration_distribution = {
-        '< 1m': 10,    # Very short calls (customer hangs up)
-        '1-2m': 25,    # Brief inquiries
-        '2-3m': 35,    # Standard booking process
-        '3-5m': 30,    # Detailed service discussions
-        '5-10m': 15,   # Complex bookings with multiple services
-        '> 10m': 5     # Unusual cases with many questions
-    }
-    
-    # Return the data as JSON
-    return JsonResponse({
-        'dates': date_range,
-        'voice_calls': voice_calls,
-        'voice_minutes': voice_minutes,
-        'voice_metrics': {
-            'total_calls': usage_summary['voice_calls'],
-            'total_minutes': usage_summary['voice_minutes'],
-            'avg_duration': avg_duration_formatted,
-            'success_rate': '87%'
-        },
-        'call_outcomes': call_outcomes,
-        'call_duration_distribution': call_duration_distribution,
+    # Prepare the response data with just the summary metrics
+    response_data = {
+        'total_calls': total_calls,
+        'total_minutes': total_voice_minutes,
+        'avg_duration': avg_duration,
         'date_range': {
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d')
         }
-    })
+    }
+    
+    return JsonResponse(response_data)
 
 @login_required
 def get_call_outcomes(request):
@@ -623,55 +466,104 @@ def sms_analytics(request):
     """Detailed SMS analytics page."""
     business = request.user.business_set.first()
     
-    # Get usage summary for current month
-    today = timezone.now().date()
-    start_of_month = today.replace(day=1)
-    usage_summary = UsageTracker.get_usage_summary(
-        business=business,
-        start_date=start_of_month,
-        end_date=today
-    )
+    # Get the current subscription for the business
+    subscription = business.active_subscription()
     
-    # Message status breakdown (sample data)
-    message_status = {
-        'delivered': 97,
-        'read': 85,
-        'responded': 68,
-        'failed': 3
-    }
-    
-    # Response time distribution (sample data)
-    response_time_distribution = {
-        '<30s': 320,
-        '30s-1m': 250,
-        '1m-5m': 180,
-        '5m-30m': 90,
-        '30m-1h': 45,
-        '>1h': 15
-    }
-    
-    # Customer engagement (sample data)
-    customer_engagement = {
-        'high': 37,
-        'medium': 39,
-        'low': 24
-    }
-    
+    # Prepare context with only the subscription data
     context = {
-        'active_page': 'sms_analytics',
-        'title': 'SMS Analytics',
-        'sms_stats': {
-            'total_messages': usage_summary['sms_messages'],
-            'response_rate': '85%',
-            'avg_response_time': '45s',
-            'conversion_rate': '32%'
-        },
-        'message_status': message_status,
-        'response_time_distribution': response_time_distribution,
-        'customer_engagement': customer_engagement
+        'subscription': subscription,
     }
     
     return render(request, 'usage_analytics/sms_analytics.html', context)
+
+@login_required
+def get_sms_analytics(request):
+    """API endpoint to retrieve SMS analytics summary data."""
+    business = request.user.business_set.first()
+    subscription = business.active_subscription()
+    
+    # Parse date range from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        else:
+            start_date = (timezone.now() - timedelta(days=30)).date()
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        else:
+            end_date = timezone.now().date()
+
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        print(f"Received start_date: {start_date_str}")
+        print(f"Received end_date: {end_date_str}")
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    try:
+        # Get usage summary from UsageTracker
+        usage_summary = UsageTracker.get_usage_summary(
+            business=business,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Get total SMS messages from usage summary
+        total_messages = usage_summary.get('total', {}).get('sms_messages', 0)
+        
+        # Calculate conversion rate by checking chat status
+        from ai_agent.models import Chat
+        
+        # Convert dates to datetime for proper filtering
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+        
+        # Get all chats for this business within the date range
+        total_chats = Chat.objects.filter(
+            business=business,
+            createdAt__gte=start_datetime,
+            createdAt__lte=end_datetime
+        ).count()
+        
+        # Get chats with status 'booked'
+        booked_chats = Chat.objects.filter(
+            business=business,
+            createdAt__gte=start_datetime,
+            createdAt__lte=end_datetime,
+            status='booked'
+        ).count()
+        
+        # Calculate conversion rate
+        conversion_rate = round((booked_chats / total_chats * 100), 1) if total_chats > 0 else 0
+        
+        print(f"DEBUG: Total chats: {total_chats}, Booked chats: {booked_chats}, Conversion rate: {conversion_rate}%")
+        
+        # Prepare response data
+        response_data = {
+            'total_messages': total_messages,
+            'conversion_rate': {
+                'value': conversion_rate,
+                'unit': '%'
+            },
+            'total_chats': total_chats,
+            'booked_chats': booked_chats,
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            },
+            'subscription': {
+                'start_date': subscription.start_date.strftime('%Y-%m-%d'),
+                'end_date': subscription.next_billing_date.strftime('%Y-%m-%d')
+            }
+        }
+        
+        return JsonResponse(response_data)
+    except Exception as e:
+        print(f"Error in get_sms_analytics: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
 def get_usage_data(request):
@@ -684,119 +576,165 @@ def get_usage_data(request):
     
     try:
         if start_date_str:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            # Handle different date formats
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                start_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d').date()
         else:
             # Default to last 30 days
             start_date = (timezone.now() - timedelta(days=30)).date()
             
         if end_date_str:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            # Handle different date formats
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                end_date = datetime.strptime(end_date_str.split(' ')[0], '%Y-%m-%d').date()
         else:
             end_date = timezone.now().date()
-    except ValueError:
+            
+        print(f"Parsed date range: {start_date} to {end_date}")
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        print(f"Received start_date: {start_date_str}")
+        print(f"Received end_date: {end_date_str}")
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
-    # Get actual usage data for the date range
-    usage_records = UsageTracker.objects.filter(
+    # Get usage summary for the date range
+    usage_summary = UsageTracker.get_usage_summary(
         business=business,
-        date__gte=start_date,
-        date__lte=end_date
-    ).order_by('date')
+        start_date=start_date,
+        end_date=end_date
+    )
     
-    # Prepare data structure for charts
+    # Get daily metrics for charts
     dates = []
-    voice_calls_data = []
     voice_minutes_data = []
     sms_messages_data = []
+    agents_data = []
+    leads_data = []
+    
+    # Process daily data from usage summary
+    daily_data = usage_summary.get('daily', [])
+    
+    # Create a dictionary to map dates to their data for easier lookup
+    daily_data_dict = {}
+    for entry in daily_data:
+        date_str = entry['date'].strftime('%Y-%m-%d') if hasattr(entry['date'], 'strftime') else entry['date']
+        daily_data_dict[date_str] = entry['metrics']
     
     current_date = start_date
-    date_data_map = {record.date: record.metrics for record in usage_records}
-    
     while current_date <= end_date:
-        dates.append(current_date.strftime('%Y-%m-%d'))
+        date_str = current_date.strftime('%Y-%m-%d')
+        dates.append(date_str)
         
         # Get metrics for the current date if available
-        if current_date in date_data_map:
-            metrics = date_data_map[current_date]
-            voice_calls_data.append(metrics.get('voice_calls', 0))
-            voice_minutes_data.append(metrics.get('voice_minutes', 0))
-            sms_messages_data.append(metrics.get('sms_messages', 0))
-        else:
-            voice_calls_data.append(0)
-            voice_minutes_data.append(0)
-            sms_messages_data.append(0)
+        day_data = daily_data_dict.get(date_str, {})
+        voice_minutes_data.append(day_data.get('voice_minutes', 0))
+        sms_messages_data.append(day_data.get('sms_messages', 0))
+        agents_data.append(day_data.get('active_agents', 0))
+        leads_data.append(day_data.get('leads_generated', 0))
         
         current_date += timedelta(days=1)
     
-    # Calculate totals for the selected period
-    total_voice_calls = sum(voice_calls_data)
-    total_voice_minutes = sum(voice_minutes_data)
-    total_sms_messages = sum(sms_messages_data)
+    # Get current subscription using the active_subscription method
+    subscription = business.active_subscription()
     
-    # Get current subscription for limits
-    try:
-        subscription = BusinessSubscription.objects.filter(
-            business=business,
-            is_active=True
-        ).latest('created_at')
+    if subscription and subscription.is_subscription_active():
+        # Get features from M2M relationship
+        features = subscription.plan.features.filter(is_active=True)
+        feature_list = [feature.name for feature in features]
         
-        # Calculate usage percentages
-        voice_calls_percentage = min(round((total_voice_calls / subscription.plan.voice_calls) * 100, 0), 100) if subscription.plan.voice_calls > 0 else 0
-        voice_minutes_percentage = min(round((total_voice_minutes / subscription.plan.voice_minutes) * 100, 0), 100) if subscription.plan.voice_minutes > 0 else 0
-        sms_messages_percentage = min(round((total_sms_messages / subscription.plan.sms_messages) * 100, 0), 100) if subscription.plan.sms_messages > 0 else 0
-        
-        # Prepare usage data
-        usage_data = {
-            'voice_calls': {
-                'used': total_voice_calls,
-                'limit': subscription.plan.voice_calls,
-                'percentage': voice_calls_percentage
-            },
-            'voice_minutes': {
-                'used': total_voice_minutes,
-                'limit': subscription.plan.voice_minutes,
-                'percentage': voice_minutes_percentage
-            },
-            'sms_messages': {
-                'used': total_sms_messages,
-                'limit': subscription.plan.sms_messages,
-                'percentage': sms_messages_percentage
-            }
+        subscription_data = {
+            'name': subscription.plan.name,
+            'price': float(subscription.plan.price),
+            'status': subscription.status,
+            'next_billing_date': subscription.next_billing_date.strftime('%Y-%m-%d') if subscription.next_billing_date else None,
+            'start_date': subscription.start_date.strftime('%Y-%m-%d'),
+            'voice_minutes_limit': subscription.plan.voice_minutes,
+            'sms_messages_limit': subscription.plan.sms_messages,
+            'agents_limit': subscription.plan.agents,
+            'leads_limit': subscription.plan.leads,
+            'features': feature_list
         }
-    except BusinessSubscription.DoesNotExist:
-        usage_data = {
-            'voice_calls': {'used': total_voice_calls, 'limit': 0, 'percentage': 0},
-            'voice_minutes': {'used': total_voice_minutes, 'limit': 0, 'percentage': 0},
-            'sms_messages': {'used': total_sms_messages, 'limit': 0, 'percentage': 0}
+    else:
+        subscription_data = {
+            'name': 'No Active Plan',
+            'price': 0,
+            'status': 'inactive',
+            'next_billing_date': None,
+            'start_date': None,
+            'voice_minutes_limit': 0,
+            'sms_messages_limit': 0,
+            'agents_limit': 0,
+            'leads_limit': 0,
+            'features': []
         }
     
-    # Calculate metrics for voice module
-    avg_duration = f"{total_voice_minutes / total_voice_calls if total_voice_calls > 0 else 0:.1f}m"
-    success_rate = '87%'  # This could be calculated from actual data in a real implementation
+    # Get recent activities
+    recent_activities = UsageService.get_recent_activities(business, limit=10)
+    activity_data = []
     
-    # Calculate metrics for SMS module
-    response_rate = '85%'  # This could be calculated from actual data in a real implementation
-    avg_response_time = '45s'  # This could be calculated from actual data in a real implementation
-    conversion_rate = '32%'  # This could be calculated from actual data in a real implementation
+    for activity in recent_activities:
+        activity_data.append({
+            'type': activity.get('type'),
+            'contact': activity.get('contact'),
+            'status': activity.get('status'),
+            'timestamp': activity.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if activity.get('timestamp') else None,
+            'preview': activity.get('preview', ''),
+            'duration': activity.get('duration', 'N/A')
+        })
+    
+    # Get call data from Retell API
+    from .services.retell_api_service import RetellAPIService
+    total_calls = RetellAPIService.list_calls(business=business, limit=100, start_date=start_date, end_date=end_date)
+    total_calls_count = len(total_calls)
+    
+    # Calculate metrics
+    total_data = usage_summary.get('total', {})
+    total_voice_minutes = total_data.get('voice_minutes', 0)
+    total_sms_messages = total_data.get('sms_messages', 0)
+    total_agents = total_data.get('active_agents', 0)
+    print(f"Total Agents - GET USAGE DATA: {total_agents}")
+    total_leads = total_data.get('leads_generated', 0)
+    
+    # Calculate average call duration
+    avg_duration = f"{round(total_voice_minutes / total_calls_count, 1)}m" if total_calls_count > 0 else "0m"
     
     # Prepare the response data
     response_data = {
         'dates': dates,
-        'voice_calls': voice_calls_data,
         'voice_minutes': voice_minutes_data,
         'sms_messages': sms_messages_data,
-        'usage': usage_data,
+        'agents': agents_data,
+        'leads': leads_data,
+        'subscription': subscription_data,
+        'usage_summary': usage_summary,
+        'recent_activities': activity_data,
         'voice_metrics': {
-            'total_calls': total_voice_calls,
+            'total_calls': total_calls_count,
             'total_minutes': total_voice_minutes,
             'avg_duration': avg_duration,
-            'success_rate': success_rate
+            'success_rate': f"{round(total_data.get('successful_calls', 0) / total_calls_count * 100 if total_calls_count > 0 else 0)}%"
         },
         'sms_metrics': {
             'total_messages': total_sms_messages,
-            'response_rate': response_rate,
-            'avg_response_time': avg_response_time,
-            'conversion_rate': conversion_rate
+            'response_rate': f"{round(total_data.get('sms_responses', 0) / total_sms_messages * 100 if total_sms_messages > 0 else 0)}%",
+            'avg_response_time': f"{total_data.get('avg_response_time', 0)}s",
+            'conversion_rate': f"{round(total_data.get('sms_conversions', 0) / total_sms_messages * 100 if total_sms_messages > 0 else 0)}%"
+        },
+        'agent_metrics': {
+            'total_agents': total_agents,
+            'usage_percentage': f"{round(total_agents / subscription_data['agents_limit'] * 100 if subscription_data['agents_limit'] > 0 else 0)}%",
+            'features_count': len(subscription_data['features'])
+        },
+        'lead_metrics': {
+            'total_leads': total_leads,
+            'usage_percentage': f"{round(total_leads / subscription_data['leads_limit'] * 100 if subscription_data['leads_limit'] > 0 else 0)}%",
+            'conversion_rate': f"{round(total_data.get('lead_conversions', 0) / total_leads * 100 if total_leads > 0 else 0)}%"
         }
     }
     
@@ -987,3 +925,436 @@ def get_recent_calls(request):
             'end_date': end_date.strftime('%Y-%m-%d')
         }
     })
+
+@login_required
+def get_call_volume(request):
+    """API endpoint to retrieve call volume data for the chart."""
+    business = request.user.business_set.first()
+    
+    # Parse date range from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    try:
+        if start_date_str:
+            # Handle different date formats
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                start_date = datetime.strptime(start_date_str.split(' ')[0], '%Y-%m-%d').date()
+        else:
+            # Default to last 30 days
+            start_date = (timezone.now() - timedelta(days=30)).date()
+            
+        if end_date_str:
+            # Handle different date formats
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                # Try alternative format
+                end_date = datetime.strptime(end_date_str.split(' ')[0], '%Y-%m-%d').date()
+        else:
+            end_date = timezone.now().date()
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Get call data from Retell API
+    from .services.retell_api_service import RetellAPIService
+    calls = RetellAPIService.list_calls(
+        business=business, 
+        start_date=start_date, 
+        end_date=end_date,
+        limit=100
+    )
+    
+    # Calculate daily call volume
+    dates = []
+    call_volume = []
+    voice_minutes = []
+    
+    current_date = start_date
+    daily_calls = {}
+    daily_minutes = {}
+    
+    # Group calls by date
+    for call in calls:
+        call_date = datetime.fromtimestamp(call.get('start_timestamp', 0) / 1000).date()
+        date_str = call_date.strftime('%Y-%m-%d')
+        
+        # Count calls
+        if date_str in daily_calls:
+            daily_calls[date_str] += 1
+        else:
+            daily_calls[date_str] = 1
+        
+        # Sum minutes
+        duration_ms = call.get('duration', 0)  # Duration in milliseconds
+        duration_min = duration_ms / (1000 * 60)  # Convert to minutes
+        
+        if date_str in daily_minutes:
+            daily_minutes[date_str] += duration_min
+        else:
+            daily_minutes[date_str] = duration_min
+    
+    # Fill in the date range
+    while current_date <= end_date:
+        date_str = current_date.strftime('%Y-%m-%d')
+        dates.append(date_str)
+        call_volume.append(daily_calls.get(date_str, 0))
+        voice_minutes.append(int(round(daily_minutes.get(date_str, 0))))  # Round to integer
+        current_date += timedelta(days=1)
+    
+    # Prepare the response data
+    response_data = {
+        'dates': dates,
+        'call_volume': call_volume,
+        'voice_minutes': voice_minutes,
+        'date_range': {
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d')
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+@login_required
+def get_sms_volume(request):
+    """API endpoint to retrieve SMS message volume data for the chart."""
+    business = request.user.business_set.first()
+    
+    
+    # Parse date range from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    try:
+        # Get usage summary from UsageTracker
+        usage_summary = UsageTracker.get_usage_summary(
+            business=business,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Calculate daily SMS message volume from the daily breakdown
+        dates = []
+        sms_volume = []
+        
+        # Create a dictionary to map dates to their SMS message counts
+        daily_sms = {}
+        
+        # Process daily data from the usage summary
+        for daily_entry in usage_summary.get('daily', []):
+            date_obj = daily_entry.get('date')
+            if date_obj:
+                date_str = date_obj.strftime('%Y-%m-%d')
+                metrics = daily_entry.get('metrics', {})
+                daily_sms[date_str] = int(metrics.get('sms_messages', 0))
+        
+        # Fill in the date range with zeros for missing dates
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            dates.append(date_str)
+            sms_volume.append(daily_sms.get(date_str, 0))
+            current_date += timedelta(days=1)
+        
+        # Prepare the response data
+        response_data = {
+            'dates': dates,
+            'sms_volume': sms_volume,
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            }
+        }
+        
+        return JsonResponse(response_data)
+    except Exception as e:
+        print(f"Error in get_sms_volume: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def get_sms_response_rate(request):
+    """API endpoint to retrieve SMS response rate data."""
+    business = request.user.business_set.first()
+    
+    # Parse date range from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    try:
+        # Import needed models
+        from ai_agent.models import Chat, Messages
+        
+        # Convert dates to datetime for proper filtering
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+        
+        # Get all chats for this business within the date range
+        chats = Chat.objects.filter(
+            business=business,
+            createdAt__gte=start_datetime,
+            createdAt__lte=end_datetime
+        )
+        
+        total_assistant_messages = 0
+        total_user_responses = 0
+        
+        # Process each chat
+        for chat in chats:
+            # Get all messages in this chat ordered by creation time
+            messages = Messages.objects.filter(chat=chat).order_by('createdAt')
+            
+            # Track the last role to identify response patterns
+            last_role = None
+            
+            for message in messages:
+                if message.role == 'assistant':
+                    total_assistant_messages += 1
+                    last_role = 'assistant'
+                elif message.role == 'user' and last_role == 'assistant':
+                    # This is a user responding to an assistant message
+                    total_user_responses += 1
+                    last_role = 'user'
+                elif message.role == 'user':
+                    last_role = 'user'
+        
+        # Calculate response rate
+        response_rate = (total_user_responses / total_assistant_messages * 100) if total_assistant_messages > 0 else 0
+        response_rate = round(response_rate, 1)
+        
+        print(f"DEBUG: Total assistant messages: {total_assistant_messages}, Total user responses: {total_user_responses}")
+        print(f"DEBUG: Response rate: {response_rate}%")
+        
+        # Prepare response data
+        response_data = {
+            'response_rate': {
+                'value': response_rate,
+                'unit': '%'
+            },
+            'total_messages': total_assistant_messages,
+            'total_responses': total_user_responses,
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            }
+        }
+
+        print("SMS response rate data:", response_data)
+        
+        return JsonResponse(response_data)
+    except Exception as e:
+        print(f"Error in get_sms_response_rate: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def get_sms_response_time(request):
+    """API endpoint to retrieve SMS response time data."""
+    business = request.user.business_set.first()
+    
+    # Parse date range from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    
+    try:
+        # Get usage summary from UsageTracker
+        from ai_agent.models import Chat, Messages
+        
+        # Convert dates to datetime for proper filtering
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+        
+        # Get all chats for this business within the date range
+        chats = Chat.objects.filter(
+            business=business,
+            createdAt__gte=start_datetime,
+            createdAt__lte=end_datetime
+        )
+        
+        # Track response times
+        response_times = []
+        total_response_time = 0
+        total_responses = 0
+        
+        # Process each chat
+        for chat in chats:
+            # Get all messages in this chat ordered by creation time
+            messages = list(Messages.objects.filter(chat=chat).order_by('createdAt'))
+            
+            # Need at least 2 messages to calculate response time
+            if len(messages) < 2:
+                continue
+            
+            # Track the last assistant message time
+            last_assistant_msg_time = None
+            
+            # Analyze message sequence to find response times
+            for message in messages:
+                if message.role == 'assistant':
+                    last_assistant_msg_time = message.createdAt
+                elif message.role == 'user' and last_assistant_msg_time:
+                    # Calculate time difference in seconds
+                    time_diff = (message.createdAt - last_assistant_msg_time).total_seconds()
+                    
+                    # Only count reasonable response times (less than 24 hours)
+                    if 0 < time_diff < 86400:  # 86400 seconds = 24 hours
+                        response_times.append(time_diff)
+                        total_response_time += time_diff
+                        total_responses += 1
+                        
+                    # Reset after finding a response
+                    last_assistant_msg_time = None
+        
+        # Calculate overall average response time in minutes
+        overall_avg_response_time = round(total_response_time / total_responses / 60) if total_responses > 0 else 0
+        
+        print(f"DEBUG: Total responses: {total_responses}, Total response time: {total_response_time}")
+        
+        # Get response time distribution from actual data
+        response_time_distribution = {}
+        
+        # Define time buckets (in minutes)
+        time_buckets = {
+            'under_5min': 0,
+            '5_15min': 0,
+            '15_30min': 0,
+            '30_60min': 0,
+            'over_60min': 0
+        }
+        
+        # Categorize response times into buckets
+        for time_in_seconds in response_times:
+            time_in_minutes = time_in_seconds / 60
+            
+            if time_in_minutes < 5:
+                time_buckets['under_5min'] += 1
+            elif time_in_minutes < 15:
+                time_buckets['5_15min'] += 1
+            elif time_in_minutes < 30:
+                time_buckets['15_30min'] += 1
+            elif time_in_minutes < 60:
+                time_buckets['30_60min'] += 1
+            else:
+                time_buckets['over_60min'] += 1
+        
+        # Calculate percentages for each bucket
+        for bucket, count in time_buckets.items():
+            percentage = (count / total_responses * 100) if total_responses > 0 else 0
+            response_time_distribution[bucket] = round(percentage, 1)
+        
+        # Prepare the response data
+        response_data = {
+            'avg_response_time': {
+                'value': overall_avg_response_time,
+                'unit': 'min'
+            },
+            'response_time_distribution': response_time_distribution,
+            'total_responses': total_responses,
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            }
+        }
+        
+        return JsonResponse(response_data)
+    except Exception as e:
+        print(f"Error in get_sms_response_time: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def get_recent_sms_messages(request):
+    """API endpoint to retrieve recent SMS messages."""
+    business = request.user.business_set.first()
+    
+    # Get date range parameters
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    # Get current subscription
+    subscription = business.active_subscription()
+    
+
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+    except ValueError as e:
+        print(f"Date parsing error: {str(e)}")
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    try:
+        # Convert date objects to datetime objects for querying
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+        
+        # Get SMS messages from the database
+        # Assuming you have a Message model or similar
+        from ai_agent.models import Messages
+
+        
+        messages = Messages.objects.filter(
+            chat__business=business,
+            createdAt__gte=start_datetime,
+            createdAt__lte=end_datetime
+        ).order_by('-createdAt')[:10]  # Get the 10 most recent messages
+        
+        # Format the messages for the response
+        message_list = []
+        for msg in messages:
+            message_list.append({
+                'id': msg.id,
+                'contact': msg.chat.clientPhoneNumber,
+                'message_preview': msg.message[:100] + '...' if len(msg.message) > 100 else msg.message,
+                'sent_at': msg.createdAt.strftime('%b %d, %Y, %I:%M %p'),
+                'is_today': msg.createdAt.date() == timezone.now().date(),
+                'is_yesterday': msg.createdAt.date() == (timezone.now().date() - timedelta(days=1))
+            })
+
+        # If no messages found, return an empty list (not dummy data)
+        if not message_list:
+            return JsonResponse({
+                'messages': [],
+                'date_range': {
+                    'start_date': start_date.strftime('%Y-%m-%d'),
+                    'end_date': end_date.strftime('%Y-%m-%d')
+                }
+            })
+        
+        return JsonResponse({
+            'messages': message_list,
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            }
+        })
+    except Exception as e:
+        print(f"Error in get_recent_sms_messages: {str(e)}")
+        # Return an empty list instead of dummy data
+        return JsonResponse({
+            'messages': [],
+            'error': str(e),
+            'date_range': {
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d')
+            }
+        }, status=500)
