@@ -81,7 +81,7 @@ def usage_overview(request):
         'subscription': subscription_data,
         'usage': {
             'voice_minutes': {
-                'used': usage_summary.get('total', {}).get('voice_minutes', 0),
+                'used': int(total_minutes),
                 'limit': subscription_data['voice_minutes_limit'],
                 'percentage': voice_minutes_percentage
             },
