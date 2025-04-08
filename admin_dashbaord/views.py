@@ -546,12 +546,9 @@ def add_business(request):
             isApproved=is_approved,
             isActive=is_active,
             useCall=use_call,
-            timeToWait=int(time_to_wait) if time_to_wait else 0
+            timeToWait=int(time_to_wait) if time_to_wait else 10
         )
-        
-        # Send approval email if the business is approved
-        if is_approved:
-            send_business_approval_email(business)
+
         
         messages.success(request, f'Business "{business_name}" has been created successfully.')
         return redirect('admin_dashboard:businesses')
@@ -774,10 +771,10 @@ def users(request):
     search_query = request.GET.get('search', '')
     if search_query:
         users = users.filter(
-            models.Q(username__icontains=search_query) | 
-            models.Q(email__icontains=search_query) |
-            models.Q(first_name__icontains=search_query) |
-            models.Q(last_name__icontains=search_query)
+            Q(username__icontains=search_query) | 
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
         )
     
     # Pagination
