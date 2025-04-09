@@ -207,7 +207,7 @@ def create_retell_llm(request):
     """
     # Get the user's business
     business = request.user.business_set.first()
-    
+    apiCredential = ApiCredential.objects.filter(business=business).first()
     # Check if business already has an LLM
     existing_llm = RetellLLM.objects.filter(business=business).first()
     if existing_llm:
@@ -229,7 +229,8 @@ def create_retell_llm(request):
             "begin_message": "Hello, this is your cleaning service virtual assistant. How can I help you today?",
             "default_dynamic_variables": {
                 "business_name": business.name if hasattr(business, 'name') else "Cleaning Service",
-            }
+            },
+            'webhook_url': apiCredential.getRetellUrl()
         }
         
         # Add your Retell API key
@@ -451,7 +452,7 @@ def update_retell_agent(request, agent_id):
                 
                 # Validate ambient sound against allowed values
                 valid_ambient_sounds = ["coffee-shop", "convention-hall", "summer-outdoor", 
-                                         "mountain-outdoor", "static-noise", "call-center"]
+                                          "mountain-outdoor", "static-noise", "call-center"]
                 if ambient_sound and ambient_sound not in valid_ambient_sounds:
                     ambient_sound = ""  # Reset to empty if invalid
                 
@@ -460,12 +461,52 @@ def update_retell_agent(request, agent_id):
                 except (ValueError, TypeError):
                     ambient_sound_volume = 0.1
                 
-                # Convert string to int with fallback
+                # Handle time-based settings
+                max_call_duration_raw = request.POST.get('max_call_duration_ms', '')
+                try:
+                    max_call_duration_ms = int(max_call_duration_raw)
+                except (ValueError, TypeError):
+                    max_call_duration_ms = 3600000  # Default 60 minutes
+                
+                end_call_after_silence_raw = request.POST.get('end_call_after_silence_ms', '')
+                try:
+                    end_call_after_silence_ms = int(end_call_after_silence_raw)
+                except (ValueError, TypeError):
+                    end_call_after_silence_ms = 600000  # Default 10 minutes
+                
+                ring_duration_raw = request.POST.get('ring_duration_ms', '')
+                try:
+                    ring_duration_ms = int(ring_duration_raw)
+                except (ValueError, TypeError):
+                    ring_duration_ms = 30000  # Default 30 seconds
+                
+                reminder_trigger_raw = request.POST.get('reminder_trigger_ms', '')
+                try:
+                    reminder_trigger_ms = int(reminder_trigger_raw)
+                except (ValueError, TypeError):
+                    reminder_trigger_ms = 10000  # Default 10 seconds
+                
+                reminder_max_count_raw = request.POST.get('reminder_max_count', '')
+                try:
+                    reminder_max_count = int(reminder_max_count_raw)
+                except (ValueError, TypeError):
+                    reminder_max_count = 2
+                
+                # Voicemail settings
+                enable_voicemail_detection = 'enable_voicemail_detection' in request.POST
+                
+                voicemail_detection_timeout_raw = request.POST.get('voicemail_detection_timeout_ms', '')
+                try:
+                    voicemail_detection_timeout_ms = int(voicemail_detection_timeout_raw)
+                except (ValueError, TypeError):
+                    voicemail_detection_timeout_ms = 30000  # Default 30 seconds
+                
+                # Begin message delay
                 begin_message_delay_raw = request.POST.get('begin_message_delay_ms', '')
                 try:
-                    begin_message_delay_ms = int(begin_message_delay_raw) * 1000 if begin_message_delay_raw else 1000
+                    begin_message_delay_ms = int(begin_message_delay_raw)
                 except (ValueError, TypeError):
-                    begin_message_delay_ms = 1000
+                    begin_message_delay_ms = 1000  # Default 1 second
                 
                 # Get form data - LLM settings
                 new_prompt = request.POST.get('llm_prompt', '').strip()
@@ -495,52 +536,8 @@ def update_retell_agent(request, agent_id):
                 boosted_keywords_raw = request.POST.get('boosted_keywords', '')
                 boosted_keywords = [keyword.strip() for keyword in boosted_keywords_raw.split(',') if keyword.strip()]
                 
-                # Handle time-based settings
-                max_call_duration_raw = request.POST.get('max_call_duration_ms', '')
-                try:
-                    max_call_duration_ms = int(max_call_duration_raw) * 60000 if max_call_duration_raw else 3600000
-                except (ValueError, TypeError):
-                    max_call_duration_ms = 3600000  # Default 60 minutes
-                
-                end_call_after_silence_raw = request.POST.get('end_call_after_silence_ms', '')
-                try:
-                    end_call_after_silence_ms = int(end_call_after_silence_raw) * 1000 if end_call_after_silence_raw else 600000
-                except (ValueError, TypeError):
-                    end_call_after_silence_ms = 600000  # Default 10 minutes
-                
-                ring_duration_raw = request.POST.get('ring_duration_ms', '')
-                try:
-                    ring_duration_ms = int(ring_duration_raw) * 1000 if ring_duration_raw else 30000
-                except (ValueError, TypeError):
-                    ring_duration_ms = 30000  # Default 30 seconds
-                
-                reminder_trigger_raw = request.POST.get('reminder_trigger_ms', '')
-                try:
-                    reminder_trigger_ms = int(reminder_trigger_raw) * 1000 if reminder_trigger_raw else 10000
-                except (ValueError, TypeError):
-                    reminder_trigger_ms = 10000  # Default 10 seconds
-                
-                reminder_max_count_raw = request.POST.get('reminder_max_count', '')
-                try:
-                    reminder_max_count = int(reminder_max_count_raw) if reminder_max_count_raw else 2
-                except (ValueError, TypeError):
-                    reminder_max_count = 2
-                
-                # Voicemail settings
-                enable_voicemail_detection = 'enable_voicemail_detection' in request.POST
-                
-                voicemail_detection_timeout_raw = request.POST.get('voicemail_detection_timeout_ms', '')
-                try:
-                    voicemail_detection_timeout_ms = int(voicemail_detection_timeout_raw) * 1000 if voicemail_detection_timeout_raw else 30000
-                except (ValueError, TypeError):
-                    voicemail_detection_timeout_ms = 30000  # Default 30 seconds
-                
-                voicemail_message = request.POST.get('voicemail_message', 'Hi, please give us a callback.').strip()
-                
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {settings.RETELL_API_KEY}'
-                }
+                # Import the API service
+                from retell_agent.api import RetellAgentAPI
                 
                 # 1. Update LLM if applicable
                 if agent.llm and new_prompt:
@@ -560,28 +557,16 @@ def update_retell_agent(request, agent_id):
                     
                     # Make the update request
                     logger.info(f"Updating LLM {agent.llm.llm_id} with PATCH")
-                    try:
-                        llm_update_response = requests.patch(
-                            f'{BASE_URL}/update-retell-llm/{agent.llm.llm_id}',
-                            json=llm_update_data,
-                            headers=headers,
-                            timeout=10  # Add timeout
-                        )
-                        
-                        if llm_update_response.status_code in [200, 201, 204]:
-                            logger.info(f"LLM {agent.llm.llm_id} updated successfully")
-                            # Update the local database
-                            agent.llm.general_prompt = new_prompt
-                            agent.llm.save()
-                        else:
-                            error_msg = f"Error updating LLM: {llm_update_response.text}"
-                            logger.error(error_msg)
-                            messages.warning(request, error_msg)
-                            
-                    except requests.exceptions.RequestException as e:
-                        error_msg = f"Network error updating LLM: {str(e)}"
-                        logger.error(error_msg)
-                        messages.warning(request, error_msg)
+                    success, message = RetellAgentAPI.update_llm(agent.llm.llm_id, llm_update_data)
+                    
+                    if success:
+                        logger.info(f"LLM {agent.llm.llm_id} updated successfully")
+                        # Update the local database
+                        agent.llm.general_prompt = new_prompt
+                        agent.llm.save()
+                    else:
+                        logger.error(message)
+                        messages.warning(request, message)
                 
                 # 2. Update the agent
                 # Prepare agent update data with only fields we're changing
@@ -609,7 +594,7 @@ def update_retell_agent(request, agent_id):
                     'reminder_max_count': reminder_max_count,
                     'enable_voicemail_detection': enable_voicemail_detection,
                     'voicemail_detection_timeout_ms': voicemail_detection_timeout_ms,
-                    'voicemail_message': voicemail_message
+                    'voicemail_message': request.POST.get('voicemail_message', 'Hi, please give us a callback.').strip()
                 }
                 
                 # Optional fields (only include if they have values)
@@ -629,34 +614,21 @@ def update_retell_agent(request, agent_id):
                 
                 # Make the update request
                 logger.info(f"Updating agent {agent_id} with PATCH")
-                try:
-                    update_response = requests.patch(
-                        f'{BASE_URL}/update-agent/{agent_id}',
-                        json=agent_update_data,
-                        headers=headers,
-                        timeout=10  # Add timeout
-                    )
-                    
-                    if update_response.status_code in [200, 201, 204]:
-                        # Update local DB with essential fields
-                        agent.agent_name = new_name
-                        agent.voice_id = voice_id
-                        agent.save()
-                        
-                        logger.info(f"Agent {agent_id} updated successfully")
-                        messages.success(request, "Agent updated successfully with all settings")
-                        return redirect('list_retell_agents')
-                    else:
-                        error_msg = f"Error updating agent: {update_response.text}"
-                        logger.error(error_msg)
-                        messages.error(request, error_msg)
-                        context['agent'] = agent  # Refresh with updated data
-                        return render(request, 'retell_agent/update_agent.html', context)
+                success, message = RetellAgentAPI.update_agent(agent_id, agent_update_data)
                 
-                except requests.exceptions.RequestException as e:
-                    error_msg = f"Network error updating agent: {str(e)}"
-                    logger.error(error_msg)
-                    messages.error(request, error_msg)
+                if success:
+                    # Update local DB with essential fields
+                    agent.agent_name = new_name
+                    agent.voice_id = voice_id
+                    agent.save()
+                    
+                    logger.info(f"Agent {agent_id} updated successfully")
+                    messages.success(request, "Agent updated successfully with all settings")
+                    return redirect('list_retell_agents')
+                else:
+                    logger.error(message)
+                    messages.error(request, message)
+                    context['agent'] = agent  # Refresh with updated data
                     return render(request, 'retell_agent/update_agent.html', context)
                 
         except Exception as e:
@@ -668,77 +640,57 @@ def update_retell_agent(request, agent_id):
     context['loading'] = True
     
     try:
-        # Fetch agent details from Retell API
-        headers = {
-            'Authorization': f'Bearer {settings.RETELL_API_KEY}'
-        }
+        # Import the API service
+        from retell_agent.api import RetellAgentAPI
         
+        # Fetch agent details from Retell API
         logger.info(f"Fetching agent details from Retell API for agent {agent_id}")
-        try:
-            agent_response = requests.get(
-                f'{BASE_URL}/get-agent/{agent_id}',
-                headers=headers,
-                timeout=10  # Add timeout
-            )
+        agent_data = RetellAgentAPI.get_agent(agent_id)
+        
+        if agent_data:
+            # Update local agent data with fresh API data
+            agent.agent_name = agent_data.get('agent_name', agent.agent_name)
+            agent.voice_id = agent_data.get('voice_id', agent.voice_id)
             
-            if agent_response.status_code == 200:
-                agent_data = agent_response.json()
+            # Also fetch LLM details if available
+            response_engine = agent_data.get('response_engine', {})
+            llm_id = response_engine.get('llm_id') if response_engine and isinstance(response_engine, dict) else None
+            
+            if llm_id:
+                logger.info(f"Fetching LLM details from Retell API for LLM {llm_id}")
+                llm_data = RetellAgentAPI.get_llm(llm_id)
                 
-                # Update local agent data with fresh API data
-                agent.agent_name = agent_data.get('agent_name', agent.agent_name)
-                agent.voice_id = agent_data.get('voice_id', agent.voice_id)
-                
-                # Also fetch LLM details if available
-                llm_id = agent_data.get('response_engine', {}).get('llm_id')
-                
-                if llm_id:
-                    logger.info(f"Fetching LLM details from Retell API for LLM {llm_id}")
-                    try:
-                        llm_response = requests.get(
-                            f'{BASE_URL}/get-retell-llm/{llm_id}',
-                            headers=headers,
-                            timeout=10  # Add timeout
-                        )
+                if llm_data:
+                    # Update or create the LLM record
+                    if agent.llm and agent.llm.llm_id == llm_id:
+                        agent.llm.model = llm_data.get('model', agent.llm.model)
+                        agent.llm.general_prompt = llm_data.get('general_prompt', agent.llm.general_prompt)
+                        agent.llm.save()
+                    else:
+                        # LLM ID changed or doesn't exist, create/update
+                        try:
+                            llm = RetellLLM.objects.get(llm_id=llm_id)
+                        except RetellLLM.DoesNotExist:
+                            llm = RetellLLM(
+                                business=business,
+                                llm_id=llm_id,
+                                model=llm_data.get('model', 'Unknown'),
+                                general_prompt=llm_data.get('general_prompt', '')
+                            )
+                            llm.save()
                         
-                        if llm_response.status_code == 200:
-                            llm_data = llm_response.json()
-                            
-                            # Update or create the LLM record
-                            if agent.llm and agent.llm.llm_id == llm_id:
-                                agent.llm.model = llm_data.get('model', agent.llm.model)
-                                agent.llm.general_prompt = llm_data.get('general_prompt', agent.llm.general_prompt)
-                                agent.llm.save()
-                            else:
-                                # LLM ID changed or doesn't exist, create/update
-                                try:
-                                    llm = RetellLLM.objects.get(llm_id=llm_id)
-                                except RetellLLM.DoesNotExist:
-                                    llm = RetellLLM(
-                                        business=business,
-                                        llm_id=llm_id,
-                                        model=llm_data.get('model', 'Unknown'),
-                                        general_prompt=llm_data.get('general_prompt', '')
-                                    )
-                                    llm.save()
-                                
-                                agent.llm = llm
-                                agent.save()
-                            
-                            # Add agent and LLM details to context
-                            context['llm_data'] = llm_data
-                    except requests.exceptions.RequestException as e:
-                        logger.warning(f"Network error fetching LLM: {str(e)}")
-                        messages.warning(request, f"Could not retrieve latest LLM details: {str(e)}")
-                
-                # Add complete agent data to context
-                context['agent_data'] = agent_data
-            else:
-                logger.warning(f"Error fetching agent details: {agent_response.text}")
-                messages.warning(request, f"Using cached agent data, could not fetch latest from Retell")
-                
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Network error fetching agent: {str(e)}")
-            messages.warning(request, f"Using cached agent data, network error: {str(e)}")
+                        agent.llm = llm
+                        agent.save()
+                    
+                    # Add LLM details to context
+                    context['llm_data'] = llm_data
+                else:
+                    messages.warning(request, "Could not retrieve latest LLM details")
+            
+            # Add complete agent data to context
+            context['agent_data'] = agent_data
+        else:
+            messages.warning(request, "Using cached agent data, could not fetch latest from Retell")
             
     except Exception as e:
         logger.exception("Error fetching Retell data")
