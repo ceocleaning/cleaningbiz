@@ -23,7 +23,7 @@ from leadsAutomation.error_handlers import handler400, handler403, handler404, h
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('automation.urls')),
-    path('account/', include('accounts.urls')),
+    path('accounts/', include('accounts.urls')),
     path('booking/', include('bookings.urls')),
     path('invoice/', include('invoice.urls')),
     path('integration/', include('integrations.urls')),
