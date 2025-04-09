@@ -65,11 +65,11 @@ def send_payment_reminder(booking_id):
                                 </tr>
                                 <tr>
                                     <td>Date:</td>
-                                    <td>{booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
+                                    <td>{booking.cleaningDate if isinstance(booking.cleaningDate, str) else booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
                                 </tr>
                                 <tr>
                                     <td>Time:</td>
-                                    <td>{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}</td>
+                                    <td>{booking.startTime if isinstance(booking.startTime, str) else booking.startTime.strftime('%I:%M %p')} - {booking.endTime if isinstance(booking.endTime, str) else booking.endTime.strftime('%I:%M %p')}</td>
                                 </tr>
                                 <tr>
                                     <td>Amount Due:</td>
@@ -82,15 +82,15 @@ def send_payment_reminder(booking_id):
                         
                         <a href="{settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/" class="button">Complete Payment Now</a>
                         
-                        <p>If you have any questions or need assistance, please contact us at {business.email or business.phoneNumber}.</p>
+                        <p>If you have any questions or need assistance, please contact us at {business.user.email or business.phone}.</p>
                     </div>
                     <div class="footer">
                         <p>This is an automated message from {business.businessName}.</p>
                     </div>
                 </body>
-                </html>
-                """
-                
+                </html> 
+                """                      
+                 
             # Plain text version
             text_body = f"""
             PAYMENT REMINDER - {business.businessName}
@@ -103,8 +103,8 @@ def send_payment_reminder(booking_id):
                 
             Booking Details:
             - Service: {booking.get_serviceType_display()}
-            - Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-            - Time: {booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}
+            - Date: {booking.cleaningDate if isinstance(booking.cleaningDate, str) else booking.cleaningDate.strftime('%A, %B %d, %Y')}
+            - Time: {booking.startTime if isinstance(booking.startTime, str) else booking.startTime.strftime('%I:%M %p')} - {booking.endTime if isinstance(booking.endTime, str) else booking.endTime.strftime('%I:%M %p')}
             - Amount Due: ${booking.totalPrice:.2f}
                 
             To secure your booking, please complete your payment here:
@@ -190,7 +190,7 @@ def send_payment_reminder(booking_id):
             
             # Update the booking to record when the payment reminder was sent
             booking.paymentReminderSentAt = timezone.now()
-            booking.save(update_fields=['paymentReminderSentAt'])
+            booking.save() 
                 
             return True
         else:

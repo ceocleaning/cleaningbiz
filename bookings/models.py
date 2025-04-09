@@ -110,8 +110,14 @@ class Booking(models.Model):
     def is_paid(self):
         """Check if booking has an invoice and is paid"""
         if hasattr(self, 'invoice') and self.invoice:
-            notPaidStatus = ['PENDING', 'FAILED']
-            return False if self.invoice.status in notPaidStatus else True
+            # Check if invoice is marked as paid
+            if self.invoice.isPaid:
+                return True
+            # Check payment details if they exist
+            if hasattr(self.invoice, 'payment_details'):
+                notPaidStatus = ['PENDING', 'FAILED']
+                return self.invoice.payment_details.status not in notPaidStatus
+            return False
         return False
     
     def generateBookingId(self):

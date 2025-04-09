@@ -38,16 +38,12 @@ class SubscriptionPlan(models.Model):
     def get_monthly_display_price(self):
         """Get the monthly display price for yearly plans with 20% discount applied."""
         if self.billing_cycle == 'yearly' or self.billing_cycle == 'Yearly':
-            print("Returning discounted price")
-            print("Price:", self.price)
             # Calculate monthly price (yearly price / 12)
             monthly_price = float(self.price) / 12
             # Apply 20% discount
             discounted_price = monthly_price * 0.8
-            print("Discounted Price:", discounted_price)
             return round(discounted_price, 2)
         
-        print("Returning original price")
         return float(self.price)
     
     def get_monthly_display_limits(self):
