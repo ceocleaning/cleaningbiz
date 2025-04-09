@@ -1066,7 +1066,7 @@ def delete_card(request):
     if request.method == 'POST':
         try:
             # Get the business instance
-            business = request.user.business
+            business = request.user.business_set.first()
             
             if not business.square_card_id:
                 messages.error(request, 'No card found to delete.')
