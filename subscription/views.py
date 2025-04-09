@@ -1061,3 +1061,42 @@ def update_auto_upgrade(request):
             'success': False,
             'message': f'An error occurred: {str(e)}'
         })
+
+def delete_card(request):
+    if request.method == 'POST':
+        try:
+            # Get the business instance
+            business = request.user.business
+            
+            if not business.square_card_id:
+                messages.error(request, 'No card found to delete.')
+                return redirect('subscription:manage_card')
+            
+            # Initialize Square client
+            square_client = Client(
+                access_token=settings.SQUARE_ACCESS_TOKEN,
+                environment=settings.SQUARE_ENVIRONMENT
+            )
+            
+            # Delete the card from Square
+            try:
+                result = square_client.cards.delete_card(
+                    card_id=business.square_card_id
+                )
+                
+                if result.is_success():
+                    # Clear the card ID from the business model
+                    business.square_card_id = None
+                    business.save()
+                    messages.success(request, 'Card successfully deleted.')
+                else:
+                    messages.error(request, 'Failed to delete card from Square.')
+            except Exception as e:
+                messages.error(request, f'Error deleting card from Square: {str(e)}')
+                return redirect('subscription:manage_card')
+            
+        except Exception as e:
+            messages.error(request, f'Error deleting card: {str(e)}')
+    
+    # Redirect back to the card management page
+    return redirect('subscription:manage_card')

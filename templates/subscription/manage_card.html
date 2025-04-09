@@ -30,26 +30,31 @@
                         <div class="current-card mb-4">
                             <h6 class="mb-3">Current Card</h6>
                             <div class="card border-0 bg-light p-3 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="card-brand-icon text-primary me-3">
-                                        {% if card_details.card_brand == 'VISA' %}
-                                        <i class="fab fa-cc-visa fa-2x"></i>
-                                        {% elif card_details.card_brand == 'MASTERCARD' %}
-                                        <i class="fab fa-cc-mastercard fa-2x"></i>
-                                        {% elif card_details.card_brand == 'AMEX' %}
-                                        <i class="fab fa-cc-amex fa-2x"></i>
-                                        {% elif card_details.card_brand == 'DISCOVER' %}
-                                        <i class="fab fa-cc-discover fa-2x"></i>
-                                        {% else %}
-                                        <i class="far fa-credit-card fa-2x"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium">Card ending in {{ card_details.last4 }}</div>
-                                        <div class="card-details">
-                                            Expires {{ card_details.exp_month }}/{{ card_details.exp_year }}
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="card-brand-icon text-primary me-3">
+                                            {% if card_details.card_brand == 'VISA' %}
+                                            <i class="fab fa-cc-visa fa-2x"></i>
+                                            {% elif card_details.card_brand == 'MASTERCARD' %}
+                                            <i class="fab fa-cc-mastercard fa-2x"></i>
+                                            {% elif card_details.card_brand == 'AMEX' %}
+                                            <i class="fab fa-cc-amex fa-2x"></i>
+                                            {% elif card_details.card_brand == 'DISCOVER' %}
+                                            <i class="fab fa-cc-discover fa-2x"></i>
+                                            {% else %}
+                                            <i class="far fa-credit-card fa-2x"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">Card ending in {{ card_details.last4 }}</div>
+                                            <div class="card-details">
+                                                Expires {{ card_details.exp_month }}/{{ card_details.exp_year }}
+                                            </div>
                                         </div>
                                     </div>
+                                    <button type="button" class="btn btn-danger btn-sm" id="delete-card-button" data-bs-toggle="modal" data-bs-target="#deleteCardModal">
+                                        <i class="fas fa-trash-alt me-1"></i> Delete Card
+                                    </button>
                                 </div>
                             </div>
                             <p class="text-muted small">Enter new card details below to update your payment method.</p>
@@ -119,6 +124,31 @@
                         We never store your full card details on our servers. All transactions are encrypted and protected 
                         according to PCI DSS standards.
                     </p>
+                </div>
+            </div>
+            
+            <!-- Delete Card Modal -->
+            <div class="modal fade" id="deleteCardModal" tabindex="-1" aria-labelledby="deleteCardModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteCardModalLabel">Delete Card</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete this card? This action cannot be undone.</p>
+                            <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>You will need to add a new card to make future payments.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="{% url 'subscription:delete_card' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Delete Card
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
