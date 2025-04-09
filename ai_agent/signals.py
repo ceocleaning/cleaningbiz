@@ -37,12 +37,10 @@ def track_usage(sender, instance,created, **kwargs):
         
 
 @receiver(pre_save, sender=Messages)
-def check_sms_limits(sender, instance, created, **kwargs):
-    if created:
-        from usage_analytics.services.usage_service import UsageService
-        check_limit = UsageService.check_sms_messages_limit(instance.chat.business)
-        if check_limit.get('exceeded'):
-            print("SMS Limit reached for your Plan")
+def check_sms_limits(sender, instance, **kwargs):
+    """Check SMS message limits before saving a message."""
+    from usage_analytics.services.usage_service import UsageService
+    check_limit = UsageService.check_sms_messages_limit(instance.chat.business)
+    if check_limit.get('exceeded'):
+        print("SMS Limit reached for your Plan")
         
-        return
-            

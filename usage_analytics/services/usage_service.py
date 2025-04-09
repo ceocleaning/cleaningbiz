@@ -185,7 +185,7 @@ class UsageService:
             
             # Get plan
             plan = active_subscription.plan
-            sms_messages_limit = getattr(plan, 'sms_messages', 0)
+            sms_messages_limit = plan.sms_messages
             
             if sms_messages_limit <= 0:  # No limit or invalid limit
                 return {
@@ -195,10 +195,12 @@ class UsageService:
                 }
             
             # Get usage data
-            start_date = datetime.now().replace(day=1)
+            start_date = active_subscription.start_date
+            end_date = active_subscription.end_date
             usage = UsageTracker.get_usage_summary(
                 business=business,
-                start_date=start_date
+                start_date=start_date,
+                end_date=end_date
             )
                 
             sms_messages_used = usage.get('total', {}).get('sms_messages', 0)
