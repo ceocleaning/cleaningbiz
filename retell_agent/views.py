@@ -856,34 +856,105 @@ def assign_phone_number(request):
     """
     View to assign a phone number to a Retell agent.
     """
-    if request.method == 'POST':
-        agent_id = request.POST.get('agent_id')
-        agent_number = request.POST.get('agent_number')
+    if request.method != 'POST':
+        return redirect('list_retell_agents')
+    
+    agent_id = request.POST.get('agent_id')
+    phone_number = request.POST.get('phone_number')
+    
+    if not agent_id or not phone_number:
+        messages.error(request, 'Agent ID and phone number are required')
+        return redirect('list_retell_agents')
+    
+    # Format phone number with leading +
+    if not phone_number.startswith('+'):
+        phone_number = f"+{phone_number}"
+    
+    try:
+        # Get the agent
+        agent = RetellAgent.objects.get(agent_id=agent_id)
         
-        if not agent_id or not agent_number:
-            messages.error(request, "Both agent ID and phone number are required")
-            return redirect('list_retell_agents')
-            
-        # Clean the phone number format
-        agent_number = agent_number.strip()
-        if not agent_number.startswith('+'):
-            agent_number = '+' + agent_number
-            
-        try:
-            # Get the user's business
-            business = request.user.business_set.first()
-            
-            # Get the agent
-            agent = RetellAgent.objects.get(agent_id=agent_id, business=business)
-            
-            # Update the phone number
-            agent.agent_number = agent_number
-            agent.save()
-                
-        except RetellAgent.DoesNotExist:
-            messages.error(request, "Agent not found")
-        except Exception as e:
-            print(f"Error assigning phone number: {str(e)}")
-            messages.error(request, f"An error occurred: {str(e)}")
-            
+        # Update the agent's phone number
+        agent.agent_number = phone_number
+        agent.save()
+        
+        messages.success(request, f'Phone number {phone_number} assigned to {agent.agent_name}')
+    except RetellAgent.DoesNotExist:
+        messages.error(request, f'Agent with ID {agent_id} not found')
+    except Exception as e:
+        messages.error(request, f'Error assigning phone number: {str(e)}')
+    
     return redirect('list_retell_agents')
+
+@login_required
+def voice_conversations(request):
+    """
+    View to display voice call transcripts in a messaging platform style.
+    """
+    business = request.user.business_set.first()
+    
+    # Get date range from request parameters or use default (last 30 days)
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    
+    end_date = request.GET.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    start_date = request.GET.get('start_date', (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=30)).strftime('%Y-%m-%d'))
+    
+    # Convert to datetime objects
+    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)  # End of the day
+    
+    # Get call data from Retell API
+    from usage_analytics.services.retell_api_service import RetellAPIService
+    calls = RetellAPIService.list_calls(business, start_date=start_date_obj, end_date=end_date_obj)
+    call_details = RetellAPIService.get_call_details(calls)
+    
+    # Process call transcripts into message format
+    for call in call_details:
+        messages = []
+        if call.get('transcript'):
+            # Parse the transcript and create message objects
+            transcript_lines = call['transcript'].split('\n')
+            
+            # Track message start time based on call start time
+            call_start_time = datetime.strptime(call['start_time'], '%b %d, %Y %I:%M %p')
+            message_time = call_start_time
+            message_increment = timedelta(seconds=30)  # Approximate time between messages
+            
+            for line in transcript_lines:
+                if line.strip():
+                    # Check if line starts with "Agent:" or "User:"
+                    if line.startswith('Agent:'):
+                        role = 'agent'
+                        content = line[6:].strip()
+                    elif line.startswith('User:'):
+                        role = 'user'
+                        content = line[5:].strip()
+                    else:
+                        # If no prefix, continue the previous message
+                        if messages:
+                            messages[-1]['content'] += ' ' + line.strip()
+                        continue
+                    
+                    # Format the timestamp
+                    timestamp = message_time.strftime('%I:%M %p')
+                    
+                    # Add the message
+                    messages.append({
+                        'role': role,
+                        'content': content,
+                        'timestamp': timestamp
+                    })
+                    
+                    # Increment the message time for the next message
+                    message_time += message_increment
+        
+        call['messages'] = messages
+    
+    context = {
+        'call_details': call_details,
+        'start_date': start_date_obj,
+        'end_date': end_date_obj,
+    }
+    
+    return render(request, 'retell_agent/voice_conversations.html', context)

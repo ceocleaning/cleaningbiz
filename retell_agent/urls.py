@@ -9,4 +9,5 @@ urlpatterns = [
     path('agents/update/<str:agent_id>/', views.update_retell_agent, name='update_retell_agent'),
     path('agents/delete/<str:agent_id>/', views.delete_retell_agent, name='delete_retell_agent'),
     path('agents/assign-number/', views.assign_phone_number, name='assign_phone_number'),
+    path('voice-conversations/', views.voice_conversations, name='voice_conversations'),
 ] 
