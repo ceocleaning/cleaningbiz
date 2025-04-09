@@ -71,6 +71,66 @@
         border-color: #98a2b3;
     }
     
+    /* Filter tabs styles */
+    .filter-tabs {
+        display: flex;
+        border-bottom: 1px solid #eaecf0;
+        margin-bottom: 0;
+        background-color: #f9fafb;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .filter-tab {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #667085;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        margin: 0 0.25rem;
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+    
+    .filter-tab:hover {
+        color: #344054;
+        background-color: rgba(var(--bs-primary-rgb), 0.04);
+    }
+    
+    .filter-tab.active {
+        color: var(--bs-primary);
+        border-bottom-color: var(--bs-primary);
+        background-color: white;
+        box-shadow: 0 -2px 5px rgba(16, 24, 40, 0.05);
+    }
+    
+    .filter-tab i {
+        margin-right: 0.5rem;
+        font-size: 0.875rem;
+        color: inherit;
+    }
+    
+    .filter-tab .count {
+        margin-left: 0.5rem;
+        background-color: #f2f4f7;
+        color: #344054;
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.125rem 0.375rem;
+        border-radius: 1rem;
+        min-width: 1.5rem;
+        text-align: center;
+    }
+    
+    .filter-tab.active .count {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--bs-primary);
+    }
+    
     /* Chat container styles */
     .chat-container {
         height: calc(100vh - 200px);
@@ -80,6 +140,64 @@
         box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
         overflow: hidden;
         display: flex; /* Use flexbox for layout */
+    }
+    
+    .container-fluid {
+        max-width: 90%; /* Increased container width */
+    }
+    
+    .page-header {
+        padding: 1.5rem 0;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #344054;
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-subtitle {
+        color: #667085;
+        font-size: 0.95rem;
+    }
+    
+    /* Breadcrumb styles */
+    .breadcrumb {
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: #667085;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item a:hover {
+        color: #344054;
+        text-decoration: underline;
+    }
+    
+    .breadcrumb-item.active {
+        color: #344054;
+        font-weight: 500;
+    }
+    
+    /* Date picker styles */
+    .date-picker-btn {
+        background-color: white;
+        border: 1px solid #d0d5dd;
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #344054;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    }
+    
+    .date-picker-btn:hover {
+        border-color: #98a2b3;
     }
     
     /* Chat list styles */
@@ -509,13 +627,37 @@
         <!-- Main Content -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-0">
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <div class="filter-tab active" data-filter="all">
+                        <i class="fas fa-list"></i>All Calls
+                        <span class="count" id="all-count">0</span>
+                    </div>
+                    <div class="filter-tab" data-filter="outbound">
+                        <i class="fas fa-phone-volume"></i>Outbound Calls
+                        <span class="count" id="outbound-count">0</span>
+                    </div>
+                    <div class="filter-tab" data-filter="inbound">
+                        <i class="fas fa-phone-alt"></i>Inbound Calls
+                        <span class="count" id="inbound-count">0</span>
+                    </div>
+                    <div class="filter-tab" data-filter="phone_call">
+                        <i class="fas fa-mobile-alt"></i>Phone Calls
+                        <span class="count" id="phone-count">0</span>
+                    </div>
+                    <div class="filter-tab" data-filter="web_call">
+                        <i class="fas fa-globe"></i>Web Calls
+                        <span class="count" id="web-count">0</span>
+                    </div>
+                </div>
+                
                 <div class="chat-container">
                     <!-- Left Side - Chat List -->
                     <div class="chat-list-container">
                         <div class="chat-list">
                             {% if call_details %}
                                 {% for call in call_details %}
-                                <div class="chat-item" data-call-id="{{ call.call_id }}" id="chat-item-{{ call.call_id }}">
+                                <div class="chat-item" data-call-id="{{ call.call_id }}" data-call-type="{{ call.call_type }}" id="chat-item-{{ call.call_id }}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="mb-0 text-truncate" style="max-width: 65%;">
                                             {% if call.customer_name and call.customer_name != "Unknown" %}
@@ -703,9 +845,81 @@
             // Redirect with new date range when selected
             window.location.href = `?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`;
         });
+        
+        // Initialize filter tabs
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const chatItems = document.querySelectorAll('.chat-item');
+        
+        // Count calls by type
+        const counts = {
+            all: chatItems.length,
+            outbound: 0,
+            inbound: 0,
+            phone_call: 0,
+            web_call: 0
+        };
+        
+        // Count calls by type
+        chatItems.forEach(item => {
+            const callType = item.getAttribute('data-call-type');
+            if (callType === 'outbound') counts.outbound++;
+            if (callType === 'inbound') counts.inbound++;
+            if (callType === 'phone_call') counts.phone_call++;
+            if (callType === 'web_call') counts.web_call++;
+        });
+        
+        // Update count badges
+        document.getElementById('all-count').textContent = counts.all;
+        document.getElementById('outbound-count').textContent = counts.outbound;
+        document.getElementById('inbound-count').textContent = counts.inbound;
+        document.getElementById('phone-count').textContent = counts.phone_call;
+        document.getElementById('web-count').textContent = counts.web_call;
+        
+        // Handle filter tab clicks
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                filterTabs.forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Get filter value
+                const filter = this.getAttribute('data-filter');
+                
+                // Filter chat items
+                chatItems.forEach(item => {
+                    const callType = item.getAttribute('data-call-type');
+                    
+                    if (filter === 'all') {
+                        item.style.display = 'block';
+                    } else if (filter === 'outbound' && callType === 'outbound') {
+                        item.style.display = 'block';
+                    } else if (filter === 'inbound' && callType === 'inbound') {
+                        item.style.display = 'block';
+                    } else if (filter === 'phone_call' && callType === 'phone_call') {
+                        item.style.display = 'block';
+                    } else if (filter === 'web_call' && callType === 'web_call') {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // If there are visible items, select the first one
+                const visibleItems = document.querySelectorAll('.chat-item[style="display: block"]');
+                if (visibleItems.length > 0) {
+                    visibleItems[0].click();
+                } else {
+                    // Hide conversation view if no items are visible
+                    document.getElementById('no-conversation-selected').style.display = 'flex';
+                    document.getElementById('conversation-view').style.display = 'none';
+                    document.getElementById('call-details-container').style.display = 'none';
+                }
+            });
+        });
 
         // Handle chat item clicks
-        const chatItems = document.querySelectorAll('.chat-item');
         chatItems.forEach(item => {
             item.addEventListener('click', function() {
                 // Remove active class from all items
