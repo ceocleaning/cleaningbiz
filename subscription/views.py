@@ -1080,10 +1080,11 @@ def delete_card(request):
             
             # Delete the card from Square
             try:
-                result = square_client.cards.delete_card(
+                
+                result = square_client.customers.delete_customer_card(
+                    customer_id=business.square_customer_id,
                     card_id=business.square_card_id
                 )
-                
                 if result.is_success():
                     # Clear the card ID from the business model
                     business.square_card_id = None
