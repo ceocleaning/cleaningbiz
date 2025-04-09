@@ -606,8 +606,8 @@ def approve_business(request):
         business.save()
 
         # Create ApiConfig and BusinessSettings
-        ApiCredential.objects.create(business=business)
-        BusinessSettings.objects.create(business=business)
+        ApiCredential.objects.get_or_create(business=business)
+        BusinessSettings.objects.get_or_create(business=business)
 
         # Send email notification to business owner
         try:
