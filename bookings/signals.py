@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from .models import Booking
 from invoice.models import Invoice
 from django_q.tasks import schedule, Schedule
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils import timezone
 import logging
 
@@ -31,7 +31,7 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
                     'bookings.tasks.send_payment_reminder',  
                     instance.bookingId,  
                     schedule_type='O',
-                    next_run=timezone.now() + datetime.timedelta(hours=2),
+                    next_run=timezone.now() + timedelta(hours=2),
                 )
                 
                 # Check if delete_unpaid_bookings is already scheduled
@@ -70,4 +70,3 @@ def schedule_delete_unpaid_bookings():
 
 # Connect the signal
 post_save.connect(create_invoice_for_booking, sender=Booking)
-

@@ -9,7 +9,7 @@ from accounts.models import ApiCredential, SMTPConfig
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timedelta
 from twilio.rest import Client
 from .models import Invoice, Payment
 from automation.utils import sendEmailtoClientInvoice
@@ -38,7 +38,6 @@ def send_booking_confirmation_sms(sender, instance, created, **kwargs):
             # Get the invoice associated with this booking
             # We need to query for it directly since the signal might fire before the reverse relation is established
             try:
-                
                 
                 # Generate invoice link
                 invoice_link = f"{settings.BASE_URL}/invoice/invoices/{instance.invoiceId}/preview/"
@@ -122,11 +121,11 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
                         <table>
                             <tr>
                                 <td>Date:</td>
-                                <td>{instance.booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
+                                <td>{format_date(instance.booking.cleaningDate)}</td>
                             </tr>
                             <tr>
                                 <td>Time:</td>
-                                <td>{instance.booking.startTime.strftime('%I:%M %p')} - {instance.booking.endTime.strftime('%I:%M %p')}</td>
+                                <td>{format_time(instance.booking.startTime)} - {format_time(instance.booking.endTime)}</td>
                             </tr>
                             <tr>
                                 <td>Service Type:</td>
@@ -159,7 +158,7 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
             # Plain text alternative
             text_content = f"""Hello {instance.booking.firstName},
 
-            Your appointment with {instance.booking.business.businessName} has been confirmed for {instance.booking.cleaningDate.strftime('%A, %B %d, %Y')} at {instance.booking.startTime.strftime('%I:%M %p')}.
+            Your appointment with {instance.booking.business.businessName} has been confirmed for {format_date(instance.booking.cleaningDate)} at {format_time(instance.booking.startTime)}.
 
             Service: {instance.booking.serviceType.title()} Cleaning
             Address: {instance.booking.address1}, {instance.booking.city}, {instance.booking.stateOrProvince} {instance.booking.zipCode}
@@ -264,7 +263,7 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                                 </tr>
                                 <tr>
                                     <td>Payment Date:</td>
-                                    <td>{instance.paidAt.strftime('%B %d, %Y at %I:%M %p')}</td>
+                                    <td>{format_date(instance.paidAt)}</td>
                                 </tr>
                                 <tr>
                                     <td>Payment Method:</td>
@@ -278,11 +277,11 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                             <table>
                                 <tr>
                                     <td>Date:</td>
-                                    <td>{booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
+                                    <td>{format_date(booking.cleaningDate)}</td>
                                 </tr>
                                 <tr>
                                     <td>Time:</td>
-                                    <td>{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}</td>
+                                    <td>{format_time(booking.startTime)} - {format_time(booking.endTime)}</td>
                                 </tr>
                                 <tr>
                                     <td>Service:</td>
@@ -315,12 +314,12 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                     - Invoice ID: {invoice.invoiceId}
                     - Square Payment ID: {instance.squarePaymentId}
                     - Amount Paid: ${invoice.amount:.2f}
-                    - Payment Date: {instance.paidAt.strftime('%B %d, %Y at %I:%M %p')}
+                    - Payment Date: {format_date(instance.paidAt)}
                     - Payment Method: Square
 
                     Appointment Details:
-                    - Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-                    - Time: {booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}
+                    - Date: {format_date(booking.cleaningDate)}
+                    - Time: {format_time(booking.startTime)} - {format_time(booking.endTime)}
                     - Service: {booking.serviceType.title()} Cleaning
 
                     Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!
@@ -378,6 +377,19 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
         except Exception as e:
             print(f"[ERROR] Error in send_email_payment_completed: {str(e)}")
 
+
+# Helper functions for date and time formatting
+def format_date(date_value):
+    """Format a date value safely, handling both date objects and strings"""
+    if hasattr(date_value, 'strftime'):
+        return date_value.strftime('%A, %B %d, %Y')
+    return str(date_value)
+
+def format_time(time_value):
+    """Format a time value safely, handling both time objects and strings"""
+    if hasattr(time_value, 'strftime'):
+        return time_value.strftime('%I:%M %p')
+    return str(time_value)
 
 # Connect the signals
 post_save.connect(send_booking_confirmation_sms, sender=Invoice)

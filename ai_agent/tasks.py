@@ -16,7 +16,7 @@ def check_chat_status():
     """
     try:
         print("[TASK] Starting check_chat_status task")
-        chats = Chat.objects.filter(status='pending', updatedAt__lte=(timezone.now() - timedelta(minutes=10)))
+        chats = Chat.objects.filter(status='pending', clientPhoneNumber__isnull=False, updatedAt__lte=(timezone.now() - timedelta(minutes=10)))
         print(f"[TASK] Found {chats.count()} pending chats to process")
         
         results = {
