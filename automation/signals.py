@@ -65,12 +65,16 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
 
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
 
-            message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
-            message = client.messages.create(
-                body=message_body,
-                from_=apiCred.twilioSmsNumber,
-                to=instance.phone_number
-            )
+            try:
+                message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
+                message = client.messages.create(
+                    body=message_body,
+                    from_=apiCred.twilioSmsNumber,
+                    to=instance.phone_number
+                )
+
+            except TwilioRestException as e:
+                pass
 
             chat = Chat.objects.filter(clientPhoneNumber=instance.phone_number).first()
             if chat:

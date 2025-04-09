@@ -46,15 +46,26 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="john.doe@example.com" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="phoneNumber" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required>
+                                <div class="input-group">
+                                    <span class="input-group-text">+1</span>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="phoneNumber" 
+                                           name="phoneNumber" 
+                                           placeholder="(555) 555-5555"
+                                           pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                           title="Please enter a valid 10-digit phone number"
+                                           required>
+                                </div>
+                                <small class="form-text text-muted">Enter your 10-digit phone number</small>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="companyName" class="form-label">Company Name (Optional)</label>
-                                <input type="text" class="form-control" id="companyName" name="companyName">
+                                <input type="text" class="form-control" id="companyName" name="companyName" placeholder="ABC Corporation">
                             </div>
                         </div>
                         
@@ -69,26 +80,26 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="address1" class="form-label">Address Line 1</label>
-                                <input type="text" class="form-control" id="address1" name="address1" required>
+                                <input type="text" class="form-control" id="address1" name="address1" placeholder="123 Main Street" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="address2" class="form-label">Address Line 2 (Optional)</label>
-                                <input type="text" class="form-control" id="address2" name="address2">
+                                <input type="text" class="form-control" id="address2" name="address2" placeholder="Apt 4B">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="city" class="form-label">City</label>
-                                <input type="text" class="form-control" id="city" name="city" required>
+                                <input type="text" class="form-control" id="city" name="city" placeholder="New York" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="stateOrProvince" class="form-label">State/Province</label>
-                                <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" required>
+                                <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" placeholder="NY" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="zipCode" class="form-label">ZIP Code</label>
-                                <input type="text" class="form-control" id="zipCode" name="zipCode" required>
+                                <input type="text" class="form-control" id="zipCode" name="zipCode" placeholder="10001" required>
                             </div>
                         </div>
                         
@@ -128,6 +139,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="serviceType" class="form-label">Service Type</label>
                                 <select class="form-control form-select" name="serviceType" id="serviceType" required>
+                                    <option value="" disabled selected>Select a service type</option>
                                     <option value="standard">Standard Cleaning</option>
                                     <option value="deep">Deep Cleaning</option>
                                     <option value="moveinmoveout">Move In/Move Out</option>
@@ -140,6 +152,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="recurring" class="form-label">Recurring Service</label>
                                 <select class="form-control form-select" name="recurring" id="recurring">
+                                    <option value="" disabled selected>Select frequency</option>
                                     <option value="one-time">One Time</option>
                                     <option value="weekly">Weekly</option>
                                     <option value="biweekly">Bi-weekly</option>
@@ -149,6 +162,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="paymentMethod" class="form-label">Payment Method</label>
                                 <select class="form-control form-select" name="paymentMethod" id="paymentMethod">
+                                    <option value="" disabled selected>Select payment method</option>
                                     <option value="creditcard">Credit Card</option>
                                     <option value="paypal">PayPal</option>
                                     <option value="stripe">Stripe</option>
@@ -195,15 +209,15 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="bedrooms" class="form-label">Number of Bedrooms</label>
-                                <input type="number" class="form-control" id="bedrooms" name="bedrooms" min="0" required>
+                                <input type="number" class="form-control" id="bedrooms" name="bedrooms" min="0" placeholder="2" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="bathrooms" class="form-label">Number of Bathrooms</label>
-                                <input type="number" class="form-control" id="bathrooms" name="bathrooms" min="0" required>
+                                <input type="number" class="form-control" id="bathrooms" name="bathrooms" min="0" placeholder="1" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="squareFeet" class="form-label">Square Footage</label>
-                                <input type="number" class="form-control" id="squareFeet" name="squareFeet" min="0" required>
+                                <input type="number" class="form-control" id="squareFeet" name="squareFeet" min="0" placeholder="1000" required>
                             </div>
                         </div>
                         

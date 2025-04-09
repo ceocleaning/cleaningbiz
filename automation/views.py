@@ -295,7 +295,10 @@ def create_lead(request):
             )
             
             # Track the lead generation in usage metrics
-            UsageTracker.track_lead_generated(lead.business)
+            UsageTracker.increment_leads(
+                business=business,
+                increment_by=1
+            )
             
             messages.success(request, f'Lead {lead.leadId} created successfully!')
             return redirect('lead_detail', leadId=lead.leadId)

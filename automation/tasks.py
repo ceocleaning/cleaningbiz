@@ -15,8 +15,6 @@ def send_call_to_lead(lead_id):
         chat = Chat.objects.get(lead=lead)
         retellAgent = RetellAgent.objects.get(business=lead.business)
 
-        # Track usage for voice calls
-        UsageTracker.increment_metric(lead.business, 'voice_calls')
 
         if not lead.is_response_received and retellAgent.agent_number:
             client = Retell(api_key=settings.RETELL_API_KEY)

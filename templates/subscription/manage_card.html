@@ -58,37 +58,11 @@
                         
                         <!-- Custom Card Form -->
                         <div class="custom-card-form">
-                            <!-- Cardholder Information -->
-                            <h6 class="mb-3">Cardholder Information</h6>
-                            <div class="mb-4">
-                                <label for="cardholder-name" class="form-label fw-medium">Full Name</label>
-                                <input type="text" class="form-control" id="cardholder-name" placeholder="John Doe" required>
-                                <div class="invalid-feedback" id="cardholder-name-error"></div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="cardholder-email" class="form-label fw-medium">Email Address</label>
-                                <input type="email" class="form-control" id="cardholder-email" placeholder="john@example.com" required>
-                                <div class="invalid-feedback" id="cardholder-email-error"></div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="cardholder-phone" class="form-label fw-medium">Phone Number</label>
-                                <input type="tel" class="form-control" id="cardholder-phone" placeholder="(123) 456-7890" required>
-                                <div class="invalid-feedback" id="cardholder-phone-error"></div>
-                            </div>
-                            
                             <!-- Square Card Form -->
                             <h6 class="mb-3">Card Information</h6>
                             <div class="mb-4">
                                 <div id="card-container" class="sq-card-container"></div>
                                 <div id="card-errors" class="text-danger mt-2"></div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="postal-code" class="form-label fw-medium">Postal Code</label>
-                                <input type="text" class="form-control" id="postal-code" placeholder="12345" required>
-                                <div class="invalid-feedback" id="postal-code-error"></div>
                             </div>
                             
                             <!-- Hidden field for the card nonce -->
@@ -192,6 +166,21 @@
                 async function initializeCard() {
                     try {
                         card = await payments.card();
+                    
+                        
+                        // Add event listeners for card validation
+                        card.addEventListener('cardBrandChanged', function (event) {
+                            console.log('Card brand changed:', event.cardBrand);
+                        });
+                        
+                        card.addEventListener('errorClassAdded', function (event) {
+                            console.log('Error class added:', event);
+                        });
+                        
+                        card.addEventListener('errorClassRemoved', function (event) {
+                            console.log('Error class removed:', event);
+                        });
+                        
                         await card.attach('#card-container');
                         console.log('Square card form attached successfully');
                     } catch (e) {
@@ -208,62 +197,9 @@
                 statusContainer.innerHTML = '<div class="alert alert-danger">Payment processing is currently unavailable. Please try again later.</div>';
             }
             
-            // Validate cardholder details
-            function validateCardholderDetails() {
-                let isValid = true;
-                
-                // Validate cardholder name
-                const cardholderName = document.getElementById('cardholder-name').value.trim();
-                if (cardholderName.length < 3) {
-                    document.getElementById('cardholder-name').classList.add('is-invalid');
-                    document.getElementById('cardholder-name-error').textContent = 'Please enter the cardholder name';
-                    isValid = false;
-                } else {
-                    document.getElementById('cardholder-name').classList.remove('is-invalid');
-                }
-                
-                // Validate email
-                const email = document.getElementById('cardholder-email').value.trim();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    document.getElementById('cardholder-email').classList.add('is-invalid');
-                    document.getElementById('cardholder-email-error').textContent = 'Please enter a valid email address';
-                    isValid = false;
-                } else {
-                    document.getElementById('cardholder-email').classList.remove('is-invalid');
-                }
-                
-                // Validate phone (simple validation)
-                const phone = document.getElementById('cardholder-phone').value.trim();
-                if (phone.length < 10) {
-                    document.getElementById('cardholder-phone').classList.add('is-invalid');
-                    document.getElementById('cardholder-phone-error').textContent = 'Please enter a valid phone number';
-                    isValid = false;
-                } else {
-                    document.getElementById('cardholder-phone').classList.remove('is-invalid');
-                }
-                
-                // Validate postal code
-                const postalCode = postalCodeInput.value.trim();
-                if (postalCode.length < 5) {
-                    postalCodeInput.classList.add('is-invalid');
-                    document.getElementById('postal-code-error').textContent = 'Please enter a valid postal code';
-                    isValid = false;
-                } else {
-                    postalCodeInput.classList.remove('is-invalid');
-                }
-                
-                return isValid;
-            }
-            
             // Handle save card button click
             saveCardButton.addEventListener('click', async function(event) {
                 event.preventDefault();
-                
-                // Validate cardholder details
-                if (!validateCardholderDetails()) {
-                    return;
-                }
                 
                 // Show processing state
                 saveCardButton.disabled = true;
@@ -272,6 +208,8 @@
                 try {
                     // Log tokenization attempt
                     console.log('Attempting to tokenize card...');
+                    
+                  
                     
                     // Create tokenization payload
                     const tokenResult = await card.tokenize();
@@ -289,7 +227,7 @@
                         }, 100);
                     } else {
                         console.error('Tokenization failed with status:', tokenResult.status);
-                        document.getElementById('card-errors').textContent = 'Card validation failed. Please check your card details and try again.';
+                        document.getElementById('card-errors').textContent = tokenResult.errors?.[0]?.message || 'Card validation failed. Please check your card details and try again.';
                         
                         // Reset button state
                         saveCardButton.disabled = false;
@@ -297,7 +235,7 @@
                     }
                 } catch (error) {
                     console.error('Error tokenizing card:', error);
-                    document.getElementById('card-errors').textContent = 'An error occurred while processing your card. Please try again.';
+                    document.getElementById('card-errors').textContent = error.message || 'An error occurred while processing your card. Please try again.';
                     
                     // Reset button state
                     saveCardButton.disabled = false;
