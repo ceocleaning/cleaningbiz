@@ -610,7 +610,17 @@
             <div>
                 <button id="dateRangePicker" class="date-picker-btn">
                     <i class="far fa-calendar-alt me-2"></i>
-                    <span>Last 30 days</span>
+                    <span>
+                        {% if start_date and end_date %}
+                            {% if start_date == end_date %}
+                                {{ start_date|date:"M d, Y" }}
+                            {% else %}
+                                {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+                            {% endif %}
+                        {% else %}
+                            Last 30 days
+                        {% endif %}
+                    </span>
                 </button>
             </div>
         </div>
@@ -842,6 +852,15 @@
                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
             }
         }, function(start, end, label) {
+            // Update the date range text
+            let dateText;
+            if (start.format('YYYY-MM-DD') === end.format('YYYY-MM-DD')) {
+                dateText = start.format('MMM D, YYYY');
+            } else {
+                dateText = start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY');
+            }
+            $('#dateRangePicker span').text(dateText);
+            
             // Redirect with new date range when selected
             window.location.href = `?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`;
         });
