@@ -427,3 +427,33 @@ def generate_pdf(request, invoiceId):
         content_type='application/pdf',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
+
+@require_http_methods(["POST"])
+@login_required
+def bulk_delete_invoices(request):
+    try:
+        data = json.loads(request.body)
+        invoice_ids = data.get('invoice_ids', [])
+        
+        if not invoice_ids:
+            return JsonResponse({'success': False, 'error': 'No invoices selected'})
+        
+        # Get invoices that belong to the user's business
+        invoices = Invoice.objects.filter(
+            invoiceId__in=invoice_ids,
+            booking__business__user=request.user
+        )
+        
+        # Delete the invoices
+        deleted_count = invoices.count()
+        invoices.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully deleted {deleted_count} invoice(s)'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

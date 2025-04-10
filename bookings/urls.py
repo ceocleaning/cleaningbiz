@@ -12,6 +12,7 @@ urlpatterns = [
     path('detail/<str:bookingId>/', views.booking_detail, name='booking_detail'),
     path('customers/', views.customers, name='customers'),
     path('customers/detail/<str:identifier>/', views.customer_detail, name='customer_detail'),
+    path('bulk-delete/', views.bulk_delete_bookings, name='bulk_delete_bookings'),
   
     
     # Invoice URLs

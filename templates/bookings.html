@@ -6,9 +6,14 @@
 <!-- Improved page header for mobile -->
 <div class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 p-md-4">
     <h1 class="h2"><i class="fas fa-calendar-alt me-2"></i>Bookings</h1>
-    <a href="{% url 'bookings:create_booking' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>New Booking
-    </a>
+    <div class="d-flex gap-2">
+        <button id="bulkDeleteBtn" class="btn btn-danger d-none" onclick="deleteSelectedBookings()">
+            <i class="fas fa-trash me-2"></i>Delete Selected
+        </button>
+        <a href="{% url 'bookings:create_booking' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Booking
+        </a>
+    </div>
 </div>
 
 <!-- Modified card layout: 2 cards in first row, 1 card in second row on mobile -->
@@ -84,6 +89,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllUpcoming" onchange="toggleAllCheckboxes('upcoming')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
@@ -94,6 +104,11 @@
                         <tbody>
                             {% for booking in upcoming_bookings %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="upcoming">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
                                 <td>{{ booking.firstName }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
@@ -135,7 +150,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">No upcoming bookings found</td>
+                                <td colspan="6" class="text-center">No upcoming bookings found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -149,6 +164,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllCompleted" onchange="toggleAllCheckboxes('completed')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
@@ -159,6 +179,11 @@
                         <tbody>
                             {% for booking in completed_bookings %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="completed">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
                                 <td>{{ booking.firstName }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
@@ -180,7 +205,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">No completed bookings found</td>
+                                <td colspan="6" class="text-center">No completed bookings found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -194,6 +219,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPending" onchange="toggleAllCheckboxes('pending')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
@@ -204,6 +234,11 @@
                         <tbody>
                             {% for booking in pending_bookings %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="pending">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
                                 <td>{{ booking.firstName }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
@@ -231,7 +266,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">No pending payments found</td>
+                                <td colspan="6" class="text-center">No pending payments found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -320,6 +355,164 @@
         if (window.matchMedia('(hover: hover)').matches) {
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         }
+
+        // Add event listeners for checkboxes
+        document.querySelectorAll('.booking-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateBulkDeleteButton);
+        });
     });
+
+    function toggleAllCheckboxes(tab) {
+        const selectAll = document.getElementById(`selectAll${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        const checkboxes = document.querySelectorAll(`.booking-checkbox[data-tab="${tab}"]`);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateBulkDeleteButton();
+    }
+
+    function updateBulkDeleteButton() {
+        const selectedCount = document.querySelectorAll('.booking-checkbox:checked').length;
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        
+        if (selectedCount > 0) {
+            bulkDeleteBtn.classList.remove('d-none');
+            bulkDeleteBtn.innerHTML = `<i class="fas fa-trash me-2"></i>Delete Selected (${selectedCount})`;
+        } else {
+            bulkDeleteBtn.classList.add('d-none');
+        }
+    }
+
+    function deleteSelectedBookings() {
+        const selectedBookings = Array.from(document.querySelectorAll('.booking-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedBookings.length === 0) {
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete ${selectedBookings.length} selected booking(s)? This action cannot be undone.`)) {
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const originalButtonContent = bulkDeleteBtn.innerHTML;
+            
+            // Show loading spinner
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Deleting...
+            `;
+
+            fetch('{% url "bookings:bulk_delete_bookings" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ booking_ids: selectedBookings })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+
+                    // Remove toast after it's hidden
+                    toast.addEventListener('hidden.bs.toast', function () {
+                        toast.remove();
+                    });
+
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || 'Failed to delete bookings');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Show error message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', function () {
+                    toast.remove();
+                });
+            })
+            .finally(() => {
+                // Reset button state
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = originalButtonContent;
+            });
+        }
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
+
+<style>
+    /* Add toast styles */
+    .toast {
+        z-index: 1050;
+    }
+    
+    /* Add loading spinner styles */
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.15em;
+    }
+</style>
 {% endblock %}

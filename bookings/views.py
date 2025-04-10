@@ -12,6 +12,7 @@ from decimal import Decimal
 import json
 from datetime import datetime
 from django.db.models import Min, Count
+from django.http import JsonResponse
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -45,8 +46,8 @@ def all_bookings(request):
     
     # Counts for the dashboard cards
     total_bookings = all_bookings.count()
-    pending_count = all_bookings.filter(isCompleted=False).count()
-    completed_count = all_bookings.filter(isCompleted=True).count()
+    pending_count = pending_bookings.count()
+    completed_count = completed_bookings.count()
     
     context = {
         'upcoming_bookings': upcoming_bookings,
@@ -451,3 +452,33 @@ def booking_detail(request, bookingId):
         'booking': booking
     }
     return render(request, 'booking_detail.html', context)
+
+@require_http_methods(["POST"])
+@login_required
+def bulk_delete_bookings(request):
+    try:
+        data = json.loads(request.body)
+        booking_ids = data.get('booking_ids', [])
+        
+        if not booking_ids:
+            return JsonResponse({'success': False, 'error': 'No bookings selected'})
+        
+        # Get bookings that belong to the user's business
+        bookings = Booking.objects.filter(
+            bookingId__in=booking_ids,
+            business__user=request.user
+        )
+        
+        # Delete the bookings
+        deleted_count = bookings.count()
+        bookings.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully deleted {deleted_count} booking(s)'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

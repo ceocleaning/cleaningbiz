@@ -6,9 +6,13 @@ import uuid
 import json
 from square.client import Client
 from django.db.models import Q
+import logging
+from django.db import transaction
 
 from accounts.models import Business
-from subscription.models import BusinessSubscription, BillingHistory, SubscriptionPlan
+from .models import BusinessSubscription, BillingHistory, SubscriptionPlan, UsageTracker
+
+logger = logging.getLogger(__name__)
 
 def process_subscription_renewals():
     """
@@ -183,6 +187,7 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             status='active',
             start_date=timezone.now(),
             end_date=new_end_date,
+            next_billing_date=new_end_date,
             square_subscription_id=payment_result['payment_id'],
             square_customer_id=business.square_customer_id,
             is_active=True
@@ -256,8 +261,12 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
             subscription.status = 'past_due'
             subscription.save()
         
-        if subscription.end_date < timezone.now().date() + timedelta(days=2):
+
+        two_days_after = timezone.now().date() + timedelta(days=2)
+        
+        if subscription.end_date < two_days_after:
             subscription.is_active = False
+            subscription.status = 'ended'
             subscription.save()
         
         # Send failure notification
@@ -269,16 +278,15 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
         print(f"Error handling failed renewal: {str(e)}")
 
 
-def _send_successful_renewal_notification(business, subscription, plan, card_last4):
-    """Send email notification for successful subscription renewal"""
+def _send_successful_renewal_notification(business, subscription, plan, card_last4, is_upgrade=False):
+    """Send email notification for successful subscription renewal/upgrade"""
     try:
-        # Prepare email content
-        subject = f"Subscription Renewed: {plan.name} Plan"
+        subject = f"Subscription {'Upgraded' if is_upgrade else 'Renewed'}: {plan.name} Plan"
         
         message = f"""
 Hello {business.businessName},
 
-Your subscription to the {plan.name} plan has been automatically renewed.
+Your subscription has been {'upgraded' if is_upgrade else 'renewed'} to the {plan.name} plan.
 
 Subscription Details:
 - Plan: {plan.name} ({plan.get_billing_cycle_display()})
@@ -286,6 +294,8 @@ Subscription Details:
 - Payment Method: Card ending in {card_last4}
 - Start Date: {subscription.start_date.strftime('%Y-%m-%d')}
 - Next Billing Date: {subscription.end_date.strftime('%Y-%m-%d')}
+
+{'This upgrade was processed because your current plan\'s usage reached 90% of its limits.' if is_upgrade else ''}
 
 Thank you for your continued business!
 
@@ -302,33 +312,38 @@ The CleaningBizAI Team
                 recipient_list=[business.user.email],
                 fail_silently=False
             )
-            print(f"Sent successful renewal notification to {business.user.email}")
+            logger.info(f"Sent {'upgrade' if is_upgrade else 'renewal'} notification to {business.user.email}")
         else:
-            print(f"No email address found for {business.businessName}")
+            logger.warning(f"No email address found for {business.businessName}")
             
     except Exception as e:
-        print(f"Error sending successful renewal notification: {str(e)}")
+        logger.error(f"Error sending {'upgrade' if is_upgrade else 'renewal'} notification: {str(e)}")
 
 
-def _send_failed_renewal_notification(business, subscription, plan, error_message):
-    """Send email notification for failed subscription renewal"""
+def _send_failed_renewal_notification(business, subscription, plan, error_message, is_upgrade=False):
+    """Send email notification for failed subscription renewal/upgrade"""
     try:
-        # Prepare email content
-        subject = f"ACTION REQUIRED: Subscription Payment Failed"
+        subject = f"ACTION REQUIRED: Subscription {'Upgrade' if is_upgrade else 'Renewal'} Failed"
         
         message = f"""
 Hello {business.businessName},
 
-We were unable to process the automatic renewal payment for your {plan.name} plan subscription.
+We were unable to process the {'upgrade' if is_upgrade else 'renewal'} payment for your {plan.name} plan subscription.
 
 Subscription Details:
 - Plan: {plan.name} ({plan.get_billing_cycle_display()})
 - Amount: ${plan.price}
 - Error: {error_message}
 
-Your subscription is now in a past-due state. To avoid service interruption, please log in to your account and update your payment method as soon as possible.
+{'Your usage has reached 90% of your current plan\'s limits. ' if is_upgrade else ''}To avoid any service interruptions, please:
 
-If you need assistance, please contact our support team.
+1. Check that your payment method is valid and has sufficient funds
+2. Update your payment information in your account settings
+3. Contact our support team if you need assistance
+
+Your subscription will remain on the current plan until the payment issue is resolved.
+
+For immediate assistance, please contact our support team at support@cleaningbizai.com
 
 Best regards,
 The CleaningBizAI Team
@@ -343,12 +358,12 @@ The CleaningBizAI Team
                 recipient_list=[business.user.email],
                 fail_silently=False
             )
-            print(f"Sent failed renewal notification to {business.user.email}")
+            logger.info(f"Sent failed {'upgrade' if is_upgrade else 'renewal'} notification to {business.user.email}")
         else:
-            print(f"No email address found for {business.businessName}")
+            logger.warning(f"No email address found for {business.businessName}")
             
     except Exception as e:
-        print(f"Error sending failed renewal notification: {str(e)}")
+        logger.error(f"Error sending failed {'upgrade' if is_upgrade else 'renewal'} notification: {str(e)}")
 
 
 def _send_no_card_notification(business, subscription, plan):
@@ -417,17 +432,124 @@ def schedule_subscription_renewals():
     
     # Check if the task is already scheduled
     task_name = 'Subscription Renewals (Test)'
+    second_task_name = 'Auto Upgrade Subscription'
     
-    # Delete any existing task with this name to avoid duplicates
-    Schedule.objects.filter(name=task_name).delete()
+    if not Schedule.objects.filter(name=task_name).exists():
+        # Schedule the task to run every 5 minutes
+        schedule(
+            'subscription.tasks.process_subscription_renewals',
+            name=task_name,
+            schedule_type='D',  # Daily
+            repeats=-1,  # Repeat indefinitely
+            # At Midnight
+            next_run=timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        )
+        print(f"Scheduled {task_name} to run every 5 minutes for testing")
     
-    # Schedule the task to run every 5 minutes
-    schedule(
-        'subscription.tasks.process_subscription_renewals',
-        name=task_name,
-        schedule_type='I',  # Minutes
-        minutes=5,  # Every 5 minutes
-        repeats=-1,  # Repeat indefinitely
-        next_run=timezone.now() + timedelta(seconds=30)  # Start in 30 seconds
+    if not Schedule.objects.filter(name=second_task_name).exists():
+        schedule(
+            'subscription.tasks.auto_upgrade_subscription',
+            name=second_task_name,
+            schedule_type='D',  # Daily
+            next_run=timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        )
+
+        logger.info(f"Scheduled {second_task_name} to run every day at Midnight")
+
+
+
+@transaction.atomic
+def auto_upgrade_subscription():
+    """
+    Automatically upgrade a subscription to the next available plan when the current plan is nearing its end date.
+    
+    This function checks all active subscriptions and attempts to upgrade them to the next available plan.
+    """
+    logger.info("Starting auto-upgrade subscription process")
+    
+    # Get all active subscriptions
+    businesses = Business.objects.filter(isActive=True, isApproved=True, auto_upgrade=True)
+    logger.info(f"Found {businesses.count()} businesses with auto-upgrade enabled")
+
+    # Initialize Square client
+    square_client = Client(
+        access_token=settings.SQUARE_ACCESS_TOKEN,
+        environment=settings.SQUARE_ENVIRONMENT
     )
-    print(f"Scheduled {task_name} to run every 5 minutes for testing")
+
+    for business in businesses:
+        try:
+            logger.info(f"Processing auto-upgrade for {business.businessName}")
+            
+            # Validate payment method
+            if not business.square_card_id or not business.square_customer_id:
+                logger.warning(f"No payment method found for {business.businessName}")
+                continue
+
+            active_subscription = business.active_subscription
+            if not active_subscription:
+                logger.warning(f"No active subscription found for {business.businessName}")
+                continue
+
+            if not active_subscription.is_subscription_active():
+                logger.warning(f"Subscription is not active for {business.businessName}")
+                continue
+
+            current_plan = active_subscription.plan
+            
+            # Get current usage summary
+            usage_summary = UsageTracker.get_usage_summary(business=business)
+            logger.info(f"Current usage for {business.businessName}: {usage_summary.get('usage_percentage', {})}")
+            
+            # Check if any usage metric has reached 90% of the limit
+            should_upgrade = False
+            for metric, percentage in usage_summary.get('usage_percentage', {}).items():
+                if percentage >= 90:
+                    should_upgrade = True
+                    logger.info(f"Usage threshold reached for {metric} ({percentage}%)")
+                    break
+            
+            if should_upgrade:
+                # Get the next available plan with proper ordering
+                plans = SubscriptionPlan.objects.filter(
+                    is_active=True, 
+                    billing_cycle=current_plan.billing_cycle
+                ).order_by('price')  # Order by price to ensure we get the next tier
+
+                next_plan = None
+                for plan in plans:
+                    # Check if this plan has higher limits in any category
+                    if (plan.leads > current_plan.leads or 
+                        plan.voice_minutes > current_plan.voice_minutes or
+                        plan.sms_messages > current_plan.sms_messages or
+                        plan.agents > current_plan.agents):
+                        next_plan = plan
+                        logger.info(f"Found upgrade plan: {plan.name}")
+                        break
+                   
+                if next_plan:
+                    # Process the payment using the existing function
+                    payment_result = _process_renewal_payment(business, active_subscription, next_plan, square_client)
+                    
+                    if payment_result['success']:
+                        # Handle successful renewal using existing function
+                        _handle_successful_renewal(business, active_subscription, next_plan, payment_result, square_client)
+                        
+                
+                        
+                        logger.info(f"Successfully upgraded {business.businessName} from {current_plan.name} to {next_plan.name}")
+                    else:
+                        # Handle failed renewal using existing function
+                        _handle_failed_renewal(business, active_subscription, next_plan, payment_result)
+                       
+                   
+                else:
+                    logger.info(f"No higher plan available for {business.businessName} to upgrade from {current_plan.name}")
+            else:
+                logger.info(f"No upgrade needed for {business.businessName} - usage below threshold")
+
+        except Exception as e:
+            logger.error(f"Error processing auto-upgrade for {business.businessName}: {str(e)}")
+            continue  # Continue with next business even if one fails
+
+

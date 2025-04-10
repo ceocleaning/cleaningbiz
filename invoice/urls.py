@@ -14,4 +14,5 @@ urlpatterns = [
     path('invoices/<str:invoiceId>/generate-pdf/', views.generate_pdf, name='generate_pdf'),
     path('invoices/process-payment/', payment_views.process_payment, name='process_payment'),
     path('invoices/process-manual-payment/', payment_views.process_manual_payment, name='process_manual_payment'),
+    path('bulk-delete/', views.bulk_delete_invoices, name='bulk_delete_invoices'),
 ]

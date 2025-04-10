@@ -5,6 +5,9 @@
 {% block content %}
 <div class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 p-md-4">
     <h1 class="h2"><i class="fas fa-file-invoice me-2"></i>Invoices</span></h1>
+    <button id="bulkDeleteBtn" class="btn btn-danger d-none" onclick="deleteSelectedInvoices()">
+        <i class="fas fa-trash me-2"></i>Delete Selected
+    </button>
 </div>
 
 <!-- Modified card layout: 2 cards in first row, 1 card in second row on mobile -->
@@ -85,6 +88,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllInvoices" onchange="toggleAllCheckboxes('all')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">Invoice #</th>
                                 <th>Customer</th>
                                 <th>Amount</th>
@@ -96,6 +104,11 @@
                         <tbody>
                             {% for invoice in invoices %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input invoice-checkbox" type="checkbox" value="{{ invoice.invoiceId }}" data-tab="all">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
                                 <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                                 <td>${{ invoice.amount }}</td>
@@ -136,7 +149,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No invoices found</td>
+                                <td colspan="7" class="text-center">No invoices found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -150,6 +163,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPaid" onchange="toggleAllCheckboxes('paid')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">Invoice #</th>
                                 <th>Customer</th>
                                 <th>Amount</th>
@@ -161,6 +179,11 @@
                         <tbody>
                             {% for invoice in paid_invoices %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input invoice-checkbox" type="checkbox" value="{{ invoice.invoiceId }}" data-tab="paid">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
                                 <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                                 <td>${{ invoice.amount }}</td>
@@ -187,7 +210,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No paid invoices found</td>
+                                <td colspan="7" class="text-center">No paid invoices found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -201,6 +224,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllAuthorized" onchange="toggleAllCheckboxes('authorized')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">Invoice #</th>
                                 <th>Customer</th>
                                 <th>Amount</th>
@@ -212,6 +240,11 @@
                         <tbody>
                             {% for invoice in authorized_invoices %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input invoice-checkbox" type="checkbox" value="{{ invoice.invoiceId }}" data-tab="authorized">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
                                 <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                                 <td>${{ invoice.amount }}</td>
@@ -238,7 +271,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No authorized invoices found</td>
+                                <td colspan="7" class="text-center">No authorized invoices found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -252,6 +285,11 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPending" onchange="toggleAllCheckboxes('pending')">
+                                    </div>
+                                </th>
                                 <th class="d-none d-md-table-cell">Invoice #</th>
                                 <th>Customer</th>
                                 <th>Amount</th>
@@ -263,6 +301,11 @@
                         <tbody>
                             {% for invoice in pending_invoices %}
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input invoice-checkbox" type="checkbox" value="{{ invoice.invoiceId }}" data-tab="pending">
+                                    </div>
+                                </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
                                 <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
                                 <td>${{ invoice.amount }}</td>
@@ -289,7 +332,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No pending invoices found</td>
+                                <td colspan="7" class="text-center">No pending invoices found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -413,6 +456,172 @@
         if (window.matchMedia('(hover: hover)').matches) {
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         }
+
+        // Add event listeners for checkboxes
+        document.querySelectorAll('.invoice-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateBulkDeleteButton);
+        });
+
+        // Add event listeners for "Select All" checkboxes
+        document.querySelectorAll('input[type="checkbox"][id^="selectAll"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const tab = this.id.replace('selectAll', '').toLowerCase();
+                toggleAllCheckboxes(tab);
+            });
+        });
     });
+
+    function toggleAllCheckboxes(tab) {
+        const selectAll = document.getElementById(`selectAll${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        const checkboxes = document.querySelectorAll(`.invoice-checkbox[data-tab="${tab}"]`);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateBulkDeleteButton();
+    }
+
+    function updateBulkDeleteButton() {
+        const selectedCount = document.querySelectorAll('.invoice-checkbox:checked').length;
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        
+        if (selectedCount > 0) {
+            bulkDeleteBtn.classList.remove('d-none');
+            bulkDeleteBtn.innerHTML = `<i class="fas fa-trash me-2"></i>Delete Selected (${selectedCount})`;
+        } else {
+            bulkDeleteBtn.classList.add('d-none');
+        }
+    }
+
+    function deleteSelectedInvoices() {
+        const selectedInvoices = Array.from(document.querySelectorAll('.invoice-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedInvoices.length === 0) {
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete ${selectedInvoices.length} selected invoice(s)? This action cannot be undone.`)) {
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const originalButtonContent = bulkDeleteBtn.innerHTML;
+            
+            // Show loading spinner
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Deleting...
+            `;
+
+            fetch('{% url "invoice:bulk_delete_invoices" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ invoice_ids: selectedInvoices })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                    toast.setAttribute('role', 'alert');
+                    toast.setAttribute('aria-live', 'assertive');
+                    toast.setAttribute('aria-atomic', 'true');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>${data.message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+
+                    // Remove toast after it's hidden
+                    toast.addEventListener('hidden.bs.toast', function () {
+                        toast.remove();
+                    });
+
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || 'Failed to delete invoices');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Show error message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', function () {
+                    toast.remove();
+                });
+            })
+            .finally(() => {
+                // Reset button state
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = originalButtonContent;
+            });
+        }
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
+
+<style>
+    /* Add toast styles */
+    .toast {
+        z-index: 1050;
+    }
+    
+    /* Add loading spinner styles */
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.15em;
+    }
+</style>
 {% endblock %}

@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
     path('api/create-booking/', create_booking, name='create_booking'),
     path('api/send-commercial-form-link/', sendCommercialFormLink, name='send_commercial_form_link'),
+    path('bulk-delete-leads/', views.bulk_delete_leads, name='bulk_delete_leads'),
    
     
     # Test pages

@@ -17,8 +17,9 @@ import random
 import pytz
 import requests
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from usage_analytics.services.usage_service import UsageService
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -1399,3 +1400,33 @@ def PrivacyPolicyPage(request):
 
 def TermsOfServicePage(request):
     return render(request, 'TermsOfService.html')
+
+@require_http_methods(["POST"])
+@login_required
+def bulk_delete_leads(request):
+    try:
+        data = json.loads(request.body)
+        lead_ids = data.get('lead_ids', [])
+        
+        if not lead_ids:
+            return JsonResponse({'success': False, 'error': 'No leads selected'})
+        
+        # Get leads that belong to the user's business
+        leads = Lead.objects.filter(
+            leadId__in=lead_ids,
+            business__user=request.user
+        )
+        
+        # Delete the leads
+        deleted_count = leads.count()
+        leads.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully deleted {deleted_count} lead(s)'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
