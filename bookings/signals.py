@@ -31,10 +31,9 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
                     'bookings.tasks.send_payment_reminder',  
                     instance.bookingId,  
                     schedule_type='O',
-                    next_run=timezone.now() + timedelta(minutes=1),
+                    next_run=timezone.now() + timedelta(hours=2),
                 )
 
-                print(f"[INFO] Scheduled payment reminder for booking {instance.bookingId}")
                 
                 # Check if delete_unpaid_bookings is already scheduled
                 schedule_delete_unpaid_bookings()
@@ -62,7 +61,6 @@ def schedule_delete_unpaid_bookings():
                 schedule_type='H',  # Hourly
                 repeats=-1  # Repeat indefinitely
             )
-            print(f"[INFO] Scheduled delete_unpaid_bookings task with ID: {schedule_id}")
         else:
             print(f"[INFO] delete_unpaid_bookings task already scheduled with ID: {existing_schedule.id}")
             
