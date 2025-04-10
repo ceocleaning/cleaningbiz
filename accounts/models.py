@@ -40,6 +40,9 @@ class Business(models.Model):
 
     def generateBusinessId(self):
         return f"BUS-{random.randint(1000, 9999)}"
+
+    def get_square_credentials(self):
+        return self.square_credentials
         
     def active_subscription(self):
         """
@@ -192,3 +195,21 @@ class PasswordResetOTP(models.Model):
     class Meta:
         verbose_name = "Password Reset OTP"
         verbose_name_plural = "Password Reset OTPs"
+
+
+
+class SquareCredentials(models.Model):
+    business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='square_credentials')
+    access_token = models.CharField(max_length=255, null=True, blank=True)
+    app_id = models.CharField(max_length=255, null=True, blank=True)
+    location_id = models.CharField(max_length=255, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Square Credentials for {self.business.businessName}"
+    
+    
+    
+
