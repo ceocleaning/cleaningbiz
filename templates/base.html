@@ -39,18 +39,149 @@
             font-family: 'Poppins', sans-serif;
             background-color: #f8fafc;
             color: #334155;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Default HTML element sizes */
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.875rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.625rem;
+        }
+
+        h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        h6 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        small {
+            font-size: 0.8rem;
+        }
+
+        a {
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+
+        em {
+            font-style: italic;
+        }
+
+        blockquote {
+            font-size: 1rem;
+            margin: 1rem 0;
+            padding-left: 1rem;
+            border-left: 3px solid var(--gray-light);
+        }
+
+        code {
+            font-size: 0.875rem;
+            font-family: monospace;
+            background-color: var(--gray-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        pre {
+            font-size: 0.875rem;
+            font-family: monospace;
+            background-color: var(--gray-light);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        ul, ol {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive typography */
+        @media (max-width: 768px) {
+            body {
+                font-size: 0.875rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            h3 {
+                font-size: 1.125rem;
+            }
+
+            h4 {
+                font-size: 1rem;
+            }
+
+            h5 {
+                font-size: 0.875rem;
+            }
+
+            h6 {
+                font-size: 0.8rem;
+            }
+
+            p, a, ul, ol {
+                font-size: 0.875rem;
+            }
         }
 
         /* Navigation Bar */
         .navbar {
             background-color: white;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
+            padding: 0.5rem 0;
         }
 
         .navbar-brand {
             font-weight: 700;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             letter-spacing: -0.5px;
         }
 
@@ -66,6 +197,7 @@
         .nav-link {
             position: relative;
             font-weight: 500;
+            font-size: 0.9rem;
             padding: 0.75rem 1rem !important;
             color: var(--gray-color) !important;
             transition: all 0.3s ease;
@@ -166,17 +298,18 @@
         .card-header {
             background-color: white;
             border-bottom: 1px solid var(--gray-light);
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.25rem;
         }
 
         .card-body {
-            padding: 1.5rem;
+            padding: 1.25rem;
         }
 
         /* Buttons */
         .btn {
             font-weight: 500;
-            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.25rem;
             border-radius: 8px;
             transition: all 0.3s ease;
             letter-spacing: 0.3px;
@@ -244,15 +377,16 @@
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 0.7px;
-            padding: 1rem;
+            padding: 0.75rem;
             color: var(--dark-color);
             white-space: nowrap;
         }
 
         .table tbody td {
-            padding: 1rem;
+            padding: 0.75rem;
             vertical-align: middle;
             border-bottom: 1px solid var(--gray-light);
+            font-size: 0.9rem;
         }
 
         .table tbody tr:last-child td {
@@ -264,7 +398,7 @@
             border-radius: 8px;
             padding: 0.75rem 1rem;
             border: 1px solid #cbd5e1;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .form-control:focus, .form-select:focus {
@@ -287,6 +421,7 @@
 
         .page-header h1, .page-header h2 {
             font-weight: 600;
+            font-size: 1.5rem;
             color: var(--dark-color);
         }
 
@@ -312,7 +447,7 @@
         .avatar-initials {
             color: white;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 0.9rem;
             text-transform: uppercase;
         }
 
@@ -331,6 +466,7 @@
             display: flex;
             align-items: center;
             font-weight: 500;
+            font-size: 0.9rem;
             color: var(--dark-color);
         }
         
@@ -361,8 +497,9 @@
         .alert {
             border: none;
             border-radius: 10px;
-            padding: 1rem 1.25rem;
+            padding: 0.75rem 1.25rem;
             margin-bottom: 1.5rem;
+            font-size: 0.9rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
@@ -397,6 +534,7 @@
         footer p {
             color: var(--gray-color);
             font-weight: 500;
+            font-size: 0.9rem;
         }
 
         /* Animation */
@@ -508,6 +646,7 @@
         .toast-body {
             padding: 12px 15px;
             font-weight: 500;
+            font-size: 0.9rem;
         }
 
         /* Fix for dropdown positioning */
