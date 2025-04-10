@@ -19,6 +19,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.mail import send_mail
 from automation.utils import format_phone_number
+from automation.views import verify_recaptcha_token
 
 
 def SignupPage(request):
@@ -30,6 +31,17 @@ def SignupPage(request):
         email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        
+        # Verify reCAPTCHA first
+        if not recaptcha_response:
+            messages.error(request, 'Please complete the reCAPTCHA verification.')
+            return redirect('accounts:signup')
+            
+        recaptcha_result = verify_recaptcha_token(recaptcha_response)
+        if not recaptcha_result.get('success'):
+            messages.error(request, 'reCAPTCHA verification failed. Please try again.')
+            return redirect('accounts:signup')
         
         if password1 == password2:
             if User.objects.filter(username=username).exists():
@@ -54,6 +66,17 @@ def loginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        
+        # Verify reCAPTCHA first
+        if not recaptcha_response:
+            messages.error(request, 'Please complete the reCAPTCHA verification.')
+            return redirect('accounts:login')
+            
+        recaptcha_result = verify_recaptcha_token(recaptcha_response)
+        if not recaptcha_result.get('success'):
+            messages.error(request, 'reCAPTCHA verification failed. Please try again.')
+            return redirect('accounts:login')
         
         user = authenticate(request, username=username, password=password)
         
