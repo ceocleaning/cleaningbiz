@@ -165,7 +165,7 @@
                                                         <div class="text-muted small">Phone Number</div>
                                                     </div>
                                                     <div class="fs-5 fw-semibold text-dark">
-                                                        <a href="tel:{{ business.phone }}" class="text-dark text-decoration-none">{{ business.phone }}</a> 
+                                                        <a href="tel:{{ business.phone }}" class="text-dark text-decoration-none" id="businessPhone">{{ business.phone }}</a> 
                                                     </div>
                                                 </div>
                                             </div>
@@ -2444,5 +2444,48 @@
     });
 </script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format phone number
+        const phoneElement = document.getElementById('businessPhone');
+        if (phoneElement) {
+            const phoneNumber = phoneElement.textContent.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                      cleanNumber.substring(3, 6) + '-' + 
+                                      cleanNumber.substring(6, 10);
+                phoneElement.textContent = formattedNumber;
+            }
+        }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format SMS Agent Number
+        const smsElement = document.getElementById('smsAgentNumber');
+        if (smsElement) {
+            const phoneNumber = smsElement.value.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                      cleanNumber.substring(3, 6) + '-' + 
+                                      cleanNumber.substring(6, 10);
+                smsElement.value = formattedNumber;
+            }
+        }
+    });
+</script>
 {% endblock %}
 {% endblock content %}

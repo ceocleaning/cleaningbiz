@@ -59,7 +59,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                     <span class="text-muted mb-1 mb-sm-0">Phone Number</span>
-                                    <span>{{ lead.phone_number }}</span>
+                                    <span id="leadPhoneNumber">{{ lead.phone_number }}</span>
                                 </div>
                             </div>
                         </div>
@@ -224,4 +224,26 @@
         }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format phone number
+    const phoneElement = document.getElementById('leadPhoneNumber');
+    if (phoneElement) {
+        const phoneNumber = phoneElement.textContent.trim();
+        if (phoneNumber) {
+            // Remove any existing formatting and +1 if present
+            let cleanNumber = phoneNumber.replace(/\D/g, '');
+            if (cleanNumber.startsWith('1')) {
+                cleanNumber = cleanNumber.substring(1);
+            }
+            // Format as +1 (555) 555-5555
+            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                  cleanNumber.substring(3, 6) + '-' + 
+                                  cleanNumber.substring(6, 10);
+            phoneElement.textContent = formattedNumber;
+        }
+    }
+});
+</script>
 {% endblock %}

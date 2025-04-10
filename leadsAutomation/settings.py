@@ -265,7 +265,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'INFO',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
@@ -304,14 +304,14 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': False,
         },
+        'django.db.backends': {
+            'handlers': ['file'],
+            'level': 'WARNING',  # Changed from DEBUG to WARNING
+            'propagate': False,
+        },
         'subscription': {
             'handlers': ['console', 'subscription_file', 'mail_admins'],
             'level': 'INFO',
-            'propagate': False,
-        },
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },

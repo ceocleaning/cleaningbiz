@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from usage_analytics.services.usage_service import UsageService
 import json
-
+from automation.utils import format_phone_number
 logger = logging.getLogger(__name__)
 
 
@@ -284,11 +284,19 @@ def create_lead(request):
                 messages.error(request, 'You have reached the maximum number of leads allowed in your subscription plan.')
                 return redirect('create_lead')
 
+            phone_number = request.POST.get('phone_number')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid phone number.')
+                return redirect('create_lead')
+
 
             lead = Lead.objects.create(
                 name=request.POST.get('name'),
                 email=request.POST.get('email'),
-                phone_number=request.POST.get('phone_number'),
+                phone_number=phone_number,
                 source=request.POST.get('source'),
                 notes=request.POST.get('notes'),
                 content=request.POST.get('content'),
@@ -316,9 +324,17 @@ def update_lead(request, leadId):
     
     if request.method == 'POST':
         try:
+            phone_number = request.POST.get('phone_number')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid phone number.')
+                return redirect('update_lead', leadId=leadId)
+            
             lead.name = request.POST.get('name')
             lead.email = request.POST.get('email')
-            lead.phone_number = request.POST.get('phone_number')
+            lead.phone_number = phone_number
             lead.source = request.POST.get('source')
             lead.notes = request.POST.get('notes')
             lead.content = request.POST.get('content')
@@ -380,12 +396,19 @@ def add_cleaner(request):
     
     if request.method == 'POST':
         try:
+            phone_number = request.POST.get('phoneNumber')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid US phone number.')
+                return redirect('add_cleaner')
             # Create cleaner
             cleaner = Cleaners.objects.create(
                 business=business,
                 name=request.POST.get('name'),
                 email=request.POST.get('email'),
-                phoneNumber=request.POST.get('phoneNumber'),
+                phoneNumber=phone_number,
                 isActive=True
             )
             
@@ -594,7 +617,14 @@ def update_cleaner_profile(request, cleaner_id):
             # Update basic info
             cleaner.name = request.POST.get('name')
             cleaner.email = request.POST.get('email')
-            cleaner.phoneNumber = request.POST.get('phoneNumber')
+            phone_number = request.POST.get('phoneNumber')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid US phone number.')
+                return redirect('update_cleaner_profile', cleaner_id=cleaner_id)
+            cleaner.phoneNumber = phone_number
             cleaner.isActive = request.POST.get('isActive') == 'on'
             
             # Update rating

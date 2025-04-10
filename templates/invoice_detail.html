@@ -61,7 +61,7 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                 <span class="text-muted mb-1 mb-sm-0">Customer Phone Number</span>
-                                <span>{{ invoice.booking.phoneNumber }}</span>
+                                <span id="customerPhoneNumber">{{ invoice.booking.phoneNumber }}</span>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
@@ -537,6 +537,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Format phone numbers
+    const phoneElement = document.getElementById('customerPhoneNumber');
+    if (phoneElement) {
+        const phoneNumber = phoneElement.textContent.trim();
+        if (phoneNumber) {
+            // Remove any existing formatting and +1 if present
+            let cleanNumber = phoneNumber.replace(/\D/g, '');
+            if (cleanNumber.startsWith('1')) {
+                cleanNumber = cleanNumber.substring(1);
+            }
+            // Format as +1 (555) 555-5555
+            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                  cleanNumber.substring(3, 6) + '-' + 
+                                  cleanNumber.substring(6, 10);
+            phoneElement.textContent = formattedNumber;
+        }
+    }
+
     // Only enable tooltips on non-touch devices
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     if (window.matchMedia('(hover: hover)').matches) {

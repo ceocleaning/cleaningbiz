@@ -238,3 +238,42 @@ def calculateAddonsAmount(addons, addonsPrices):
     for key in addons:
         total += addons[key] * addonsPrices.get(key, 0)  # Use `.get()` to avoid KeyError
     return total
+
+
+def format_phone_number(phone_number):
+    """
+    Clean and format a phone number to ensure it has the country code.
+    
+    Args:
+        phone_number (str): The phone number to format
+        
+    Returns:
+        str: Formatted phone number with country code (+1)
+        
+    Examples:
+        >>> format_phone_number("(555) 555-5555")
+        "+15555555555"
+        >>> format_phone_number("5555555555")
+        "+15555555555"
+        >>> format_phone_number("+15555555555")
+        "+15555555555"
+    """
+    try:
+        # Remove all non-digit characters
+        cleaned = ''.join(filter(str.isdigit, str(phone_number)))
+        
+        # If the number is 10 digits, add +1
+        if len(cleaned) == 10:
+            return f"+1{cleaned}"
+        # If the number is 11 digits and starts with 1, add +
+        elif len(cleaned) == 11 and cleaned.startswith('1'):
+            return f"+{cleaned}"
+        # If the number already has country code, return as is
+        elif cleaned.startswith('+'):
+            return cleaned
+        # If the number is invalid, return None
+        else:
+            return None
+    except Exception as e:
+        print(f"Error formatting phone number: {str(e)}")
+        return None

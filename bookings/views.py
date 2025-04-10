@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 from django.db.models import Min, Count
 from django.http import JsonResponse
+from automation.utils import format_phone_number
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -188,7 +189,13 @@ def create_booking(request):
             # Get price details from form
             totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
-          
+            phone_number = request.POST.get('phoneNumber')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid US phone number.')
+                return redirect('bookings:create_booking')
 
             # Create the booking
             booking = Booking.objects.create(
@@ -196,7 +203,7 @@ def create_booking(request):
                 firstName=request.POST.get('firstName'),
                 lastName=request.POST.get('lastName'),
                 email=request.POST.get('email'),
-                phoneNumber=request.POST.get('phoneNumber'),
+                phoneNumber=phone_number,
                 companyName=request.POST.get('companyName', ''),
 
                 address1=request.POST.get('address1'),
@@ -317,7 +324,14 @@ def edit_booking(request, bookingId):
             booking.firstName = request.POST.get('firstName')
             booking.lastName = request.POST.get('lastName')
             booking.email = request.POST.get('email')
-            booking.phoneNumber = request.POST.get('phoneNumber')
+            phone_number = request.POST.get('phoneNumber')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+
+            if not phone_number:
+                messages.error(request, 'Please enter a valid US phone number.')
+                return redirect('bookings:edit_booking', bookingId=bookingId)
+            booking.phoneNumber = phone_number
             booking.companyName = request.POST.get('companyName', '')
 
             booking.address1 = request.POST.get('address1')

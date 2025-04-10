@@ -75,7 +75,7 @@
                         </span>
                         <div>
                             <p class="text-muted small mb-0">Phone</p>
-                            <a href="tel:{{ customer.phoneNumber }}" class="mb-0 fw-medium text-reset">{{ customer.phoneNumber }}</a>
+                            <a href="tel:{{ customer.phoneNumber }}" class="mb-0 fw-medium text-reset customer-phone">{{ customer.phoneNumber }}</a>
                         </div>
                     </li>
                     {% endif %}
@@ -465,6 +465,24 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Format phone numbers
+        const phoneElements = document.querySelectorAll('.customer-phone');
+        phoneElements.forEach(function(element) {
+            const phoneNumber = element.textContent.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                      cleanNumber.substring(3, 6) + '-' + 
+                                      cleanNumber.substring(6, 10);
+                element.textContent = formattedNumber;
+            }
+        });
+
         // Calculate and set progress bar widths
         if (document.querySelector('.completed-bar')) {
             const totalBookings = {{ stats.totalBookings }};

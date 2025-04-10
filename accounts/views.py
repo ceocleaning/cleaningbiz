@@ -18,6 +18,7 @@ import string
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.mail import send_mail
+from automation.utils import format_phone_number
 
 
 def SignupPage(request):
@@ -120,23 +121,6 @@ def update_profile(request):
     
     return redirect('accounts:profile')
 
-
-@login_required
-def update_credentials(request):
-    if request.method == 'POST':
-        credentials, created = ApiCredential.objects.get_or_create(user=request.user)
-        
-        # Update credentials fields
-        credentials.apiKey = request.POST.get('apiKey', '')
-        credentials.auth_token = request.POST.get('auth_token', '')
-        credentials.twilio_number = request.POST.get('twilio_number', '')
-        credentials.twilio_whatsapp_number = request.POST.get('twilio_whatsapp_number', '')
-        credentials.save()
-        
-        messages.success(request, 'Your API credentials have been updated successfully!')
-        return redirect('accounts:profile')
-    
-    return redirect('accounts:profile')
 
 
 @login_required
@@ -298,7 +282,9 @@ def edit_credentials(request):
         try:
             # credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
             # credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
-            credentials.twilioSmsNumber = request.POST.get('twilioSmsNumber', '')
+
+            # Format phone numbers
+            credentials.twilioSmsNumber = format_phone_number(request.POST.get('twilioSmsNumber', ''))
             credentials.twilioAccountSid = request.POST.get('twilioSid', '')
             credentials.twilioAuthToken = request.POST.get('twilioAuthToken', '')
             credentials.save()

@@ -2,13 +2,16 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-3 py-md-4">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3 mb-md-4">
-        <h1 class="h3 mb-0">Cleaners</h1>
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-2">Cleaners</h1>
+            <p class="text-muted mb-0">Manage your cleaning staff and their availability</p>
+        </div>
         <div class="d-flex flex-wrap gap-2">
-            <a href="{% url 'business_monthly_schedule' %}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-calendar me-1"></i>Business Schedule
+            <a href="{% url 'business_monthly_schedule' %}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar me-2"></i>Schedule
             </a>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCleanerModal">
                 <i class="fas fa-plus me-2"></i>Add Cleaner
@@ -17,42 +20,46 @@
     </div>
 
     <!-- Cleaners Grid -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2 g-md-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for cleaner in cleaners %}
         <div class="col">
-            <div class="card h-100 border-0 shadow-sm">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition">
                 <!-- Card Header -->
                 <div class="card-header bg-transparent border-0 pt-3 pb-0">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <h5 class="card-title mb-1 fs-6 fs-md-5">
-                                <a href="{% url 'cleaner_detail' cleaner.id %}" class="text-decoration-none text-dark">
+                            <h5 class="card-title mb-2">
+                                <a href="{% url 'cleaner_detail' cleaner.id %}" class="text-decoration-none text-dark hover-primary">
                                     {{ cleaner.name }}
                                 </a>
                             </h5>
-                            <div class="d-flex flex-wrap gap-1 gap-md-2 mb-2">
+                            <div class="d-flex flex-wrap gap-2">
                                 {% if not cleaner.isActive %}
-                                <span class="badge bg-danger">Inactive</span>
+                                <span class="badge bg-danger-soft text-danger">
+                                    <i class="fas fa-user-slash me-1"></i>Inactive
+                                </span>
                                 {% endif %}
                                 {% if not cleaner.isAvailable %}
-                                <span class="badge bg-warning text-dark">Unavailable</span>
+                                <span class="badge bg-warning-soft text-warning">
+                                    <i class="fas fa-clock me-1"></i>Unavailable
+                                </span>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-link text-dark p-0 p-md-1 touch-target" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 <li>
-                                    <a class="dropdown-item touch-item" href="{% url 'cleaner_detail' cleaner.id %}">
+                                    <a class="dropdown-item" href="{% url 'cleaner_detail' cleaner.id %}">
                                         <i class="fas fa-eye me-2"></i>View Details
                                     </a>
                                 </li>
                                 <li>
                                     <form action="{% url 'toggle_cleaner_availability' cleaner.id %}" method="POST" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="dropdown-item touch-item {% if cleaner.isAvailable %}text-warning{% else %}text-success{% endif %}">
+                                        <button type="submit" class="dropdown-item {% if cleaner.isAvailable %}text-warning{% else %}text-success{% endif %}">
                                             <i class="fas {% if cleaner.isAvailable %}fa-pause-circle{% else %}fa-play-circle{% endif %} me-2"></i>
                                             Mark as {% if cleaner.isAvailable %}Unavailable{% else %}Available{% endif %}
                                         </button>
@@ -61,7 +68,7 @@
                                 <li>
                                     <form action="{% url 'toggle_cleaner_active' cleaner.id %}" method="POST" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="dropdown-item touch-item {% if cleaner.isActive %}text-danger{% else %}text-success{% endif %}">
+                                        <button type="submit" class="dropdown-item {% if cleaner.isActive %}text-danger{% else %}text-success{% endif %}">
                                             <i class="fas {% if cleaner.isActive %}fa-user-slash{% else %}fa-user-check{% endif %} me-2"></i>
                                             Mark as {% if cleaner.isActive %}Inactive{% else %}Active{% endif %}
                                         </button>
@@ -73,40 +80,50 @@
                 </div>
 
                 <!-- Card Body -->
-                <div class="card-body pt-2 pt-md-3">
-                    <div class="d-flex flex-column gap-2">
+                <div class="card-body pt-3">
+                    <div class="d-flex flex-column gap-3">
                         {% if cleaner.email %}
                         <div class="d-flex align-items-center">
-                            <i class="fas fa-envelope text-muted me-2 fa-fw"></i>
-                            <span class="small text-break">{{ cleaner.email }}</span>
+                            <div class="icon-circle bg-primary-soft text-primary me-3">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Email</div>
+                                <div class="text-break">{{ cleaner.email }}</div>
+                            </div>
                         </div>
                         {% endif %}
                         {% if cleaner.phoneNumber %}
                         <div class="d-flex align-items-center">
-                            <i class="fas fa-phone text-muted me-2 fa-fw"></i>
-                            <span class="small">{{ cleaner.phoneNumber }}</span>
+                            <div class="icon-circle bg-success-soft text-success me-3">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Phone</div>
+                                <div class="cleaner-phone">{{ cleaner.phoneNumber }}</div>
+                            </div>
                         </div>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Card Footer -->
-                <div class="card-footer bg-transparent border-0 pb-3">
-                    <a href="{% url 'cleaner_detail' cleaner.id %}" class="btn btn-outline-primary btn-sm w-100 touch-target">
-                        Manage Cleaner
+                <div class="card-footer bg-transparent border-0 pt-0 pb-3">
+                    <a href="{% url 'cleaner_detail' cleaner.id %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-user-cog me-2"></i>Manage Cleaner
                     </a>
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col-12">
-            <div class="text-center py-4">
-                <div class="mb-3">
-                    <i class="fas fa-user-plus fa-3x text-muted"></i>
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-user-plus fa-3x text-primary-soft"></i>
                 </div>
-                <h5>No Cleaners Added Yet</h5>
-                <p class="text-muted mb-3">Start by adding your first cleaner to manage their schedules and bookings.</p>
-                <button class="btn btn-primary touch-target" data-bs-toggle="modal" data-bs-target="#addCleanerModal">
+                <h4 class="mb-2">No Cleaners Added Yet</h4>
+                <p class="text-muted mb-4">Start by adding your first cleaner to manage their schedules and bookings.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCleanerModal">
                     <i class="fas fa-plus me-2"></i>Add Cleaner
                 </button>
             </div>
@@ -137,16 +154,27 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control" name="phoneNumber" required>
+                        <div class="input-group">
+                            <span class="input-group-text">+1</span>
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phoneNumber" 
+                                   name="phoneNumber" 
+                                   placeholder="(555) 555-5555"
+                                   pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                   title="Please enter a valid 10-digit phone number"
+                                   required>
+                        </div>
+                        <small class="form-text text-muted">Enter your 10-digit phone number</small>
                     </div>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
                         Default availability will be set to 9:00 AM - 5:00 PM for all days. You can adjust this later.
                     </div>
                 </div>
-                <div class="modal-footer flex-column flex-sm-row">
-                    <button type="button" class="btn btn-secondary w-100 w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary w-100 w-sm-auto">Add Cleaner</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Cleaner</button>
                 </div>
             </form>
         </div>
@@ -154,111 +182,138 @@
 </div>
 
 <style>
-    .card {
-        transition: transform 0.15s ease-in-out;
-        border-radius: 0.5rem;
+    /* Card hover effect */
+    .hover-shadow {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
     
-    .text-break {
-        word-break: break-word;
-        overflow-wrap: break-word;
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
     
-    .dropdown-item {
-        cursor: pointer;
+    /* Icon circle */
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .dropdown-item:active {
-        color: inherit;
-        background-color: rgba(0,0,0,0.1);
+    /* Soft colors */
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.1);
     }
     
-    .btn-outline-primary:hover {
-        color: #fff;
+    .bg-success-soft {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+    
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    /* Text colors */
+    .text-primary-soft {
+        color: rgba(13, 110, 253, 0.5);
+    }
+    
+    /* Hover effect for links */
+    .hover-primary:hover {
+        color: #0d6efd !important;
     }
     
     /* Responsive adjustments */
-    @media (min-width: 768px) {
-        .card:hover {
-            transform: translateY(-5px);
-        }
-    }
-    
     @media (max-width: 767.98px) {
         .card {
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
         }
         
-        .card:hover {
-            transform: translateY(-2px);
+        .hover-shadow:hover {
+            transform: none;
         }
         
-        .badge {
-            font-size: 0.7rem;
-            padding: 0.25em 0.5em;
-        }
-        
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-        
-        .fa-3x {
-            font-size: 2em;
-        }
-        
-        .card-header, .card-body, .card-footer {
-            padding: 0.75rem;
+        .icon-circle {
+            width: 36px;
+            height: 36px;
         }
     }
     
     /* Touch optimizations */
-    .touch-target {
+    .btn, .dropdown-item {
         min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
     
-    .touch-item {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
+    .dropdown-item {
+        padding: 0.75rem 1rem;
     }
     
     @media (hover: none) and (pointer: coarse) {
-        .dropdown-item {
-            padding: 0.75rem 1rem;
-        }
-        
-        .btn {
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         .card-title a {
             display: inline-block;
             padding: 5px 0;
         }
-        
-        /* Improve spacing for touch devices */
-        .g-2 {
-            --bs-gutter-y: 0.75rem;
-            --bs-gutter-x: 0.75rem;
-        }
-        
-        /* Smaller font size for mobile */
-        .small {
-            font-size: 0.8rem;
-        }
-        
-        .fa-fw {
-            width: 1.25em;
-            text-align: center;
-        }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Phone number formatting for input
+    const phoneInput = document.getElementById('phoneNumber');
+    const form = document.querySelector('form');
+    
+    if (phoneInput) {
+        // Format phone number as user types
+        phoneInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+        
+        // Create a hidden input to store the full phone number
+        const hiddenPhoneInput = document.createElement('input');
+        hiddenPhoneInput.type = 'hidden';
+        hiddenPhoneInput.name = 'full_phone';
+        form.appendChild(hiddenPhoneInput);
+        
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            const phoneValue = phoneInput.value.replace(/\D/g, '');
+            if (phoneValue.length === 10) {
+                // Store the full number in the hidden input
+                hiddenPhoneInput.value = '+1' + phoneValue;
+                // Keep the display input unchanged
+                phoneInput.value = phoneValue;
+            }
+        });
+    }
+
+    // Format phone numbers in cleaner cards
+    const phoneNumbers = document.querySelectorAll('.cleaner-phone');
+    phoneNumbers.forEach(function(element) {
+        const phoneNumber = element.textContent.trim();
+        if (phoneNumber) {
+            // Remove any existing formatting and +1 if present
+            let cleanNumber = phoneNumber.replace(/\D/g, '');
+            if (cleanNumber.startsWith('1')) {
+                cleanNumber = cleanNumber.substring(1);
+            }
+            // Format as +1 (555) 555-5555
+            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                  cleanNumber.substring(3, 6) + '-' + 
+                                  cleanNumber.substring(6, 10);
+            element.textContent = formattedNumber;
+        }
+    });
+});
+</script>
 {% endblock %}
 

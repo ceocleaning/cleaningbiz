@@ -91,7 +91,7 @@
                             {% if cleaner.phoneNumber %}
                             <div class="col-12 mb-2">
                                 <i class="fas fa-phone text-muted me-2"></i>
-                                <a href="tel:{{ cleaner.phoneNumber }}" class="text-decoration-none">{{ cleaner.phoneNumber }}</a>
+                                <a href="tel:{{ cleaner.phoneNumber }}" class="text-decoration-none cleaner-phone">{{ cleaner.phoneNumber }}</a>
                             </div>
                             {% endif %}
                             <div class="col-12">
@@ -332,7 +332,18 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" name="phoneNumber" value="{{ cleaner.phoneNumber }}">
+                            <div class="input-group">
+                                <span class="input-group-text">+1</span>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="editPhoneNumber" 
+                                       name="phoneNumber" 
+                                       value="{{ cleaner.phoneNumber }}"
+                                       placeholder="(555) 555-5555"
+                                       pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                       title="Please enter a valid 10-digit phone number">
+                            </div>
+                            <small class="form-text text-muted">Enter your 10-digit phone number</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Rating</label>
@@ -806,6 +817,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Phone number formatting for display
+    const phoneNumbers = document.querySelectorAll('.cleaner-phone');
+    phoneNumbers.forEach(function(element) {
+        const phoneNumber = element.textContent.trim();
+        if (phoneNumber) {
+            // Remove any existing formatting and +1 if present
+            let cleanNumber = phoneNumber.replace(/\D/g, '');
+            if (cleanNumber.startsWith('1')) {
+                cleanNumber = cleanNumber.substring(1);
+            }
+            // Format as +1 (555) 555-5555
+            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                  cleanNumber.substring(3, 6) + '-' + 
+                                  cleanNumber.substring(6, 10);
+            element.textContent = formattedNumber;
+        }
+    });
+
+    // Phone number formatting for edit modal
+    const editPhoneInput = document.getElementById('editPhoneNumber');
+    if (editPhoneInput) {
+        // Format phone number as user types
+        editPhoneInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+
+        // Create a hidden input to store the full phone number
+        const hiddenPhoneInput = document.createElement('input');
+        hiddenPhoneInput.type = 'hidden';
+        hiddenPhoneInput.name = 'full_phone';
+        document.querySelector('#editProfileModal form').appendChild(hiddenPhoneInput);
+
+        // Handle form submission
+        document.querySelector('#editProfileModal form').addEventListener('submit', function(e) {
+            const phoneValue = editPhoneInput.value.replace(/\D/g, '');
+            if (phoneValue.length === 10) {
+                // Store the full number in the hidden input
+                hiddenPhoneInput.value = '+1' + phoneValue;
+                // Keep the display input unchanged
+                editPhoneInput.value = phoneValue;
+            }
+        });
+
+        // Format initial phone number value if it exists
+        if (editPhoneInput.value) {
+            // Remove +1 if present and any non-digit characters
+            let initialValue = editPhoneInput.value.replace(/\D/g, '');
+            if (initialValue.startsWith('1')) {
+                initialValue = initialValue.substring(1);
+            }
+            // Format the number
+            let x = initialValue.match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            editPhoneInput.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        }
+    }
 });
 </script>
 {% endblock %}
