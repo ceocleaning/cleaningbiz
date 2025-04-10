@@ -14,17 +14,17 @@ def send_payment_reminder(booking_id):
     """
     Send a payment reminder email and SMS to clients when payment has not been made within 2 hours.
     Warns that the slot will be released if payment isn't made within 1 hour.
+    
     """
+
+    print(f"[INFO] Sending payment reminder for booking {booking_id}")
     try:
         booking = Booking.objects.get(bookingId=booking_id)
-        
         # Check if booking is unpaid
         if not booking.is_paid():
             business = booking.business
-                
             # Prepare message content
             email_subject = f"URGENT: Complete Your Payment for {business.businessName} Booking"
-                
             # Create HTML email body
             html_body = f"""
             <!DOCTYPE html>
@@ -110,18 +110,16 @@ def send_payment_reminder(booking_id):
             To secure your booking, please complete your payment here:
             {settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/
                 
-            If you have any questions, please contact us at {business.email or business.phoneNumber}.
+            If you have any questions, please contact us at {business.user.email or business.phoneNumber}.
                 
             This is an automated message from {business.businessName}.
             """
-                
             # Send email
             try:
                 # Get SMTP configuration for the business
                 smtp_config = SMTPConfig.objects.filter(business=business).first()
-                
                 # Set up email parameters
-                from_email = f"{business.businessName} <{business.email}>" if business.email else settings.DEFAULT_FROM_EMAIL
+                from_email = smtp_config.username
                 recipient_email = booking.email
                 
                 # Send email based on available configuration
@@ -221,7 +219,6 @@ def delete_unpaid_bookings():
         # Find bookings that match our criteria
         unpaid_bookings = Booking.objects.filter(
             createdAt__lte=three_hours_ago,  # Created more than 3 hours ago
-            paymentReminderSentAt__isnull=False,  # Payment reminder was sent
         )
         
         deleted_count = 0

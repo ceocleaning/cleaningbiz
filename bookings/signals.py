@@ -31,8 +31,10 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
                     'bookings.tasks.send_payment_reminder',  
                     instance.bookingId,  
                     schedule_type='O',
-                    next_run=timezone.now() + timedelta(hours=2),
+                    next_run=timezone.now() + timedelta(minutes=1),
                 )
+
+                print(f"[INFO] Scheduled payment reminder for booking {instance.bookingId}")
                 
                 # Check if delete_unpaid_bookings is already scheduled
                 schedule_delete_unpaid_bookings()
