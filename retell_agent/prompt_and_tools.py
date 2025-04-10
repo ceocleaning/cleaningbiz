@@ -1,25 +1,29 @@
-from accounts.models import Business, ApiCredential
+from accounts.models import Business, ApiCredential, CustomAddons
 
 
 
 def get_retell_prompt(business):
     api_credential = ApiCredential.objects.filter(business=business).first()
-    business_id = api_credential.business_id
+    business = api_credential.business
+    custom_addons = CustomAddons.objects.filter(business=business)
+    addons = ""
+    for addon in custom_addons:
+        addons += f"- {addon.name}, \n"
 
-    default_prompt = """
+    default_prompt = f"""
     ###Persona of AI Voice Agent
-    Your name is Sarah, Office Assistant for CEO Cleaners from Dallas. Your role is to book appointment and answer client questions about cleaning services.
+    Your name is Sarah, Office Assistant for {business.businessName} from {business.address}. Your role is to book appointment and answer client questions about cleaning services.
 
     ##Skills:
     - Professional and friendly communication
     - Efficient data collection and processing
-    - Knowledgeable about CEO Cleaners' services and policies
+    - Knowledgeable about {business.businessName}'s services and policies
     - Ability to check real-time calendar availability
     - Proficient in making service recommendations based on client needs
 
     ##Role: To assist clients in scheduling cleaning services seamlessly, ensuring all necessary information is collected and providing recommendations to enhance their experience.
 
-    ##Objective: To facilitate a smooth and efficient booking process, ensuring client satisfaction and optimal scheduling for CEO Cleaners.
+    ##Objective: To facilitate a smooth and efficient booking process, ensuring client satisfaction and optimal scheduling for {business.businessName}.
 
     ###Rules to Follow
     Always maintain a courteous and professional tone.
@@ -31,24 +35,25 @@ def get_retell_prompt(business):
     Thank the client sincerely after booking.
 
     ##Addons
-    - dishes
-    - laundry
-    - window
-    - pets
-    - fridge
-    - oven
-    - baseboard
-    - blinds
-    - green
-    - cabinets
-    - patio
-    - garage
+    - dishes,
+    - laundry,
+    - window,
+    - pets,
+    - fridge,
+    - oven,
+    - baseboard,
+    - blinds,
+    - green,
+    - cabinets,
+    - patio,
+    - garage,
+    {addons}
 
     ##Business TimeZone
     America/Chicago
 
     ##Business ID
-    {business_id}
+    {business.businessId}
 
     ###Script AI has to Follow
     ##Greeting and Introduction:
@@ -56,7 +61,7 @@ def get_retell_prompt(business):
     ##Initial Step
     - run {{current_time}} and convert it business timezone in the beginning of the call
 
-    "Good [morning/afternoon/evening]! Thank you for contacting CEO Cleaners in Dallas. My name is Sarah,. How are you doing today?"
+    "Good [morning/afternoon/evening]! Thank you for contacting {business.businessName} in {business.address}. My name is Sarah,. How are you doing today?"
     Check for User's Intent:
 
     If the user expresses interest in booking a service:
@@ -120,13 +125,22 @@ def get_retell_prompt(business):
     "Thank you, [Client's Name], for choosing CEO Cleaners. We look forward to providing you with exceptional service. Have a wonderful day!"
 
     {{end_call}}
-    """.format(business_id=business_id)
+    """
 
     return default_prompt
 
 def get_retell_tools(business):
     api_credential = ApiCredential.objects.filter(business=business).first()
     secretKey = api_credential.secretKey
+    custom_addons = CustomAddons.objects.filter(business=business)
+
+    custom_addon_json = {}
+    for addon in custom_addons:
+        custom_addon_json.append({
+            "type": "string",
+            "description": addon.name
+        })
+
     custom_tools = [
             {
                 "type": "end_call",
@@ -192,112 +206,7 @@ def get_retell_tools(business):
                 "speak_after_execution": True,
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "pets": {
-                            "type": "integer",
-                            "description": "Qty for the pet cleaning add-on"
-                        },
-                        "fridge": {
-                            "type": "integer",
-                            "description": "Qty of fridge cleaning add-on"
-                        },
-                        "city": {
-                            "type": "string",
-                            "description": "The city where the service is booked."
-                        },
-                        "appointment_date_time": {
-                            "type": "string",
-                            "description": "The date and time when the cleaning service is scheduled."
-                        },
-                        "zip_code": {
-                            "type": "string",
-                            "description": "The postal code of the booking location."
-                        },
-                        "patio": {
-                            "type": "integer",
-                            "description": "Qty for the patio cleaning add-on"
-                        },
-                        "laundry": {
-                            "type": "integer",
-                            "description": "The number of laundry loads included as an add-on."
-                        },
-                        "baseboard": {
-                            "type": "integer",
-                            "description": "Qty of Baseboard add-on"
-                        },
-                        "state": {
-                            "type": "string",
-                            "description": "The state or province of the booking location."
-                        },
-                        "first_name": {
-                            "type": "string",
-                            "description": "The first name of the person making the booking."
-                        },
-                        "cabinets": {
-                            "type": "integer",
-                            "description": "Qty for the cabinets cleaning add-on"
-                        },
-                        "email": {
-                            "type": "string",
-                            "description": "The email address of the person making the booking."
-                        },
-                        "area": {
-                            "type": "integer",
-                            "description": "The total square footage of the location."
-                        },
-                        "blinds": {
-                            "type": "integer",
-                            "description": "Qty for blinds cleaning add-on"
-                        },
-                        "address": {
-                            "type": "string",
-                            "description": "Primary address for the booking."
-                        },
-                        "green": {
-                            "type": "integer",
-                            "description": "Qty for the green cleaning add-on"
-                        },
-                        "oven": {
-                            "type": "integer",
-                            "description": "Qty of oven cleaning add-on"
-                        },
-                        "garage": {
-                            "type": "integer",
-                            "description": "Qty for the garage cleaning add-on"
-                        },
-                        "last_name": {
-                            "type": "string",
-                            "description": "The last name of the person making the booking."
-                        },
-                        "dishes": {
-                            "type": "integer",
-                            "description": "The number of dish add-ons"
-                        },
-                        "bathrooms": {
-                            "type": "integer",
-                            "description": "The number of bathrooms in the booking location."
-                        },
-                        "windows": {
-                            "type": "integer",
-                            "description": "Qty for window cleaning add-on"
-                        },
-                        "bedrooms": {
-                            "type": "integer",
-                            "description": "The number of bedrooms in the booking location."
-                        },
-                        "service_type": {
-                            "type": "string",
-                            "description": "The type of cleaning service requested."
-                        },
-                        "phone_number": {
-                            "type": "string",
-                            "description": "The phone number of the person making the booking."
-                        },
-                        "business_id": {
-                            "type": "string",
-                            "description": "Business ID"
-                        }
-                    },
+                    "properties": get_book_appointment_tool_properties(business),
                     "required": [
                         "first_name", "last_name", "email", "phone_number", "address", "city", "state", 
                         "zip_code", "bedrooms", "bathrooms", "area", "service_type", "appointment_date_time", 
@@ -309,3 +218,127 @@ def get_retell_tools(business):
         ]
     
     return custom_tools
+
+
+
+
+def get_book_appointment_tool_properties(business):
+    api_credential = ApiCredential.objects.filter(business=business).first()
+    secretKey = api_credential.secretKey
+    custom_addons = CustomAddons.objects.filter(business=business)
+
+    properties = {
+                "pets": {
+                    "type": "integer",
+                    "description": "Qty for the pet cleaning add-on"
+                },
+                "fridge": {
+                    "type": "integer",
+                    "description": "Qty of fridge cleaning add-on"
+                },
+                "city": {
+                    "type": "string",
+                    "description": "The city where the service is booked."
+                },
+                "appointment_date_time": {
+                    "type": "string",
+                    "description": "The date and time when the cleaning service is scheduled."
+                },
+                "zip_code": {
+                    "type": "string",
+                    "description": "The postal code of the booking location."
+                },
+                "patio": {
+                    "type": "integer",
+                    "description": "Qty for the patio cleaning add-on"
+                },
+                "laundry": {
+                    "type": "integer",
+                    "description": "The number of laundry loads included as an add-on."
+                },
+                "baseboard": {
+                    "type": "integer",
+                    "description": "Qty of Baseboard add-on"
+                },
+                "state": {
+                    "type": "string",
+                    "description": "The state or province of the booking location."
+                },
+                "first_name": {
+                    "type": "string",
+                    "description": "The first name of the person making the booking."
+                },
+                "cabinets": {
+                    "type": "integer",
+                    "description": "Qty for the cabinets cleaning add-on"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "The email address of the person making the booking."
+                },
+                "area": {
+                    "type": "integer",
+                    "description": "The total square footage of the location."
+                },
+                "blinds": {
+                    "type": "integer",
+                    "description": "Qty for blinds cleaning add-on"
+                },
+                "address": {
+                    "type": "string",
+                    "description": "Primary address for the booking."
+                },
+                "green": {
+                    "type": "integer",
+                    "description": "Qty for the green cleaning add-on"
+                },
+                "oven": {
+                    "type": "integer",
+                    "description": "Qty of oven cleaning add-on"
+                },
+                "garage": {
+                    "type": "integer",
+                    "description": "Qty for the garage cleaning add-on"
+                },
+                "last_name": {
+                    "type": "string",
+                    "description": "The last name of the person making the booking."
+                },
+                "dishes": {
+                    "type": "integer",
+                    "description": "The number of dish add-ons"
+                },
+                "bathrooms": {
+                    "type": "integer",
+                    "description": "The number of bathrooms in the booking location."
+                },
+                "windows": {
+                    "type": "integer",
+                    "description": "Qty for window cleaning add-on"
+                },
+                "bedrooms": {
+                    "type": "integer",
+                    "description": "The number of bedrooms in the booking location."
+                },
+                "service_type": {
+                    "type": "string",
+                    "description": "The type of cleaning service requested."
+                },
+                "phone_number": {
+                    "type": "string",
+                    "description": "The phone number of the person making the booking."
+                },
+                "business_id": {
+                    "type": "string",
+                    "description": "Business ID"
+                }
+            }
+
+    for addon in custom_addons:
+        properties[addon.addonDataName] = {
+            "type": "integer",
+            "description": f"Qty for the {addon.addonName} add-on"
+        }
+
+    return properties
+
