@@ -1214,7 +1214,7 @@ def chat_api(request):
                 if len(messages) == 0:
                     return JsonResponse({
                         'error': 'No messages found',
-                        'status': 'success'
+                        'status': 'no_messages'
                     }, status=200)
                 else:
                     return JsonResponse({
@@ -1223,6 +1223,7 @@ def chat_api(request):
                     })
             else:
                 return JsonResponse({
+                    'status': 'error',
                     'error': 'Invalid action or missing phone number or session key'
                 }, status=400)
             

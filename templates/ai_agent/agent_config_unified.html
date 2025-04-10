@@ -3,11 +3,10 @@
 {% block title %}AI SMS Agent Configuration{% endblock %}
 
 {% block content %}
-<div class="container mt-2 px-3 px-md-4">
+<div class="container px-3 px-md-4">
     <div class="row mb-3 mb-md-4">
         <div class="col-12">
-            <h1 class="h2 mt-2 mt-md-3">AI SMS Agent Configuration</h1>
-            <p class="text-muted">Configure your AI SMS Agent</p>
+            <h2 class="mt-md-3">AI SMS Agent Configuration</h2>
         </div>
     </div>
    
@@ -59,7 +58,7 @@
                 </div>
                 <div class="card-body d-flex flex-column p-2 p-md-3" style="height: 400px;">
                     <div id="chatMessages" class="flex-grow-1 overflow-auto mb-3">
-                        <div id="chatLoading" class="d-flex flex-column justify-content-center align-items-center h-100">
+                        <div id="chatLoading" class="d-flex flex-column justify-content-center align-items-center h-100 d-none">
                             <div class="spinner-border text-primary mb-2" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
@@ -85,7 +84,7 @@
 </div>
 
 <!-- Toast container for notifications -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+<div class="position-fixed bottom-0 end-0 p-3 d-none" style="z-index: 11">
     <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
             <strong class="me-auto" id="toastTitle">Notification</strong>
@@ -379,6 +378,8 @@
             return;
         }
         
+        chatLoader = document.getElementById('chatLoading');
+        chatLoader.classList.remove('d-none');
         fetch(`/ai_agent/api/chat/?client_phone_number=${encodeURIComponent(clientPhoneNumber)}&action=get_messages`, {
             method: 'GET',
             headers: {
@@ -389,7 +390,7 @@
         .then(response => response.json())
         .then(data => {
             // Hide loader
-            document.getElementById('chatLoading').style.display = 'none';
+            chatLoader.classList.add('d-none');
             
             const chatMessagesContent = document.getElementById('chatMessagesContent');
             chatMessagesContent.style.display = 'block';
@@ -409,10 +410,11 @@
                     }
                     appendMessage(message.role, message.message, timestamp);
                 });
+                chatLoader.classList.add('d-none');
             } else {
-                // Show empty state with welcome message - handles both status='error' and empty messages case
+                // Show empty state with welcome message
                 chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
-                
+                chatLoader.classList.add('d-none');
                 // Show toast for error if present
                 if (data.status === 'error' && data.error) {
                     console.log('Error loading messages:', data.error);
@@ -426,7 +428,7 @@
         .catch(error => {
             console.error('Error loading messages:', error);
             // Hide loader and show empty state on error
-            document.getElementById('chatLoading').style.display = 'none';
+            chatLoader.classList.add('d-none');
             const chatMessagesContent = document.getElementById('chatMessagesContent');
             chatMessagesContent.innerHTML = '<div class="text-start"><small>Start a conversation with your AI agent</small></div>';
             chatMessagesContent.style.display = 'block';
