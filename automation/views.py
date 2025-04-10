@@ -1460,3 +1460,9 @@ def bulk_delete_leads(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+def sitemap(request):
+    """
+    Render the sitemap page showing all available routes in the application.
+    """
+    return render(request, 'sitemap.html')

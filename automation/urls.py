@@ -62,4 +62,5 @@ urlpatterns = [
     # Privacy Policy and Terms of Service
     path('privacy-policy/', views.PrivacyPolicyPage, name='privacy_policy'),
     path('terms-of-service/', views.TermsOfServicePage, name='terms_of_service'),
+    path('sitemap/', views.sitemap, name='sitemap'),
 ]

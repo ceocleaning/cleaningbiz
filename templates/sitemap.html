@@ -1,0 +1,193 @@
+{% extends 'LandingPageBase.html' %}
+
+{% block title %}Sitemap - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-white mb-4">Sitemap</h1>
+            
+            <!-- Main Navigation -->
+            <div class="card mb-4 bg-dark-surface-2 border-dark-border">
+                <div class="card-header bg-dark-surface-3 text-white">
+                    <h2 class="h5 mb-0">Main Navigation</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{% url 'landing-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-home me-2"></i>Home
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'pricing-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-tags me-2"></i>Pricing
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'features-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-star me-2"></i>Features
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'about-us' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-info-circle me-2"></i>About Us
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'contact-us' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-envelope me-2"></i>Contact Us
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'docs-page' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-book me-2"></i>Documentation
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Account & Business Management -->
+            <div class="card mb-4 bg-dark-surface-2 border-dark-border">
+                <div class="card-header bg-dark-surface-3 text-white">
+                    <h2 class="h5 mb-0">Account & Business Management</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:login' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:signup' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-user-plus me-2"></i>Sign Up
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:profile' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-user-circle me-2"></i>Profile Settings
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:register_business' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-building me-2"></i>Register Business
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:edit_business' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-edit me-2"></i>Edit Business
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:edit_business_settings' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-cog me-2"></i>Business Settings
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'accounts:edit_credentials' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-key me-2"></i>API Credentials
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Business Features -->
+            <div class="card mb-4 bg-dark-surface-2 border-dark-border">
+                <div class="card-header bg-dark-surface-3 text-white">
+                    <h2 class="h5 mb-0">Business Features</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{% url 'bookings:all_bookings' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-calendar-check me-2"></i>Bookings
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'bookings:customers' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-users me-2"></i>Customers
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'invoice:all_invoices' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Invoices
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'all_leads' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-user-friends me-2"></i>Leads
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'cleaners_list' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-user-friends me-2"></i>Cleaners
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'integration_list' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-screwdriver me-2"></i>Integrations
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'business_monthly_schedule' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-calendar-alt me-2"></i>Business Schedule
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AI Assistant -->
+            <div class="card mb-4 bg-dark-surface-2 border-dark-border">
+                <div class="card-header bg-dark-surface-3 text-white">
+                    <h2 class="h5 mb-0">AI Assistant</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{% url 'ai_agent:agent_config' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-cogs me-2"></i>AI Agent Configuration
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'ai_agent:all_chats' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-sms me-2"></i>SMS Chat History
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'test_availability_api' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-check-circle me-2"></i>Test Availability API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Legal -->
+            <div class="card bg-dark-surface-2 border-dark-border">
+                <div class="card-header bg-dark-surface-3 text-white">
+                    <h2 class="h5 mb-0">Legal</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{% url 'privacy_policy' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-shield-alt me-2"></i>Privacy Policy
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'terms_of_service' %}" class="text-dark-text-secondary hover-text-white text-decoration-none">
+                                <i class="fas fa-file-contract me-2"></i>Terms of Service
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
