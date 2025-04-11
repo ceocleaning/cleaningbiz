@@ -100,7 +100,6 @@ class CleanerAccessMiddleware:
             '/accounts/logout/',
             '/accounts/profile/',
             '/accounts/profile/change-password/',
-            '/',  # Home page
             '/home/',
             '/pricing/',
             '/features/',
