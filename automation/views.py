@@ -609,8 +609,10 @@ def cleaner_detail(request, cleaner_id):
 def update_cleaner_profile(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
@@ -653,8 +655,10 @@ def update_cleaner_profile(request, cleaner_id):
 def update_cleaner_schedule(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
@@ -743,8 +747,10 @@ def update_cleaner_schedule(request, cleaner_id):
 def add_specific_date(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
@@ -797,8 +803,10 @@ def add_specific_date(request, cleaner_id):
 def delete_specific_date(request, cleaner_id, exception_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     exception = get_object_or_404(CleanerAvailability, id=exception_id, cleaner=cleaner, availability_type='specific')
@@ -817,8 +825,10 @@ def delete_specific_date(request, cleaner_id, exception_id):
 def toggle_cleaner_availability(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
@@ -840,8 +850,10 @@ def toggle_cleaner_availability(request, cleaner_id):
 def delete_cleaner(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
@@ -861,8 +873,10 @@ def delete_cleaner(request, cleaner_id):
 def toggle_cleaner_active(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     

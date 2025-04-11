@@ -150,12 +150,10 @@ class CleanerAccessMiddleware:
         # Determine correct URL namespace based on current path
         try:
             # Force use of a hardcoded URL based on app
-            if 'automation' in request.path:
-                redirect_url = f'/automation/cleaners/{cleaner_id}/'
+            if '/cleaners/' in request.path:
+                redirect_url = f'/cleaners/{cleaner_id}/'
                 print(f"DEBUG: CleanerAccessMiddleware - Using automation redirect URL: {redirect_url}")
-            else:
-                redirect_url = f'/accounts/cleaners/{cleaner_id}/'
-                print(f"DEBUG: CleanerAccessMiddleware - Using accounts redirect URL: {redirect_url}")
+           
                 
             # Log a message for debugging
             print(f"DEBUG: CleanerAccessMiddleware - Redirecting cleaner to: {redirect_url}")
@@ -165,6 +163,6 @@ class CleanerAccessMiddleware:
             print(f"DEBUG: CleanerAccessMiddleware - Error in cleaner redirection: {str(e)}")
             
             # Use absolute hardcoded redirect as last resort
-            cleaner_url = f'/accounts/cleaners/{cleaner_id}/'
+            cleaner_url = f'/cleaners/{cleaner_id}/'
             print(f"DEBUG: CleanerAccessMiddleware - Using last resort redirect: {cleaner_url}")
             return redirect(cleaner_url)
