@@ -21,6 +21,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from usage_analytics.services.usage_service import UsageService
 import json
 from automation.utils import format_phone_number
+import decimal
 logger = logging.getLogger(__name__)
 
 
@@ -284,6 +285,7 @@ def create_lead(request):
                 messages.error(request, 'You have reached the maximum number of leads allowed in your subscription plan.')
                 return redirect('create_lead')
 
+            # Process phone number
             phone_number = request.POST.get('phone_number')
             if phone_number:
                 phone_number = format_phone_number(phone_number)
@@ -291,16 +293,41 @@ def create_lead(request):
             if not phone_number:
                 messages.error(request, 'Please enter a valid phone number.')
                 return redirect('create_lead')
+                
+            # Process date and time
+            proposed_start_datetime = None
+            proposed_date = request.POST.get('proposed_date')
+            proposed_time = request.POST.get('proposed_time')
+            
+            if proposed_date and proposed_time:
+                try:
+                    proposed_start_datetime = datetime.combine(
+                        datetime.strptime(proposed_date, '%Y-%m-%d').date(),
+                        datetime.strptime(proposed_time, '%H:%M').time()
+                    )
+                except ValueError:
+                    messages.warning(request, 'Invalid date or time format. The date/time information was not saved.')
 
-
+            # Create the lead
             lead = Lead.objects.create(
                 name=request.POST.get('name'),
                 email=request.POST.get('email'),
                 phone_number=phone_number,
+                
+                # Address fields
+                address1=request.POST.get('address1'),
+                address2=request.POST.get('address2'),
+                city=request.POST.get('city'),
+                state=request.POST.get('state'),
+                zipCode=request.POST.get('zipCode'),
+                
+                # Scheduling
+                proposed_start_datetime=proposed_start_datetime,
+                
+                # Original fields
                 source=request.POST.get('source'),
                 notes=request.POST.get('notes'),
-                content=request.POST.get('content'),
-                business=request.user.business_set.first()
+                business=business
             )
             
             # Track the lead generation in usage metrics
@@ -324,6 +351,7 @@ def update_lead(request, leadId):
     
     if request.method == 'POST':
         try:
+            # Process phone number
             phone_number = request.POST.get('phone_number')
             if phone_number:
                 phone_number = format_phone_number(phone_number)
@@ -332,13 +360,41 @@ def update_lead(request, leadId):
                 messages.error(request, 'Please enter a valid phone number.')
                 return redirect('update_lead', leadId=leadId)
             
+            # Process date and time
+            proposed_start_datetime = None
+            proposed_date = request.POST.get('proposed_date')
+            proposed_time = request.POST.get('proposed_time')
+            
+            if proposed_date and proposed_time:
+                try:
+                    proposed_start_datetime = datetime.combine(
+                        datetime.strptime(proposed_date, '%Y-%m-%d').date(),
+                        datetime.strptime(proposed_time, '%H:%M').time()
+                    )
+                except ValueError:
+                    messages.warning(request, 'Invalid date or time format. The date/time information was not saved.')
+            
+            # Update basic fields
             lead.name = request.POST.get('name')
             lead.email = request.POST.get('email')
             lead.phone_number = phone_number
+            
+            # Update address fields
+            lead.address1 = request.POST.get('address1')
+            lead.address2 = request.POST.get('address2')
+            lead.city = request.POST.get('city')
+            lead.state = request.POST.get('state')
+            lead.zipCode = request.POST.get('zipCode')
+            
+            # Update scheduling
+            if proposed_start_datetime:
+                lead.proposed_start_datetime = proposed_start_datetime
+            
+            # Update original fields
             lead.source = request.POST.get('source')
             lead.notes = request.POST.get('notes')
-            lead.content = request.POST.get('content')
-            lead.isConverted = 'isConverted' in request.POST
+            lead.is_response_received = 'is_response_received' in request.POST
+            
             lead.save()
             
             messages.success(request, f'Lead {lead.leadId} updated successfully!')
@@ -346,8 +402,11 @@ def update_lead(request, leadId):
         except Exception as e:
             messages.error(request, f'Error updating lead: {str(e)}')
     
+    # Pre-fill the date and time fields if they exist
     context = {
-        'lead': lead
+        'lead': lead,
+        'proposed_date': lead.proposed_start_datetime.strftime('%Y-%m-%d') if lead.proposed_start_datetime else '',
+        'proposed_time': lead.proposed_start_datetime.strftime('%H:%M') if lead.proposed_start_datetime else '',
     }
     return render(request, 'update_lead.html', context)
 

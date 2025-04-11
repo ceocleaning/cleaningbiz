@@ -1,5 +1,6 @@
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt    
+import requests
 from django.db import transaction
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
@@ -23,15 +24,144 @@ from django.conf import settings
 
 @csrf_exempt
 def thumbtack_webhook(request, secretKey):
+    """Handle incoming lead data from Thumbtack"""
     verifySecretKey = ApiCredential.objects.filter(secretKey=secretKey)
     if not verifySecretKey.exists():
-        return JsonResponse({'message': 'Secret Not Verified'},status=500)
+        return JsonResponse({'message': 'Secret Key Not Verified'}, status=500)
 
-    business = verifySecretKey.business
+    business = verifySecretKey.first().business
 
     if request.method == 'POST':
-        data = json.loads(request.body)
-        print(data)
+        try:
+            data = json.loads(request.body)
+            print(f"Received Thumbtack webhook: {data}")
+            
+            # Extract required fields from the webhook payload
+            lead_data = data.get('data', {})
+            customer_data = lead_data.get('customer', {})
+            request_data = lead_data.get('request', {})
+            location_data = request_data.get('location', {})
+            booking_data = request_data.get('booking', {})
+            estimate_data = lead_data.get('estimate', {})
+            
+            # Process details from request data
+            details_list = request_data.get('details', [])
+            details_dict = {}
+            
+            # Extract questions and answers from details
+            for detail in details_list:
+                question = detail.get('question', '')
+                answer = detail.get('answer', '')
+                if question and answer:
+                    details_dict[question] = answer
+            
+            # Create separate tracking for category information
+            category = request_data.get('category', {})
+            category_name = category.get('name', 'Unknown') if category else 'Unknown'
+            
+            # Create separate tracking for proposed times
+            proposed_times = request_data.get('proposedTimes', [])
+            proposed_start_datetime_str = proposed_times[0].get('start')
+            proposed_end_datetime_str = proposed_times[0].get('end')
+            
+            # Extract proposed start and end datetime
+            proposed_start = None
+            proposed_end = None
+            
+            if proposed_start_datetime_str:
+                try:
+                    proposed_start = datetime.fromisoformat(proposed_start_datetime_str.replace('Z', '+00:00'))
+                except Exception as e:
+                    print(f"Error parsing proposed start datetime: {e}")
+            
+            if proposed_end_datetime_str:
+                try:
+                    proposed_end = datetime.fromisoformat(proposed_end_datetime_str.replace('Z', '+00:00'))
+                except Exception as e:
+                    print(f"Error parsing proposed end datetime: {e}")
+            
+
+            # Parse estimated price
+            estimated_price = None
+            if estimate_data.get('total'):
+                try:
+                    # Remove currency symbol and commas
+                    price_str = estimate_data.get('total', '0')
+                    # Handle both $1,234.56 and 1234.56 formats
+                    price_str = price_str.replace('$', '').replace(',', '')
+                    estimated_price = float(price_str)
+                except ValueError:
+                    estimated_price = None
+            
+            
+            # Create formatted notes from important details
+            notes = f"Thumbtack Lead"
+            notes += f"Service: {category_name}\n"
+            notes += f"Location: {location_data.get('city', 'N/A')}, {location_data.get('state', 'N/A')}\n"
+            notes += f"Estimate: {estimate_data.get('total', 'N/A')}\n\n"
+            
+            # Add all questions and answers to notes
+            notes += "Details:\n"
+            for key, value in details_dict.items():
+                notes += f"{key}: {value}\n"
+                
+            notes += f"Proposed Times: {proposed_start_datetime_str} - {proposed_end_datetime_str}\n"
+                
+            # Add estimate details to notes
+            if estimate_data:
+                notes += "\nEstimate Details:\n"
+                notes += f"- Type: {estimate_data.get('type', 'N/A')}\n"
+                notes += f"- Total: {estimate_data.get('total', 'N/A')}\n"
+                notes += f"- Price Per Unit: {estimate_data.get('pricePerUnit', 'N/A')}\n"
+                notes += f"- Unit Quantity: {estimate_data.get('unitQuantity', 'N/A')}\n"
+                notes += f"- Unit Name: {estimate_data.get('unitName', 'N/A')}\n"
+            
+            lead = Lead.objects.create(
+                business=business,
+                name=f"{customer_data.get('firstName', '')} {customer_data.get('lastName', '')}".strip(),
+                email=customer_data.get('email', None),  # May be None
+                phone_number=customer_data.get('Phone', ''),
+                
+                # Address fields
+                address1=location_data.get('address1', ''),
+                address2=location_data.get('address2', ''),
+                city=location_data.get('city', ''),
+                state=location_data.get('state', ''),
+                zipCode=location_data.get('zipCode', ''),
+                
+                # Store only request details in the JSONField
+                details=details_dict,
+                
+                # Store datetime information
+                proposed_start_datetime=proposed_start,
+                proposed_end_datetime=proposed_end,
+                
+                # Notes and source
+                notes=notes,
+                content=json.dumps(data, indent=2),  # Store raw JSON as content
+                source="Thumbtack",
+                
+                
+                # Pricing
+                estimatedPrice=estimated_price
+            )
+            
+            print(f"Successfully created Thumbtack lead: {lead.leadId}")
+            
+            # Track usage
+            try:
+                from subscription.models import UsageTracker
+                UsageTracker.increment_leads(business=business, increment_by=1)
+            except Exception as e:
+                print(f"Error tracking lead usage: {e}")
+                
+            return JsonResponse({'status': 'success', 'lead_id': lead.leadId}, status=200)
+            
+        except Exception as e:
+            print(f"Error processing Thumbtack webhook: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
     
     return JsonResponse({'status': 'success'}, status=200)
 

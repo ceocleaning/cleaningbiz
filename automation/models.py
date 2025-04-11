@@ -22,13 +22,32 @@ class Lead(models.Model):
     business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE, null=True, blank=True)
     leadId = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
     phone_number = models.CharField(max_length=20)
     
+    # Address fields
+    address1 = models.CharField(max_length=255, null=True, blank=True)
+    address2 = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=50, null=True, blank=True)
+    zipCode = models.CharField(max_length=20, null=True, blank=True)
+    
+    proposed_start_datetime = models.DateTimeField(null=True, blank=True)
+    proposed_end_datetime = models.DateTimeField(null=True, blank=True)
+    
+    
+    details = models.JSONField(null=True, blank=True, default=dict)
+    
+
+    
+    # Pricing
+    estimatedPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Original fields
     notes = models.TextField(blank=True, null=True)
     content = models.TextField(blank=True, null=True)
-
     source = models.CharField(max_length=255)
+
 
     is_response_received = models.BooleanField(default=False)
     is_call_sent = models.BooleanField(default=False)
@@ -41,7 +60,7 @@ class Lead(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} - {self.email}"
+        return f"{self.name} - {self.email if self.email else self.phone_number}"
     
 
     def save(self, *args, **kwargs):

@@ -21,9 +21,9 @@
                         </div>
                         <div class="text-start text-md-end">
                             <div class="mb-2">
-                                {% if lead.isConverted %}
+                                {% if lead.is_response_received %}
                                 <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>Converted
+                                    <i class="fas fa-check me-1"></i>Responded
                                 </span>
                                 {% else %}
                                 <span class="badge bg-warning">
@@ -32,6 +32,9 @@
                                 {% endif %}
                             </div>
                             <span class="badge bg-info fs-6">{{ lead.source }}</span>
+                            {% if lead.estimatedPrice %}
+                            <span class="badge bg-primary fs-6">${{ lead.estimatedPrice }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -55,7 +58,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                     <span class="text-muted mb-1 mb-sm-0">Email</span>
-                                    <span class="text-break">{{ lead.email }}</span>
+                                    <span class="text-break">{{ lead.email|default:"Not provided" }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                     <span class="text-muted mb-1 mb-sm-0">Phone Number</span>
@@ -66,12 +69,89 @@
                     </div>
                 </div>
 
-                <!-- Lead Details -->
+                <!-- Address Information -->
                 <div class="col-12 col-md-6 mb-3 mb-md-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-body p-3 p-md-4">
                             <div class="d-flex align-items-center mb-3 mb-md-4">
                                 <div class="icon-circle bg-info text-white me-3">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Address Information</h5>
+                            </div>
+                            <div class="contact-info">
+                                {% if lead.address1 or lead.city or lead.state or lead.zipCode %}
+                                    {% if lead.address1 %}
+                                    <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                        <span class="text-muted mb-1 mb-sm-0">Address Line 1</span>
+                                        <span class="text-break">{{ lead.address1 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if lead.address2 %}
+                                    <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                        <span class="text-muted mb-1 mb-sm-0">Address Line 2</span>
+                                        <span class="text-break">{{ lead.address2 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                        <span class="text-muted mb-1 mb-sm-0">City, State, ZIP</span>
+                                        <span class="text-break">
+                                            {{ lead.city|default:"" }}{% if lead.city and lead.state %}, {% endif %}
+                                            {{ lead.state|default:"" }}{% if lead.zipCode and lead.state or lead.zipCode and lead.city %} {% endif %}
+                                            {{ lead.zipCode|default:"" }}
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-0">No address information provided</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scheduling Information -->
+                <div class="col-12 col-md-6 mb-3 mb-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex align-items-center mb-3 mb-md-4">
+                                <div class="icon-circle bg-success text-white me-3">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Scheduling Information</h5>
+                            </div>
+                            <div class="lead-details">
+                                {% if lead.proposed_start_datetime %}
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Proposed Date</span>
+                                    <span>{{ lead.proposed_start_datetime|date:"F d, Y" }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Proposed Time</span>
+                                    <span>{{ lead.proposed_start_datetime|date:"g:i A" }}</span>
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">No scheduling information provided</p>
+                                {% endif %}
+                                
+                                {% if lead.estimatedPrice %}
+                                <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
+                                    <span class="text-muted mb-1 mb-sm-0">Estimated Price</span>
+                                    <span class="fw-bold">${{ lead.estimatedPrice }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lead Details -->
+                <div class="col-12 col-md-6 mb-3 mb-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex align-items-center mb-3 mb-md-4">
+                                <div class="icon-circle bg-secondary text-white me-3">
                                     <i class="fas fa-info-circle"></i>
                                 </div>
                                 <h5 class="card-title mb-0">Lead Details</h5>
@@ -81,16 +161,29 @@
                                     <h6 class="text-muted mb-2">Notes</h6>
                                     <p class="mb-0">{{ lead.notes|default:"No notes available" }}</p>
                                 </div>
+                                
+                                {% if lead.details %}
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Details</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-0">
+                                            <tbody>
+                                                {% for key, value in lead.details.items %}
+                                                <tr>
+                                                    <th scope="row" class="text-break" style="width: 40%">{{ key }}</th>
+                                                    <td class="text-break">{{ value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
                                 <div class="mb-4">
                                     <h6 class="text-muted mb-2">Content</h6>
                                     <p class="mb-0">{{ lead.content|default:"No content available" }}</p>
                                 </div>
-                                {% if lead.emailSentAt %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-envelope me-2"></i>
-                                    Email sent on {{ lead.emailSentAt|date:"F d, Y" }}
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>

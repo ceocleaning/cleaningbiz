@@ -45,22 +45,16 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 agentConfig = AgentConfiguration.objects.get(business=instance.business)
             except (ApiCredential.DoesNotExist, AgentConfiguration.DoesNotExist):
                 # If either doesn't exist, just skip sending the SMS
-                print(f"Skipping SMS for lead {instance.leadId}: Missing API credentials or agent configuration")
                 return
                 
-            # Only proceed if we have both configurations
-            print(f"Twilio Account SID: {apiCred.twilioAccountSid}")
-            print(f"Twilio Auth Token: {apiCred.twilioAuthToken}")
-            print(f"Twilio SMS Number: {apiCred.twilioSmsNumber}")
+   
 
             # Check if Twilio credentials are properly set
             if not apiCred.twilioAccountSid or not apiCred.twilioAuthToken or not apiCred.twilioSmsNumber:
-                print(f"Skipping SMS for lead {instance.leadId}: Incomplete Twilio credentials")
                 return
                 
             # Check if phone number is valid
             if not instance.phone_number or len(instance.phone_number) < 10:
-                print(f"Skipping SMS for lead {instance.leadId}: Invalid phone number")
                 return
 
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
@@ -93,10 +87,11 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 is_first_message=True
             )
 
+            lead_details = f"Here are the details about the lead:\nName: {instance.name}\nPhone: {instance.phone_number}\nEmail: {instance.email if instance.email else 'Not provided'}\nAddress: {instance.address1 if instance.address1 else 'Not provided'}\nCity: {instance.city if instance.city else 'Not provided'}\nState: {instance.state if instance.state else 'Not provided'}\nZip Code: {instance.zipCode if instance.zipCode else 'Not provided'}\nProposed Start Time: {instance.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if instance.proposed_start_datetime else 'Not provided'}\nNotes: {instance.notes if instance.notes else 'No additional notes'}"
             Messages.objects.create(
                 chat=chat,
                 role='assistant',
-                message=f"Lead Name is {instance.name} and Lead Phone Number is {instance.phone_number} and Lead Email is {instance.email}",
+                message=lead_details,
                 is_first_message=False
             )
 

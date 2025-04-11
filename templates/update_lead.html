@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
                     <h4 class="card-title mb-4">
@@ -26,7 +26,8 @@
                             
                             <div class="col-md-6">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" value="{{ lead.email }}" required>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ lead.email }}">
+                                <small class="form-text text-muted">Email is optional</small>
                             </div>
                             
                             <div class="col-md-6">
@@ -34,11 +35,56 @@
                                 <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ lead.phone_number }}" required>
                             </div>
 
-                            <!-- Lead Details -->
+                            <!-- Address Information -->
                             <div class="col-md-12 mt-4">
-                                <h5 class="text-muted mb-3">Lead Details</h5>
+                                <h5 class="text-muted mb-3">Address Information</h5>
                             </div>
                             
+                            <div class="col-md-12">
+                                <label for="address1" class="form-label">Address Line 1</label>
+                                <input type="text" class="form-control" id="address1" name="address1" value="{{ lead.address1 }}">
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label for="address2" class="form-label">Address Line 2</label>
+                                <input type="text" class="form-control" id="address2" name="address2" value="{{ lead.address2 }}">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ lead.city }}">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="state" name="state" value="{{ lead.state }}">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="zipCode" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="zipCode" name="zipCode" value="{{ lead.zipCode }}">
+                            </div>
+                            
+                            <!-- Scheduling Information -->
+                            <div class="col-md-12 mt-4">
+                                <h5 class="text-muted mb-3">Scheduling Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="proposed_date" class="form-label">Proposed Date</label>
+                                <input type="date" class="form-control" id="proposed_date" name="proposed_date" value="{{ proposed_date }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="proposed_time" class="form-label">Proposed Time</label>
+                                <input type="time" class="form-control" id="proposed_time" name="proposed_time" value="{{ proposed_time }}">
+                            </div>
+
+                            <!-- Additional Details -->
+                            <div class="col-md-12 mt-4">
+                                <h5 class="text-muted mb-3">Additional Details</h5>
+                            </div>
+
                             <div class="col-md-12">
                                 <label for="source" class="form-label">Lead Source</label>
                                 <input type="text" class="form-control" id="source" name="source" value="{{ lead.source }}" required>
@@ -48,18 +94,13 @@
                                 <label for="notes" class="form-label">Notes</label>
                                 <textarea class="form-control" id="notes" name="notes" rows="3">{{ lead.notes }}</textarea>
                             </div>
-                            
-                            <div class="col-md-12">
-                                <label for="content" class="form-label">Content</label>
-                                <textarea class="form-control" id="content" name="content" rows="3">{{ lead.content }}</textarea>
-                            </div>
 
                             <div class="col-12">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="isConverted" name="isConverted" 
-                                           {% if lead.isConverted %}checked{% endif %}>
-                                    <label class="form-check-label" for="isConverted">
-                                        Mark as Converted
+                                    <input class="form-check-input" type="checkbox" id="is_response_received" name="is_response_received" 
+                                           {% if lead.is_response_received %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_response_received">
+                                        Mark as Responded
                                     </label>
                                 </div>
                             </div>
