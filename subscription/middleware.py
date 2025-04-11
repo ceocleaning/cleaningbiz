@@ -44,7 +44,7 @@ class SubscriptionRequiredMiddleware:
         if request.user.is_superuser:
             return self.get_response(request)
             
-        # Skip for users in the 'Cleaner' group
+        # Skip for users in the 'Cleaner' group - allow all access
         if request.user.groups.filter(name='Cleaner').exists():
             return self.get_response(request)
         
@@ -79,20 +79,21 @@ class SubscriptionRequiredMiddleware:
         if any(current_path == path for path in self.allowed_public_paths):
             return self.get_response(request)
             
-        # Check if user has a business
-        if hasattr(request.user, 'business_set') and request.user.business_set.exists():
-            business = request.user.business_set.first()
-            
-            # Get active subscription
-            subscription = business.active_subscription()
-            
-            # If no active subscription or subscription is not active, redirect to subscription page
-            if not subscription or not subscription.is_subscription_active():
-                messages.warning(request, 'You need an active subscription to access this page.')
+        # Only users in the Owner group need to be checked for subscription
+        if request.user.groups.filter(name='Owner').exists():
+            # Check if user has a business
+            if hasattr(request.user, 'business_set') and request.user.business_set.exists():
+                business = request.user.business_set.first()
+                
+                # Get active subscription
+                subscription = business.active_subscription()
+                
+                # If no active subscription or subscription is not active, redirect to subscription page
+                if not subscription or not subscription.is_subscription_active():
+                    messages.warning(request, 'You need an active subscription to access this page.')
+                    return redirect('subscription:subscription_management')
+            else:
+                messages.warning(request, 'You need a business account with an active subscription to access this page.')
                 return redirect('subscription:subscription_management')
-       
-        else:
-            messages.warning(request, 'You need a business account with an active subscription to access this page.')
-            return redirect('subscription:subscription_management')
         
         return self.get_response(request)
