@@ -67,5 +67,16 @@ def owner_or_cleaner(view_func):
             messages.error(request, 'You do not have permission to access this page.')
             return redirect('home')
             
+        # For cleaner detail views, ensure cleaners only access their own pages
+        if is_cleaner and 'cleaner_id' in kwargs:
+            # Cleaners can only access their own detail page
+            cleaner_id = kwargs.get('cleaner_id')
+            user_cleaner_id = request.user.cleaner_profile.cleaner.id
+            
+            if str(cleaner_id) != str(user_cleaner_id):
+                messages.error(request, 'You can only view your own details.')
+                # Use the correct URL namespace to avoid redirect loops
+                return redirect('accounts:cleaner_detail', cleaner_id=user_cleaner_id)
+            
         return view_func(request, *args, **kwargs)
     return _wrapped_view 
