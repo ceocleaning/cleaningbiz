@@ -17,7 +17,7 @@ class BusinessApprovalMiddleware:
             return self.get_response(request)
             
         # Skip for cleaner users - they'll be handled by CleanerAccessMiddleware
-        if hasattr(request.user, 'cleaner_profile'):
+        if request.user.groups.filter(name='Cleaner').exists():
             return self.get_response(request)
             
         # List of URLs that should be accessible without approval
@@ -66,8 +66,13 @@ class CleanerAccessMiddleware:
         if not request.user.is_authenticated or request.user.is_staff or request.user.is_superuser:
             return self.get_response(request)
             
-        # Only process for cleaner users
+        # Only process for cleaner users with 'Cleaner' group
+        if not request.user.groups.filter(name='Cleaner').exists():
+            return self.get_response(request)
+            
+        # Get the cleaner ID if the user has a cleaner profile
         if not hasattr(request.user, 'cleaner_profile'):
+            # User has Cleaner group but no cleaner_profile yet - let them access public pages
             return self.get_response(request)
             
         cleaner_id = str(request.user.cleaner_profile.cleaner.id)
@@ -78,50 +83,53 @@ class CleanerAccessMiddleware:
             'change_password', 'LandingPage', 
             'PricingPage', 'FeaturesPage', 'AboutUsPage',
             'ContactUsPage', 'DocsPage', 'PrivacyPolicyPage', 
-            'TermsOfServicePage', 'sitemap'
+            'TermsOfServicePage', 'sitemap', 'home'
         ]
         
-        # Check if we're already on a cleaner detail page to avoid redirect loops
+        # Public paths always accessible
+        allowed_paths = [
+            '/accounts/logout/',
+            '/accounts/profile/change-password/',
+            '/',  # Home page
+            '/home/',
+            '/pricing/',
+            '/features/',
+            '/about-us/',
+            '/contact-us/',
+            '/docs/'
+        ]
+        
         try:
             current_url = resolve(request.path_info).url_name
             
             # If on exempt URL, allow access
             if current_url in exempt_urls:
                 return self.get_response(request)
-                
-            # If already on cleaner detail page for the correct cleaner, allow access
-            if current_url == 'cleaner_detail':
-                path_parts = request.path.strip('/').split('/')
-                if 'cleaners' in path_parts and cleaner_id in path_parts:
-                    return self.get_response(request)
         except:
-            # If URL can't be resolved, continue with other checks
             pass
             
-        # Check allowed path patterns
-        allowed_paths = [
-            '/accounts/logout/',
-            '/accounts/profile/change-password/',
-            '/',  # Home page
-        ]
-        
+        # Check if in allowed paths
         for path in allowed_paths:
             if request.path.startswith(path):
                 return self.get_response(request)
-                
+        
         # Allow access to cleaner's own URLs
         if '/cleaners/' in request.path and cleaner_id in request.path:
             return self.get_response(request)
             
+        # Special check for login-related pages
+        if '/accounts/' in request.path and any(x in request.path for x in ['/login/', '/logout/']):
+            return self.get_response(request)
+            
         # Not allowed - redirect to appropriate cleaner detail page
         # Determine correct URL namespace based on current path
-        if request.path.startswith('/cleaners/'):
-            redirect_url = reverse('cleaner_detail', kwargs={'cleaner_id': cleaner_id})
-        else:
-            redirect_url = reverse('accounts:cleaner_detail', kwargs={'cleaner_id': cleaner_id})
-            
-        # Only show error message if not already redirecting to a cleaner detail page
-        if resolve(request.path_info).url_name != 'cleaner_detail':
-            messages.error(request, 'You do not have permission to access this page.')
-            
-        return redirect(redirect_url)
+        try:
+            if '/automation/' in request.path:
+                redirect_url = reverse('cleaner_detail', kwargs={'cleaner_id': cleaner_id})
+            else:
+                redirect_url = reverse('accounts:cleaner_detail', kwargs={'cleaner_id': cleaner_id})
+                
+            return redirect(redirect_url)
+        except:
+            # Fallback to home if redirect fails
+            return redirect('home')

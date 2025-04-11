@@ -30,12 +30,22 @@ class SubscriptionRequiredMiddleware:
             'admin:index', 'admin:login', 'subscription_management', 'select_plan',
             'process_payment', 'subscription_success', 'billing_history',
             'change_plan', 'cancel_subscription', 'get_subscription_data',
-            'track_usage', 'home', 'contact', 'about', 'features', 'pricing', 'docs'
+            'track_usage', 'home', 'contact', 'about', 'features', 'pricing', 'docs',
+            'cleaner_detail', 'cleaner_monthly_schedule', 'update_cleaner_profile',
+            'update_cleaner_schedule', 'add_specific_date', 'delete_specific_date'
         ]
         
     def __call__(self, request):
         # Skip middleware if user is not authenticated
         if not request.user.is_authenticated:
+            return self.get_response(request)
+            
+        # Skip for superusers
+        if request.user.is_superuser:
+            return self.get_response(request)
+            
+        # Skip for users in the 'Cleaner' group
+        if request.user.groups.filter(name='Cleaner').exists():
             return self.get_response(request)
         
         # Get current URL name and path
@@ -72,8 +82,6 @@ class SubscriptionRequiredMiddleware:
         # Check if user has a business
         if hasattr(request.user, 'business_set') and request.user.business_set.exists():
             business = request.user.business_set.first()
-            if request.user.is_superuser:
-                return self.get_response(request)
             
             # Get active subscription
             subscription = business.active_subscription()

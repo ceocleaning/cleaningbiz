@@ -60,7 +60,7 @@ def owner_or_cleaner(view_func):
             return redirect('accounts:login')
         
         # Check if user is in either Owner or Cleaner group
-        is_owner = request.user.groups.filter(name='Owner').exists()
+        is_owner = request.user.groups.filter(name='Owner').exists() or request.user.is_superuser
         is_cleaner = request.user.groups.filter(name='Cleaner').exists()
         
         if not (is_owner or is_cleaner):
@@ -68,7 +68,7 @@ def owner_or_cleaner(view_func):
             return redirect('home')
             
         # For cleaner detail views, ensure cleaners only access their own pages
-        if is_cleaner and 'cleaner_id' in kwargs:
+        if is_cleaner and 'cleaner_id' in kwargs and hasattr(request.user, 'cleaner_profile'):
             # Cleaners can only access their own detail page
             cleaner_id = kwargs.get('cleaner_id')
             user_cleaner_id = request.user.cleaner_profile.cleaner.id
