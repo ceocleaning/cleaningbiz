@@ -403,6 +403,11 @@ def add_cleaner(request):
             if not phone_number:
                 messages.error(request, 'Please enter a valid US phone number.')
                 return redirect('add_cleaner')
+            
+            if Cleaners.objects.filter(business=business, email=request.POST.get('email')).exists():
+                messages.error(request, 'A cleaner with this email already exists.')
+                return redirect('add_cleaner')
+            
             # Create cleaner
             cleaner = Cleaners.objects.create(
                 business=business,

@@ -1391,3 +1391,180 @@ def cleaner_detail(request, cleaner_id):
     }
     
     return render(request, 'accounts/cleaner_detail.html', context)
+
+
+@owner_required
+def edit_cleaner_account(request, cleaner_id):
+    """
+    View for editing a cleaner's user account details
+    Only accessible by business owners
+    """
+    # Get the user's business
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get the cleaner
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    # Check if cleaner has a user profile
+    if not hasattr(cleaner, 'user_profile'):
+        messages.warning(request, f'{cleaner.name} does not have a user account yet.')
+        return redirect('accounts:register_cleaner_user', cleaner_id=cleaner.id)
+    
+    # Get the user account
+    user = cleaner.user_profile.user
+    
+    if request.method == 'POST':
+        # Get form data
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        
+        # Check if username is being changed and if it already exists
+        if username != user.username and User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists. Please choose a different username.')
+            return render(request, 'accounts/edit_cleaner_account.html', {
+                'cleaner': cleaner,
+                'user': user
+            })
+        
+        # Update user account
+        user.username = username
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+        
+        # Update cleaner email if changed
+        if email != cleaner.email:
+            cleaner.email = email
+            cleaner.save()
+        
+        messages.success(request, f'Account details for {cleaner.name} have been updated.')
+        return redirect('accounts:manage_cleaners')
+    
+    context = {
+        'cleaner': cleaner,
+        'user': user
+    }
+    
+    return render(request, 'accounts/edit_cleaner_account.html', context)
+
+
+@owner_required
+def reset_cleaner_password(request):
+    """
+    View for resetting a cleaner's password
+    Only accessible by business owners
+    """
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('accounts:manage_cleaners')
+    
+    cleaner_id = request.POST.get('cleaner_id')
+    if not cleaner_id:
+        messages.error(request, 'No cleaner specified.')
+        return redirect('accounts:manage_cleaners')
+    
+    # Get the user's business
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Get the cleaner
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    # Check if cleaner has a user profile
+    if not hasattr(cleaner, 'user_profile'):
+        messages.warning(request, f'{cleaner.name} does not have a user account yet.')
+        return redirect('accounts:manage_cleaners')
+    
+    # Get the user account
+    user = cleaner.user_profile.user
+    
+    # Generate a temporary password
+    temp_password = User.objects.make_random_password()
+    
+    # Update user's password
+    user.set_password(temp_password)
+    user.save()
+    
+    # Send reset email
+    try:
+        subject = f'{business.businessName} - Your Password Has Been Reset'
+        html_message = f"""
+        <p>Hello {cleaner.name},</p>
+        <p>Your password has been reset by your business administrator.</p>
+        <p>Your temporary password is: <strong>{temp_password}</strong></p>
+        <p>Thank you,<br>{business.businessName}</p>
+        """
+        # Check for business configured email settings
+        try:
+            if hasattr(business, 'smtp_configuration'):
+                from django.core.mail import send_mail
+                send_mail(subject, html_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+            else:
+                # Fallback to Django's default email
+                from django.core.mail import send_mail
+                plain_message = f"Hello {cleaner.name}, Your password has been reset. Your temporary password is: {temp_password}"
+                send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+        except Exception as e:
+            messages.warning(request, f'Password was reset but we could not send the email: {str(e)}')
+            return redirect('accounts:manage_cleaners')
+            
+        messages.success(request, f'Password for {cleaner.name} has been reset and a temporary password has been sent to {user.email}.')
+    except Exception as e:
+        messages.error(request, f'Error sending password reset email: {str(e)}')
+    
+    return redirect('accounts:manage_cleaners')
+
+
+@login_required
+def cleaner_change_password(request):
+    """
+    View for cleaners to change their password
+    """
+    # Check if user is a cleaner
+    if not hasattr(request.user, 'cleaner_profile'):
+        messages.error(request, 'You are not a cleaner.')
+        return redirect('accounts:profile')
+    
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        # Validate input
+        if not all([current_password, new_password, confirm_password]):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'accounts/cleaner_change_password.html')
+        
+        # Check if current password is correct
+        if not request.user.check_password(current_password):
+            messages.error(request, 'Current password is incorrect.')
+            return render(request, 'accounts/cleaner_change_password.html')
+        
+        # Check if new passwords match
+        if new_password != confirm_password:
+            messages.error(request, 'New passwords do not match.')
+            return render(request, 'accounts/cleaner_change_password.html')
+        
+        # Update password
+        request.user.set_password(new_password)
+        request.user.save()
+        
+        # Update session to prevent logout
+        update_session_auth_hash(request, request.user)
+        
+        messages.success(request, 'Your password has been changed successfully.')
+        return redirect('accounts:cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
+    
+    return render(request, 'accounts/cleaner_change_password.html')

@@ -51,4 +51,7 @@ urlpatterns = [
     path('cleaners/', views.manage_cleaners, name='manage_cleaners'),
     path('cleaners/<int:cleaner_id>/register/', views.register_cleaner_user, name='register_cleaner_user'),
     path('cleaners/<int:cleaner_id>/', views.cleaner_detail, name='cleaner_detail'),
+    path('cleaners/<int:cleaner_id>/edit-account/', views.edit_cleaner_account, name='edit_cleaner_account'),
+    path('cleaners/reset-password/', views.reset_cleaner_password, name='reset_cleaner_password'),
+    path('cleaners/change-password/', views.cleaner_change_password, name='cleaner_change_password'),
 ]

@@ -240,6 +240,7 @@
                                     <th>Client</th>
                                     <th>Service</th>
                                     <th>Status</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -251,6 +252,28 @@
                                     <td>{{ booking.get_serviceType_display }}</td>
                                     <td>
                                         <span class="badge bg-info">Scheduled</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                               data-bs-toggle="modal" 
+                                               data-bs-target="#viewBookingModal" 
+                                               data-booking-id="{{ booking.bookingId }}"
+                                               data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
+                                               data-booking-time="{{ booking.startTime|time:'g:i A' }} - {{ booking.endTime|time:'g:i A' }}"
+                                               data-booking-client="{{ booking.firstName }} {{ booking.lastName }}"
+                                               data-booking-phone="{{ booking.phoneNumber }}"
+                                               data-booking-email="{{ booking.email }}"
+                                               data-booking-service="{{ booking.get_serviceType_display }}"
+                                               data-booking-status="Scheduled"
+                                               data-booking-address="{{ booking.address1 }}{% if booking.address2 %}, {{ booking.address2 }}{% endif %}, {{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}"
+                                               data-booking-notes="{{ booking.notes|default:'' }}"
+                                               data-booking-bedrooms="{{ booking.bedrooms }}"
+                                               data-booking-bathrooms="{{ booking.bathrooms }}"
+                                               data-booking-addons="{% for field, value in booking.get_all_addons %}{{ field }}{% if value %}: {{ value }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                                               data-booking-custom-addons="{% for addon in booking.customAddons.all %}{{ addon.addon.addonName }}: {{ addon.qty }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                                               data-booking-square-feet="{{ booking.squareFeet }}">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -281,6 +304,7 @@
                                     <th>Client</th>
                                     <th>Service</th>
                                     <th>Status</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -294,6 +318,28 @@
                                         <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning{% endif %}">
                                             {% if booking.isCompleted %}Completed{% else %}Pending{% endif %}
                                         </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                               data-bs-toggle="modal" 
+                                               data-bs-target="#viewBookingModal" 
+                                               data-booking-id="{{ booking.bookingId }}"
+                                               data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
+                                               data-booking-time="{{ booking.startTime|time:'g:i A' }} - {{ booking.endTime|time:'g:i A' }}"
+                                               data-booking-client="{{ booking.firstName }} {{ booking.lastName }}"
+                                               data-booking-phone="{{ booking.phoneNumber }}"
+                                               data-booking-email="{{ booking.email }}"
+                                               data-booking-service="{{ booking.get_serviceType_display }}"
+                                               data-booking-status="{% if booking.isCompleted %}Completed{% else %}Pending{% endif %}"
+                                               data-booking-address="{{ booking.address1 }}{% if booking.address2 %}, {{ booking.address2 }}{% endif %}, {{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}"
+                                               data-booking-notes="{{ booking.notes|default:'' }}"
+                                               data-booking-bedrooms="{{ booking.bedrooms }}"
+                                               data-booking-bathrooms="{{ booking.bathrooms }}"
+                                               data-booking-addons="{% for field, value in booking.get_all_addons %}{{ field }}{% if value %}: {{ value }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                                               data-booking-custom-addons="{% for addon in booking.customAddons.all %}{{ addon.addon.addonName }}: {{ addon.qty }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                                               data-booking-square-feet="{{ booking.squareFeet }}">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -535,6 +581,228 @@
     </div>
 </div>
 
+<!-- View Booking Detail Modal -->
+<div class="modal fade" id="viewBookingModal" tabindex="-1" aria-labelledby="viewBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="viewBookingModalLabel">
+                    <i class="fas fa-calendar-check text-primary me-2"></i>Booking Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Booking ID and Status Banner -->
+                <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                    <div>
+                        <h5 class="mb-0 text-primary" id="modal-booking-id-display">Booking #123456</h5>
+                    </div>
+                    <span class="badge px-3 py-2 rounded-pill" id="modal-booking-status-badge">Status</span>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Left Column -->
+                    <div class="col-md-6">
+                        <!-- Basic Information Card -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom-0 pt-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-circle bg-primary text-white me-3">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold">Appointment Details</h6>
+                                </div>
+                            </div>
+                            <div class="card-body pt-0">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-tag"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Service:</div>
+                                        <div class="ms-auto" id="modal-booking-service"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-calendar"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Date:</div>
+                                        <div class="ms-auto" id="modal-booking-date"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Time:</div>
+                                        <div class="ms-auto" id="modal-booking-time"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-id-card"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Booking ID:</div>
+                                        <div class="ms-auto" id="modal-booking-id"></div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Client Information Card -->
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom-0 pt-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-circle bg-success text-white me-3">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold">Client Information</h6>
+                                </div>
+                            </div>
+                            <div class="card-body pt-0">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-user-circle"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Name:</div>
+                                        <div class="ms-auto" id="modal-booking-client"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-phone"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Phone:</div>
+                                        <div class="ms-auto">
+                                            <a href="tel:" id="modal-booking-phone-link" class="text-decoration-none">
+                                                <span id="modal-booking-phone"></span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Email:</div>
+                                        <div class="ms-auto">
+                                            <a href="mailto:" id="modal-booking-email-link" class="text-decoration-none">
+                                                <span id="modal-booking-email"></span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div class="col-md-6">
+                        <!-- Property Details Card -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom-0 pt-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-circle bg-info text-white me-3">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold">Property Details</h6>
+                                </div>
+                            </div>
+                            <div class="card-body pt-2 pb-3">
+                                <div class="row g-3 mt-1">
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded text-center h-100">
+                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-bedrooms">0</h3>
+                                            <small class="text-muted d-block">Bedrooms</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded text-center h-100">
+                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-bathrooms">0</h3>
+                                            <small class="text-muted d-block">Bathrooms</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded text-center h-100">
+                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-square-feet">0</h3>
+                                            <small class="text-muted d-block">Sq. Ft</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address Card -->
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom-0 pt-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-circle bg-warning text-white me-3">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold">Service Location</h6>
+                                </div>
+                            </div>
+                            <div class="card-body pt-2">
+                                <div class="p-3 bg-light rounded mt-1">
+                                    <p class="mb-0" id="modal-booking-address"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add-ons Card (Full Width) -->
+                <div class="card border-0 shadow-sm my-4" id="addons-card">
+                    <div class="card-header bg-white border-bottom-0 pt-3">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-purple text-white me-3">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <h6 class="mb-0 fw-bold">Add-on Services</h6>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div id="standard-addons-section">
+                            <h6 class="text-muted small fw-bold mb-2 pb-2 border-bottom">STANDARD ADD-ONS</h6>
+                            <div class="row g-2" id="modal-booking-addons-container">
+                                <div class="col-12">
+                                    <p id="modal-booking-addons">None</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="custom-addons-section" class="mt-3">
+                            <h6 class="text-muted small fw-bold mb-2 pb-2 border-bottom">CUSTOM ADD-ONS</h6>
+                            <div class="row g-2" id="modal-booking-custom-addons-container">
+                                <div class="col-12">
+                                    <p id="modal-booking-custom-addons">None</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes Card (Full Width) -->
+                <div class="card border-0 shadow-sm" id="notes-card">
+                    <div class="card-header bg-white border-bottom-0 pt-3">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-secondary text-white me-3">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <h6 class="mb-0 fw-bold">Notes</h6>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        <div class="p-3 bg-light rounded mt-1">
+                            <p class="mb-0" id="modal-booking-notes"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% block extra_css %}
 <style>
     .booking-status {
@@ -656,6 +924,43 @@
         text-decoration: none;
         display: inline-block;
         vertical-align: middle;
+    }
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .bg-purple {
+        background-color: #6f42c1;
+    }
+    
+    .modal-body .card {
+        transition: all 0.3s ease;
+    }
+    
+    .modal-body .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .display-6 {
+        font-size: 1.75rem;
+    }
+    
+    #addons-card .col-md-6 .bg-light,
+    #addons-card .col-lg-4 .bg-light {
+        transition: all 0.2s ease;
+    }
+    
+    #addons-card .col-md-6 .bg-light:hover,
+    #addons-card .col-lg-4 .bg-light:hover {
+        background-color: #e9effd !important;
+        transform: translateY(-2px);
     }
 </style>
 {% endblock %}
@@ -873,6 +1178,218 @@ document.addEventListener('DOMContentLoaded', function() {
             let x = initialValue.match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
             editPhoneInput.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
         }
+    }
+
+    // Booking Details Modal
+    const viewBookingModal = document.getElementById('viewBookingModal');
+    if (viewBookingModal) {
+        viewBookingModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            
+            // Extract booking data from button attributes
+            const bookingId = button.getAttribute('data-booking-id');
+            const bookingDate = button.getAttribute('data-booking-date');
+            const bookingTime = button.getAttribute('data-booking-time');
+            const bookingClient = button.getAttribute('data-booking-client');
+            const bookingPhone = button.getAttribute('data-booking-phone');
+            const bookingEmail = button.getAttribute('data-booking-email');
+            const bookingService = button.getAttribute('data-booking-service');
+            const bookingStatus = button.getAttribute('data-booking-status');
+            const bookingAddress = button.getAttribute('data-booking-address');
+            const bookingNotes = button.getAttribute('data-booking-notes');
+            const bookingBedrooms = button.getAttribute('data-booking-bedrooms');
+            const bookingBathrooms = button.getAttribute('data-booking-bathrooms');
+            const bookingSquareFeet = button.getAttribute('data-booking-square-feet');
+            const bookingAddons = button.getAttribute('data-booking-addons');
+            const bookingCustomAddons = button.getAttribute('data-booking-custom-addons');
+            
+            // Update modal with booking data
+            document.getElementById('modal-booking-id').textContent = bookingId;
+            document.getElementById('modal-booking-id-display').textContent = `Booking #${bookingId}`;
+            document.getElementById('modal-booking-date').textContent = bookingDate;
+            document.getElementById('modal-booking-time').textContent = bookingTime;
+            document.getElementById('modal-booking-client').textContent = bookingClient;
+            document.getElementById('modal-booking-service').textContent = bookingService;
+            document.getElementById('modal-booking-address').textContent = bookingAddress;
+            
+            // Property details
+            document.getElementById('modal-booking-bedrooms').textContent = bookingBedrooms || '0';
+            document.getElementById('modal-booking-bathrooms').textContent = bookingBathrooms || '0';
+            document.getElementById('modal-booking-square-feet').textContent = bookingSquareFeet || '0';
+            
+            // Set status badge color
+            const statusBadge = document.getElementById('modal-booking-status-badge');
+            statusBadge.textContent = bookingStatus;
+            
+            if (bookingStatus === 'Completed') {
+                statusBadge.className = 'badge bg-success px-3 py-2 rounded-pill';
+            } else if (bookingStatus === 'Scheduled') {
+                statusBadge.className = 'badge bg-info px-3 py-2 rounded-pill';
+            } else if (bookingStatus === 'Pending') {
+                statusBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill';
+            } else {
+                statusBadge.className = 'badge bg-secondary px-3 py-2 rounded-pill';
+            }
+            
+            // Add-ons
+            const addonsCard = document.getElementById('addons-card');
+            const standardAddonsSection = document.getElementById('standard-addons-section');
+            const customAddonsSection = document.getElementById('custom-addons-section');
+            
+            if ((bookingAddons && bookingAddons.trim() !== '') || (bookingCustomAddons && bookingCustomAddons.trim() !== '')) {
+                // Standard add-ons
+                if (bookingAddons && bookingAddons.trim() !== '') {
+                    // Create a visually appealing display for addons
+                    const addonsContainer = document.getElementById('modal-booking-addons-container');
+                    addonsContainer.innerHTML = '';
+                    
+                    const addonsList = bookingAddons.split(',').map(addon => addon.trim());
+                    if (addonsList.length > 0 && addonsList[0] !== '') {
+                        addonsList.forEach(addon => {
+                            const col = document.createElement('div');
+                            col.className = 'col-md-6 col-lg-4 mb-2';
+                            
+                            const addonDiv = document.createElement('div');
+                            addonDiv.className = 'd-flex align-items-center bg-light p-3 rounded h-100';
+                            
+                            // Get addon name and value if available
+                            let addonName = addon;
+                            let addonValue = '';
+                            
+                            if (addon.includes(':')) {
+                                const parts = addon.split(':');
+                                addonName = parts[0].trim();
+                                addonValue = parts[1].trim();
+                            }
+                            
+                            // Choose an appropriate icon
+                            let iconClass = 'fas fa-check';
+                            if (addonName.toLowerCase().includes('dishes')) iconClass = 'fas fa-utensils';
+                            else if (addonName.toLowerCase().includes('laundry')) iconClass = 'fas fa-tshirt';
+                            else if (addonName.toLowerCase().includes('window')) iconClass = 'fas fa-window-maximize';
+                            else if (addonName.toLowerCase().includes('pet')) iconClass = 'fas fa-paw';
+                            else if (addonName.toLowerCase().includes('fridge')) iconClass = 'fas fa-temperature-low';
+                            else if (addonName.toLowerCase().includes('oven')) iconClass = 'fas fa-fire';
+                            else if (addonName.toLowerCase().includes('board')) iconClass = 'fas fa-border-style';
+                            else if (addonName.toLowerCase().includes('blind')) iconClass = 'fas fa-blinds';
+                            else if (addonName.toLowerCase().includes('green')) iconClass = 'fas fa-leaf';
+                            else if (addonName.toLowerCase().includes('cabinet')) iconClass = 'fas fa-cabinet-filing';
+                            else if (addonName.toLowerCase().includes('patio')) iconClass = 'fas fa-umbrella-beach';
+                            else if (addonName.toLowerCase().includes('garage')) iconClass = 'fas fa-warehouse';
+                            
+                            addonDiv.innerHTML = `
+                                <div class="icon-circle bg-success text-white me-3" style="width: 36px; height: 36px;">
+                                    <i class="${iconClass}"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-medium">${addonName}</span>
+                                    ${addonValue ? `<span class="d-block text-muted small">Quantity: ${addonValue}</span>` : ''}
+                                </div>
+                            `;
+                            
+                            col.appendChild(addonDiv);
+                            addonsContainer.appendChild(col);
+                        });
+                    } else {
+                        addonsContainer.innerHTML = '<div class="col-12"><p class="mb-0 p-3 bg-light rounded">No standard add-ons</p></div>';
+                    }
+                    
+                    standardAddonsSection.style.display = 'block';
+                } else {
+                    const addonsContainer = document.getElementById('modal-booking-addons-container');
+                    addonsContainer.innerHTML = '<div class="col-12"><p class="mb-0 p-3 bg-light rounded">No standard add-ons</p></div>';
+                    standardAddonsSection.style.display = 'block';
+                }
+                
+                // Custom add-ons
+                if (bookingCustomAddons && bookingCustomAddons.trim() !== '') {
+                    // Create a visually appealing display for custom addons
+                    const customAddonsContainer = document.getElementById('modal-booking-custom-addons-container');
+                    customAddonsContainer.innerHTML = '';
+                    
+                    const customAddonsList = bookingCustomAddons.split(',').map(addon => addon.trim());
+                    if (customAddonsList.length > 0 && customAddonsList[0] !== '') {
+                        customAddonsList.forEach(addon => {
+                            const col = document.createElement('div');
+                            col.className = 'col-md-6 col-lg-4 mb-2';
+                            
+                            const addonDiv = document.createElement('div');
+                            addonDiv.className = 'd-flex align-items-center bg-light p-3 rounded h-100';
+                            
+                            // Get addon name and value if available
+                            let addonName = addon;
+                            let addonValue = '';
+                            
+                            if (addon.includes(':')) {
+                                const parts = addon.split(':');
+                                addonName = parts[0].trim();
+                                addonValue = parts[1].trim();
+                            }
+                            
+                            addonDiv.innerHTML = `
+                                <div class="icon-circle bg-purple text-white me-3" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-medium">${addonName}</span>
+                                    ${addonValue ? `<span class="d-block text-muted small">Quantity: ${addonValue}</span>` : ''}
+                                </div>
+                            `;
+                            
+                            col.appendChild(addonDiv);
+                            customAddonsContainer.appendChild(col);
+                        });
+                    } else {
+                        customAddonsContainer.innerHTML = '<div class="col-12"><p class="mb-0 p-3 bg-light rounded">No custom add-ons</p></div>';
+                    }
+                    
+                    customAddonsSection.style.display = 'block';
+                } else {
+                    const customAddonsContainer = document.getElementById('modal-booking-custom-addons-container');
+                    customAddonsContainer.innerHTML = '<div class="col-12"><p class="mb-0 p-3 bg-light rounded">No custom add-ons</p></div>';
+                    customAddonsSection.style.display = 'none';
+                }
+                
+                addonsCard.style.display = 'block';
+            } else {
+                // No addons at all - show "No Add-ons" message
+                const addonsContainer = document.getElementById('modal-booking-addons-container');
+                addonsContainer.innerHTML = '<div class="col-12"><p class="mb-0 p-3 bg-light rounded">No add-ons for this booking</p></div>';
+                
+                const customAddonsContainer = document.getElementById('modal-booking-custom-addons-container');
+                customAddonsContainer.innerHTML = '';
+                
+                standardAddonsSection.style.display = 'block';
+                customAddonsSection.style.display = 'none';
+                addonsCard.style.display = 'block';
+            }
+            
+            // Phone and email with links
+            if (bookingPhone) {
+                document.getElementById('modal-booking-phone').textContent = bookingPhone;
+                document.getElementById('modal-booking-phone-link').href = `tel:${bookingPhone}`;
+            } else {
+                document.getElementById('modal-booking-phone').textContent = 'Not provided';
+                document.getElementById('modal-booking-phone-link').removeAttribute('href');
+            }
+            
+            if (bookingEmail) {
+                document.getElementById('modal-booking-email').textContent = bookingEmail;
+                document.getElementById('modal-booking-email-link').href = `mailto:${bookingEmail}`;
+            } else {
+                document.getElementById('modal-booking-email').textContent = 'Not provided';
+                document.getElementById('modal-booking-email-link').removeAttribute('href');
+            }
+            
+            // Show/hide notes section based on if there are notes
+            const notesCard = document.getElementById('notes-card');
+            if (bookingNotes && bookingNotes.trim() !== '') {
+                document.getElementById('modal-booking-notes').textContent = bookingNotes;
+                notesCard.style.display = 'block';
+            } else {
+                notesCard.style.display = 'none';
+            }
+        });
     }
 });
 </script>
