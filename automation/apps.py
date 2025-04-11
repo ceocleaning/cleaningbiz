@@ -8,5 +8,9 @@ class AutomationConfig(AppConfig):
     def ready(self):
         import automation.signals  # Import the signals module
         # Make sure Django knows about our template tags
-        from django.template import Library
-        import automation.templatetags.automation_filters
+        import importlib
+        try:
+            importlib.import_module('automation.templatetags.split_filter')
+            importlib.import_module('automation.templatetags.json_format_filter')
+        except ImportError:
+            pass

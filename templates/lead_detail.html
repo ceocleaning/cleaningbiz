@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% load split_filter %}
+{% load json_format_filter %}
+
 
 {% block content %}
 <div class="container py-4">
@@ -165,7 +168,9 @@
                 <div class="card-body">
                     {% if lead.notes %}
                     <div class="note-card p-3 rounded-3 bg-light mb-2">
-                        <p class="mb-0">{{ lead.notes }}</p>
+                        <div id="formatted-notes" data-notes="{{ lead.notes|escapejs }}">
+                            <p class="mb-0">{{ lead.notes|linebreaksbr }}</p>
+                        </div>
                     </div>
                     {% else %}
                     <div class="empty-state text-center py-4">
@@ -230,7 +235,9 @@
                 </div>
                 <div class="card-body">
                     <div class="content-card p-3 rounded-3 bg-light">
-                        <p class="mb-0">{{ lead.content }}</p>
+                        <div id="formatted-content" data-content="{{ lead.content|escapejs }}">
+                            <p class="mb-0">{{ lead.content }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -366,6 +373,65 @@
             font-size: 1rem;
         }
     }
+    
+    /* Structured notes styling */
+    .thumbtack-note {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    .note-section-header {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding-bottom: 5px;
+    }
+    
+    .note-item {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .note-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .note-value {
+        font-weight: 500;
+    }
+    
+    .note-list-item {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .note-bullet {
+        color: #6c757d;
+    }
+    
+    /* JSON formatting */
+    .json-viewer {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .json-key {
+        color: #7952b3;
+    }
+    
+    .json-string {
+        color: #28a745;
+    }
+    
+    .json-number {
+        color: #fd7e14;
+    }
+    
+    .json-boolean {
+        color: #dc3545;
+    }
+    
+    .json-null {
+        color: #6c757d;
+    }
 </style>
 
 <script>
@@ -400,6 +466,92 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'translateY(0)';
         });
     });
+    
+    // Format notes if they contain Thumbtack lead info
+    const formatNotes = function() {
+        const notesContainer = document.getElementById('formatted-notes');
+        if (notesContainer) {
+            const notes = notesContainer.dataset.notes;
+            
+            // Check if this is a Thumbtack lead
+            if (notes.includes('Thumbtack Lead:')) {
+                const lines = notes.split('\n');
+                let formattedHTML = '';
+                
+                lines.forEach(line => {
+                    // Process each line based on its content
+                    if (line.includes('Thumbtack Lead:')) {
+                        formattedHTML += `
+                            <div class="note-header mb-3">
+                                <span class="badge bg-primary rounded-pill px-3 py-2">
+                                    <i class="fas fa-tag me-1"></i>${line}
+                                </span>
+                            </div>`;
+                    } else if (line.includes(':') && !line.includes('http://') && !line.includes('https://')) {
+                        const parts = line.split(':');
+                        if (parts.length > 1) {
+                            const key = parts[0];
+                            const value = parts.slice(1).join(':');
+                            formattedHTML += `
+                                <div class="note-item d-flex mb-2 align-items-baseline">
+                                    <div class="note-label text-muted me-2" style="min-width: 130px; font-weight: 500;">${key}:</div>
+                                    <div class="note-value flex-fill">${value}</div>
+                                </div>`;
+                        } else if (line.length > 1) {
+                            formattedHTML += `
+                                <div class="note-section-header mt-3 mb-2">
+                                    <h6 class="mb-0 text-primary fw-bold">${line}</h6>
+                                </div>`;
+                        }
+                    } else if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+                        formattedHTML += `
+                            <div class="note-list-item d-flex mb-1 ps-3">
+                                <div class="note-bullet me-2">•</div>
+                                <div class="note-list-value">${line.trim().substring(1).trim()}</div>
+                            </div>`;
+                    } else if (line.length > 1) {
+                        formattedHTML += `<div class="note-text mb-2">${line}</div>`;
+                    }
+                });
+                
+                notesContainer.innerHTML = `<div class="thumbtack-note">${formattedHTML}</div>`;
+            }
+        }
+    };
+    
+    // Format JSON content if it exists
+    const formatJSON = function() {
+        const contentContainer = document.getElementById('formatted-content');
+        if (contentContainer) {
+            const content = contentContainer.dataset.content;
+            
+            // Check if content starts with { (likely JSON)
+            if (content.trim().startsWith('{')) {
+                try {
+                    const parsedJSON = JSON.parse(content);
+                    const formattedJSON = JSON.stringify(parsedJSON, null, 2);
+                    
+                    // Apply syntax highlighting
+                    let highlighted = formattedJSON
+                        .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+                        .replace(/"([^"]+)"(?!:)/g, '<span class="json-string">"$1"</span>')
+                        .replace(/\b(\d+)\b/g, '<span class="json-number">$1</span>')
+                        .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+                        .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+                    
+                    contentContainer.innerHTML = `
+                        <div class="json-viewer">
+                            <pre class="mb-0" style="background-color: transparent; border: none; font-family: 'Roboto Mono', monospace; font-size: 0.85rem; white-space: pre-wrap; color: #333;"><code>${highlighted}</code></pre>
+                        </div>`;
+                } catch (e) {
+                    console.error('Error formatting JSON:', e);
+                }
+            }
+        }
+    };
+    
+    formatNotes();
+    formatJSON();
 });
 </script>
 {% endblock %}

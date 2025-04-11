@@ -15,7 +15,7 @@ current_time = datetime.now().astimezone(pytz.timezone('America/Chicago'))
 
 
 
-def find_by_phone_number(model, field_name, phone):
+def find_by_phone_number(model, field_name, phone, business):
     """Find a record by trying different phone number formats."""
 
     # Extract only the last 10 digits for a more reliable comparison
@@ -25,7 +25,7 @@ def find_by_phone_number(model, field_name, phone):
     # Build query to check different formats in a single database hit
     query = Q(**{field_name: phone}) | Q(**{field_name: phone_digits}) | Q(**{field_name: phone_last_10})
     
-    return model.objects.filter(query).first()
+    return model.objects.filter(business=business).filter(query).first()
 
 
 

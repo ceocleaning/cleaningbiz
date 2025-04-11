@@ -400,6 +400,7 @@ def send_sms_response(to_number, message, apiCred):
         account_sid = apiCred.twilioAccountSid
         auth_token = apiCred.twilioAuthToken
         from_number = apiCred.twilioSmsNumber
+        business = apiCred.business
         
         # Check if credentials are available
         if not account_sid or not auth_token or not from_number:
@@ -426,14 +427,14 @@ def send_sms_response(to_number, message, apiCred):
         print(f"[DEBUG] Finding chat for phone number: {to_number}")
         
         # Find chat with reusable function
-        chat = find_by_phone_number(Chat, 'clientPhoneNumber', to_number)
+        chat = find_by_phone_number(Chat, 'clientPhoneNumber', to_number, business)
         if chat:
             print(f"[DEBUG] Chat found: {chat}")
             get_chat_status(chat)
 
             
         # Find lead with the same function
-        lead = find_by_phone_number(Lead, 'phone_number', to_number)
+        lead = find_by_phone_number(Lead, 'phone_number', to_number, business)
         
         print(f"[DEBUG] Lead found: {lead}")
         if lead:

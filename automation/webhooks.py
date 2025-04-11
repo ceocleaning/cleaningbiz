@@ -95,17 +95,12 @@ def thumbtack_webhook(request, secretKey):
             
             
             # Create formatted notes from important details
-            notes = f"Thumbtack Lead"
+            notes = request_data.get('description', '')
             notes += f"Service: {category_name}\n"
             notes += f"Location: {location_data.get('city', 'N/A')}, {location_data.get('state', 'N/A')}\n"
             notes += f"Estimate: {estimate_data.get('total', 'N/A')}\n\n"
             
-            # Add all questions and answers to notes
-            notes += "Details:\n"
-            for key, value in details_dict.items():
-                notes += f"{key}: {value}\n"
-                
-            notes += f"Proposed Times: {proposed_start_datetime_str} - {proposed_end_datetime_str}\n"
+           
                 
             # Add estimate details to notes
             if estimate_data:

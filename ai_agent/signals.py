@@ -33,7 +33,7 @@ def save_chat_summary(sender, instance, **kwargs):
 def track_usage(sender, instance,created, **kwargs):
     if created:
         if instance.role == 'assistant':
-            UsageTracker.increment_agents(instance.chat.business, 1)
+            UsageTracker.increment_sms(instance.chat.business, 1)
         
 
 @receiver(pre_save, sender=Messages)
