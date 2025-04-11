@@ -126,8 +126,8 @@ class OpenAIAgent:
                     If you have leads details, confirm the details with the customer on each step of the booking process respectively.
                     Like if you have Customer Name, and Phone Number When You rached step for Customer Name, you will confirm the name with the customer. Like "Is this correct? Name: [Customer Name] and Phone Number: [Phone Number]"
                     If you have Customer Address, and Customer City, State, Zip Code, When You rached step for Customer Address, you will confirm the address with the customer. Like "Is this correct? Address: [Customer Address], City: [Customer City], State: [Customer State], Zip Code: [Customer Zip Code]"
-                    If you have Proposed Start Time, When You rached step for Proposed Start Time, you will confirm the time with the customer. Like "Is this correct? Proposed Start Time: [Proposed Start Time]"
-                    
+                    If you have Proposed Start Time, When You reached step for getting preferred date time, you will confirm the time with the customer. Like "I have your preferred date and time as [Proposed Start Time], is this correct?"
+    
                     ##BOOKING STATUS AWARENESS - VERY IMPORTANT
                     1. Carefully track if a booking has already been completed in the conversation.
                     2. If a booking has been confirmed (booking ID exists or tool call was successful), DO NOT attempt to book again unless the customer EXPLICITLY asks for another/additional booking.

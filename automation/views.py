@@ -290,9 +290,14 @@ def create_lead(request):
             if phone_number:
                 phone_number = format_phone_number(phone_number)
 
+
             if not phone_number:
                 messages.error(request, 'Please enter a valid phone number.')
                 return redirect('create_lead')
+
+            previous_leads = Lead.objects.filter(phone_number=phone_number)
+            if previous_leads.exists():
+                previous_leads.delete()
                 
             # Process date and time
             proposed_start_datetime = None
