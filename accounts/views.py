@@ -4,7 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig
+from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile
+from automation.models import Cleaners
+from invoice.models import Invoice, Payment
+from django.urls import reverse
 import random
 from django.http import JsonResponse
 from email.mime.multipart import MIMEMultipart
@@ -20,6 +23,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.mail import send_mail
 from automation.utils import format_phone_number
 from automation.views import verify_recaptcha_token
+from accounts.decorators import owner_required, cleaner_required, owner_or_cleaner
 
 
 def SignupPage(request):
@@ -83,6 +87,10 @@ def loginPage(request):
         if user is not None:
             login(request, user)
             messages.success(request, 'Logged in successfully!')
+            
+            # Check if the user is a cleaner
+            if hasattr(user, 'cleaner_profile'):
+                return redirect('accounts:cleaner_detail', cleaner_id=user.cleaner_profile.cleaner.id)
             
             # Check if the user has a business and if it's approved
             if user.business_set.exists():
@@ -1171,3 +1179,215 @@ def update_business_settings(request):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+def payment_square_view(request):
+    """
+    View for managing Square credentials and viewing payment history
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get Square credentials if they exist
+    try:
+        square_credentials = SquareCredentials.objects.get(business=business)
+    except SquareCredentials.DoesNotExist:
+        square_credentials = None
+    
+    # Get payment history for this business
+    # We need to get all invoices for bookings related to this business
+    # Then get all payments for those invoices
+    payments = Payment.objects.filter(
+        invoice__booking__business=business
+    )
+    
+    context = {
+        'business': business,
+        'square_credentials': square_credentials,
+        'payments': payments,
+    }
+    
+    return render(request, 'accounts/payment_square.html', context)
+
+@login_required
+def manage_square_credentials(request):
+    """
+    Consolidated view for both adding and updating Square credentials
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    if request.method == 'POST':
+        access_token = request.POST.get('access_token')
+        app_id = request.POST.get('app_id')
+        location_id = request.POST.get('location_id', '')  # Make location_id optional
+        
+        if not all([access_token, app_id]):
+            messages.error(request, 'Access Token and Application ID are required.')
+            return redirect('accounts:payment_square')
+        
+        try:
+            # Get existing square credentials or create new ones
+            square_credentials, created = SquareCredentials.objects.get_or_create(
+                business=business,
+                defaults={
+                    'access_token': access_token,
+                    'app_id': app_id,
+                    'location_id': location_id
+                }
+            )
+            
+            # If credentials already existed, update them
+            if not created:
+                square_credentials.access_token = access_token
+                square_credentials.app_id = app_id
+                square_credentials.location_id = location_id if location_id else square_credentials.location_id
+                square_credentials.save()
+                messages.success(request, 'Square credentials updated successfully!')
+            else:
+                messages.success(request, 'Square credentials added successfully!')
+            
+            return redirect('accounts:payment_square')
+            
+        except Exception as e:
+            messages.error(request, f'Error managing Square credentials: {str(e)}')
+    
+    return redirect('accounts:payment_square')
+
+
+@owner_required
+def manage_cleaners(request):
+    """
+    View for business owners to manage their cleaners
+    """
+    # Get the user's business
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get all cleaners for this business
+    cleaners = Cleaners.objects.filter(business=business)
+    cleaner_profiles = CleanerProfile.objects.filter(business=business)
+    
+    context = {
+        'cleaners': cleaners,
+        'cleaner_profiles': cleaner_profiles,
+        'business': business
+    }
+    
+    return render(request, 'accounts/manage_cleaners.html', context)
+
+
+@owner_required
+def register_cleaner_user(request, cleaner_id):
+    """
+    Create a user account for an existing cleaner
+    """
+    # Get the user's business
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get the cleaner
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    # Check if cleaner already has a user profile
+    if hasattr(cleaner, 'user_profile'):
+        messages.warning(request, f'{cleaner.name} already has a user account.')
+        return redirect('accounts:manage_cleaners')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = cleaner.email or request.POST.get('email')
+        password = request.POST.get('password')
+        
+        # Validate input
+        if not all([username, email, password]):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
+        
+        # Check if username already exists
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
+        
+        # Create user account
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password
+        )
+        
+        # Create cleaner profile linking user to cleaner
+        CleanerProfile.objects.create(
+            user=user,
+            business=business,
+            cleaner=cleaner
+        )
+        
+        messages.success(request, f'User account created for {cleaner.name}')
+        return redirect('accounts:manage_cleaners')
+    
+    return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
+
+
+@owner_or_cleaner
+def cleaner_detail(request, cleaner_id):
+    """
+    View for cleaner details
+    Accessible by both owners and the specific cleaner
+    """
+    # Check if user is cleaner
+    is_cleaner = hasattr(request.user, 'cleaner_profile')
+    
+    if is_cleaner:
+        # Cleaners can only access their own detail page
+        if str(request.user.cleaner_profile.cleaner.id) != str(cleaner_id):
+            messages.error(request, 'You can only view your own details.')
+            return redirect('accounts:cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
+        
+        cleaner = request.user.cleaner_profile.cleaner
+        business = request.user.cleaner_profile.business
+    else:
+        # Owner accessing the page
+        business = request.user.business_set.first()
+        if not business:
+            messages.warning(request, 'Please register your business first.')
+            return redirect('accounts:register_business')
+        
+        cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+    
+    # Get cleaner's bookings
+    bookings = cleaner.bookings.all().order_by('-createdAt')
+    
+    context = {
+        'cleaner': cleaner,
+        'business': business,
+        'bookings': bookings,
+        'is_cleaner': is_cleaner
+    }
+    
+    return render(request, 'accounts/cleaner_detail.html', context)

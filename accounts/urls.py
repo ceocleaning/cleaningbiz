@@ -30,7 +30,6 @@ urlpatterns = [
     
     # SMTP Configuration URLs
     path('smtp-config/', views.smtp_config, name='smtp_config'),
-   
     path('smtp-config/delete/', views.delete_smtp_config, name='delete_smtp_config'),
     
     # Approval Pending URL
@@ -43,4 +42,13 @@ urlpatterns = [
 
 
     path('update-business-settings/', views.update_business_settings, name='update_business_settings'),
+    
+    # Square and Payment URLs
+    path('payment-square/', views.payment_square_view, name='payment_square'),
+    path('square-credentials/manage/', views.manage_square_credentials, name='manage_square_credentials'),
+    
+    # Cleaner Management URLs
+    path('cleaners/', views.manage_cleaners, name='manage_cleaners'),
+    path('cleaners/<int:cleaner_id>/register/', views.register_cleaner_user, name='register_cleaner_user'),
+    path('cleaners/<int:cleaner_id>/', views.cleaner_detail, name='cleaner_detail'),
 ]

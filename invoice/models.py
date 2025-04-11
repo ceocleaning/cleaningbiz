@@ -1,6 +1,7 @@
 from django.db import models
 import random
 import string
+from django.utils import timezone
 # Create your models here.
 
 
@@ -59,6 +60,8 @@ class Payment(models.Model):
         return prefix + ''.join(id)
     
     def save(self, *args, **kwargs):
+        if self.status == 'COMPLETED':
+            self.paidAt = timezone.now()
         if not self.paymentId:
             self.paymentId = self.generatePaymentId()
         super().save(*args, **kwargs)

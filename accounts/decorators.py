@@ -1,0 +1,71 @@
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.http import HttpResponse
+from functools import wraps
+
+def group_required(group_name):
+    """
+    Decorator for views that checks if a user is in a particular group,
+    redirecting to the login page if necessary.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            # Check if user is authenticated
+            if not request.user.is_authenticated:
+                messages.error(request, 'Please log in to access this page.')
+                return redirect('accounts:login')
+            
+            # Check if user is in the required group
+            if not request.user.groups.filter(name=group_name).exists():
+                messages.error(request, 'You do not have permission to access this page.')
+                
+                # Redirect cleaners to their detail page
+                if request.user.groups.filter(name='Cleaner').exists() and hasattr(request.user, 'cleaner_profile'):
+                    return redirect('accounts:cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
+                    
+                # Redirect owners to their profile
+                if request.user.groups.filter(name='Owner').exists():
+                    return redirect('accounts:profile')
+                    
+                # Default redirect to home
+                return redirect('home')
+                
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator
+
+def owner_required(view_func):
+    """
+    Decorator for views that require the user to be a business owner
+    """
+    return group_required('Owner')(view_func)
+
+def cleaner_required(view_func):
+    """
+    Decorator for views that require the user to be a cleaner
+    """
+    return group_required('Cleaner')(view_func)
+
+def owner_or_cleaner(view_func):
+    """
+    Decorator for views that can be accessed by both owners and cleaners
+    but with different behavior based on role
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('accounts:login')
+        
+        # Check if user is in either Owner or Cleaner group
+        is_owner = request.user.groups.filter(name='Owner').exists()
+        is_cleaner = request.user.groups.filter(name='Cleaner').exists()
+        
+        if not (is_owner or is_cleaner):
+            messages.error(request, 'You do not have permission to access this page.')
+            return redirect('home')
+            
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view 

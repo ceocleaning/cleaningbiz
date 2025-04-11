@@ -7,6 +7,7 @@ import json
 import uuid
 from square.client import Client
 from .models import Invoice, Payment
+from accounts.models import Business, SquareCredentials
 
 
 
@@ -22,14 +23,16 @@ def process_payment(request):
         
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        business = invoice.booking.business
+        square_credentials = business.square_credentials
         
         if not source_id:
             return JsonResponse({'success': False, 'error': 'No payment source provided'}, status=400)
 
         # Initialize Square client
         client = Client(
-            access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment=settings.SQUARE_ENVIRONMENT
+            access_token=square_credentials.access_token,
+            environment='sandbox' if settings.DEBUG else 'production'
         )
 
         # Create unique idempotency key
@@ -116,6 +119,8 @@ def process_manual_payment(request):
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        business = invoice.booking.business
+        square_credentials = business.square_credentials
 
         # Check if this is an existing Square payment with AUTHORIZED status
         if payment_method == 'Square' and square_payment_id:
@@ -125,8 +130,8 @@ def process_manual_payment(request):
                 
                 # Initialize Square client
                 client = Client(
-                    access_token=settings.SQUARE_ACCESS_TOKEN,
-                    environment=settings.SQUARE_ENVIRONMENT
+                    access_token=square_credentials.access_token,
+                    environment='sandbox' if settings.DEBUG else 'production'
                 )
 
                 # Complete the payment in Square

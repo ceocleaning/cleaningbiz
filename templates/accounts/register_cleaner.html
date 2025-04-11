@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Account for {{ cleaner.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create User Account for {{ cleaner.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="alert alert-info">
+                        Creating a user account will allow this team member to log in to the system and access their assigned bookings and information.
+                    </p>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text">
+                                This will be used to log in to the system.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ cleaner.email|default:'' }}" required {% if cleaner.email %}readonly{% endif %}>
+                            <div class="form-text">
+                                {% if cleaner.email %}
+                                    Email is pre-filled from cleaner's information.
+                                {% else %}
+                                    Please provide an email address for this cleaner.
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="form-text">
+                                Create a strong password for this user.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'accounts:manage_cleaners' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Cleaners
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

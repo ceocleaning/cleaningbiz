@@ -123,6 +123,7 @@ def invoice_preview(request, invoiceId):
         invoice = Invoice.objects.get(invoiceId=invoiceId)
         booking = invoice.booking
         business = booking.business
+        square_credentials = business.square_credentials
 
         # Only include add-ons with values > 0
         addons = [
@@ -148,9 +149,9 @@ def invoice_preview(request, invoiceId):
             'business': business,
             'addons': addons,
             'settings': {
-                'SQUARE_APP_ID': settings.SQUARE_APP_ID,
-                'SQUARE_LOCATION_ID': settings.SQUARE_LOCATION_ID,
-                'SQUARE_ENVIRONMENT': settings.SQUARE_ENVIRONMENT
+                'SQUARE_APP_ID': square_credentials.app_id,
+                'SQUARE_LOCATION_ID': square_credentials.location_id,
+                'SQUARE_ENVIRONMENT': 'sandbox' if settings.DEBUG else 'production'
             }
         }
         return render(request, 'invoice_preview.html', context)
