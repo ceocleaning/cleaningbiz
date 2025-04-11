@@ -220,29 +220,7 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Content Section (If needed) -->
-        {% if lead.content %}
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 pt-4 pb-2">
-                    <div class="d-flex align-items-center">
-                        <div class="icon-circle bg-light-warning me-3">
-                            <i class="fas fa-file-alt text-warning"></i>
-                        </div>
-                        <h5 class="mb-0">Additional Content</h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="content-card p-3 rounded-3 bg-light">
-                        <div id="formatted-content" data-content="{{ lead.content|escapejs }}">
-                            <p class="mb-0">{{ lead.content }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+
     </div>
     
     <!-- Delete Modal -->

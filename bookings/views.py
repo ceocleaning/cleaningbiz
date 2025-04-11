@@ -264,6 +264,7 @@ def create_booking(request):
                     booking.customAddons.add(newCustomBookingAddon)
 
 
+
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
             
@@ -300,6 +301,10 @@ def create_booking(request):
     }
 
     return render(request, 'create_booking.html', context)
+
+
+
+
 
 @require_http_methods(["GET", "POST"])
 @transaction.atomic

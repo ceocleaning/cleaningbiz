@@ -221,10 +221,6 @@ def check_availability(business, date_string):
             "parsed_datetime": formatted_datetime,
             "available": is_available,
             "alternative_slots": alternative_slots,
-            "cleaners": [{
-                "id": c.id,
-                "name": c.name
-            } for c in available_cleaners]
         }
         return response_data
         

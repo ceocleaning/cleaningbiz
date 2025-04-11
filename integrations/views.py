@@ -5,7 +5,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.urls import reverse
-from .models import PlatformIntegration, DataMapping
+from django.template.defaultfilters import register
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .models import PlatformIntegration, DataMapping, IntegrationLog
+from .utils import log_integration_activity
 from accounts.models import Business, ApiCredential
 from bookings.models import Booking
 import json
@@ -339,7 +342,22 @@ def send_booking_data_to_integration(booking_data, integration):
                 headers={"Content-Type": "application/json"},
                 timeout=30
             )
-            print("Payload:", payload)
+
+            if response.status_code in [200, 201]:
+                log_integration_activity(
+                    platform=integration,
+                    status='success',
+                    request_data=payload,
+                    response_data=response.json() if response.text else None
+                )
+            else:
+                log_integration_activity(
+                    platform=integration,
+                    status='failed',
+                    request_data=payload,
+                    error_message=response.text
+                )
+            
         else:  # direct_api
             from automation.webhooks import create_mapped_payload
             payload = create_mapped_payload(booking_data, integration)
@@ -356,9 +374,20 @@ def send_booking_data_to_integration(booking_data, integration):
                 timeout=30
             )
 
-         
-        
-        response.raise_for_status()
+            if response.status_code in [200, 201]:
+                log_integration_activity(
+                    platform=integration,
+                    status='success',
+                    request_data=payload,
+                    response_data=response.json() if response.text else None
+                )
+            else:
+                log_integration_activity(
+                    platform=integration,
+                    status='failed',
+                    request_data=payload,
+                    error_message=response.text
+                )
         results['success'].append({
             'name': integration.name,
             'response': response.text,
@@ -366,6 +395,14 @@ def send_booking_data_to_integration(booking_data, integration):
         })
         
     except Exception as e:
+        # Log failed integration
+        log_integration_activity(
+            platform=integration,
+            status='failed',
+            request_data=payload if 'payload' in locals() else {},
+            error_message=str(e)
+        )
+        
         results['failed'].append({
             'name': integration.name,
             'error': str(e)
@@ -503,3 +540,92 @@ def retell_settings(request):
     }
     
     return render(request, 'integrations/retell_settings.html', context)
+
+@login_required
+def integration_logs(request, platform_id=None):
+    """View integration logs for all integrations or a specific one"""
+    business = request.user.business_set.first()
+    if not business:
+        return redirect('accounts:register_business')
+        
+    # Get query parameters for filtering
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Base query - filter by business
+    if platform_id:
+        # For a specific integration
+        platform = get_object_or_404(PlatformIntegration, id=platform_id, business=business)
+        logs_query = IntegrationLog.objects.filter(platform=platform)
+        # Set the title accordingly
+        title = f"Integration Logs: {platform.name}"
+    else:
+        # For all integrations of this business
+        platforms = PlatformIntegration.objects.filter(business=business)
+        logs_query = IntegrationLog.objects.filter(platform__in=platforms)
+        title = "All Integration Logs"
+    
+    # Apply filters if provided
+    if status_filter:
+        logs_query = logs_query.filter(status=status_filter)
+        
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            logs_query = logs_query.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            pass  # Invalid date format
+            
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the end date
+            date_to_obj = date_to_obj + timedelta(days=1)
+            logs_query = logs_query.filter(created_at__lt=date_to_obj)
+        except ValueError:
+            pass  # Invalid date format
+    
+    # Get logs with pagination (20 logs per page)
+    paginator = Paginator(logs_query.order_by('-created_at'), 20)
+    page = request.GET.get('page')
+    try:
+        logs = paginator.page(page)
+    except PageNotAnInteger:
+        logs = paginator.page(1)
+    except EmptyPage:
+        logs = paginator.page(paginator.num_pages)
+    
+    # Get all integrations for the filter dropdown
+    integrations = PlatformIntegration.objects.filter(business=business)
+    
+    # Get stats
+    total_logs = logs_query.count()
+    success_logs = logs_query.filter(status='success').count()
+    failed_logs = logs_query.filter(status='failed').count()
+    pending_logs = logs_query.filter(status='pending').count()
+    
+    context = {
+        'logs': logs,
+        'integrations': integrations,
+        'platform_id': platform_id,
+        'status_filter': status_filter, 
+        'date_from': date_from,
+        'date_to': date_to,
+        'title': title,
+        'status_choices': dict(IntegrationLog.STATUS_CHOICES),
+        'paginator': paginator,
+        'total_logs': total_logs,
+        'success_logs': success_logs,
+        'failed_logs': failed_logs,
+        'pending_logs': pending_logs
+    }
+    
+    return render(request, 'integrations/integration_logs.html', context)
+
+# Template filter for pretty printing JSON data
+@register.filter
+def pprint(data):
+    if isinstance(data, dict) or isinstance(data, list):
+        return json.dumps(data, indent=2)
+    return data

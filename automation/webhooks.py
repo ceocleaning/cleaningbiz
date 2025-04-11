@@ -17,6 +17,7 @@ from accounts.models import ApiCredential, Business, BusinessSettings, CustomAdd
 from bookings.models import Booking, BookingCustomAddons
 from .utils import calculateAmount, calculateAddonsAmount
 from integrations.models import PlatformIntegration, DataMapping, IntegrationLog
+from integrations.utils import log_integration_activity
 from retell_agent.models import RetellAgent
 from subscription.models import UsageTracker
 from retell import Retell
@@ -364,6 +365,24 @@ def send_booking_data(booking):
                         headers={"Content-Type": "application/json"},
                         timeout=30
                     )
+
+                    # Log successful integration
+                    if response.status_code in [200, 201]:
+                        log_integration_activity(
+                            platform=integration,
+                            status='success',
+                            request_data=payload,
+                            response_data=response.json() if response.text else None
+                        )
+                    
+                    # Log failed integration
+                    else:
+                        log_integration_activity(
+                            platform=integration,
+                            status='failed',
+                            request_data=payload,
+                            error_message=response.text
+                        )
                     
                 else:  # direct_api
                     # Create payload using field mappings
@@ -394,16 +413,24 @@ def send_booking_data(booking):
                         timeout=30
                     )
                 
-                response.raise_for_status()
-                print(f"Successfully sent booking data to {integration.name}", response.text)
-                
-                # Log successful integration
-                IntegrationLog.objects.create(
-                    platform=integration,
-                    status='success',
-                    request_data=payload,
-                    response_data=response.json() if response.text else None
-                )
+                    # Log successful integration
+                    if response.status_code in [200, 201]:
+                        log_integration_activity(
+                            platform=integration,
+                            status='success',
+                            request_data=payload,
+                            response_data=response.json() if response.text else None
+                        )
+                    
+                    # Log failed integration
+                    else:
+                        log_integration_activity(
+                            platform=integration,
+                            status='failed',
+                            request_data=payload,
+                            error_message=response.text
+                        )
+                    
                 
                 results[integration_type]['success'].append({
                     'name': integration.name,
@@ -416,7 +443,7 @@ def send_booking_data(booking):
                 print(error_msg)
                 
                 # Log failed integration
-                IntegrationLog.objects.create(
+                log_integration_activity(
                     platform=integration,
                     status='failed',
                     request_data=payload if 'payload' in locals() else {},

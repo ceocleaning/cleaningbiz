@@ -267,8 +267,7 @@ def check_availability_retell(request, secretKey):
         response = {
             "status": "success",
             "available": is_available,
-            "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S"),
-            "cleaners": [{"id": c.id, "name": c.name, "rating": c.rating} for c in available_cleaners],
+            "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S")
         }
 
         # If not available, find alternate slots
