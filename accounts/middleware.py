@@ -91,7 +91,7 @@ class CleanerAccessMiddleware:
             'PricingPage', 'FeaturesPage', 'AboutUsPage',
             'ContactUsPage', 'DocsPage', 'PrivacyPolicyPage', 
             'TermsOfServicePage', 'sitemap', 'home',
-            'cleaner_detail', 'cleaner_monthly_schedule', 'update_cleaner_profile',
+            'update_cleaner_profile',
             'update_cleaner_schedule', 'add_specific_date', 'delete_specific_date'
         ]
         
@@ -117,13 +117,16 @@ class CleanerAccessMiddleware:
                 print(f"DEBUG: CleanerAccessMiddleware - URL {current_url} is in exempt_urls, allowing access")
                 return self.get_response(request)
                 
-            # If already on cleaner detail page, check if it's their own page
-            if current_url == 'cleaner_detail':
+            # Check for cleaner detail pages - cleaner can only see their own page
+            if current_url in ['cleaner_detail', 'cleaner_monthly_schedule']:
                 url_cleaner_id = resolve(request.path_info).kwargs.get('cleaner_id')
-                print(f"DEBUG: CleanerAccessMiddleware - On cleaner_detail page, URL cleaner_id: {url_cleaner_id}, User cleaner_id: {cleaner_id}")
+                print(f"DEBUG: CleanerAccessMiddleware - On cleaner page, URL cleaner_id: {url_cleaner_id}, User cleaner_id: {cleaner_id}")
                 if str(url_cleaner_id) == cleaner_id:
-                    print("DEBUG: CleanerAccessMiddleware - Cleaner accessing their own detail page, allowing access")
+                    print("DEBUG: CleanerAccessMiddleware - Cleaner accessing their own page, allowing access")
                     return self.get_response(request)
+                else:
+                    print("DEBUG: CleanerAccessMiddleware - Cleaner trying to access another cleaner's page, redirecting")
+                    return redirect(f'/cleaners/{cleaner_id}/')
         except Exception as e:
             print(f"DEBUG: CleanerAccessMiddleware - Exception resolving URL: {str(e)}")
             pass
