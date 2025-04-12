@@ -375,14 +375,20 @@ class OpenAIAgent:
             # Convert to a list of dictionaries
             message_list = []
             for msg in messages:
-                if msg.role != 'tool':
+                if msg.role == 'tool':
+                    message_list.append({
+                        'id': msg.id,
+                        'role': 'function_call',
+                        'content': msg.message,  # Use content key for OpenAI compatibility
+                        'createdAt': msg.createdAt
+                    })
+                else:
                     message_list.append({
                         'id': msg.id,
                         'role': msg.role,
-                        'content': msg.message,  # Use content key for OpenAI compatibility
-                        'message': msg.message,   # Keep message key for backward compatibility
+                        'content': msg.message,
                         'createdAt': msg.createdAt
-                })
+                    })
             
             print(f"[DEBUG] Retrieved {len(message_list)} messages from chat ID={chat.id}")
             return message_list
