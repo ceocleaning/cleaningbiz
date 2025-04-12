@@ -246,6 +246,8 @@
                                 </div>
                             </a>
                         </div>
+
+                        {% if user.is_superuser %}
                         <!-- Retell AI Agent Setup Button -->
                         <div class="col-md-4">
                             <a href="{% url 'list_retell_agents' %}" class="card border-0 shadow-sm bg-purple text-white text-decoration-none h-100" style="background-color: #6f42c1;">
@@ -262,6 +264,7 @@
                                 </div>
                             </a>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

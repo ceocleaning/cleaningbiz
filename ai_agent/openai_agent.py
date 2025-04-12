@@ -268,7 +268,7 @@ class OpenAIAgent:
             try:
                 if client_phone_number:
                     from .utils import find_by_phone_number
-                    chat = find_by_phone_number(Chat, 'clientPhoneNumber', client_phone_number)
+                    chat = find_by_phone_number(Chat, 'clientPhoneNumber', client_phone_number, business)
                     
                     if not chat:
                         chat = Chat.objects.create(
