@@ -998,8 +998,10 @@ def cleaner_monthly_schedule(request, cleaner_id):
     """
     business = request.user.business_set.first()
     if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
+        business = request.user.cleaner_profile.business
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
