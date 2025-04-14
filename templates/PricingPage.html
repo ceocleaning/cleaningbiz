@@ -274,6 +274,7 @@
                         {% endif %}
                     </div>
                 </div>
+                
                 {% for feature in feature_list %}
                 <div class="comparison-row">
                     <div class="comparison-cell feature-name">{{ feature.display_name }}</div>
@@ -283,7 +284,7 @@
                         {% if feature in starter_plan.features.all %}
                             <i class="fas fa-check text-success"></i>
                         {% else %}
-                            <i class="fas fa-times text-dark-text-secondary"></i>
+                            <i class="fas fa-times text-danger"></i>
                         {% endif %}
                     </div>
                     
@@ -292,7 +293,7 @@
                         {% if feature in professional_plan.features.all %}
                             <i class="fas fa-check text-success"></i>
                         {% else %}
-                            <i class="fas fa-times text-dark-text-secondary"></i>
+                            <i class="fas fa-times text-danger"></i>
                         {% endif %}
                     </div>
                     
@@ -301,13 +302,11 @@
                         {% if feature in enterprise_plan.features.all %}
                             <i class="fas fa-check text-success"></i>
                         {% else %}
-                            <i class="fas fa-times text-dark-text-secondary"></i>
+                            <i class="fas fa-times text-danger"></i>
                         {% endif %}
                     </div>
                 </div>
                 {% endfor %}
-                
-        
                 
                 {% endwith %}
                 {% endwith %}
@@ -613,6 +612,83 @@
     
     .opacity-70 {
         opacity: 0.7;
+    }
+
+    /* Comparison Table Styling */
+    .comparison-table-wrapper {
+        overflow-x: auto;
+        margin-bottom: 2rem;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background-color: var(--bs-dark-surface-2, #1A1C23);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    
+    .comparison-row {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .comparison-row:last-child {
+        border-bottom: none;
+    }
+    
+    .comparison-row.header {
+        background-color: rgba(0, 0, 0, 0.2);
+        font-weight: bold;
+    }
+    
+    .comparison-cell {
+        flex: 1;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        color: #fff;
+    }
+    
+    .comparison-cell.feature-name {
+        flex: 1.5;
+        font-weight: 500;
+    }
+    
+    .comparison-cell.highlight {
+        background-color: rgba(45, 91, 255, 0.1);
+        position: relative;
+    }
+    
+    .comparison-cell.highlight::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--bs-primary-color, #2D5BFF);
+    }
+    
+    .comparison-row:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    .fa-check {
+        font-size: 1.2rem;
+        color: #28a745 !important;
+    }
+    
+    .fa-times {
+        font-size: 1.2rem;
+        color: #dc3545 !important;
+    }
+    
+    @media (max-width: 767px) {
+        .comparison-table {
+            min-width: 650px;
+        }
     }
 </style>
 
