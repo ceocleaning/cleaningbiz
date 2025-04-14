@@ -170,17 +170,10 @@
         window.cardFormInitialized = true;
         
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[DEBUG] Card form initialization started');
             // Form elements
             const cardForm = document.getElementById('card-management-form');
             const saveCardButton = document.getElementById('save-card-button');
             const statusContainer = document.getElementById('card-management-status-container');
-            
-            console.log('[DEBUG] Form elements:', {
-                cardForm: !!cardForm,
-                saveCardButton: !!saveCardButton,
-                statusContainer: !!statusContainer
-            });
             
             // Initialize Square
             let card = null;
@@ -188,157 +181,94 @@
             try {
                 const appId = '{{ square_app_id }}';
                 
-                console.log('[DEBUG] Square App ID:', appId);
-                
                 if (!appId || appId === 'None') {
-                    console.error('[ERROR] Square App ID is missing or invalid:', appId);
                     throw new Error('Square payment credentials are missing or invalid');
                 }
                 
                 // Initialize the Square payments object
-                console.log('[DEBUG] Initializing Square payments with App ID:', appId);
                 const payments = window.Square.payments(appId);
-                console.log('[DEBUG] Square payments initialized successfully');
                 
                 async function initializeCard() {
                     try {
-                        console.log('[DEBUG] Creating card element');
                         card = await payments.card();
-                        console.log('[DEBUG] Card element created successfully');
                         
                         // Add event listeners for card validation
                         card.addEventListener('cardBrandChanged', function (event) {
-                            console.log('[DEBUG] Card brand changed:', event.cardBrand);
+                            // Card brand changed
                         });
                         
                         card.addEventListener('errorClassAdded', function (event) {
-                            console.log('[DEBUG] Error class added:', event);
+                            // Error class added
                         });
                         
                         card.addEventListener('errorClassRemoved', function (event) {
-                            console.log('[DEBUG] Error class removed:', event);
+                            // Error class removed
                         });
                         
-                        // Add additional debug listeners
-                        card.addEventListener('focusClassAdded', function (event) {
-                            console.log('[DEBUG] Focus class added:', event);
-                        });
-                        
-                        card.addEventListener('focusClassRemoved', function (event) {
-                            console.log('[DEBUG] Focus class removed:', event);
-                        });
-                        
-                        card.addEventListener('escape', function (event) {
-                            console.log('[DEBUG] Escape event:', event);
-                        });
-                        
-                        console.log('[DEBUG] Attaching card to container');
                         await card.attach('#card-container');
-                        console.log('[DEBUG] Square card form attached successfully');
                     } catch (e) {
-                        console.error('[ERROR] Error attaching Square card form:', e);
-                        console.error('[ERROR] Stack trace:', e.stack);
+                        console.error('Error attaching Square card form:', e);
                         statusContainer.innerHTML = '<div class="alert alert-danger">Error initializing payment form. Please try again later.</div>';
                     }
                 }
                 
                 // Initialize the card
-                console.log('[DEBUG] Starting card initialization');
                 initializeCard();
-                console.log('[DEBUG] Card initialization requested');
                 
             } catch (error) {
-                console.error('[ERROR] Error initializing Square:', error);
-                console.error('[ERROR] Stack trace:', error.stack);
+                console.error('Error initializing Square:', error);
                 statusContainer.innerHTML = '<div class="alert alert-danger">Payment processing is currently unavailable. Please try again later.</div>';
             }
             
             // Handle save card button click
             saveCardButton.addEventListener('click', async function(event) {
-                console.log('[DEBUG] Save card button clicked');
                 event.preventDefault();
                 
                 // Show processing state
                 saveCardButton.disabled = true;
                 saveCardButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-                console.log('[DEBUG] Button state changed to processing');
                 
                 try {
-                    // Log tokenization attempt
-                    console.log('[DEBUG] Starting card tokenization process');
-                    
                     if (!card) {
-                        console.error('[ERROR] Card element is not initialized');
                         throw new Error('Card element is not initialized');
                     }
                     
                     // Check card validity before attempting to tokenize
-                    console.log('[DEBUG] Checking card completeness before tokenization');
                     try {
-                        // Square doesn't provide an isComplete method, so we'll do a validation check instead
-                        console.log('[DEBUG] Performing card validation check');
+                        // Validate card data without generating a token
+                        await card.tokenize({ skipTokenization: true });
                         
-                        // Use tokenize({ skipCvv: true }) to only validate the card details without generating a token
-                        // We'll check if it doesn't throw errors to determine if the card is valid
-                        let validationCheck = await card.tokenize({ skipTokenization: true });
-                        console.log('[DEBUG] Card validation check result:', validationCheck);
-                        
-                        // If we get here without error, proceed with actual tokenization
-                        console.log('[DEBUG] Card validation passed, proceeding with tokenization');
-                        
-                        // Create tokenization payload
-                        console.log('[DEBUG] Calling card.tokenize() for payment processing');
+                        // Proceed with actual tokenization
                         const tokenResult = await card.tokenize();
                         
-                        console.log('[DEBUG] Tokenization response received:', JSON.stringify(tokenResult));
-                        console.log('[DEBUG] Token result status:', tokenResult.status);
-                        
                         if (tokenResult.status === 'OK') {
-                            console.log('[DEBUG] Tokenization successful - Token length:', tokenResult.token ? tokenResult.token.length : 0);
-                            console.log('[DEBUG] Token first 10 chars:', tokenResult.token ? tokenResult.token.substring(0, 10) + '...' : 'N/A');
-                            
                             document.getElementById('card-nonce').value = tokenResult.token;
-                            console.log('[DEBUG] Token saved to form input field');
                             
-                            // Submit form immediately without timeout
-                            console.log('[DEBUG] Submitting form immediately');
+                            // Submit form immediately
                             cardForm.submit();
                         } else {
-                            console.error('[ERROR] Tokenization failed with status:', tokenResult.status);
-                            console.error('[ERROR] Tokenization errors:', JSON.stringify(tokenResult.errors || []));
                             document.getElementById('card-errors').textContent = tokenResult.errors?.[0]?.message || 'Card validation failed. Please check your card details and try again.';
                             
                             // Reset button state
                             saveCardButton.disabled = false;
                             saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
-                            console.log('[DEBUG] Button state reset after error');
                         }
                     } catch (validationError) {
                         // If validation fails, show error to user
-                        console.error('[ERROR] Card validation failed:', validationError);
                         document.getElementById('card-errors').textContent = 'Please fill in all card details correctly before proceeding.';
                         
                         // Reset button state
                         saveCardButton.disabled = false;
                         saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
-                        console.log('[DEBUG] Button state reset due to invalid card data');
                     }
                 } catch (error) {
-                    console.error('[ERROR] Exception during tokenization:', error);
-                    console.error('[ERROR] Stack trace:', error.stack);
-                    console.error('[ERROR] Error type:', error.name);
-                    console.error('[ERROR] Error message:', error.message);
-                    
                     document.getElementById('card-errors').textContent = error.message || 'An error occurred while processing your card. Please try again.';
                     
                     // Reset button state
                     saveCardButton.disabled = false;
                     saveCardButton.innerHTML = '{% if business.square_card_id %}<i class="fas fa-save me-2"></i>Update Card{% else %}<i class="fas fa-save me-2"></i>Save Card{% endif %}';
-                    console.log('[DEBUG] Button state reset after exception');
                 }
             });
-            
-            console.log('[DEBUG] Card form initialization completed');
         });
     }
 </script>

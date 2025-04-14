@@ -885,59 +885,43 @@ def validate_coupon(request):
 @login_required
 def manage_card(request):
     """View for saving or updating card details."""
-    print("[DEBUG] manage_card view called")
     business = request.user.business_set.first()
-    print(f"[DEBUG] Business: {business.businessName if business else 'None'}")
     
     # Get redirect URL if provided
     redirect_url = request.GET.get('redirect_url') or request.POST.get('redirect_url')
-    print(f"[DEBUG] Redirect URL: {redirect_url}")
     
     # Get card details from Square if available
     card_details = None
     if business.square_card_id and business.square_customer_id:
         try:
-            print(f"[DEBUG] Existing Square card ID: {business.square_card_id}")
-            print(f"[DEBUG] Existing Square customer ID: {business.square_customer_id}")
-            
             # Initialize Square client
             square_client = Client(
                 access_token=settings.SQUARE_ACCESS_TOKEN,
                 environment=settings.SQUARE_ENVIRONMENT
             )
-            print(f"[DEBUG] Square environment: {settings.SQUARE_ENVIRONMENT}")
             
             # Retrieve the card details
-            print("[DEBUG] Retrieving card details from Square")
             card_result = square_client.cards.retrieve_card(
                 card_id=business.square_card_id
             )
             
             if card_result.is_success():
                 card = card_result.body.get('card', {})
-                print(f"[DEBUG] Successfully retrieved card: {card.get('last_4')}")
                 card_details = {
                     'last4': card.get('last_4'),
                     'exp_month': card.get('exp_month'),
                     'exp_year': card.get('exp_year'),
                     'card_brand': card.get('card_brand')
                 }
-            else:
-                print(f"[DEBUG] Failed to retrieve card details: {card_result.errors}")
         except Exception as e:
             # Log the error but don't crash
-            print(f"[ERROR] Error retrieving card details: {e}")
+            print(f"Error retrieving card details: {e}")
     
     if request.method == 'POST':
-        print("[DEBUG] Processing POST request for manage_card")
         # Get the card nonce from the request
         card_nonce = request.POST.get('card-nonce')
         
-        print(f"[DEBUG] Card nonce received: {card_nonce[:10] + '...' if card_nonce else 'None'}")
-        print(f"[DEBUG] Card nonce length: {len(card_nonce) if card_nonce else 0}")
-        
         if not card_nonce:
-            print("[ERROR] Card nonce is missing")
             messages.error(request, "No card information received. Please try again.")
             context = {
                 'business': business,
@@ -951,7 +935,6 @@ def manage_card(request):
             return render(request, 'subscription/manage_card.html', context)
         
         if card_nonce and not card_nonce.startswith('cnon:'):
-            print(f"[ERROR] Invalid card nonce format: {card_nonce[:10]}...")
             messages.error(request, "Invalid card token received. Please try again.")
             context = {
                 'business': business, 
@@ -965,7 +948,6 @@ def manage_card(request):
             return render(request, 'subscription/manage_card.html', context)
         
         # Initialize Square client
-        print("[DEBUG] Initializing Square client")
         square_client = Client(
             access_token=settings.SQUARE_ACCESS_TOKEN,
             environment=settings.SQUARE_ENVIRONMENT
@@ -973,7 +955,6 @@ def manage_card(request):
         
         # Check if business already has a Square customer ID
         if not business.square_customer_id:
-            print("[DEBUG] No existing Square customer ID, creating new customer")
             # Create a new customer
             customer_request = {
                 'given_name': request.user.first_name or business.businessName,
@@ -983,18 +964,15 @@ def manage_card(request):
                 'phone_number': business.phone
             }
             
-            print(f"[DEBUG] Customer request: {customer_request}")
             customer_result = square_client.customers.create_customer(
                 body=customer_request
             )
             
             if customer_result.is_success():
                 customer_id = customer_result.body['customer']['id']
-                print(f"[DEBUG] Successfully created Square customer: {customer_id}")
                 business.square_customer_id = customer_id  # Store Square customer ID
                 business.save()
             else:
-                print(f"[ERROR] Failed to create Square customer: {customer_result.errors}")
                 messages.error(request, "Failed to create payment profile. Please try again.")
                 context = {
                     'business': business,
@@ -1007,14 +985,10 @@ def manage_card(request):
                 }
                 return render(request, 'subscription/manage_card.html', context)
         else:
-            print(f"[DEBUG] Using existing Square customer ID: {business.square_customer_id}")
             customer_id = business.square_customer_id
         
         # Create a card for the customer
-        print(f"[DEBUG] Square Environment: {settings.SQUARE_ENVIRONMENT}")
-        
         idempotency_key = str(uuid.uuid4())
-        print(f"[DEBUG] Generated idempotency key: {idempotency_key}")
         
         card_request = {
             'idempotency_key': idempotency_key,
@@ -1025,17 +999,13 @@ def manage_card(request):
             }
         }
         
-        print(f"[DEBUG] Card request: {card_request}")
-        
         try:
-            print(f"[DEBUG] Creating card with source_id: {card_nonce[:10]}...")
             card_result = square_client.cards.create_card(
                 body=card_request
             )
             
             if card_result.is_success():
                 card_id = card_result.body['card']['id']
-                print(f"[DEBUG] Successfully created card: {card_id}")
                 # Store the card ID in the business model
                 business.square_card_id = card_id
                 business.save()
@@ -1043,13 +1013,10 @@ def manage_card(request):
                 # Check if there was a redirect URL
                 messages.success(request, "Payment method saved successfully.")
                 if redirect_url:
-                    print(f"[DEBUG] Redirecting to: {redirect_url}")
                     return redirect(redirect_url)
                 else:
-                    print("[DEBUG] Redirecting to subscription management")
                     return redirect('subscription:subscription_management')
             else:
-                print(f"[ERROR] Failed to create card: {card_result.errors}")
                 error_message = "Failed to save payment method."
                 
                 # Try to extract more specific error info
@@ -1057,7 +1024,6 @@ def manage_card(request):
                     first_error = card_result.errors[0]
                     error_detail = first_error.get('detail', '')
                     error_code = first_error.get('code', '')
-                    print(f"[ERROR] Square error code: {error_code}, detail: {error_detail}")
                     
                     if error_code in ['INVALID_CARD_DATA', 'INVALID_EXPIRATION_DATE', 'VERIFY_CVV_FAILURE', 'VERIFY_AVS_FAILURE']:
                         error_message = f"Invalid card information: {error_detail or 'Please check your card details and try again.'}"
@@ -1068,13 +1034,9 @@ def manage_card(request):
                 
                 messages.error(request, error_message)
         except Exception as e:
-            print(f"[ERROR] Exception creating card: {e}")
-            import traceback
-            print(f"[ERROR] Traceback: {traceback.format_exc()}")
             messages.error(request, "An unexpected error occurred. Please try again.")
     
     # Render the form for GET requests or if there was an error
-    print("[DEBUG] Rendering manage_card template")
     context = {
         'business': business,
         'card_details': card_details,
