@@ -154,6 +154,112 @@
     
     <!-- Lead Details Section -->
     <div class="row g-4">
+        <!-- Property Details Section -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-2">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-light-success me-3">
+                            <i class="fas fa-home text-success"></i>
+                        </div>
+                        <h5 class="mb-0">Property Details</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% if lead.bedrooms or lead.bathrooms or lead.squareFeet or lead.type_of_cleaning %}
+                            {% if lead.bedrooms %}
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded-3 p-3 h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="icon-square bg-light-info rounded-3 me-2">
+                                            <i class="fas fa-bed text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-muted">Bedrooms</h6>
+                                    </div>
+                                    <div class="stat-content ps-4">
+                                        <span class="h4 fw-bold">{{ lead.bedrooms }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if lead.bathrooms %}
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded-3 p-3 h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="icon-square bg-light-info rounded-3 me-2">
+                                            <i class="fas fa-bath text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-muted">Bathrooms</h6>
+                                    </div>
+                                    <div class="stat-content ps-4">
+                                        <span class="h4 fw-bold">{{ lead.bathrooms }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if lead.squareFeet %}
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded-3 p-3 h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="icon-square bg-light-info rounded-3 me-2">
+                                            <i class="fas fa-ruler-combined text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-muted">Square Feet</h6>
+                                    </div>
+                                    <div class="stat-content ps-4">
+                                        <span class="h4 fw-bold">{{ lead.squareFeet }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if lead.type_of_cleaning %}
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded-3 p-3 h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="icon-square bg-light-info rounded-3 me-2">
+                                            <i class="fas fa-broom text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-muted">Cleaning Type</h6>
+                                    </div>
+                                    <div class="stat-content ps-4">
+                                        <span class="fw-bold">
+                                            {% if lead.type_of_cleaning == 'standard' %}
+                                                Standard Cleaning
+                                            {% elif lead.type_of_cleaning == 'deep' %}
+                                                Deep Cleaning
+                                            {% elif lead.type_of_cleaning == 'moveinmoveout' %}
+                                                Move In/Move Out
+                                            {% elif lead.type_of_cleaning == 'airbnb' %}
+                                                Airbnb Cleaning
+                                            {% elif lead.type_of_cleaning == 'commercial' %}
+                                                Commercial Cleaning
+                                            {% else %}
+                                                {{ lead.type_of_cleaning }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="col-12">
+                                <div class="empty-state text-center py-4">
+                                    <div class="empty-icon mb-3">
+                                        <i class="fas fa-home text-muted fa-2x"></i>
+                                    </div>
+                                    <p class="text-muted">No property details available</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Notes Section -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">

@@ -96,6 +96,33 @@
                                 <h5 class="text-muted mb-3">Additional Details</h5>
                             </div>
 
+                            <div class="col-md-3">
+                                <label for="bedrooms" class="form-label">Bedrooms</label>
+                                <input type="number" min="0" class="form-control" id="bedrooms" name="bedrooms" placeholder="Number of bedrooms">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="bathrooms" class="form-label">Bathrooms</label>
+                                <input type="number" min="0" step="0.5" class="form-control" id="bathrooms" name="bathrooms" placeholder="Number of bathrooms">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="squareFeet" class="form-label">Square Feet</label>
+                                <input type="number" min="0" class="form-control" id="squareFeet" name="squareFeet" placeholder="Property size">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="type_of_cleaning" class="form-label">Cleaning Type</label>
+                                <select class="form-select" id="type_of_cleaning" name="type_of_cleaning">
+                                    <option value="" selected>Select type...</option>
+                                    <option value="standard">Standard Cleaning</option>
+                                    <option value="deep">Deep Cleaning</option>
+                                    <option value="moveinmoveout">Move In/Move Out</option>
+                                    <option value="airbnb">Airbnb Cleaning</option>
+                                    <option value="commercial">Commercial Cleaning</option>
+                                </select>
+                            </div>
+
                             <div class="col-md-12">
                                 <label for="source" class="form-label">Lead Source</label>
                                 <input type="text" class="form-control" id="source" name="source" placeholder="e.g., Website, Referral, Thumbtack" required>

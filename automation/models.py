@@ -17,6 +17,14 @@ WEEKDAY_CHOICES = (
     ('Sunday', 'Sunday'),
 )
 
+serviceTypes = [
+    ('standard', 'Standard Cleaning'),
+    ('deep', 'Deep Cleaning'),
+    ('moveinmoveout', 'Move In/Move Out'),
+    ('airbnb', 'Airbnb Cleaning'),
+    ('commercial', 'Commercial Cleaning'),
+]
+
 
 class Lead(models.Model):
     business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE, null=True, blank=True)
@@ -24,6 +32,11 @@ class Lead(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(null=True, blank=True)
     phone_number = models.CharField(max_length=20)
+
+    bedrooms = models.IntegerField(null=True, blank=True)
+    bathrooms = models.IntegerField(null=True, blank=True)
+    squareFeet = models.IntegerField(null=True, blank=True)
+    type_of_cleaning = models.CharField(max_length=255, null=True, blank=True, choices=serviceTypes)
     
     # Address fields
     address1 = models.CharField(max_length=255, null=True, blank=True)

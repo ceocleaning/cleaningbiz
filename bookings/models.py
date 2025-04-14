@@ -15,6 +15,7 @@ serviceTypes = [
     ('deep', 'Deep Cleaning'),
     ('moveinmoveout', 'Move In/Move Out'),
     ('airbnb', 'Airbnb Cleaning'),
+    ('commercial', 'Commercial Cleaning'),
 ]
 
 paymentMethods = [

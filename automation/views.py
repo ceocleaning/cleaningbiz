@@ -313,6 +313,11 @@ def create_lead(request):
                 except ValueError:
                     messages.warning(request, 'Invalid date or time format. The date/time information was not saved.')
 
+            # Process additional fields
+            bedrooms = request.POST.get('bedrooms')
+            bathrooms = request.POST.get('bathrooms')
+            square_feet = request.POST.get('squareFeet')
+            
             # Create the lead
             lead = Lead.objects.create(
                 name=request.POST.get('name'),
@@ -328,6 +333,12 @@ def create_lead(request):
                 
                 # Scheduling
                 proposed_start_datetime=proposed_start_datetime,
+                
+                # Property details fields
+                bedrooms=int(bedrooms) if bedrooms and bedrooms.isdigit() else None,
+                bathrooms=float(bathrooms) if bathrooms and bathrooms.replace('.', '', 1).isdigit() else None,
+                squareFeet=int(square_feet) if square_feet and square_feet.isdigit() else None,
+                type_of_cleaning=request.POST.get('type_of_cleaning'),
                 
                 # Original fields
                 source=request.POST.get('source'),
@@ -379,6 +390,11 @@ def update_lead(request, leadId):
                 except ValueError:
                     messages.warning(request, 'Invalid date or time format. The date/time information was not saved.')
             
+            # Process additional fields
+            bedrooms = request.POST.get('bedrooms')
+            bathrooms = request.POST.get('bathrooms')
+            square_feet = request.POST.get('squareFeet')
+            
             # Update basic fields
             lead.name = request.POST.get('name')
             lead.email = request.POST.get('email')
@@ -394,6 +410,12 @@ def update_lead(request, leadId):
             # Update scheduling
             if proposed_start_datetime:
                 lead.proposed_start_datetime = proposed_start_datetime
+            
+            # Update property details fields
+            lead.bedrooms = int(bedrooms) if bedrooms and bedrooms.isdigit() else None
+            lead.bathrooms = float(bathrooms) if bathrooms and bathrooms.replace('.', '', 1).isdigit() else None
+            lead.squareFeet = int(square_feet) if square_feet and square_feet.isdigit() else None
+            lead.type_of_cleaning = request.POST.get('type_of_cleaning')
             
             # Update original fields
             lead.source = request.POST.get('source')

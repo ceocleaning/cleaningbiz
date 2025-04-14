@@ -60,7 +60,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
 
             try:
-                message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service."
+                message_body = f"Hello {instance.name}, this is {agentConfig.agent_name} from {instance.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service with us?"
                 message = client.messages.create(
                     body=message_body,
                     from_=apiCred.twilioSmsNumber,
@@ -87,7 +87,8 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 is_first_message=True
             )
 
-            lead_details = f"Here are the details about the lead:\nName: {instance.name}\nPhone: {instance.phone_number}\nEmail: {instance.email if instance.email else 'Not provided'}\nAddress: {instance.address1 if instance.address1 else 'Not provided'}\nCity: {instance.city if instance.city else 'Not provided'}\nState: {instance.state if instance.state else 'Not provided'}\nZip Code: {instance.zipCode if instance.zipCode else 'Not provided'}\nProposed Start Time: {instance.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if instance.proposed_start_datetime else 'Not provided'}\nNotes: {instance.notes if instance.notes else 'No additional notes'}"
+            lead_details = f"Here are the details about the lead:\nName: {instance.name}\nPhone: {instance.phone_number}\nEmail: {instance.email if instance.email else 'Not provided'}\nAddress: {instance.address1 if instance.address1 else 'Not provided'}\nCity: {instance.city if instance.city else 'Not provided'}\nState: {instance.state if instance.state else 'Not provided'}\nZip Code: {instance.zipCode if instance.zipCode else 'Not provided'}\nProposed Start Time: {instance.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if instance.proposed_start_datetime else 'Not provided'}\nNotes: {instance.notes if instance.notes else 'No additional notes'}\nBedrooms: {instance.bedrooms if instance.bedrooms else 'Not provided'}\nBathrooms: {instance.bathrooms if instance.bathrooms else 'Not provided'}\nSquare Feet: {instance.squareFeet if instance.squareFeet else 'Not provided'}\nType of Cleaning: {instance.type_of_cleaning if instance.type_of_cleaning else 'Not provided'}"
+
             Messages.objects.create(
                 chat=chat,
                 role='assistant',
@@ -95,7 +96,6 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 is_first_message=False
             )
 
-            print(f"Message sent successfully! SID: {message.sid}")
 
             if instance.business.useCall and instance.business.timeToWait > 0:
 
