@@ -445,7 +445,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             bedrooms=bedrooms,
             bathrooms=bathrooms,
             squareFeet=area,
-            otherRequests=data.get("additionalNotes", ""),
+            otherRequests=data.get("otherRequests", ""),
             totalPrice=total,
             tax=tax,
             addonDishes=addons["dishes"],

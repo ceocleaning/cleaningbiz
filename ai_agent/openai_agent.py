@@ -1024,7 +1024,7 @@ class OpenAIAgent:
             'serviceType': '',
             'appointmentDateTime': '',
             'convertedDateTime': '',
-            'additionalNotes': '',
+            'otherRequests': '',
             'detailSummary': '',
             "addonDishes": '',
             "addonLaundryLoads": '',
@@ -1100,7 +1100,7 @@ class OpenAIAgent:
             - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
             - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
             - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time_in_chicago()}
-            - additionalNotes: Any special requests or notes
+            - otherRequests: Any special requests or notes
             - detailSummary: Summary of the Whole conversation
             - addonDishes: Quantity of Dishes Addon
             - addonLaundryLoads: Quantity of Laundry Loads Addon
