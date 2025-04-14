@@ -28,6 +28,12 @@ def all_bookings(request):
     # Upcoming bookings (not completed and future date)
     upcoming_bookings = all_bookings.filter(
         isCompleted=False,
+        cleaningDate__gte=today
+    ).order_by('cleaningDate', 'startTime')
+    
+    # Upcoming paid bookings (not completed, future date, with paid invoice)
+    upcoming_paid_bookings = all_bookings.filter(
+        isCompleted=False,
         cleaningDate__gte=today,
         invoice__isnull=False,
         invoice__isPaid=True
@@ -36,7 +42,6 @@ def all_bookings(request):
     # Completed bookings (isCompleted=True and past date)
     completed_bookings = all_bookings.filter(
         isCompleted=True,
-        cleaningDate__lt=today
     ).order_by('-cleaningDate', '-startTime')
     
     # Pending bookings (unpaid invoices)
@@ -49,14 +54,17 @@ def all_bookings(request):
     total_bookings = all_bookings.count()
     pending_count = pending_bookings.count()
     completed_count = completed_bookings.count()
+    upcoming_paid_count = upcoming_paid_bookings.count()
     
     context = {
         'upcoming_bookings': upcoming_bookings,
+        'upcoming_paid_bookings': upcoming_paid_bookings,
         'completed_bookings': completed_bookings,
         'pending_bookings': pending_bookings,
         'total_bookings': total_bookings,
         'pending_count': pending_count,
-        'completed_count': completed_count
+        'completed_count': completed_count,
+        'upcoming_paid_count': upcoming_paid_count
     }
     return render(request, 'bookings.html', context)
 
