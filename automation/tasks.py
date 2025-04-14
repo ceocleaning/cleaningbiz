@@ -25,7 +25,8 @@ def send_call_to_lead(lead_id):
                 override_agent_id=retellAgent.agent_id,
                 retell_llm_dynamic_variables={
                     'name': lead.name,
-                    'details': lead_details
+                    'details': lead_details,
+                    'service': 'cleaning'
                 }
             )
             lead.is_call_sent = True

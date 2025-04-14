@@ -74,12 +74,15 @@ def check_chat_status():
                             if '+1' not in lead.phone_number and len(lead.phone_number) == 10:
                                 lead.phone_number = '+1' + lead.phone_number
                             
+                            lead_details = f"Here are the details about the lead:\nName: {lead.name}\nPhone: {lead.phone_number}\nEmail: {lead.email if lead.email else 'Not provided'}\nAddress: {lead.address1 if lead.address1 else 'Not provided'}\nCity: {lead.city if lead.city else 'Not provided'}\nState: {lead.state if lead.state else 'Not provided'}\nZip Code: {lead.zipCode if lead.zipCode else 'Not provided'}\nProposed Start Time: {lead.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if lead.proposed_start_datetime else 'Not provided'}\nNotes: {lead.notes if lead.notes else 'No additional notes'}"
+                            
                             call_response = client.call.create_phone_call(
                                 from_number=retellAgent.agent_number,
                                 to_number=lead.phone_number,
                                 retell_llm_dynamic_variables={
                                     'name': lead.name,
-                                    'service': lead.content
+                                    'details': lead_details,
+                                    'service': 'cleaning'
                                 }
                             )
                             
