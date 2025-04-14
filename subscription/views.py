@@ -429,8 +429,8 @@ def get_subscription_data(request):
             'price': float(subscription.plan.price),
             'billing_cycle': subscription.plan.billing_cycle,
             'voice_minutes': subscription.plan.voice_minutes,
-            'voice_calls': subscription.plan.voice_calls,
             'sms_messages': subscription.plan.sms_messages,
+            'cleaners': subscription.plan.cleaners,
             'features': subscription.plan.features,
             'status': subscription.status,
             'start_date': subscription.start_date.strftime('%Y-%m-%d'),
@@ -456,8 +456,8 @@ def get_subscription_data(request):
             'price': float(plan.price),
             'billing_cycle': plan.billing_cycle,
             'voice_minutes': plan.voice_minutes,
-            'voice_calls': plan.voice_calls,
             'sms_messages': plan.sms_messages,
+            'cleaners': plan.cleaners,
             'features': plan.features
         })
     

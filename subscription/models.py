@@ -25,6 +25,7 @@ class SubscriptionPlan(models.Model):
     sms_messages = models.IntegerField(default=0)
     agents = models.IntegerField(default=1)
     leads = models.IntegerField(default=100)
+    cleaners = models.IntegerField(default=5)
     
     # Replace JSON field with M2M relationship
     features = models.ManyToManyField('Feature', related_name='subscription_plans', blank=True)
@@ -53,13 +54,15 @@ class SubscriptionPlan(models.Model):
                 'voice_minutes': round(self.voice_minutes / 12),
                 'sms_messages': round(self.sms_messages / 12),
                 'agents': self.agents,  # Agents don't change
-                'leads': round(self.leads / 12)
+                'leads': round(self.leads / 12),
+                'cleaners': self.cleaners  # Cleaners don't change
             }
         return {
             'voice_minutes': self.voice_minutes,
             'sms_messages': self.sms_messages,
             'agents': self.agents,
-            'leads': self.leads
+            'leads': self.leads,
+            'cleaners': self.cleaners
         }
 
 
@@ -342,14 +345,17 @@ class UsageTracker(models.Model):
 
         # Get Active Agents
         from retell_agent.models import RetellAgent
+        from automation.models import Cleaners
         active_agents = RetellAgent.objects.filter(business=business).count()
+        cleaners = Cleaners.objects.filter(business=business).count()
         
         summary = {
             'total': {
                 'voice_minutes': 0,
                 'sms_messages': 0,
                 'active_agents': active_agents,
-                'leads_generated': 0
+                'leads_generated': 0,
+                'cleaners': cleaners
             },
             'daily': []
         }
@@ -361,6 +367,8 @@ class UsageTracker(models.Model):
                 if metric in summary['total']:
                     if metric == 'active_agents':
                         summary['total'][metric] = active_agents
+                    elif metric == 'cleaners':
+                        summary['total'][metric] = cleaners
                     else:
                         summary['total'][metric] += value
                 else:
@@ -380,7 +388,8 @@ class UsageTracker(models.Model):
                 'voice_minutes': plan.voice_minutes,
                 'sms_messages': plan.sms_messages,
                 'active_agents': plan.agents,
-                'leads_generated': plan.leads
+                'leads_generated': plan.leads,
+                'cleaners': plan.cleaners
             }
             
             # Calculate usage percentages

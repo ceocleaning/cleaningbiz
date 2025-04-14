@@ -134,6 +134,12 @@
                                     <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
                                         <i class="fas fa-check text-success fs-6"></i>
                                     </div>
+                                    <span class="text-white opacity-80">{{ plan.cleaners }} Cleaners</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle me-3" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-check text-success fs-6"></i>
+                                    </div>
                                     <span class="text-white opacity-80">
                                         {% if plan.billing_cycle == 'yearly' %}
                                         {{ plan.get_monthly_display_limits.leads }} Leads/month
@@ -248,6 +254,13 @@
                     <div class="comparison-cell text-center">{{ starter_plan.agents }}</div>
                     <div class="comparison-cell text-center highlight">{{ professional_plan.agents }}</div>
                     <div class="comparison-cell text-center">{{ enterprise_plan.agents }}</div>
+                </div>
+                
+                <div class="comparison-row">
+                    <div class="comparison-cell feature-name">Cleaners</div>
+                    <div class="comparison-cell text-center">{{ starter_plan.cleaners }}</div>
+                    <div class="comparison-cell text-center highlight">{{ professional_plan.cleaners }}</div>
+                    <div class="comparison-cell text-center">{{ enterprise_plan.cleaners }}</div>
                 </div>
                 
                 <div class="comparison-row">

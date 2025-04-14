@@ -90,6 +90,12 @@
                             <span>{{ subscription.plan.leads }} Leads</span>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>{{ subscription.plan.cleaners }} Cleaners</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="d-flex align-items-center">
@@ -210,6 +216,23 @@
                                 {% endif %}
                             </div>
                         </div>
+                        
+                        <!-- Cleaners Usage -->
+                        <div class="col-md-3 mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Cleaners</span>
+                                <span class="fw-bold">{{ usage_summary.total.cleaners }} / {{ subscription.plan.cleaners }}</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 10px;">
+                                {% if usage_summary.usage_percentage.cleaners >= 80 %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% elif usage_summary.usage_percentage.cleaners >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                     <div class="alert alert-info mb-0">
                         <div class="d-flex align-items-center">
@@ -263,14 +286,16 @@
                 {% if plan.billing_cycle == 'monthly' %}
                 <div class="col plan-card" data-plan-type="monthly">
                     <div class="card h-100 {% if plan.id == subscription.plan.id %}border-primary{% endif %}">
-                        <div class="card-header bg-transparent">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ plan.name }}</h5>
-                            {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
-                                <span class="badge bg-primary">Current Plan</span>
-                            {% endif %}
-                            {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
-                                <span class="badge bg-info">Future Plan</span>
-                            {% endif %}
+                            <div>
+                                {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
+                                    <span class="badge bg-primary">Current Plan</span>
+                                {% endif %}
+                                {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
+                                    <span class="badge bg-info">Future Plan</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="card-body d-flex flex-column">
                             <p class="price-tag text-center mb-3">
@@ -279,21 +304,25 @@
                                 <span class="period">/month</span>
                             </p>
                             <ul class="list-group list-group-flush mb-4">
-                                <li class="list-group-item">
+                                <li class="list-group-item d-flex align-items-center">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.voice_minutes }} Voice Minutes
+                                    <span>{{ plan.voice_minutes }} Voice Minutes</span>
                                 </li>
-                                <li class="list-group-item">
+                                <li class="list-group-item d-flex align-items-center">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.leads }} Leads
+                                    <span>{{ plan.sms_messages }} SMS Messages</span>
                                 </li>
-                                <li class="list-group-item">
+                                <li class="list-group-item d-flex align-items-center">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.sms_messages }} SMS Messages
+                                    <span>{{ plan.leads }} Leads</span>
                                 </li>
-                                <li class="list-group-item">
+                                <li class="list-group-item d-flex align-items-center">
                                     <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ plan.agents }} Voice Agents
+                                    <span>{{ plan.agents }} Voice Agents</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.cleaners }} Cleaners</span>
                                 </li>
                             </ul>
                             <div class="d-grid mt-auto">
@@ -340,12 +369,14 @@
                     <div class="card h-100 {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}border-primary{% endif %}">
                         <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ plan.name }}</h5>
-                            {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
-                                <span class="badge bg-primary">Current</span>
-                            {% endif %}
-                            {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
-                                <span class="badge bg-info">Future</span>
-                            {% endif %}
+                            <div>
+                                {% if plan.id == subscription.plan.id and subscription.status != 'cancelled' %}
+                                    <span class="badge bg-primary">Current</span>
+                                {% endif %}
+                                {% if next_plan and plan.id == next_plan.id and subscription.status != 'cancelled' %}
+                                    <span class="badge bg-info">Future</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="card-body d-flex flex-column">
                             <p class="price-tag text-center mb-1">
@@ -357,50 +388,52 @@
                                 <span>billed annually at ${{ plan.price|floatformat:2 }}</span>
                                 <span class="badge bg-success ms-1">Save 20%</span>
                             </p>
-                            <div class="features mb-4">
-                                <ul class="list-unstyled">
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>{{ plan.get_monthly_display_limits.voice_minutes }} Voice Minutes/month</span>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>{{ plan.agents }} AI Agents</span>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>{{ plan.get_monthly_display_limits.sms_messages }} SMS Messages/month</span>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>{{ plan.get_monthly_display_limits.leads }} Leads/month</span>
-                                    </li>
-                                    {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        Basic Analytics
-                                    </li>
-                                    {% endif %}
-                                    {% if plan.features.advanced_analytics %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        Advanced Analytics
-                                    </li>
-                                    {% endif %}
-                                    {% if plan.features.custom_voice %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        Custom Voice Options
-                                    </li>
-                                    {% endif %}
-                                    {% if plan.features.priority_support %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        Priority Support
-                                    </li>
-                                    {% endif %}
-                                </ul>
-                            </div>
+                            <ul class="list-group list-group-flush mb-4">
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.get_monthly_display_limits.voice_minutes }} Voice Minutes/month</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.get_monthly_display_limits.sms_messages }} SMS Messages/month</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.get_monthly_display_limits.leads }} Leads/month</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.agents }} Voice Agents</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ plan.cleaners }} Cleaners</span>
+                                </li>
+                                {% if plan.features.basic_analytics and not plan.features.advanced_analytics %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Basic Analytics</span>
+                                </li>
+                                {% endif %}
+                                {% if plan.features.advanced_analytics %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Advanced Analytics</span>
+                                </li>
+                                {% endif %}
+                                {% if plan.features.custom_voice %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Custom Voice Options</span>
+                                </li>
+                                {% endif %}
+                                {% if plan.features.priority_support %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Priority Support</span>
+                                </li>
+                                {% endif %}
+                            </ul>
                             <div class="d-grid mt-auto">
                                 {% if subscription %}
                                     {% if subscription.plan.id == plan.id %}
@@ -442,38 +475,44 @@
             </div>
 
             {% if is_eligible_for_trial %}
-                <div class="col plan-card" data-plan-type="trial">
-                    <div class="card h-100 border-primary">
-                        <div class="card-header bg-transparent">
-                            <h5 class="card-title mb-0">{{ trial_plan.name }}</h5>
-                            <span class="badge bg-primary">Trial</span>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <p class="price-tag text-center mb-3">
-                                <span class="currency">$</span>
-                                <span class="amount">{{ trial_plan.price }}</span>
-                                <span class="period">/month</span>
-                            </p>
-                            <ul class="list-group list-group-flush mb-4">
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ trial_plan.voice_minutes }} Voice Minute
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ trial_plan.leads }} Lead
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ trial_plan.sms_messages }} SMS Message
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    {{ trial_plan.agents }} Voice Agent
-                                </li>
-                            </ul>
-                            <div class="d-grid mt-auto">
-                                <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="btn btn-primary">Start Trial</a>
+                <div class="row mt-4">
+                    <div class="col-md-4 mx-auto">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">{{ trial_plan.name }}</h5>
+                                <span class="badge bg-primary">Trial</span>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <p class="price-tag text-center mb-3">
+                                    <span class="currency">$</span>
+                                    <span class="amount">{{ trial_plan.price }}</span>
+                                    <span class="period">/month</span>
+                                </p>
+                                <ul class="list-group list-group-flush mb-4">
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ trial_plan.voice_minutes }} Voice Minute</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ trial_plan.sms_messages }} SMS Message</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ trial_plan.leads }} Lead</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ trial_plan.agents }} Voice Agent</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>{{ trial_plan.cleaners }} Cleaner</span>
+                                    </li>
+                                </ul>
+                                <div class="d-grid mt-auto">
+                                    <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="btn btn-primary">Start Trial</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -678,6 +717,51 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Add enhanced styling for plan cards
+        const style = document.createElement('style');
+        style.textContent = `
+            .price-tag {
+                font-size: 1.8rem;
+                font-weight: 600;
+                color: #333;
+            }
+            .price-tag .currency {
+                font-size: 1.2rem;
+                vertical-align: super;
+                font-weight: 500;
+            }
+            .price-tag .period {
+                font-size: 1rem;
+                color: #6c757d;
+                font-weight: 400;
+            }
+            .card-header {
+                padding: 1rem;
+                border-bottom: 1px solid rgba(0,0,0,.125);
+            }
+            .list-group-item {
+                padding: 0.75rem 1rem;
+            }
+            .list-group-item i {
+                min-width: 20px;
+            }
+            .plan-card .card {
+                transition: all 0.3s ease;
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            }
+            .plan-card .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            }
+            .border-primary {
+                border-width: 2px !important;
+            }
+            .badge {
+                padding: 0.5em 0.65em;
+            }
+        `;
+        document.head.appendChild(style);
+        
         // Toggle between monthly and yearly plans
         const billingToggle = document.getElementById('billingToggle');
         const billingCycleText = document.getElementById('billingCycle');
@@ -723,8 +807,8 @@
         window.addEventListener('resize', equalizeCardHeights);
 
         // Add CSS for the loader
-        const style = document.createElement('style');
-        style.textContent = `
+        const loaderStyle = document.createElement('style');
+        loaderStyle.textContent = `
             .plan-loader {
                 display: flex;
                 justify-content: center;
@@ -741,7 +825,7 @@
                 opacity: 0.6;
             }
         `;
-        document.head.appendChild(style);
+        document.head.appendChild(loaderStyle);
 
         // Handle cancel plan change
         const cancelPlanChangeForm = document.querySelector('.cancel-plan-change-form');

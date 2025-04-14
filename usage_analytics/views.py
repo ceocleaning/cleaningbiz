@@ -35,6 +35,7 @@ def usage_overview(request):
             'sms_messages_limit': subscription.plan.sms_messages,
             'agents_limit': subscription.plan.agents,
             'leads_limit': subscription.plan.leads,
+            'cleaners_limit': subscription.plan.cleaners,
             'features': feature_list
         }
     else:
@@ -48,6 +49,7 @@ def usage_overview(request):
             'sms_messages_limit': 0,
             'agents_limit': 0,
             'leads_limit': 0,
+            'cleaners_limit': 0,
             'features': []
         }
     
@@ -65,7 +67,7 @@ def usage_overview(request):
     sms_messages_percentage = min(round((usage_summary.get('total', {}).get('sms_messages', 0) / subscription_data['sms_messages_limit']) * 100, 0), 100) if subscription_data['sms_messages_limit'] > 0 else 0
     agents_percentage = min(round((usage_summary.get('total', {}).get('active_agents', 0) / subscription_data['agents_limit']) * 100, 0), 100) if subscription_data['agents_limit'] > 0 else 0
     leads_percentage = min(round((usage_summary.get('total', {}).get('leads_generated', 0) / subscription_data['leads_limit']) * 100, 0), 100) if subscription_data['leads_limit'] > 0 else 0
-    
+    cleaners_percentage = min(round((usage_summary.get('total', {}).get('cleaners', 0) / subscription_data['cleaners_limit']) * 100, 0), 100) if subscription_data['cleaners_limit'] > 0 else 0
     # Get recent activities (calls and SMS)
     recent_activities = UsageService.get_recent_activities(business, limit=10)
     
@@ -99,6 +101,11 @@ def usage_overview(request):
                 'used': usage_summary.get('total', {}).get('leads_generated', 0),
                 'limit': subscription_data['leads_limit'],
                 'percentage': leads_percentage
+            },
+            'cleaners': {
+                'used': usage_summary.get('total', {}).get('cleaners', 0),
+                'limit': subscription_data['cleaners_limit'],
+                'percentage': cleaners_percentage
             }
         },
         # Voice module key metrics
@@ -616,6 +623,7 @@ def get_usage_data(request):
     sms_messages_data = []
     agents_data = []
     leads_data = []
+    cleaners_data = []
     
     # Process daily data from usage summary
     daily_data = usage_summary.get('daily', [])
@@ -637,7 +645,7 @@ def get_usage_data(request):
         sms_messages_data.append(day_data.get('sms_messages', 0))
         agents_data.append(day_data.get('active_agents', 0))
         leads_data.append(day_data.get('leads_generated', 0))
-        
+        cleaners_data.append(day_data.get('cleaners', 0))
         current_date += timedelta(days=1)
     
     # Get current subscription using the active_subscription method
@@ -658,6 +666,7 @@ def get_usage_data(request):
             'sms_messages_limit': subscription.plan.sms_messages,
             'agents_limit': subscription.plan.agents,
             'leads_limit': subscription.plan.leads,
+            'cleaners_limit': subscription.plan.cleaners,
             'features': feature_list
         }
     else:
@@ -671,6 +680,7 @@ def get_usage_data(request):
             'sms_messages_limit': 0,
             'agents_limit': 0,
             'leads_limit': 0,
+            'cleaners_limit': 0,
             'features': []
         }
     
@@ -700,7 +710,7 @@ def get_usage_data(request):
     total_agents = total_data.get('active_agents', 0)
     print(f"Total Agents - GET USAGE DATA: {total_agents}")
     total_leads = total_data.get('leads_generated', 0)
-    
+    total_cleaners = total_data.get('cleaners', 0)
     # Calculate average call duration
     avg_duration = f"{round(total_voice_minutes / total_calls_count, 1)}m" if total_calls_count > 0 else "0m"
     
@@ -711,6 +721,7 @@ def get_usage_data(request):
         'sms_messages': sms_messages_data,
         'agents': agents_data,
         'leads': leads_data,
+        'cleaners': cleaners_data,
         'subscription': subscription_data,
         'usage_summary': usage_summary,
         'recent_activities': activity_data,
@@ -735,6 +746,11 @@ def get_usage_data(request):
             'total_leads': total_leads,
             'usage_percentage': f"{round(total_leads / subscription_data['leads_limit'] * 100 if subscription_data['leads_limit'] > 0 else 0)}%",
             'conversion_rate': f"{round(total_data.get('lead_conversions', 0) / total_leads * 100 if total_leads > 0 else 0)}%"
+        },
+        'cleaner_metrics': {
+            'total_cleaners': total_cleaners,
+            'usage_percentage': f"{round(total_cleaners / subscription_data['cleaners_limit'] * 100 if subscription_data['cleaners_limit'] > 0 else 0)}%",
+            'features_count': len(subscription_data['features'])
         }
     }
     

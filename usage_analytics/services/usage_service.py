@@ -354,6 +354,71 @@ class UsageService:
             }
     
     @staticmethod
+    def check_cleaners_limit(business):
+        """
+        Check if a business has exceeded its cleaners limit.
+        
+        Args:
+            business: The business to check
+            
+        Returns:
+            Dict with limit details
+        """
+        import traceback
+        from subscription.models import BusinessSubscription
+        from datetime import datetime
+        
+        try:
+            # Get active subscription
+            active_subscription = business.active_subscription()
+            
+            # If no subscription, return no limit exceeded
+            if not active_subscription:
+                print(f"[DEBUG] No active subscription found for {business.businessName}")
+                return {
+                    'limit': 0,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Get plan
+            plan = active_subscription.plan
+            cleaners_limit = plan.cleaners
+            
+            if cleaners_limit <= 0:  # No limit or invalid limit
+                return {
+                    'limit': cleaners_limit,
+                    'used': 0,
+                    'exceeded': False
+                }
+            
+            # Count active cleaners directly from the database
+            from automation.models import Cleaners
+            active_cleaners = Cleaners.objects.filter(business=business).count()
+            exceeded = active_cleaners >= cleaners_limit
+            
+            print(f"[DEBUG] Cleaners: Used {active_cleaners}/{cleaners_limit} - Exceeded: {exceeded}")
+            
+            return {
+                'limit': cleaners_limit,
+                'used': active_cleaners,
+                'exceeded': exceeded
+            }
+        except Exception as e:
+            print(f"[ERROR] Error checking cleaners limit: {str(e)}")
+            print(traceback.format_exc())
+            return {
+                'limit': 0,
+                'used': 0,
+                'exceeded': False,
+                'error': str(e)
+            }
+        
+    
+
+
+
+    @staticmethod
     def get_business_usage(business, start_date=None, end_date=None):
         """
         Get usage metrics for a business within a date range.
@@ -584,10 +649,13 @@ class UsageService:
             
             # Check limits
             voice_minutes_exceeded = current_usage['voice_minutes'] > subscription.plan.voice_minutes
-            voice_calls_exceeded = current_usage['voice_calls'] > subscription.plan.voice_calls
             sms_messages_exceeded = current_usage['sms_messages'] > subscription.plan.sms_messages
+            active_agents_exceeded = current_usage['active_agents'] > subscription.plan.agents
+            leads_generated_exceeded = current_usage['leads_generated'] > subscription.plan.leads
+            cleaners_exceeded = current_usage['cleaners'] > subscription.plan.cleaners
+
             
-            limits_exceeded = voice_minutes_exceeded or voice_calls_exceeded or sms_messages_exceeded
+            limits_exceeded = voice_minutes_exceeded or sms_messages_exceeded or active_agents_exceeded or leads_generated_exceeded or cleaners_exceeded
             
             return {
                 'has_active_subscription': True,
@@ -597,15 +665,25 @@ class UsageService:
                     'limit': subscription.plan.voice_minutes,
                     'exceeded': voice_minutes_exceeded
                 },
-                'voice_calls': {
-                    'used': current_usage['voice_calls'],
-                    'limit': subscription.plan.voice_calls,
-                    'exceeded': voice_calls_exceeded
+                'active_agents': {
+                    'used': current_usage['active_agents'],
+                    'limit': subscription.plan.agents,
+                    'exceeded': active_agents_exceeded
                 },
                 'sms_messages': {
                     'used': current_usage['sms_messages'],
                     'limit': subscription.plan.sms_messages,
                     'exceeded': sms_messages_exceeded
+                },
+                'leads_generated': {
+                    'used': current_usage['leads_generated'],
+                    'limit': subscription.plan.leads,
+                    'exceeded': leads_generated_exceeded
+                },
+                'cleaners': {
+                    'used': current_usage['cleaners'],
+                    'limit': subscription.plan.cleaners,
+                    'exceeded': cleaners_exceeded
                 }
             }
             

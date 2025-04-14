@@ -81,6 +81,7 @@ def add_plan(request):
         sms_messages = request.POST.get('sms_messages')
         agents = request.POST.get('agents')
         leads = request.POST.get('leads')
+        cleaners = request.POST.get('cleaners')
         is_active = 'is_active' in request.POST
         
         # Create plan
@@ -92,6 +93,7 @@ def add_plan(request):
             sms_messages=sms_messages,
             agents=agents,
             leads=leads,
+            cleaners=cleaners,
             is_active=is_active
         )
         
@@ -152,6 +154,7 @@ def edit_plan(request):
         plan.sms_messages = request.POST.get('sms_messages')
         plan.agents = request.POST.get('agents')
         plan.leads = request.POST.get('leads')
+        plan.cleaners = request.POST.get('cleaners')
         plan.is_active = 'is_active' in request.POST
         
         # Save the plan

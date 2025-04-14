@@ -122,7 +122,7 @@
         </div>
         
         <!-- Agents Card -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -144,7 +144,7 @@
         </div>
         
         <!-- Leads Card -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -160,6 +160,28 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="text-muted small mb-0">{{ usage.leads.percentage }}% of your limit</p>
                         <a href="{% url 'usage_analytics:sms_analytics' %}" class="btn btn-sm btn-link p-0">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cleaners Card -->
+        <div class="col-md-2">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Cleaners</h6>
+                        <div class="rounded-circle bg-danger-light p-2">
+                            <i class="fas fa-broom text-danger"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1" id="cleanersUsed">{{ usage.cleaners.used }} / {{ usage.cleaners.limit }}</h2>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage.cleaners.percentage }}%;" aria-valuenow="{{ usage.cleaners.percentage }}" aria-valuemin="0" aria-valuemax="100" id="cleanersProgress"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">{{ usage.cleaners.percentage }}% of your limit</p>
+                        <a href="{% url 'cleaners_list' %}" class="btn btn-sm btn-link p-0">View Details</a>
                     </div>
                 </div>
             </div>
@@ -559,6 +581,15 @@
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true
+                    },
+                    {
+                        label: 'Cleaners',
+                        data: data.cleaners,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
                     }
                 ]
             },
@@ -651,6 +682,7 @@
         usageTrendsChart.data.datasets[1].data = data.sms_messages;
         usageTrendsChart.data.datasets[2].data = data.agents;
         usageTrendsChart.data.datasets[3].data = data.leads;
+        usageTrendsChart.data.datasets[4].data = data.cleaners;
         usageTrendsChart.update();
     }
 
@@ -682,6 +714,11 @@
             // Show only leads metrics
             usageTrendsChart.data.datasets.forEach((dataset, index) => {
                 dataset.hidden = index !== 3;
+            });
+        } else if (metric === 'cleaners') {
+            // Show only cleaners metrics
+            usageTrendsChart.data.datasets.forEach((dataset, index) => {
+                dataset.hidden = index !== 4;
             });
         }
         
@@ -739,6 +776,15 @@
                         data: Array.from({length: 30}, () => Math.floor(Math.random() * 20) + 5),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Cleaners',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 5) + 1),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true
@@ -905,6 +951,16 @@
         $('#leadsUsed').text(`${leadsUsed} / ${leadsLimit}`);
         $('#leadsProgress').css('width', `${leadsPercentage}%`).attr('aria-valuenow', leadsPercentage);
         
+        // Update cleaners
+        const cleanersUsed = total.cleaners || 0;
+        const cleanersLimit = subscription.cleaners_limit || 0;
+        const cleanersPercentage = cleanersLimit > 0 
+            ? Math.min(Math.round((cleanersUsed / cleanersLimit) * 100), 100) 
+            : 0;
+            
+        $('#cleanersUsed').text(`${cleanersUsed} / ${cleanersLimit}`);
+        $('#cleanersProgress').css('width', `${cleanersPercentage}%`).attr('aria-valuenow', cleanersPercentage);
+        
         // Update voice metrics
         const totalCalls = total.voice_calls || 0;
         const totalMinutes = total.voice_minutes || 0;
@@ -951,99 +1007,6 @@
         console.log('Refreshing data for period:', start.format('YYYY-MM-DD'), 'to', end.format('YYYY-MM-DD'));
         // Fetch new data from the API with the selected date range
         fetchUsageData(start, end);
-    }
-    
-    // Function to update usage metrics display
-    function updateUsageMetrics(data) {
-        if (!data || !data.usage_summary) {
-            console.warn('No usage data available to update metrics');
-            return;
-        }
-        
-        const usageSummary = data.usage_summary;
-        const total = usageSummary.total || {};
-        const subscription = data.subscription || {};
-        
-        // Update voice minutes
-        const voiceMinutesUsed = total.voice_minutes || 0;
-        const voiceMinutesLimit = subscription.voice_minutes_limit || 0;
-        const voiceMinutesPercentage = voiceMinutesLimit > 0 
-            ? Math.min(Math.round((voiceMinutesUsed / voiceMinutesLimit) * 100), 100) 
-            : 0;
-            
-        $('#voiceMinutesUsed').text(`${voiceMinutesUsed} / ${voiceMinutesLimit}`);
-        $('#voiceMinutesProgress').css('width', `${voiceMinutesPercentage}%`).attr('aria-valuenow', voiceMinutesPercentage);
-        
-        // Update SMS messages
-        const smsMessagesUsed = total.sms_messages || 0;
-        const smsMessagesLimit = subscription.sms_messages_limit || 0;
-        const smsMessagesPercentage = smsMessagesLimit > 0 
-            ? Math.min(Math.round((smsMessagesUsed / smsMessagesLimit) * 100), 100) 
-            : 0;
-            
-        $('#smsMessagesUsed').text(`${smsMessagesUsed} / ${smsMessagesLimit}`);
-        $('#smsMessagesProgress').css('width', `${smsMessagesPercentage}%`).attr('aria-valuenow', smsMessagesPercentage);
-        
-        // Update agents
-        const agentsUsed = total.active_agents || 0;
-        console.log("Agents Used: ", agentsUsed);
-        const agentsLimit = subscription.agents_limit || 0;
-        const agentsPercentage = agentsLimit > 0 
-            ? Math.min(Math.round((agentsUsed / agentsLimit) * 100), 100) 
-            : 0;
-            
-        $('#agentsUsed').text(`${agentsUsed} / ${agentsLimit}`);
-        $('#agentsProgress').css('width', `${agentsPercentage}%`).attr('aria-valuenow', agentsPercentage);
-        
-        // Update leads
-        const leadsUsed = total.leads_generated || 0;
-        const leadsLimit = subscription.leads_limit || 0;
-        const leadsPercentage = leadsLimit > 0 
-            ? Math.min(Math.round((leadsUsed / leadsLimit) * 100), 100) 
-            : 0;
-            
-        $('#leadsUsed').text(`${leadsUsed} / ${leadsLimit}`);
-        $('#leadsProgress').css('width', `${leadsPercentage}%`).attr('aria-valuenow', leadsPercentage);
-        
-        // Update voice metrics
-        const totalCalls = total.voice_calls || 0;
-        const totalMinutes = total.voice_minutes || 0;
-        const avgDuration = totalCalls > 0 ? `${(totalMinutes / totalCalls).toFixed(1)}m` : '0m';
-        const successRate = totalCalls > 0 
-            ? `${Math.round((total.successful_calls || 0) / totalCalls * 100)}%` 
-            : '0%';
-            
-        $('#totalCalls').text(totalCalls);
-        $('#totalMinutes').text(totalMinutes);
-        $('#avgDuration').text(avgDuration);
-        $('#successRate').text(successRate);
-        
-        // Update SMS metrics
-        const totalMessages = total.sms_messages || 0;
-        const responseRate = totalMessages > 0 
-            ? `${Math.round((total.sms_responses || 0) / totalMessages * 100)}%` 
-            : '0%';
-        const avgResponseTime = `${total.avg_response_time || 0}s`;
-        const conversionRate = totalMessages > 0 
-            ? `${Math.round((total.sms_conversions || 0) / totalMessages * 100)}%` 
-            : '0%';
-            
-        $('#totalMessages').text(totalMessages);
-        $('#responseRate').text(responseRate);
-        $('#avgResponseTime').text(avgResponseTime);
-        $('#conversionRate').text(conversionRate);
-        
-        // Update agent metrics
-        $('#activeAgents').text(agentsUsed);
-        $('#agentLimit').text(agentsLimit);
-        $('#agentPercentage').text(`${agentsPercentage}%`);
-        $('#agentFeatures').text(subscription.features ? subscription.features.length : 0);
-        
-        // Update lead metrics
-        $('#generatedLeads').text(leadsUsed);
-        $('#leadLimit').text(leadsLimit);
-        $('#leadPercentage').text(`${leadsPercentage}%`);
-        $('#leadConversionRate').text(conversionRate);
     }
 
     // Initialize Date Range Picker
