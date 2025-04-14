@@ -46,7 +46,7 @@ def send_booking_confirmation_sms(sender, instance, created, **kwargs):
                 message = client.messages.create(
                     to=instance.booking.phoneNumber,  # Use the booking's phone number
                     from_=apiCreds.twilioSmsNumber,
-                    body=f"Hello {instance.booking.firstName}, your appointment with {instance.booking.business.businessName} is confirmed! Your total is ${instance.amount:.2f}. View and pay your invoice here: {invoice_link}"
+                    body=f"Hello {instance.booking.firstName}, your appointment with {instance.booking.business.businessName} is pending!\n\nAppointment Details:\nDate: {instance.booking.cleaningDate}\nTime: {instance.booking.startTime}\nService: {instance.booking.serviceType}\nLocation: {instance.booking.address1}, {instance.booking.city}\n\nTotal Amount: ${instance.amount:.2f}\n\nPlease pay to confirm your appointment. View and pay your invoice here: {invoice_link}"
                 )
                 
                 print(f"SMS sent successfully to {instance.booking.phoneNumber}")
@@ -114,7 +114,7 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
                 </div>
                 <div class="content">
                     <p>Hello {instance.booking.firstName} {instance.booking.lastName},</p>
-                    <p>Your appointment with {instance.booking.business.businessName} has been confirmed. Thank you for choosing our services!</p>
+                    <p>Your appointment with {instance.booking.business.businessName} is Pending. Please Pay to confirm your appointment. Thank you for choosing our services!</p>
                     
                     <div class="details">
                         <h3>Appointment Details:</h3>
@@ -136,12 +136,43 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
                                 <td>{instance.booking.address1}, {instance.booking.city}, {instance.booking.stateOrProvince} {instance.booking.zipCode}</td>
                             </tr>
                             <tr>
+                                <td>Bedrooms:</td>
+                                <td>{instance.booking.bedrooms}</td>
+                            </tr>
+                            <tr>
+                                <td>Bedrooms:</td>
+                                <td>{instance.booking.bathrooms}</td>
+                            </tr>
+                            <tr>
+                                <td>Square Feet:</td>
+                                <td>{instance.booking.squareFeet}</td>
+                            </tr>
+                            <tr>
+                                <td>Addtional Requests:</td>
+                                <td>{instance.booking.otherRequests}</td>
+                            </tr>
+
+                            <tr>
+                                <td>Addons:</td>
+                                <td>{instance.booking.get_all_addons()}</td>
+                            </tr>
+
+
+                            <tr>
+                                <td>Subtotal:</td>
+                                <td>${instance.booking.totalPrice - instance.booking.tax}</td>
+                            </tr>
+                            <tr>
+                                <td>Tax:</td>
+                                <td>${instance.booking.tax:.2f}</td>
+                            </tr>
+                            <tr>
                                 <td>Total Amount:</td>
                                 <td>${instance.amount:.2f}</td>
                             </tr>
                         </table>
                     </div>
-                    
+                    <p>Please note that this is a pending payment. Once the payment is confirmed, your appointment will be confirmed.</p>
                     <p>To view your invoice and make a payment, please click the button below:</p>
                     <a href="{invoice_link}" class="button">View Invoice</a>
                     
@@ -158,7 +189,7 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
             # Plain text alternative
             text_content = f"""Hello {instance.booking.firstName},
 
-            Your appointment with {instance.booking.business.businessName} has been confirmed for {format_date(instance.booking.cleaningDate)} at {format_time(instance.booking.startTime)}.
+            Your appointment with {instance.booking.business.businessName} is pending for {format_date(instance.booking.cleaningDate)} at {format_time(instance.booking.startTime)}.
 
             Service: {instance.booking.serviceType.title()} Cleaning
             Address: {instance.booking.address1}, {instance.booking.city}, {instance.booking.stateOrProvince} {instance.booking.zipCode}
@@ -205,10 +236,9 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
             business = booking.business
             
             # Update payment status if not already completed
-            if instance.status != 'COMPLETED':
-                instance.status = 'COMPLETED'
-                instance.paidAt = timezone.now()
-                instance.save(update_fields=['status', 'paidAt'])
+            instance.status = 'COMPLETED'
+            instance.paidAt = timezone.now()
+            instance.save()
             
             # Send custom payment confirmation email
             try:
@@ -267,7 +297,7 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                                 </tr>
                                 <tr>
                                     <td>Payment Method:</td>
-                                    <td>Square</td>
+                                    <td>Card</td>
                                 </tr>
                             </table>
                         </div>
@@ -315,7 +345,7 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                     - Square Payment ID: {instance.squarePaymentId}
                     - Amount Paid: ${invoice.amount:.2f}
                     - Payment Date: {format_date(instance.paidAt)}
-                    - Payment Method: Square
+                    - Payment Method: Card
 
                     Appointment Details:
                     - Date: {format_date(booking.cleaningDate)}
@@ -376,6 +406,202 @@ def send_email_payment_completed(sender, instance, created, **kwargs):
                 
         except Exception as e:
             print(f"[ERROR] Error in send_email_payment_completed: {str(e)}")
+
+    else:
+        return False
+
+
+
+
+
+@receiver(post_save, sender=Payment)
+def send_email_payment_authorized(sender, instance, created, **kwargs):
+    """Send email notification to client when payment is authorized"""
+    # Check if this is a Square payment with a payment ID and the invoice is marked as paid
+    if instance.squarePaymentId or instance.status == 'AUTHORIZED' and created:
+        try:
+            # Get the invoice and related booking
+            invoice = instance.invoice
+            booking = invoice.booking
+            business = booking.business
+            
+            
+            # Send custom payment confirmation email
+            try:
+                # Get SMTP configuration for the business
+                smtp_config = SMTPConfig.objects.filter(business=business).first()
+                
+                # Create email subject and content
+                subject = f"Payment Authorized - {business.businessName}"
+                
+                # Create HTML email body
+                html_body = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Payment Authorized</title>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
+                        .content {{ padding: 20px; background-color: #f9f9f9; }}
+                        .details {{ margin: 20px 0; }}
+                        .details table {{ width: 100%; border-collapse: collapse; }}
+                        .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
+                        .details table td:first-child {{ font-weight: bold; width: 40%; }}
+                        .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
+                        .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Payment Authorized!</h1>
+                    </div>
+                    <div class="content">
+                        <p>Hello {booking.firstName} {booking.lastName},</p>
+                        <p>We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully authorized. Your card will be charged for the amount of ${invoice.amount:.2f} on day of service.</p>
+                        
+                        <div class="details">
+                            <h3>Payment Details:</h3>
+                            <table>
+                                <tr>
+                                    <td>Invoice ID:</td>
+                                    <td>{invoice.invoiceId}</td>
+                                </tr>
+                                <tr>
+                                    <td>Square Payment ID:</td>
+                                    <td>{instance.squarePaymentId}</td>
+                                </tr>
+                                <tr>
+                                    <td>Amount Paid:</td>
+                                    <td>${invoice.amount:.2f}</td>
+                                </tr>
+                                <tr>
+                                    <td>Payment Date:</td>
+                                    <td>{format_date(instance.paidAt)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Payment Method:</td>
+                                    <td>Card</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="details">
+                            <h3>Appointment Details:</h3>
+                            <table>
+                                <tr>
+                                    <td>Date:</td>
+                                    <td>{format_date(booking.cleaningDate)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Time:</td>
+                                    <td>{format_time(booking.startTime)} - {format_time(booking.endTime)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Service:</td>
+                                    <td>{booking.serviceType.title()} Cleaning</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <p>Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!</p>
+                        
+                        <p>If you have any questions or need to make changes to your appointment, please contact us.</p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; {timezone.now().year} {business.businessName}. All rights reserved.</p>
+                        <p>{business.address}</p>
+                        <p>Phone: {business.phone} | Email: {business.user.email}</p>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                # Create plain text version
+                text_body = f"""Payment Authorized - {business.businessName}
+                
+                    Hello {booking.firstName} {booking.lastName},
+
+                    We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully authorized. Your card will be charged for the amount of ${invoice.amount:.2f} on day of service.
+
+                    Payment Details:
+                    - Invoice ID: {invoice.invoiceId}
+                    - Square Payment ID: {instance.squarePaymentId}
+                    - Amount Authorized: ${invoice.amount:.2f}
+                    - Authorization Date: {format_date(instance.updatedAt)}
+                    - Payment Method: Card
+
+                    Appointment Details:
+                    - Date: {format_date(booking.cleaningDate)}
+                    - Time: {format_time(booking.startTime)} - {format_time(booking.endTime)}
+                    - Service: {booking.serviceType.title()} Cleaning
+
+                    Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!
+
+                    If you have any questions or need to make changes to your appointment, please contact us.
+
+                    {business.businessName}
+                    {business.address}
+                    Phone: {business.phone} | Email: {business.user.email}
+                """
+                
+                # Set up email parameters
+                from_email = f"{business.businessName} <{business.email}>" if business.email else settings.DEFAULT_FROM_EMAIL
+                recipient_email = booking.email
+                
+                # Send email based on available configuration
+                if smtp_config:
+                    # Create message container
+                    msg = MIMEMultipart('alternative')
+                    msg['Subject'] = subject
+                    msg['From'] = from_email
+                    msg['To'] = recipient_email
+                    
+                    # Attach parts
+                    part1 = MIMEText(text_body, 'plain')
+                    part2 = MIMEText(html_body, 'html')
+                    msg.attach(part1)
+                    msg.attach(part2)
+                    
+                    # Send using custom SMTP
+                    server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
+                    server.starttls()
+                    server.login(smtp_config.username, smtp_config.password)
+                    server.send_message(msg)
+                    server.quit()
+                else:
+                    # Use Django's email system
+                    from django.core.mail import EmailMultiAlternatives
+                    email_message = EmailMultiAlternatives(
+                        subject=subject,
+                        body=text_body,
+                        from_email=from_email,
+                        to=[recipient_email]
+                    )
+                    email_message.attach_alternative(html_body, "text/html")
+                    email_message.send()
+                
+                print(f"[DEBUG] Payment confirmation email sent successfully for invoice {invoice.invoiceId}")
+                return True
+                
+            except Exception as e:
+                print(f"[ERROR] Failed to send payment confirmation email: {str(e)}")
+                return False
+                
+        except Exception as e:
+            print(f"[ERROR] Error in send_email_payment_completed: {str(e)}")
+
+    else:
+        return False
+
+
+
+
+
+
+
 
 
 # Helper functions for date and time formatting
