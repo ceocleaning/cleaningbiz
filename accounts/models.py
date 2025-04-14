@@ -43,6 +43,17 @@ class Business(models.Model):
 
     def get_square_credentials(self):
         return self.square_credentials
+    
+
+    def has_availed_trial(self):
+        from subscription.models import BusinessSubscription, SubscriptionPlan
+        plan = SubscriptionPlan.objects.filter(name__icontains='Trial').first()
+        subscription = BusinessSubscription.objects.filter(
+            business=self,
+            plan=plan
+        )
+        return subscription.exists()
+
         
     def active_subscription(self):
         """

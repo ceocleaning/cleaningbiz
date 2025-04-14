@@ -1001,8 +1001,16 @@ def approval_pending(request):
     if business.isApproved:
         messages.success(request, 'Your business is already approved!')
         return redirect('accounts:profile')
+    from subscription.models import SubscriptionPlan
+
+    trial_plan = SubscriptionPlan.objects.filter(name__icontains='Trial').first()
     
-    return render(request, 'accounts/approval_pending.html', {'business': business})
+    context = {
+        'business': business,
+        'trial_plan': trial_plan
+    }
+    
+    return render(request, 'accounts/approval_pending.html', context)
 
 
 

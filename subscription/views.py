@@ -706,6 +706,11 @@ def process_payment(request, plan_id):
                     user=request.user,
                     subscription=new_subscription
                 )
+
+            if not business.isApproved or not business.isActive:
+                business.isApproved = True
+                business.isActive = True
+                business.save()
             
             # Create usage tracker for the new subscription's business
             UsageTracker.objects.get_or_create(
@@ -713,6 +718,10 @@ def process_payment(request, plan_id):
                 date=timezone.now().date(),
                 defaults={'metrics': {}}  # Initialize with empty metrics
             )
+        
+        if 'trial' in plan.name.lower():
+            # Redirect to trial success page for trial plans
+            return redirect('subscription:trial_success', subscription_id=new_subscription.id)
         
         # Return success page
         return redirect('subscription:subscription_success', subscription_id=new_subscription.id, transaction_id=transaction_id)
@@ -762,6 +771,24 @@ def subscription_success(request, subscription_id, transaction_id):
     }
     
     return render(request, 'subscription/success.html', context)
+
+@login_required
+def trial_success(request, subscription_id):
+    """Show trial success page after successful trial activation."""
+    business = request.user.business_set.first()
+    subscription = get_object_or_404(BusinessSubscription, id=subscription_id, business=business)
+    
+    # Calculate trial end date
+    trial_end_date = subscription.start_date + timedelta(days=30)
+    
+    context = {
+        'subscription': subscription,
+        'trial_end_date': trial_end_date,
+        'active_page': 'subscription',
+        'title': 'Trial Activated Successfully'
+    }
+    
+    return render(request, 'accounts/trial_success.html', context)
 
 @login_required
 def cancel_plan_change(request):
@@ -946,15 +973,14 @@ def manage_card(request):
             customer_id = business.square_customer_id
         
         # Create a card for the customer
+
+        print(f"Sqaure Environment: {settings.SQUARE_ENVIRONMENT}")
         card_request = {
             'idempotency_key': str(uuid.uuid4()),
             'source_id': card_nonce,
             'card': {
                 'customer_id': customer_id,
                 'cardholder_name': f"{request.user.first_name} {request.user.last_name}".strip() or business.businessName,
-                'billing_address': {
-                    'postal_code': request.POST.get('postal-code', '12345')
-                }
             }
         }
         
@@ -977,6 +1003,7 @@ def manage_card(request):
                 return redirect('subscription:subscription_management')
             else:
                 # Log detailed error information
+                print(f"Card Result: {card_result}")
                 errors = card_result.errors
                 error_message = "Failed to save card: "
                 for error in errors:

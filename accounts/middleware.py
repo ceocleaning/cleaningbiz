@@ -13,8 +13,8 @@ class BusinessApprovalMiddleware:
         
     def __call__(self, request):
         # Skip middleware if user is not authenticated or is admin
-        if not request.user.is_authenticated or request.user.is_staff or request.user.is_superuser:
-            return self.get_response(request)
+        # if not request.user.is_authenticated or request.user.is_staff or request.user.is_superuser:
+        #     return self.get_response(request)
             
         # Skip for cleaner users - they'll be handled by CleanerAccessMiddleware
         if request.user.groups.filter(name='Cleaner').exists():
@@ -25,7 +25,8 @@ class BusinessApprovalMiddleware:
             'login', 'logout', 'signup', 'register_business', 
             'approval_pending', 'profile', 'update_profile', 'change_password',
             'forgot_password', 'verify_otp', 'resend_otp', 'reset_password',
-            'admin:index', 'admin:login'
+            'admin:index', 'admin:login', 'select_plan', 'subscription_management', 'manage_card',
+            'process_payment'
         ]
         
         # Also skip if URL is exempt or is admin URL
@@ -47,6 +48,8 @@ class BusinessApprovalMiddleware:
                 if not business.isApproved and current_url != 'approval_pending':
                     messages.warning(request, 'Your business is pending approval. You will have access to all features once approved.')
                     return redirect('accounts:approval_pending')
+                else:
+                    print(f"DEBUG: Allowing access to {current_url}")
             except:
                 pass
         

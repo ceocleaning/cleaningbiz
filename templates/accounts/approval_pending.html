@@ -43,7 +43,7 @@
     .step {
         display: flex;
         align-items: flex-start;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
     }
     
     .step:last-child {
@@ -111,6 +111,38 @@
         font-size: 1.25rem;
         margin-bottom: 1rem;
     }
+    
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+    }
+    
+    .trial-btn {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .trial-btn:hover {
+        background-color: var(--success-dark);
+        transform: translateY(-2px);
+    }
 </style>
 {% endblock %}
 
@@ -124,7 +156,7 @@
         <h1 class="pending-title">Your Business Registration is Pending Approval</h1>
         
         <p class="pending-message">
-            Thank you for registering your business with CleaningBiz AI! Your registration has been received and is currently pending approval by our team. This process typically takes 1-2 business days.
+            Thank you for registering your business with CleaningBiz AI! Your registration has been received and is currently pending approval by our team. While you wait, please complete the following steps to get started.
         </p>
         
         <div class="steps-container text-start">
@@ -133,34 +165,34 @@
             <div class="step">
                 <div class="step-number">1</div>
                 <div class="step-content">
-                    <div class="step-title">Book a Demo Call</div>
-                    <p>Schedule a 30-minute demo call with our team to learn how to maximize your CleaningBiz AI experience.</p>
-                    <a href="https://tidycal.com/cleaningbiz/30-min-cleaning-biz-ai-demo" class="btn btn-primary mt-2" target="_blank">
-                        <i class="fas fa-calendar-check me-2"></i>Book Demo Call
-                    </a>
+                    <div class="step-title">Watch our Demo Video</div>
+                    <p>Learn how CleaningBiz AI can transform your cleaning business operations with our comprehensive demo video.</p>
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="CleaningBiz AI Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
                 </div>
             </div>
             
             <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-content">
-                    <div class="step-title">Approval Notification</div>
-                    <p>Once approved, you'll receive an email notification confirming your approval.</p>
+                    <div class="step-title">Sign Up for 30-Day Trial</div>
+                    <p>Get full access to all CleaningBiz AI features for 30 days for just $30. Experience the power of our platform with no long-term commitment.</p>
+                    <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="btn trial-btn mt-2">
+                        <i class="fas fa-rocket me-2"></i>Start 30-Day Trial for $30
+                    </a>
                 </div>
             </div>
             
             <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-content">
-                    <div class="step-title">Access Granted</div>
-                    <p>After approval, you'll have full access to all CleaningBiz AI tools and features.</p>
+                    <div class="step-title">Book a Personalized Call</div>
+                    <p>Schedule a one-on-one call with our experts to get personalized guidance for your specific business needs.</p>
+                    <a href="https://tidycal.com/cleaningbiz/30-min-cleaning-biz-ai-demo" class="btn btn-secondary mt-2 disabled" style="opacity: 0.65; pointer-events: none;" target="_blank">
+                        <i class="fas fa-calendar-check me-2"></i>Book Your Personalized Call
+                    </a>
                 </div>
-            </div>
-
-            <div class="text-center mt-3">
-                <a href="https://tidycal.com/cleaningbiz/30-min-cleaning-biz-ai-demo" class="text-primary text-decoration-none" target="_blank">
-                    Ready to get started? Book your demo <i class="fas fa-arrow-right ms-1"></i>
-                </a>
             </div>
         </div>
         

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Trial Activated Successfully{% endblock %}
+
+{% block styles %}
+<style>
+    .success-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .success-icon {
+        font-size: 3.5rem;
+        color: var(--success-color);
+        margin-bottom: 1rem;
+    }
+    
+    .success-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 0.75rem;
+    }
+    
+    .success-message {
+        font-size: 1rem;
+        color: var(--gray-color);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+    
+    .info-card {
+        background-color: var(--primary-light);
+        border-radius: 0.5rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--primary-dark);
+    }
+    
+    .info-card p {
+        margin-bottom: 1rem;
+    }
+    
+    .trial-details {
+        background-color: var(--light-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .trial-details p {
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .trial-details strong {
+        color: var(--primary-dark);
+    }
+    
+    .demo-card {
+        background-color: var(--light-color);
+        border-radius: 0.5rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border-left: 3px solid var(--primary-color);
+    }
+    
+    .btn-demo {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        font-weight: 600;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-demo:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .action-buttons {
+        margin-top: 1.5rem;
+    }
+    
+    .btn-dashboard {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        font-weight: 600;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-dashboard:hover {
+        background-color: #007bff;
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="success-container text-center">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h1 class="success-title">Trial Activated Successfully!</h1>
+        
+        <p class="success-message">
+            Thank you for subscribing to CleaningBiz AI 30-day trial! Your account has been activated and you now have full access to all our features.
+        </p>
+        
+        <div class="trial-details text-start">
+            <p><strong>Plan:</strong> 30-Day Trial</p>
+            <p><strong>Amount:</strong> $30</p>
+            <p><strong>Duration:</strong> 30 days</p>
+            <p><strong>Expiry Date:</strong> {{ trial_end_date|date:"F j, Y" }}</p>
+        </div>
+        
+        <div class="info-card text-start">
+            <h2>What's Next?</h2>
+            <p>You now have full access to the CleaningBiz AI platform. To make the most of your trial period, we recommend booking a personalized demo call with our experts who will guide you through the platform and show you how to maximize its benefits for your business.</p>
+        </div>
+        
+        <div class="demo-card text-start">
+            <h3 class="mb-3">Book a Personalized Demo</h3>
+            <p>Get personalized guidance from our experts and learn how to leverage CleaningBiz AI for your specific business needs.</p>
+            <a href="https://tidycal.com/cleaningbiz/30-min-cleaning-biz-ai-demo" class="btn btn-demo mt-2" target="_blank">
+                <i class="fas fa-calendar-check me-2"></i>Book Your Personalized Demo
+            </a>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{% url 'home' %}" class="btn btn-dashboard">
+                <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 
