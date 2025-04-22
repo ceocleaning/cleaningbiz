@@ -9,7 +9,7 @@ import json
 import dateparser
 from automation.api_views import get_cleaners_for_business, find_available_cleaner, is_slot_available, find_alternate_slots
 from automation.utils import calculateAmount, calculateAddonsAmount, sendInvoicetoClient, sendEmailtoClientInvoice 
-from automation.webhooks import send_booking_data
+
 import traceback
 import pytz
 from .utils import convert_date_str_to_date
@@ -24,23 +24,6 @@ from django.core.mail import EmailMultiAlternatives
 
 
 def calculate_total(business, client_phone_number=None, session_key=None):
-    """Function to calculate total price based on user information and business settings.
-    
-    Args:
-        business: The Business object for which to calculate the total
-        client_phone_number: The phone number of the client
-        OR
-        session_key: The session key of the chat
-    
-    Returns:
-        Dictionary with pricing details including base price, addons total, subtotal, tax, and total
-        
-    """
-
-    print(f"[INFO] Calculating total for business: {business.businessName}")
-    print(f"[INFO] Client phone number: {client_phone_number}")
-    print(f"[INFO] Session key: {session_key}")
-
     try:
         if session_key:
             chat = Chat.objects.get(business=business, sessionKey=session_key)
@@ -218,24 +201,6 @@ def check_availability(business, date_string):
 
 
 def book_appointment(business, client_phone_number=None, session_key=None):
-    """Function to book an appointment for the AI agent.
-    Creates a booking in the system based on customer details collected by the AI agent.
-    
-    Args:
-        business: The Business object for which to create the booking
-        client_phone_number: The phone number of the client
-        booking_data: Optional dictionary containing customer details and addon selections extracted from conversation
-            Required fields: firstName, lastName, phoneNumber, address1, city, state, 
-            serviceType, appointmentDateTime, bedrooms, bathrooms, squareFeet
-    
-    Returns:
-        Dictionary with booking details or error information
-    """
-
-    print(f"[INFO] Booking appointment for business: {business.businessName}")
-    print(f"[INFO] Client phone number: {client_phone_number}")
-    print(f"[INFO] Session key: {session_key}")
-
     try:
         if session_key:
             chat = Chat.objects.get(business=business, sessionKey=session_key)
@@ -458,8 +423,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             newBooking.save()
             print(f"[DEBUG] Added {len(bookingCustomAddons)} custom addons to booking")
         
-        # Send booking data to integration if needed
-        print("[DEBUG] Sending booking data to integration")
+        from automation.webhooks import send_booking_data
         send_booking_data(newBooking)
         
         # Update chat summary with booking ID

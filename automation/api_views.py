@@ -743,9 +743,10 @@ from ai_agent.api_views import reschedule_appointment, cancel_appointment
 @api_view(['POST'])
 def reschedule_booking(request):
     try:
-        data = json.loads(request.body)
+        request_data = json.loads(request.body)
+        data = request_data.get('args')
         booking_id = data.get('booking_id')
-        new_date_time = data.get('new_date_time')
+        new_date_time = data.get('next_date_time')
         
         booking = Booking.objects.get(bookingId=booking_id)
         
@@ -769,7 +770,8 @@ def reschedule_booking(request):
 @api_view(['POST'])
 def cancel_booking(request):
     try:
-        data = json.loads(request.body)
+        request_data = json.loads(request.body)
+        data = request_data.get('args')
         booking_id = data.get('booking_id')
         
         booking = Booking.objects.filter(bookingId=booking_id).first()
