@@ -1080,7 +1080,7 @@ def payment_square_view(request):
         'payments': payments,
     }
     
-    return render(request, 'accounts/payment_square.html', context)
+    return render(request, 'accounts/payments/payment_square.html', context)
 
 @login_required
 def manage_square_credentials(request):

@@ -35,11 +35,14 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
                 )
 
                 
-                # Check if delete_unpaid_bookings is already scheduled
+                # Schedule recurring tasks if not already scheduled
                 schedule_delete_unpaid_bookings()
+                schedule_day_before_reminder()
+                schedule_hour_before_reminder()
+                schedule_post_service_followup()
                 
         except Exception as e:
-            print(f"[ERROR] Error creating invoice for booking {instance.bookingId}: {str(e)}")
+            logger.error(f"Error creating invoice for booking {instance.bookingId}: {str(e)}")
 
 
 def schedule_delete_unpaid_bookings():
@@ -56,16 +59,79 @@ def schedule_delete_unpaid_bookings():
         
         if not existing_schedule:
             # Schedule the task to run hourly
-            schedule_id = schedule(
+            schedule(
                 'bookings.tasks.delete_unpaid_bookings',
                 schedule_type='H',  # Hourly
                 repeats=-1  # Repeat indefinitely
             )
-        else:
-            print(f"[INFO] delete_unpaid_bookings task already scheduled with ID: {existing_schedule.id}")
             
     except Exception as e:
-        print(f"[ERROR] Failed to schedule delete_unpaid_bookings task: {str(e)}")
+        logger.error(f"Failed to schedule delete_unpaid_bookings task: {str(e)}")
+
+
+def schedule_day_before_reminder():
+    try:
+        existing_schedule = Schedule.objects.filter(
+            func='bookings.tasks.send_day_before_reminder',
+            schedule_type=Schedule.DAILY
+        ).first()
+        
+        if not existing_schedule:
+            next_run = timezone.now().replace(hour=10, minute=0, second=0, microsecond=0)
+            if next_run <= timezone.now():
+                next_run += timedelta(days=1)
+                
+            schedule(
+                'bookings.tasks.send_day_before_reminder',
+                schedule_type='D', 
+                next_run=next_run,
+                repeats=-1
+            )
+            
+    except Exception as e:
+        logger.error(f"Failed to schedule send_day_before_reminder task: {str(e)}")
+
+
+def schedule_hour_before_reminder():
+    try:
+        existing_schedule = Schedule.objects.filter(
+            func='bookings.tasks.send_hour_before_reminder',
+            schedule_type=Schedule.HOURLY
+        ).first()
+        
+        if not existing_schedule:
+            schedule(
+                'bookings.tasks.send_hour_before_reminder',
+                schedule_type='H', 
+                repeats=-1  
+            )
+            
+    except Exception as e:
+        logger.error(f"Failed to schedule send_hour_before_reminder task: {str(e)}")
+
+
+def schedule_post_service_followup():
+    try:
+        
+        existing_schedule = Schedule.objects.filter(
+            func='bookings.tasks.send_post_service_followup',
+            schedule_type=Schedule.DAILY
+        ).first()
+        
+        if not existing_schedule:
+            next_run = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0)
+            if next_run <= timezone.now():
+                next_run += timedelta(days=1)
+                
+            schedule(
+                'bookings.tasks.send_post_service_followup',
+                schedule_type='D', 
+                next_run=next_run,
+                repeats=-1  
+            )
+            
+    except Exception as e:
+        logger.error(f"Failed to schedule send_post_service_followup task: {str(e)}")
 
 
 # Connect the signal

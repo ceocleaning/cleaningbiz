@@ -40,9 +40,9 @@ urlpatterns = [
 
     path('update-business-settings/', views.update_business_settings, name='update_business_settings'),
     
-    # Square and Payment URLs
-    path('payment-square/', views.payment_square_view, name='payment_square'),
-    path('square-credentials/manage/', views.manage_square_credentials, name='manage_square_credentials'),
+   
+    path('payments/square/', views.payment_square_view, name='payment_square'),
+    path('payments/square/manage/', views.manage_square_credentials, name='manage_square_credentials'),
     
     # Payment Main Page
     path('payments/', views.payment_main_view, name='payment_main'),
@@ -51,12 +51,12 @@ urlpatterns = [
     path('payments/set-default/', views.set_default_payment, name='set_default_payment'),
     
     # Stripe Payment URLs
-    path('payment-stripe/', views.payment_stripe_view, name='payment_stripe'),
-    path('stripe-credentials/manage/', views.manage_stripe_credentials, name='manage_stripe_credentials'),
+    path('payments/stripe/', views.payment_stripe_view, name='payment_stripe'),
+    path('payments/stripe/manage/', views.manage_stripe_credentials, name='manage_stripe_credentials'),
     
     # PayPal Payment URLs
-    path('payment-paypal/', views.payment_paypal_view, name='payment_paypal'),
-    path('paypal-credentials/manage/', views.manage_paypal_credentials, name='manage_paypal_credentials'),
+    path('payments/paypal/', views.payment_paypal_view, name='payment_paypal'),
+    path('payments/paypal/manage/', views.manage_paypal_credentials, name='manage_paypal_credentials'),
     
     # Cleaner Management URLs
     path('cleaners/', views.manage_cleaners, name='manage_cleaners'),
