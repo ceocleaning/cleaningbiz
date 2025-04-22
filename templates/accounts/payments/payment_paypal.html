@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PayPal Payment Integration{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Business Settings</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:payment_main' %}">Payment Integrations</a></li>
+                    <li class="breadcrumb-item active">PayPal Payment</li>
+                </ol>
+            </nav>
+            
+            <div class="card border-0 rounded-3 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white p-3 rounded-top-3">
+                    <div class="d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 256 302">
+                            <path fill="#ffffff" d="M217.168 23.507C203.234 7.625 178.046.816 145.823.816h-93.52A13.393 13.393 0 0 0 39.076 12.11L.136 259.077c-.774 4.87 2.997 9.28 7.933 9.28h57.736l14.5-91.971l-.45 2.88c1.033-6.501 6.593-11.296 13.177-11.296h27.436c53.898 0 96.101-21.892 108.53-85.221c.366-1.873.683-3.696.957-5.477c-1.556-.824-1.556-.824 0 0c3.671-23.407-.025-39.34-12.67-53.765"/>
+                        </svg>
+                        
+                        <div class="px-2"> 
+                            <h3 class="mb-0 fs-5">PayPal Payment Integration</h3>
+                            <p class="mb-0 mt-1 text-white-50 small">Connect your business with PayPal for payment processing</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Status Section -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card h-100 bg-light border-0">
+                                <div class="card-body p-3">
+                                    {% if paypal_credentials %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success p-2 me-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-check text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">PayPal Connected</h5>
+                                            <p class="mb-0 text-muted small">Last updated: {{ paypal_credentials.updated_at|date:"F d, Y" }}</p>
+                                        </div>
+                                        <div class="ms-auto">
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#paypalCredentialsModal" onclick="setModalMode('edit')">
+                                                <i class="fas fa-edit me-1"></i> Update
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning p-2 me-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-exclamation-triangle text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Not Connected</h5>
+                                            <p class="mb-0 text-muted small">Your business is not connected to PayPal for payment processing</p>
+                                        </div>
+                                        <div class="ms-auto">
+                                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#paypalCredentialsModal" onclick="setModalMode('add')">
+                                                <i class="fas fa-plus me-1"></i> Connect Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Benefits Section -->
+                        <div class="col-md-12 mb-4">
+                            <h5 class="mb-3">Benefits of PayPal Integration</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-user-shield text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Buyer Protection</h6>
+                                            </div>
+                                            <p class="small mb-0">PayPal offers buyer and seller protection for eligible transactions, increasing customer confidence.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-wallet text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Familiar Experience</h6>
+                                            </div>
+                                            <p class="small mb-0">Millions of customers already use and trust PayPal, making the checkout process easier and faster.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-credit-card text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Multiple Payment Methods</h6>
+                                            </div>
+                                            <p class="small mb-0">Accept PayPal balances, credit cards, debit cards, and even bank transfers through one integration.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment History Section -->
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Payment History</h5>
+                            </div>
+                            
+                            {% if payments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Transaction ID</th>
+                                            <th scope="col">Invoice ID</th>
+                                            <th scope="col">Booking ID</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Customer</th>
+                                            <th scope="col">Amount</th>
+                                            <th scope="col">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td><span class="small text-muted">{{ payment.transactionId }}</span></td>
+                                            <td><span class="small text-muted"><a href="{% url 'invoice:invoice_detail' payment.invoice.invoiceId %}">{{ payment.invoice.invoiceId }}</a></span></td>
+                                            <td><span class="small text-muted"><a href="{% url 'bookings:booking_detail' payment.invoice.booking.bookingId %}">{{ payment.invoice.booking.bookingId }}</a></span></td>
+                                            <td>
+                                                {% if payment.paidAt %}
+                                                {{ payment.paidAt }}
+                                                {% else %}
+                                                {{ payment.updatedAt }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ payment.invoice.booking.firstName }} {{ payment.invoice.booking.lastName }}</td>
+                                            <td>${{ payment.amount }}</td>
+                                            <td>
+                                                {% if payment.status == 'COMPLETED' %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% elif payment.status == 'FAILED' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif payment.status == 'REFUNDED' %}
+                                                <span class="badge bg-warning">Refunded</span>
+                                                {% elif payment.status == 'AUTHORIZED' %}
+                                                <span class="badge bg-info">Authorized</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-4 text-center">
+                                    <div class="py-4">
+                                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                                        <h6>No Payment History Available</h6>
+                                        <p class="text-muted small mb-0">Once you start processing payments through PayPal, your transaction history will appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4 mb-0 py-2 small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Need help setting up PayPal? <a href="https://developer.paypal.com/docs/business/" target="_blank" class="text-decoration-underline">Check PayPal's documentation</a> or <a href="#" class="text-decoration-underline">contact support</a>.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{% url 'accounts:payment_main' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Payment Options
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PayPal Credentials Modal -->
+<div class="modal fade" id="paypalCredentialsModal" tabindex="-1" aria-labelledby="paypalCredentialsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="paypalCredentialsModalLabel">
+                    <i class="fas fa-plus-circle me-2" id="modalIcon"></i>
+                    <span id="modalTitle">PayPal Credentials</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'accounts:manage_paypal_credentials' %}">
+                {% csrf_token %}
+                <input type="hidden" id="action_type" name="action_type" value="add">
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="paypal_client_id" class="form-label fw-bold small">Client ID</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control form-control-sm" id="paypal_client_id" name="paypal_client_id" value="{% if paypal_credentials %}{{ paypal_credentials.paypal_client_id }}{% endif %}" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('paypal_client_id')">
+                                <i class="fas fa-eye" id="toggleClientIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text small">Your PayPal client ID</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="paypal_secret_key" class="form-label fw-bold small">Secret Key</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control form-control-sm" id="paypal_secret_key" name="paypal_secret_key" value="{% if paypal_credentials %}{{ paypal_credentials.paypal_secret_key }}{% endif %}" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('paypal_secret_key')">
+                                <i class="fas fa-eye" id="toggleSecretIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text small">Your PayPal secret key (keep this secure)</div>
+                    </div>
+                    
+                    <div id="addInfoAlert" class="alert alert-info mb-0 py-2 small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>You can find these credentials in your PayPal Developer Dashboard. Make sure to use the right environment (sandbox or live).</span>
+                    </div>
+                    
+                    <div id="editInfoAlert" class="alert alert-warning mb-0 py-2 small d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span>Updating these credentials may affect your payment processing. Make sure the new credentials are correct.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitButton">Save Credentials</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+    }
+    
+    .rounded-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .table th {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .table td {
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .pagination .page-link {
+        color: var(--primary-color);
+        font-size: 0.85rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIconId = inputId === 'paypal_client_id' ? 'toggleClientIcon' : 'toggleSecretIcon';
+        const toggleIcon = document.getElementById(toggleIconId);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    function setModalMode(mode) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalIcon = document.getElementById('modalIcon');
+        const actionType = document.getElementById('action_type');
+        const submitButton = document.getElementById('submitButton');
+        const addInfoAlert = document.getElementById('addInfoAlert');
+        const editInfoAlert = document.getElementById('editInfoAlert');
+        
+        if (mode === 'add') {
+            modalTitle.textContent = 'Add PayPal Credentials';
+            modalIcon.classList.remove('fa-edit');
+            modalIcon.classList.add('fa-plus-circle');
+            actionType.value = 'add';
+            submitButton.textContent = 'Save Credentials';
+            addInfoAlert.classList.remove('d-none');
+            editInfoAlert.classList.add('d-none');
+            
+            // Clear form fields if in add mode
+            {% if paypal_credentials %}
+            // Only clear if we're in add mode but credentials exist already
+            document.getElementById('paypal_client_id').value = '';
+            document.getElementById('paypal_secret_key').value = '';
+            {% endif %}
+        } else {
+            modalTitle.textContent = 'Update PayPal Credentials';
+            modalIcon.classList.remove('fa-plus-circle');
+            modalIcon.classList.add('fa-edit');
+            actionType.value = 'update';
+            submitButton.textContent = 'Update Credentials';
+            addInfoAlert.classList.add('d-none');
+            editInfoAlert.classList.remove('d-none');
+        }
+    }
+</script>
+{% endblock %} 

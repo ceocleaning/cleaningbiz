@@ -35,10 +35,7 @@ urlpatterns = [
     # Approval Pending URL
     path('approval-pending/', views.approval_pending, name='approval_pending'),
     
-    # Admin Business Approval URLs
-    path('admin/business-approval/', views.admin_business_approval, name='admin_business_approval'),
-    path('admin/business/<int:business_id>/approve/', views.approve_business, name='approve_business'),
-    path('admin/business/<int:business_id>/reject/', views.reject_business, name='reject_business'),
+
 
 
     path('update-business-settings/', views.update_business_settings, name='update_business_settings'),
@@ -46,6 +43,20 @@ urlpatterns = [
     # Square and Payment URLs
     path('payment-square/', views.payment_square_view, name='payment_square'),
     path('square-credentials/manage/', views.manage_square_credentials, name='manage_square_credentials'),
+    
+    # Payment Main Page
+    path('payments/', views.payment_main_view, name='payment_main'),
+    
+    # Set Default Payment Method
+    path('payments/set-default/', views.set_default_payment, name='set_default_payment'),
+    
+    # Stripe Payment URLs
+    path('payment-stripe/', views.payment_stripe_view, name='payment_stripe'),
+    path('stripe-credentials/manage/', views.manage_stripe_credentials, name='manage_stripe_credentials'),
+    
+    # PayPal Payment URLs
+    path('payment-paypal/', views.payment_paypal_view, name='payment_paypal'),
+    path('paypal-credentials/manage/', views.manage_paypal_credentials, name='manage_paypal_credentials'),
     
     # Cleaner Management URLs
     path('cleaners/', views.manage_cleaners, name='manage_cleaners'),

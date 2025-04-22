@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Integrations{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Business Settings</a></li>
+                    <li class="breadcrumb-item active">Payment Integrations</li>
+                </ol>
+            </nav>
+            
+            <div class="card border-0 rounded-3 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white p-3 rounded-top-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-credit-card fa-2x me-3"></i>
+                        <div>
+                            <h3 class="mb-0 fs-5">Payment Gateway Integrations</h3>
+                            <p class="mb-0 mt-1 text-white-50 small">Connect your business with payment gateways for payment processing</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Payment Options Cards -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm {% if square_credentials and business.defaultPaymentMethod == 'square' %}border-primary border-2{% endif %}">
+                                <div class="card-body p-4">
+                                    {% if square_credentials and business.defaultPaymentMethod == 'square' %}
+                                    <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                        <span class="badge bg-primary">Default</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="64" height="64" viewBox="0,0,256,256">
+                                            <g fill="#000000" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(5.12,5.12)"><path d="M14.40234,4c-5.736,0 -10.40234,4.66634 -10.40234,10.40234v21.19531c0,5.736 4.66634,10.40234 10.40234,10.40234h21.19531c5.736,0 10.40234,-4.66634 10.40234,-10.40234v-21.19531c0,-5.736 -4.6673,-10.40234 -10.4043,-10.40234zM16.52734,13h16.94531c1.945,0 3.52734,1.58234 3.52734,3.52734v16.94531c0,1.945 -1.5833,3.52734 -3.5293,3.52734h-16.94336c-1.945,0 -3.52734,-1.58234 -3.52734,-3.52734v-16.94531c0,-1.945 1.58234,-3.52734 3.52734,-3.52734zM19,19v12h12v-12z"></path></g></g>
+                                        </svg>
+                                    </div>
+                                    <h5 class="card-title text-center mb-3">Square</h5>
+                                    <div class="mb-3 text-center">
+                                        {% if square_credentials %}
+                                        <span class="badge bg-success">Connected</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Not Connected</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text small text-muted mb-4">Square is a popular payment processor for small businesses with point-of-sale features.</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'accounts:payment_square' %}" class="btn btn-outline-primary">
+                                            {% if square_credentials %}
+                                            Manage Connection
+                                            {% else %}
+                                            Connect Square
+                                            {% endif %}
+                                        </a>
+                                        {% if square_credentials and business.defaultPaymentMethod != 'square' %}
+                                        <form action="{% url 'accounts:set_default_payment' %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="payment_method" value="square">
+                                            <button type="submit" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-check-circle me-1"></i> Set as Default
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm {% if stripe_credentials and business.defaultPaymentMethod == 'stripe' %}border-primary border-2{% endif %}">
+                                <div class="card-body p-4">
+                                    {% if stripe_credentials and business.defaultPaymentMethod == 'stripe' %}
+                                    <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                        <span class="badge bg-primary">Default</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-center mb-3">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12.816 5.5c-1.333 0-2.616.522-3.561 1.467-.946.945-1.464 2.228-1.464 3.561 0 1.333.522 2.616 1.467 3.561.945.946 2.228 1.464 3.561 1.464 1.333 0 2.616-.522 3.561-1.467.946-.945 1.464-2.228 1.464-3.561 0-1.333-.522-2.616-1.467-3.561-.945-.946-2.228-1.464-3.561-1.464M4.5 7.522v8.956m3.022-8.956v8.956" stroke="#6772E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="card-title text-center mb-3">Stripe</h5>
+                                    <div class="mb-3 text-center">
+                                        {% if stripe_credentials %}
+                                        <span class="badge bg-success">Connected</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Not Connected</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text small text-muted mb-4">Stripe offers flexible payment processing options for online businesses with robust API features.</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'accounts:payment_stripe' %}" class="btn btn-outline-primary">
+                                            {% if stripe_credentials %}
+                                            Manage Connection
+                                            {% else %}
+                                            Connect Stripe
+                                            {% endif %}
+                                        </a>
+                                        {% if stripe_credentials and business.defaultPaymentMethod != 'stripe' %}
+                                        <form action="{% url 'accounts:set_default_payment' %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="payment_method" value="stripe">
+                                            <button type="submit" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-check-circle me-1"></i> Set as Default
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm {% if paypal_credentials and business.defaultPaymentMethod == 'paypal' %}border-primary border-2{% endif %}">
+                                <div class="card-body p-4">
+                                    {% if paypal_credentials and business.defaultPaymentMethod == 'paypal' %}
+                                    <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                        <span class="badge bg-primary">Default</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-center mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 256 302">
+                                            <path fill="#003087" d="M217.168 23.507C203.234 7.625 178.046.816 145.823.816h-93.52A13.393 13.393 0 0 0 39.076 12.11L.136 259.077c-.774 4.87 2.997 9.28 7.933 9.28h57.736l14.5-91.971l-.45 2.88c1.033-6.501 6.593-11.296 13.177-11.296h27.436c53.898 0 96.101-21.892 108.53-85.221c.366-1.873.683-3.696.957-5.477c-1.556-.824-1.556-.824 0 0c3.671-23.407-.025-39.34-12.67-53.765"/>
+                                            <path fill="#003087" d="M102.397 68.84a11.737 11.737 0 0 1 5.053-1.14h73.318c8.682 0 16.77.565 24.141 1.756a101.599 101.599 0 0 1 6.922 1.205a67.94 67.94 0 0 1 3.113.77c2.677.698 4.172 1.216 5.38 1.653c3.63.973 7.168 2.175 10.59 3.65c3.69-23.564-.6-39.878-12.75-54.67C203.37 7.183 178.039.29 145.823.29H52.303C45.798.29 40.396 4.938 39.155 11.292L.219 258.334c-.774 4.87 2.997 9.28 7.933 9.28h57.736l14.5-91.971l29.45-106.88z"/>
+                                            <path fill="#009CDE" d="M228.897 82.749c-12.43 63.32-54.632 85.221-108.53 85.221H93.22c-6.584 0-12.145 4.795-13.177 11.296L61.01 293.848c-.647 4.095 2.5 7.85 6.645 7.85h46.453c5.51 0 10.199-4.005 11.05-9.417l.459-2.35l8.728-55.391l.563-3.058c.852-5.413 5.542-9.418 11.051-9.418h6.95c45.066 0 80.35-18.317 90.637-71.287c4.318-22.24 2.089-40.76-9.342-53.811a42.508 42.508 0 0 0-5.307-5.217z"/>
+                                            <path fill="#012169" d="M216.952 72.128a89.928 89.928 0 0 0-5.38-1.653c-1.208-.437-2.703-.954-5.38-1.653a67.94 67.94 0 0 0-3.113-.77a101.599 101.599 0 0 0-6.922-1.205c-7.372-1.191-15.46-1.756-24.141-1.756h-73.318a11.737 11.737 0 0 0-5.053 1.14l-29.95 106.88l-.459 2.88c1.032-6.501 6.593-11.296 13.177-11.296h27.436c53.898 0 96.1-21.892 108.53-85.221c.366-1.873.683-3.696.957-5.477c-3.423-1.475-6.96-2.677-10.59-3.65c.498.146.83.233 1.206.334z"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="card-title text-center mb-3">PayPal</h5>
+                                    <div class="mb-3 text-center">
+                                        {% if paypal_credentials %}
+                                        <span class="badge bg-success">Connected</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Not Connected</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text small text-muted mb-4">PayPal provides a secure payment solution with global reach and buyer protection features.</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'accounts:payment_paypal' %}" class="btn btn-outline-primary">
+                                            {% if paypal_credentials %}
+                                            Manage Connection
+                                            {% else %}
+                                            Connect PayPal
+                                            {% endif %}
+                                        </a>
+                                        {% if paypal_credentials and business.defaultPaymentMethod != 'paypal' %}
+                                        <form action="{% url 'accounts:set_default_payment' %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="payment_method" value="paypal">
+                                            <button type="submit" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-check-circle me-1"></i> Set as Default
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Information Section -->
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <div class="alert alert-info py-3">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-info-circle fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">Payment Gateway Information</h5>
+                                        <p class="mb-0">Setting up multiple payment gateways provides your customers with more payment options and serves as a backup if one service has issues. Each gateway has different fee structures and features.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.85em;
+    }
+    
+    .border-2 {
+        border-width: 2px !important;
+    }
+</style>
+{% endblock %} 

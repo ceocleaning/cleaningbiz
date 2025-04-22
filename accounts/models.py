@@ -9,6 +9,12 @@ User = get_user_model()
 
 URL = settings.BASE_URL
 
+PAYMENT_METHODS = [
+    ('square', 'Square'),
+    ('stripe', 'Stripe'),
+    ('paypal', 'PayPal'),
+]
+
 
 class Business(models.Model):
     businessId = models.CharField(max_length=11, unique=True, null=True, blank=True)
@@ -23,6 +29,8 @@ class Business(models.Model):
     isActive = models.BooleanField(default=False)
     isApproved = models.BooleanField(default=False)
     isRejected = models.BooleanField(default=False)
+
+    defaultPaymentMethod = models.CharField(max_length=255, null=True, blank=True, help_text="Default payment method for collecting payments", choices=PAYMENT_METHODS)
 
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
@@ -220,6 +228,26 @@ class SquareCredentials(models.Model):
 
     def __str__(self):
         return f"Square Credentials for {self.business.businessName}"
+
+
+class StripeCredentials(models.Model):
+    business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='stripe_credentials')
+    stripe_secret_key = models.CharField(max_length=255, null=True, blank=True)
+    stripe_publishable_key = models.CharField(max_length=255, null=True, blank=True)
+    
+    def __str__(self):
+        return f"Stripe Credentials for {self.business.businessName}"
+    
+
+class PayPalCredentials(models.Model):
+    business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='paypal_credentials')
+    paypal_client_id = models.CharField(max_length=255, null=True, blank=True)
+    paypal_secret_key = models.CharField(max_length=255, null=True, blank=True)
+    
+    def __str__(self):
+        return f"PayPal Credentials for {self.business.businessName}"
+    
+    
     
     
     

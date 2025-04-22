@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile
+from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile, StripeCredentials, PayPalCredentials
 from automation.models import Cleaners
 from invoice.models import Invoice, Payment
 from django.urls import reverse
@@ -1015,148 +1015,6 @@ def approval_pending(request):
 
 
 @login_required
-def admin_business_approval(request):
-    """
-    Admin view to manage business approvals
-    Only accessible to superusers
-    """
-    # Check if user is a superuser
-    if not request.user.is_superuser:
-        messages.error(request, 'You do not have permission to access this page.')
-        return redirect('accounts:profile')
-    
-    # Get status filter from query params
-    status = request.GET.get('status', 'all')
-    
-    # Get all businesses
-    businesses_query = Business.objects.all().order_by('-createdAt')
-    
-    # Apply filters
-    if status == 'pending':
-        businesses_query = businesses_query.filter(isApproved=False, isActive=True)
-    elif status == 'approved':
-        businesses_query = businesses_query.filter(isApproved=True)
-    elif status == 'rejected':
-        businesses_query = businesses_query.filter(isActive=False)
-    
-    # Count for each status
-    all_count = Business.objects.count()
-    pending_count = Business.objects.filter(isApproved=False, isActive=True).count()
-    approved_count = Business.objects.filter(isApproved=True).count()
-    rejected_count = Business.objects.filter(isActive=False).count()
-    
-    # Pagination
-    paginator = Paginator(businesses_query, 10)  # Show 10 businesses per page
-    page = request.GET.get('page')
-    
-    try:
-        businesses = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page
-        businesses = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range, deliver last page of results
-        businesses = paginator.page(paginator.num_pages)
-    
-    context = {
-        'businesses': businesses,
-        'status': status,
-        'all_count': all_count,
-        'pending_count': pending_count,
-        'approved_count': approved_count,
-        'rejected_count': rejected_count,
-    }
-    
-    return render(request, 'accounts/admin_business_approval.html', context)
-
-
-@login_required
-def approve_business(request, business_id):
-    """
-    Approve a business
-    Only accessible to superusers
-    """
-    # Check if user is a superuser
-    if not request.user.is_superuser:
-        messages.error(request, 'You do not have permission to perform this action.')
-        return redirect('accounts:profile')
-    
-    if request.method == 'POST':
-        business = get_object_or_404(Business, id=business_id)
-        business.isApproved = True
-        business.isActive = True
-        business.save()
-        
-        # Send email notification to business owner
-        try:
-            subject = 'Your Business Has Been Approved!'
-            message = f"""Hello {business.user.username},
-
-Congratulations! Your business '{business.businessName}' has been approved by our team.
-
-You now have full access to all features of CleaningBiz AI. Log in to your account to get started.
-
-Thank you for choosing CleaningBiz AI!
-
-Best regards,
-The CleaningBiz AI Team
-"""
-            from_email = settings.DEFAULT_FROM_EMAIL
-            recipient_list = [business.user.email]
-            send_mail(subject, message, from_email, recipient_list)
-        except Exception as e:
-            # Log the error but don't stop the approval process
-            print(f"Error sending approval email: {str(e)}")
-        
-        messages.success(request, f"Business '{business.businessName}' has been approved successfully.")
-    
-    return redirect('accounts:admin_business_approval')
-
-
-@login_required
-def reject_business(request, business_id):
-    """
-    Reject a business
-    Only accessible to superusers
-    """
-    # Check if user is a superuser
-    if not request.user.is_superuser:
-        messages.error(request, 'You do not have permission to perform this action.')
-        return redirect('accounts:profile')
-    
-    if request.method == 'POST':
-        business = get_object_or_404(Business, id=business_id)
-        business.isApproved = False
-        business.isActive = False
-        business.save()
-        
-        # Send email notification to business owner
-        try:
-            subject = 'Your Business Registration Has Been Rejected'
-            message = f"""Hello {business.user.username},
-
-We regret to inform you that your business '{business.businessName}' registration has been rejected by our team.
-
-If you believe this is an error or would like to discuss this further, please contact our support team at support@cleaningbizai.com.
-
-Thank you for your understanding.
-
-Best regards,
-The CleaningBiz AI Team
-"""
-            from_email = settings.DEFAULT_FROM_EMAIL
-            recipient_list = [business.user.email]
-            send_mail(subject, message, from_email, recipient_list)
-        except Exception as e:
-            # Log the error but don't stop the rejection process
-            print(f"Error sending rejection email: {str(e)}")
-        
-        messages.warning(request, f"Business '{business.businessName}' has been rejected.")
-    
-    return redirect('accounts:admin_business_approval')
-
-
-@login_required
 def update_business_settings(request):
     if request.method == 'POST':
         business = request.user.business_set.first()
@@ -1275,6 +1133,257 @@ def manage_square_credentials(request):
     
     return redirect('accounts:payment_square')
 
+@login_required
+def payment_main_view(request):
+    """
+    Main payment selection view to choose payment gateway integration
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get all payment credentials
+    try:
+        square_credentials = SquareCredentials.objects.get(business=business)
+    except SquareCredentials.DoesNotExist:
+        square_credentials = None
+        
+    try:
+        stripe_credentials = StripeCredentials.objects.get(business=business)
+    except StripeCredentials.DoesNotExist:
+        stripe_credentials = None
+        
+    try:
+        paypal_credentials = PayPalCredentials.objects.get(business=business)
+    except PayPalCredentials.DoesNotExist:
+        paypal_credentials = None
+    
+    context = {
+        'business': business,
+        'square_credentials': square_credentials,
+        'stripe_credentials': stripe_credentials,
+        'paypal_credentials': paypal_credentials,
+    }
+    
+    return render(request, 'accounts/payments/payment_main.html', context)
+
+@login_required
+def payment_stripe_view(request):
+    """
+    View for managing Stripe credentials and viewing payment history
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get Stripe credentials if they exist
+    try:
+        stripe_credentials = StripeCredentials.objects.get(business=business)
+    except StripeCredentials.DoesNotExist:
+        stripe_credentials = None
+    
+    # Get payment history for this business
+    payments = Payment.objects.filter(
+        invoice__booking__business=business,
+        paymentMethod='stripe'
+    )
+    
+    context = {
+        'business': business,
+        'stripe_credentials': stripe_credentials,
+        'payments': payments,
+    }
+    
+    return render(request, 'accounts/payments/payment_stripe.html', context)
+
+@login_required
+def manage_stripe_credentials(request):
+    """
+    Consolidated view for both adding and updating Stripe credentials
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    if request.method == 'POST':
+        stripe_secret_key = request.POST.get('stripe_secret_key')
+        stripe_publishable_key = request.POST.get('stripe_publishable_key')
+        
+        if not all([stripe_secret_key, stripe_publishable_key]):
+            messages.error(request, 'All fields are required.')
+            return redirect('accounts:payment_stripe')
+        
+        try:
+            # Get existing stripe credentials or create new ones
+            stripe_credentials, created = StripeCredentials.objects.get_or_create(
+                business=business,
+                defaults={
+                    'stripe_secret_key': stripe_secret_key,
+                    'stripe_publishable_key': stripe_publishable_key
+                }
+            )
+            
+            # If credentials already existed, update them
+            if not created:
+                stripe_credentials.stripe_secret_key = stripe_secret_key
+                stripe_credentials.stripe_publishable_key = stripe_publishable_key
+                stripe_credentials.save()
+                messages.success(request, 'Stripe credentials updated successfully!')
+            else:
+                messages.success(request, 'Stripe credentials added successfully!')
+            
+            return redirect('accounts:payment_stripe')
+            
+        except Exception as e:
+            messages.error(request, f'Error managing Stripe credentials: {str(e)}')
+    
+    return redirect('accounts:payment_stripe')
+
+@login_required
+def payment_paypal_view(request):
+    """
+    View for managing PayPal credentials and viewing payment history
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get PayPal credentials if they exist
+    try:
+        paypal_credentials = PayPalCredentials.objects.get(business=business)
+    except PayPalCredentials.DoesNotExist:
+        paypal_credentials = None
+    
+    # Get payment history for this business
+    payments = Payment.objects.filter(
+        invoice__booking__business=business,
+        paymentMethod='paypal'
+    )
+    
+    context = {
+        'business': business,
+        'paypal_credentials': paypal_credentials,
+        'payments': payments,
+    }
+    
+    return render(request, 'accounts/payments/payment_paypal.html', context)
+
+@login_required
+def manage_paypal_credentials(request):
+    """
+    Consolidated view for both adding and updating PayPal credentials
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    if request.method == 'POST':
+        paypal_client_id = request.POST.get('paypal_client_id')
+        paypal_secret_key = request.POST.get('paypal_secret_key')
+        
+        if not all([paypal_client_id, paypal_secret_key]):
+            messages.error(request, 'All fields are required.')
+            return redirect('accounts:payment_paypal')
+        
+        try:
+            # Get existing paypal credentials or create new ones
+            paypal_credentials, created = PayPalCredentials.objects.get_or_create(
+                business=business,
+                defaults={
+                    'paypal_client_id': paypal_client_id,
+                    'paypal_secret_key': paypal_secret_key
+                }
+            )
+            
+            # If credentials already existed, update them
+            if not created:
+                paypal_credentials.paypal_client_id = paypal_client_id
+                paypal_credentials.paypal_secret_key = paypal_secret_key
+                paypal_credentials.save()
+                messages.success(request, 'PayPal credentials updated successfully!')
+            else:
+                messages.success(request, 'PayPal credentials added successfully!')
+            
+            return redirect('accounts:payment_paypal')
+            
+        except Exception as e:
+            messages.error(request, f'Error managing PayPal credentials: {str(e)}')
+    
+    return redirect('accounts:payment_paypal')
+
+@login_required
+def set_default_payment(request):
+    """
+    Set the default payment method for the business
+    """
+    if request.method != 'POST':
+        return redirect('accounts:payment_main')
+    
+    business = request.user.business_set.first()
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    payment_method = request.POST.get('payment_method')
+    
+    # Validate that the selected payment method is connected
+    if payment_method == 'square':
+        try:
+            SquareCredentials.objects.get(business=business)
+        except SquareCredentials.DoesNotExist:
+            messages.error(request, 'You need to connect Square before setting it as default.')
+            return redirect('accounts:payment_main')
+    elif payment_method == 'stripe':
+        try:
+            StripeCredentials.objects.get(business=business)
+        except StripeCredentials.DoesNotExist:
+            messages.error(request, 'You need to connect Stripe before setting it as default.')
+            return redirect('accounts:payment_main')
+    elif payment_method == 'paypal':
+        try:
+            PayPalCredentials.objects.get(business=business)
+        except PayPalCredentials.DoesNotExist:
+            messages.error(request, 'You need to connect PayPal before setting it as default.')
+            return redirect('accounts:payment_main')
+    else:
+        messages.error(request, 'Invalid payment method selected.')
+        return redirect('accounts:payment_main')
+    
+    # Set the default payment method
+    business.defaultPaymentMethod = payment_method
+    business.save()
+    
+    messages.success(request, f'{payment_method.capitalize()} has been set as your default payment method.')
+    return redirect('accounts:payment_main')
 
 @owner_required
 def manage_cleaners(request):

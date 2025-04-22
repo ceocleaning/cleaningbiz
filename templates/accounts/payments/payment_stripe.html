@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stripe Payment Integration{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Business Settings</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:payment_main' %}">Payment Integrations</a></li>
+                    <li class="breadcrumb-item active">Stripe Payment</li>
+                </ol>
+            </nav>
+            
+            <div class="card border-0 rounded-3 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white p-3 rounded-top-3">
+                    <div class="d-flex align-items-center">
+                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.816 5.5c-1.333 0-2.616.522-3.561 1.467-.946.945-1.464 2.228-1.464 3.561 0 1.333.522 2.616 1.467 3.561.945.946 2.228 1.464 3.561 1.464 1.333 0 2.616-.522 3.561-1.467.946-.945 1.464-2.228 1.464-3.561 0-1.333-.522-2.616-1.467-3.561-.945-.946-2.228-1.464-3.561-1.464M4.5 7.522v8.956m3.022-8.956v8.956" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        
+                        <div class="px-2"> 
+                            <h3 class="mb-0 fs-5">Stripe Payment Integration</h3>
+                            <p class="mb-0 mt-1 text-white-50 small">Connect your business with Stripe for payment processing</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Status Section -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card h-100 bg-light border-0">
+                                <div class="card-body p-3">
+                                    {% if stripe_credentials %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success p-2 me-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-check text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Stripe Connected</h5>
+                                            <p class="mb-0 text-muted small">Last updated: {{ stripe_credentials.updated_at|date:"F d, Y" }}</p>
+                                        </div>
+                                        <div class="ms-auto">
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#stripeCredentialsModal" onclick="setModalMode('edit')">
+                                                <i class="fas fa-edit me-1"></i> Update
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning p-2 me-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-exclamation-triangle text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Not Connected</h5>
+                                            <p class="mb-0 text-muted small">Your business is not connected to Stripe for payment processing</p>
+                                        </div>
+                                        <div class="ms-auto">
+                                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#stripeCredentialsModal" onclick="setModalMode('add')">
+                                                <i class="fas fa-plus me-1"></i> Connect Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Benefits Section -->
+                        <div class="col-md-12 mb-4">
+                            <h5 class="mb-3">Benefits of Stripe Integration</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-shield-alt text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Secure Payments</h6>
+                                            </div>
+                                            <p class="small mb-0">Process payments securely with Stripe's PCI-compliant platform and fraud prevention tools.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-globe text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Global Reach</h6>
+                                            </div>
+                                            <p class="small mb-0">Accept payments in multiple currencies from customers around the world.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-chart-line text-white small"></i>
+                                                </div>
+                                                <h6 class="mb-0">Detailed Analytics</h6>
+                                            </div>
+                                            <p class="small mb-0">Track payments, analyze customer behavior, and access detailed financial reports.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment History Section -->
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Payment History</h5>
+                            </div>
+                            
+                            {% if payments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Transaction ID</th>
+                                            <th scope="col">Invoice ID</th>
+                                            <th scope="col">Booking ID</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Customer</th>
+                                            <th scope="col">Amount</th>
+                                            <th scope="col">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td><span class="small text-muted">{{ payment.transactionId }}</span></td>
+                                            <td><span class="small text-muted"><a href="{% url 'invoice:invoice_detail' payment.invoice.invoiceId %}">{{ payment.invoice.invoiceId }}</a></span></td>
+                                            <td><span class="small text-muted"><a href="{% url 'bookings:booking_detail' payment.invoice.booking.bookingId %}">{{ payment.invoice.booking.bookingId }}</a></span></td>
+                                            <td>
+                                                {% if payment.paidAt %}
+                                                {{ payment.paidAt }}
+                                                {% else %}
+                                                {{ payment.updatedAt }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ payment.invoice.booking.firstName }} {{ payment.invoice.booking.lastName }}</td>
+                                            <td>${{ payment.amount }}</td>
+                                            <td>
+                                                {% if payment.status == 'COMPLETED' %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% elif payment.status == 'FAILED' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% elif payment.status == 'REFUNDED' %}
+                                                <span class="badge bg-warning">Refunded</span>
+                                                {% elif payment.status == 'AUTHORIZED' %}
+                                                <span class="badge bg-info">Authorized</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-4 text-center">
+                                    <div class="py-4">
+                                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                                        <h6>No Payment History Available</h6>
+                                        <p class="text-muted small mb-0">Once you start processing payments through Stripe, your transaction history will appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4 mb-0 py-2 small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Need help setting up Stripe? <a href="https://stripe.com/docs" target="_blank" class="text-decoration-underline">Check Stripe's documentation</a> or <a href="#" class="text-decoration-underline">contact support</a>.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{% url 'accounts:payment_main' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Payment Options
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stripe Credentials Modal -->
+<div class="modal fade" id="stripeCredentialsModal" tabindex="-1" aria-labelledby="stripeCredentialsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="stripeCredentialsModalLabel">
+                    <i class="fas fa-plus-circle me-2" id="modalIcon"></i>
+                    <span id="modalTitle">Stripe Credentials</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'accounts:manage_stripe_credentials' %}">
+                {% csrf_token %}
+                <input type="hidden" id="action_type" name="action_type" value="add">
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="stripe_secret_key" class="form-label fw-bold small">Secret Key</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control form-control-sm" id="stripe_secret_key" name="stripe_secret_key" value="{% if stripe_credentials %}{{ stripe_credentials.stripe_secret_key }}{% endif %}" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('stripe_secret_key')">
+                                <i class="fas fa-eye" id="toggleSecretIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text small">Your Stripe secret key (keep this secure)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="stripe_publishable_key" class="form-label fw-bold small">Publishable Key</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control form-control-sm" id="stripe_publishable_key" name="stripe_publishable_key" value="{% if stripe_credentials %}{{ stripe_credentials.stripe_publishable_key }}{% endif %}" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('stripe_publishable_key')">
+                                <i class="fas fa-eye" id="togglePublishableIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text small">Your Stripe publishable key</div>
+                    </div>
+                    
+                    <div id="addInfoAlert" class="alert alert-info mb-0 py-2 small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>You can find these credentials in your Stripe Dashboard under Developers → API keys. Make sure to use the right environment (test or live).</span>
+                    </div>
+                    
+                    <div id="editInfoAlert" class="alert alert-warning mb-0 py-2 small d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span>Updating these credentials may affect your payment processing. Make sure the new credentials are correct.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitButton">Save Credentials</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+    }
+    
+    .rounded-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .table th {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .table td {
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .pagination .page-link {
+        color: var(--primary-color);
+        font-size: 0.85rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIcon = document.getElementById(inputId === 'stripe_secret_key' ? 'toggleSecretIcon' : 'togglePublishableIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    function setModalMode(mode) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalIcon = document.getElementById('modalIcon');
+        const actionType = document.getElementById('action_type');
+        const submitButton = document.getElementById('submitButton');
+        const addInfoAlert = document.getElementById('addInfoAlert');
+        const editInfoAlert = document.getElementById('editInfoAlert');
+        
+        if (mode === 'add') {
+            modalTitle.textContent = 'Add Stripe Credentials';
+            modalIcon.classList.remove('fa-edit');
+            modalIcon.classList.add('fa-plus-circle');
+            actionType.value = 'add';
+            submitButton.textContent = 'Save Credentials';
+            addInfoAlert.classList.remove('d-none');
+            editInfoAlert.classList.add('d-none');
+            
+            // Clear form fields if in add mode
+            {% if stripe_credentials %}
+            // Only clear if we're in add mode but credentials exist already
+            document.getElementById('stripe_secret_key').value = '';
+            document.getElementById('stripe_publishable_key').value = '';
+            {% endif %}
+        } else {
+            modalTitle.textContent = 'Update Stripe Credentials';
+            modalIcon.classList.remove('fa-plus-circle');
+            modalIcon.classList.add('fa-edit');
+            actionType.value = 'update';
+            submitButton.textContent = 'Update Credentials';
+            addInfoAlert.classList.add('d-none');
+            editInfoAlert.classList.remove('d-none');
+        }
+    }
+</script>
+{% endblock %} 

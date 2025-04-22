@@ -207,6 +207,67 @@
             font-size: 1.2rem;
         }
     }
+    
+    /* Stripe Form */
+    #stripe-card-element {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        min-height: 40px;
+    }
+    
+    .stripe-form {
+        margin-bottom: 20px;
+    }
+    
+    .payment-method-tabs .nav-link {
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+    
+    .payment-method-tabs .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    /* Payment form loading state */
+    .form-loading {
+        position: relative;
+    }
+    
+    .form-loading:after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .form-loading:before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        border: 3px solid #cccccc;
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        z-index: 1;
+        animation: spinner 0.8s linear infinite;
+    }
+    
+    @keyframes spinner {
+        to {transform: translate(-50%, -50%) rotate(360deg);}
+    }
 </style>
 {% endblock %}
 
@@ -463,17 +524,44 @@
                 <div class="modal-body">
                     <div class="mb-4">
                         <h6 class="mb-3">Amount to Pay: <strong>{{ invoice.amount|format_currency }}</strong></h6>
+                        
+                        {% if booking.business.defaultPaymentMethod == 'square' %}
+                        <!-- Square Payment Form -->
                         <div id="card-container"></div>
                         <div id="payment-status-container" class="payment-status-container"></div>
-                    </div>
-                    <div class="d-grid gap-3">
-                        <button id="pay-now-button" class="btn btn-success">
-                            <i class="fas fa-credit-card me-2"></i>Pay Now
-                        </button>
-                        <button id="authorize-button" class="btn btn-primary">
-                            <i class="fas fa-clock me-2"></i>Authorize Now, Pay After Work
-                        </button>
-                        <p class="text-muted small text-center mt-2">
+
+                        <div class="d-grid gap-3 mt-4">
+                            <button id="pay-now-button" class="btn btn-success">
+                                <i class="fas fa-credit-card me-2"></i>Pay Now with Square
+                            </button>
+                            <button id="authorize-button" class="btn btn-primary">
+                                <i class="fas fa-clock me-2"></i>Authorize Now, Pay After Work
+                            </button>
+                        </div>
+                        {% elif booking.business.defaultPaymentMethod == 'stripe' %}
+                        <!-- Stripe Payment Form -->
+                        <div class="stripe-form">
+                            <div id="stripe-card-element"></div>
+                            <div id="stripe-payment-status" class="payment-status-container mt-3"></div>
+                        </div>
+
+                        <div class="d-grid gap-3 mt-4">
+                            <button id="stripe-pay-button" class="btn btn-success">
+                                <i class="fas fa-credit-card me-2"></i>Pay Now with Stripe
+                            </button>
+                            <button id="stripe-authorize-button" class="btn btn-primary">
+                                <i class="fas fa-clock me-2"></i>Authorize Now, Pay After Work
+                            </button>
+                        </div>
+                        {% else %}
+                        <!-- Default payment options if none set -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This business has not set up online payment processing yet. Please contact them directly for payment options.
+                        </div>
+                        {% endif %}
+                        
+                        <p class="text-muted small text-center mt-3">
                             <i class="fas fa-info-circle me-1"></i>
                             "Pay Now" processes the payment immediately. "Authorize Now" reserves the funds but only charges after service completion.
                         </p>
@@ -486,11 +574,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if settings.SQUARE_ENVIRONMENT == 'sandbox' %}
-<script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
-{% else %}
-<script src="https://web.squarecdn.com/v1/square.js"></script>
-{% endif %}
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Calculate subtotal
@@ -536,122 +620,324 @@
         adjustPayButton();
         window.addEventListener('resize', adjustPayButton);
     });
-
-    const appId = '{{ settings.SQUARE_APP_ID }}';
-    const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
-    const square_location_id = '{{ settings.SQUARE_LOCATION_ID }}';
-    let payments;
-    
-    async function initializeCard(payments) {
-        const card = await payments.card();
-        await card.attach('#card-container');
-        return card;
-    }
-
-    async function createPayment(token, autoComplete = true) {
-        const bodyData = {
-            sourceId: token,
-            amount: {{ invoice.amount }},
-            invoiceId: '{{ invoice.invoiceId }}',
-            autoComplete: autoComplete
-        };
-
-        const paymentResponse = await fetch('{% url "invoice:process_payment" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify(bodyData)
-        });
-
-        if (paymentResponse.ok) {
-            return paymentResponse.json();
-        }
-        const errorBody = await paymentResponse.text();
-        throw new Error(errorBody);
-    }
-
-    function displayPaymentResults(status) {
-        const statusContainer = document.getElementById('payment-status-container');
-        const buttons = document.querySelectorAll('#pay-now-button, #authorize-button');
-        
-        // Disable buttons during processing
-        buttons.forEach(btn => btn.disabled = true);
-
-        if (status.error) {
-            statusContainer.classList.remove('text-success', 'text-info');
-            statusContainer.classList.add('text-danger');
-            statusContainer.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>${status.error}</div>`;
-            // Re-enable buttons on error
-            buttons.forEach(btn => btn.disabled = false);
-        } else {
-            statusContainer.classList.remove('text-danger');
-            statusContainer.classList.add(status.isAuthorized ? 'text-info' : 'text-success');
-            statusContainer.innerHTML = `<div class="alert alert-${status.isAuthorized ? 'info' : 'success'} mb-0">
-                <i class="fas fa-${status.isAuthorized ? 'clock' : 'check-circle'} me-2"></i>${status.message}</div>`;
-            
-            // Reload page after success
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        }
-    }
-
-    window.addEventListener('load', async function () {
-        payments = window.Square.payments(appId);
-        let card;
-        try {
-            card = await initializeCard(payments);
-        } catch (e) {
-            console.error('Failed to initialize card:', e);
-            displayPaymentResults({ error: 'Failed to initialize payment form. Please try again.' });
-            return;
-        }
-
-        // Pay Now button handler
-        document.getElementById('pay-now-button').addEventListener('click', async function (event) {
-            event.preventDefault();
-            try {
-                const result = await card.tokenize();
-                if (result.status === 'OK') {
-                    displayPaymentResults({ message: 'Processing payment...' });
-                    try {
-                        const payment = await createPayment(result.token, true);
-                        displayPaymentResults({ 
-                            message: 'Payment successful! Redirecting...',
-                            isAuthorized: false 
-                        });
-                    } catch (e) {
-                        displayPaymentResults({ error: e.message });
-                    }
-                }
-            } catch (e) {
-                displayPaymentResults({ error: e.message });
-            }
-        });
-
-        // Authorize button handler
-        document.getElementById('authorize-button').addEventListener('click', async function (event) {
-            event.preventDefault();
-            try {
-                const result = await card.tokenize();
-                if (result.status === 'OK') {
-                    displayPaymentResults({ message: 'Processing authorization...' });
-                    try {
-                        const payment = await createPayment(result.token, false);
-                        displayPaymentResults({ 
-                            message: 'Authorization successful! Payment will be completed after work.',
-                            isAuthorized: true 
-                        });
-                    } catch (e) {
-                        displayPaymentResults({ error: e.message });
-                    }
-                }
-            } catch (e) {
-                displayPaymentResults({ error: e.message });
-            }
-        });
-    });
 </script>
+
+{% if booking.business.defaultPaymentMethod == 'square' %}
+    {% if settings.SQUARE_ENVIRONMENT == 'sandbox' %}
+    <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+    {% else %}
+    <script src="https://web.squarecdn.com/v1/square.js"></script>
+    {% endif %}
+    <script>
+        // Square Payment JS
+        document.addEventListener('DOMContentLoaded', function() {
+            // Calculate subtotal
+            const sub_total_display = document.getElementById('sub_total_display');
+            const tax_display = document.getElementById('tax_display');
+            const total_display = document.getElementById('total_display');
+            const amount_display = document.getElementById('amount_display');
+
+            // Get the text content and clean it properly to handle currency formatting
+            const totalText = total_display.innerText.replace(/[^0-9.-]+/g, '');
+            const taxText = tax_display.innerText.replace(/[^0-9.-]+/g, '');
+            
+            const total = parseFloat(totalText) || 0;
+            const tax = parseFloat(taxText) || 0;
+            
+            const sub_total = total - tax;
+
+            // Format with currency symbol
+            sub_total_display.textContent = `$${sub_total.toFixed(2)}`;
+            amount_display.textContent = `$${sub_total.toFixed(2)}`;
+            
+            // Adjust position of payment button on small screens
+            function adjustPayButton() {
+                const payBtn = document.getElementById('payButtonContainer');
+                const mobileBtn = document.getElementById('mobilePayBtn');
+                
+                if (payBtn && mobileBtn) {
+                    if (window.innerWidth < 768) {
+                        // Hide the regular button container on mobile
+                        payBtn.style.display = 'none';
+                        // Show the floating button
+                        mobileBtn.style.display = 'inline-block';
+                    } else {
+                        // Show regular button container on desktop
+                        payBtn.style.display = 'block';
+                        // Hide the floating button
+                        mobileBtn.style.display = 'none';
+                    }
+                }
+            }
+            
+            // Run on load and resize
+            adjustPayButton();
+            window.addEventListener('resize', adjustPayButton);
+        });
+
+        const appId = '{{ settings.SQUARE_APP_ID }}';
+        const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
+        const square_location_id = '{{ settings.SQUARE_LOCATION_ID }}';
+        let payments;
+        
+        async function initializeCard(payments) {
+            const card = await payments.card();
+            await card.attach('#card-container');
+            return card;
+        }
+
+        async function createPayment(token, autoComplete = true) {
+            const bodyData = {
+                sourceId: token,
+                amount: {{ invoice.amount }},
+                invoiceId: '{{ invoice.invoiceId }}',
+                autoComplete: autoComplete
+            };
+
+            const paymentResponse = await fetch('{% url "invoice:process_payment" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(bodyData)
+            });
+
+            if (paymentResponse.ok) {
+                return paymentResponse.json();
+            }
+            const errorBody = await paymentResponse.text();
+            throw new Error(errorBody);
+        }
+
+        function displayPaymentResults(status) {
+            const statusContainer = document.getElementById('payment-status-container');
+            const buttons = document.querySelectorAll('#pay-now-button, #authorize-button');
+            
+            // Disable buttons during processing
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (status.error) {
+                statusContainer.classList.remove('text-success', 'text-info');
+                statusContainer.classList.add('text-danger');
+                statusContainer.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>${status.error}</div>`;
+                // Re-enable buttons on error
+                buttons.forEach(btn => btn.disabled = false);
+            } else {
+                statusContainer.classList.remove('text-danger');
+                statusContainer.classList.add(status.isAuthorized ? 'text-info' : 'text-success');
+                statusContainer.innerHTML = `<div class="alert alert-${status.isAuthorized ? 'info' : 'success'} mb-0">
+                    <i class="fas fa-${status.isAuthorized ? 'clock' : 'check-circle'} me-2"></i>${status.message}</div>`;
+                
+                // Reload page after success
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        }
+
+        window.addEventListener('load', async function () {
+            payments = window.Square.payments(appId);
+            let card;
+            try {
+                card = await initializeCard(payments);
+            } catch (e) {
+                console.error('Failed to initialize card:', e);
+                displayPaymentResults({ error: 'Failed to initialize payment form. Please try again.' });
+                return;
+            }
+
+            // Pay Now button handler
+            document.getElementById('pay-now-button').addEventListener('click', async function (event) {
+                event.preventDefault();
+                try {
+                    const result = await card.tokenize();
+                    if (result.status === 'OK') {
+                        displayPaymentResults({ message: 'Processing payment...' });
+                        try {
+                            const payment = await createPayment(result.token, true);
+                            displayPaymentResults({ 
+                                message: 'Payment successful! Redirecting...',
+                                isAuthorized: false 
+                            });
+                        } catch (e) {
+                            displayPaymentResults({ error: e.message });
+                        }
+                    }
+                } catch (e) {
+                    displayPaymentResults({ error: e.message });
+                }
+            });
+
+            // Authorize button handler
+            document.getElementById('authorize-button').addEventListener('click', async function (event) {
+                event.preventDefault();
+                try {
+                    const result = await card.tokenize();
+                    if (result.status === 'OK') {
+                        displayPaymentResults({ message: 'Processing authorization...' });
+                        try {
+                            const payment = await createPayment(result.token, false);
+                            displayPaymentResults({ 
+                                message: 'Authorization successful! Payment will be completed after work.',
+                                isAuthorized: true 
+                            });
+                        } catch (e) {
+                            displayPaymentResults({ error: e.message });
+                        }
+                    }
+                } catch (e) {
+                    displayPaymentResults({ error: e.message });
+                }
+            });
+        });
+    </script>
+{% elif booking.business.defaultPaymentMethod == 'stripe' %}
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Stripe
+            const stripePublishableKey = '{{ booking.business.stripe_credentials.stripe_publishable_key }}';
+
+            console.log(stripePublishableKey);
+            if (!stripePublishableKey) {
+                console.error('Stripe publishable key not found');
+                return;
+            }
+            
+            const stripe = Stripe(stripePublishableKey);
+            const elements = stripe.elements();
+            
+            // Create and mount the Stripe card element
+            const card = elements.create('card', {
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#32325d',
+                        fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                        fontSmoothing: 'antialiased',
+                        '::placeholder': {
+                            color: '#aab7c4'
+                        }
+                    },
+                    invalid: {
+                        color: '#fa755a',
+                        iconColor: '#fa755a'
+                    }
+                }
+            });
+            
+            // Mount the card element
+            card.mount('#stripe-card-element');
+            
+            // Handle real-time validation errors
+            card.on('change', function(event) {
+                const displayError = document.getElementById('stripe-payment-status');
+                if (displayError) {
+                    if (event.error) {
+                        displayError.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>${event.error.message}</div>`;
+                    } else {
+                        displayError.innerHTML = '';
+                    }
+                }
+            });
+            
+            // Display payment result
+            function displayStripePaymentResult(result) {
+                const statusContainer = document.getElementById('stripe-payment-status');
+                const buttons = document.querySelectorAll('#stripe-pay-button, #stripe-authorize-button');
+                
+                if (!statusContainer) return;
+                
+                // Disable buttons during processing
+                buttons.forEach(btn => btn.disabled = true);
+                
+                if (result.error) {
+                    statusContainer.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>${result.error}</div>`;
+                    // Re-enable buttons on error
+                    buttons.forEach(btn => btn.disabled = false);
+                } else {
+                    statusContainer.innerHTML = `<div class="alert alert-${result.isAuthorized ? 'info' : 'success'} mb-0">
+                        <i class="fas fa-${result.isAuthorized ? 'clock' : 'check-circle'} me-2"></i>${result.message}</div>`;
+                    
+                    // Reload page after success
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            }
+            
+            // Process the payment
+            async function processStripePayment(autoComplete = true) {
+                const statusContainer = document.getElementById('stripe-payment-status');
+                
+                if (!statusContainer) return;
+                
+                // Show processing message
+                statusContainer.innerHTML = `<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>`;
+                
+                try {
+                    const { paymentMethod, error } = await stripe.createPaymentMethod({
+                        type: 'card',
+                        card: card,
+                    });
+                    
+                    if (error) {
+                        // Show error
+                        displayStripePaymentResult({ error: error.message });
+                        return;
+                    }
+                    
+                    // Send payment method ID to server
+                    const response = await fetch('{% url "invoice:process_stripe_payment" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            payment_method_id: paymentMethod.id,
+                            invoice_id: '{{ invoice.invoiceId }}',
+                            amount: {{ invoice.amount }},
+                            auto_complete: autoComplete
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        displayStripePaymentResult({
+                            message: autoComplete ? 'Payment successful! Redirecting...' : 'Authorization successful! Payment will be completed after work.',
+                            isAuthorized: !autoComplete
+                        });
+                    } else {
+                        displayStripePaymentResult({ error: result.error || 'Payment failed. Please try again.' });
+                    }
+                } catch (err) {
+                    displayStripePaymentResult({ error: 'An unexpected error occurred. Please try again.' });
+                    console.error('Stripe payment error:', err);
+                }
+            }
+            
+            // Set up event listeners
+            const payButton = document.getElementById('stripe-pay-button');
+            if (payButton) {
+                payButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    processStripePayment(true);
+                });
+            }
+            
+            // Authorize button handler
+            const authorizeButton = document.getElementById('stripe-authorize-button');
+            if (authorizeButton) {
+                authorizeButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    processStripePayment(false);
+                });
+            }
+        });
+    </script> 
+{% endif %}
 {% endblock %}

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials
+from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, StripeCredentials, PayPalCredentials
 
 
 class BusinessAdmin(admin.ModelAdmin):
@@ -36,3 +36,5 @@ admin.site.register(CustomAddons)
 admin.site.register(SMTPConfig)
 admin.site.register(PasswordResetOTP)
 admin.site.register(SquareCredentials)
+admin.site.register(StripeCredentials)
+admin.site.register(PayPalCredentials)

@@ -11,6 +11,7 @@ from accounts.models import Business, SquareCredentials
 
 
 
+# SQUARE PAYMENT VIEWS
 @require_http_methods(["POST"])
 def process_payment(request):
     """Process a Square payment for an invoice with option to authorize only"""
@@ -201,3 +202,205 @@ def process_manual_payment(request):
             'error': 'An unexpected error occurred while processing the payment.'
         }, status=500)
 
+
+
+
+# STRIPE PAYMENT VIEWS
+@require_http_methods(["POST"])
+def process_stripe_payment(request):
+    """Process a Stripe payment for an invoice with option to authorize only"""
+    try:
+        # Parse the request body
+        data = json.loads(request.body)
+        payment_method_id = data.get('payment_method_id')
+        invoice_id = data.get('invoice_id')
+        auto_complete = data.get('auto_complete', True)
+        
+        # Get the invoice
+        invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        business = invoice.booking.business
+        
+        # Get Stripe credentials
+        try:
+            stripe_credentials = business.stripe_credentials
+        except:
+            return JsonResponse({
+                'success': False,
+                'error': 'Stripe credentials not found for this business'
+            }, status=400)
+        
+        if not payment_method_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'No payment method provided'
+            }, status=400)
+
+        import stripe
+        
+        stripe.api_key = stripe_credentials.stripe_secret_key
+        
+      
+        idempotency_key = f"invoice_{invoice.invoiceId}_{timezone.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        
+        try:
+            amount_in_cents = int(invoice.amount * 100)
+            
+            if auto_complete:
+                payment_intent = stripe.PaymentIntent.create(
+                    amount=amount_in_cents,
+                    currency='usd',
+                    payment_method=payment_method_id,
+                    confirm=True,
+                    description=f"Payment for invoice {invoice.invoiceId}",
+                    metadata={
+                        'invoice_id': invoice.invoiceId,
+                        'business_id': business.businessId
+                    },
+                    idempotency_key=idempotency_key,
+                    automatic_payment_methods={
+                        'enabled': True,
+                        'allow_redirects': 'never'
+                    }
+                )
+                
+                if payment_intent.status == 'succeeded':
+                    payment = Payment.objects.create(
+                        invoice=invoice,
+                        amount=invoice.amount,
+                        paymentMethod='Stripe',
+                        transactionId=payment_intent.id,
+                        status='COMPLETED',
+                        paidAt=timezone.now()
+                    )
+                    
+                    invoice.isPaid = True
+                    invoice.save()
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'payment_id': payment.paymentId,
+                        'status': 'COMPLETED'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Payment failed. Status: {payment_intent.status}'
+                    }, status=400)
+            
+            else:
+                payment_intent = stripe.PaymentIntent.create(
+                    amount=amount_in_cents,
+                    currency='usd',
+                    payment_method=payment_method_id,
+                    confirmation_method='manual',    
+                    capture_method='manual',
+                    confirm=True,
+                    payment_method_types=["card"], 
+                    description=f"Authorization for invoice {invoice.invoiceId}",
+                    metadata={
+                        'invoice_id': invoice.invoiceId,
+                        'business_id': business.businessId
+                    },
+                    idempotency_key=idempotency_key
+                )
+                                
+                if payment_intent.status in ['requires_capture', 'succeeded']:
+                    payment = Payment.objects.create(
+                        invoice=invoice,
+                        amount=invoice.amount,
+                        paymentMethod='Stripe',
+                        transactionId=payment_intent.id,
+                        status='AUTHORIZED'
+                    )
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'payment_id': payment.paymentId,
+                        'status': 'AUTHORIZED'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Authorization failed. Status: {payment_intent.status}'
+                    }, status=400)
+                
+        except stripe.error.CardError as e:
+            error_message = e.error.message
+            return JsonResponse({
+                'success': False,
+                'error': error_message
+            }, status=400)
+        except stripe.error.StripeError as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Stripe error: {str(e)}'
+            }, status=400)
+            
+    except Exception as e:
+        print(f"Stripe payment processing error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred while processing your payment. Please try again.'
+        }, status=500)
+
+
+@require_http_methods(["POST"])
+def capture_stripe_payment(request):
+    try:
+        data = json.loads(request.body)
+        payment_id = data.get('payment_id')
+        
+        payment = get_object_or_404(Payment, paymentId=payment_id, status='AUTHORIZED')
+        invoice = payment.invoice
+        business = invoice.booking.business
+        
+        try:
+            stripe_credentials = business.stripe_credentials
+        except:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Stripe credentials not found for this business'
+            }, status=400)
+        
+        # Import Stripe
+        import stripe
+        
+        # Set the Stripe API key
+        stripe.api_key = stripe_credentials.stripe_secret_key
+        
+        try:
+            payment_intent = stripe.PaymentIntent.capture(
+                payment.transactionId,
+                amount_to_capture=int(payment.amount * 100)
+            )
+            
+            if payment_intent.status == 'succeeded':
+                payment.status = 'COMPLETED'
+                payment.paidAt = timezone.now()
+                payment.save()
+                
+                invoice.isPaid = True
+                invoice.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Payment captured successfully'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payment capture failed. Status: {payment_intent.status}'
+                }, status=400)
+                
+        except stripe.error.StripeError as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Stripe error: {str(e)}'
+            }, status=400)
+            
+    except Exception as e:
+        print(f"Stripe payment capture error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred while capturing the payment.'
+        }, status=500)
