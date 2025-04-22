@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
-from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking, sendCommercialFormLink
+from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
 
 
 
@@ -27,6 +27,10 @@ urlpatterns = [
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
     path('api/availability/<str:secretKey>/test/', test_check_availability, name='test_check_availability'),
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
+    path('api/reschedule-booking/', reschedule_booking, name='reschedule_booking'),
+    path('api/cancel-booking/', cancel_booking, name='cancel_booking'),
+
+
     path('api/create-booking/', create_booking, name='create_booking'),
     path('api/send-commercial-form-link/', sendCommercialFormLink, name='send_commercial_form_link'),
     path('bulk-delete-leads/', views.bulk_delete_leads, name='bulk_delete_leads'),

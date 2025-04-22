@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 from accounts.models import Business, CustomAddons
 from bookings.models import Booking
 from .models import Chat, Messages, AgentConfiguration
-from .api_views import check_availability, book_appointment, get_current_time_in_chicago, calculate_total
+from .api_views import check_availability, book_appointment, get_current_time_in_chicago, calculate_total, reschedule_appointment, cancel_appointment
 from .utils import convert_date_str_to_date
 import re
 
@@ -30,7 +30,9 @@ tools = {
     'check_availability': check_availability,
     'bookAppointment': book_appointment,
     'current_time': get_current_time_in_chicago,
-    'calculateTotal': calculate_total
+    'calculateTotal': calculate_total,
+    'reschedule_appointment': reschedule_appointment,
+    'cancel_appointment': cancel_appointment
 }
 
 # Define OpenAI tools schema
@@ -85,6 +87,44 @@ openai_tools = [
                 "type": "object",
                 "properties": {},
                 "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "reschedule_appointment",
+            "description": "Reschedule an existing appointment to a new date and time",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "booking_id": {
+                        "type": "string",
+                        "description": "The booking ID of the appointment to reschedule"
+                    },
+                    "new_date_time": {
+                        "type": "string",
+                        "description": "The new date and time for the appointment (e.g., 'Tomorrow at 2 PM', 'March 15, 2025 at 10 AM')"
+                    }
+                },
+                "required": ["booking_id", "new_date_time"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "cancel_appointment",
+            "description": "Cancel an existing appointment",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "booking_id": {
+                        "type": "string",
+                        "description": "The booking ID of the appointment to cancel"
+                    }
+                },
+                "required": ["booking_id"]
             }
         }
     }
@@ -229,6 +269,18 @@ class OpenAIAgent:
 
                     4. calculateTotal: Use this tool to calculate the total cost of the appointment
                        - When to use: Before booking an appointment and after confirming all customer details
+
+                    5. rescheduleAppointment: Use this tool to reschedule an existing appointment to a new date and time
+                       - Input: The booking ID and a new date and time string
+                       - When to use: When a customer wants to change the date/time of an existing booking
+                       - Example trigger phrases: "I need to reschedule my appointment", "Can I change my booking to next Tuesday?", "Move my appointment to 3 PM"
+                       - Make sure you have the booking ID before using this tool
+
+                    6. cancelAppointment: Use this tool to cancel an existing appointment
+                       - Input: The booking ID
+                       - When to use: When a customer wants to cancel their appointment
+                       - Example trigger phrases: "I need to cancel my appointment", "Cancel my booking", "I don't want the cleaning anymore"
+                       - Make sure you have the booking ID before using this tool
 
                     """
                 
@@ -378,7 +430,7 @@ class OpenAIAgent:
                 if msg.role == 'tool':
                     message_list.append({
                         'id': msg.id,
-                        'role': 'function_call',
+                        'role': 'tool',
                         'content': msg.message,  # Use content key for OpenAI compatibility
                         'createdAt': msg.createdAt
                     })
@@ -433,6 +485,12 @@ class OpenAIAgent:
                                 "role": "assistant",
                                 "content": content
                             })
+                        # Convert function_call to tool role
+                        elif msg['role'] == 'function_call':
+                            formatted_messages.append({
+                                "role": "tool",
+                                "content": content
+                            })
                         else:
                             formatted_messages.append({
                                 "role": msg['role'],
@@ -483,7 +541,7 @@ class OpenAIAgent:
             })
             
         # Import tools from api_views.py
-        from .api_views import calculate_total, check_availability, book_appointment, get_current_time_in_chicago
+        from .api_views import calculate_total, check_availability, book_appointment, get_current_time_in_chicago, reschedule_appointment, cancel_appointment
 
         # Handle tool calls
         try:
@@ -682,6 +740,59 @@ class OpenAIAgent:
                     "current_time": result
                 })
                 
+            # rescheduleAppointment tool
+            elif tool_name == 'rescheduleAppointment':
+                print(f"[DEBUG] Executing rescheduleAppointment tool with args: {tool_args}")
+                booking_id = tool_args.get('booking_id')
+                new_date_time = tool_args.get('new_date_time')
+                
+                if not booking_id or not new_date_time:
+                    print("[DEBUG] Missing required parameters in rescheduleAppointment")
+                    return json.dumps({
+                        "success": False,
+                        "error": "Missing required parameters (booking_id or new_date_time)"
+                    })
+                    
+                try:
+                    # Call the reschedule_appointment function from api_views.py
+                    print(f"[DEBUG] Calling reschedule_appointment function with business ID={business.businessId}, booking_id={booking_id}, new_date_time={new_date_time}")
+                    result = reschedule_appointment(business, booking_id, new_date_time)
+                    print(f"[DEBUG] reschedule_appointment returned: {result}")
+                    return json.dumps(result)
+                except Exception as e:
+                    print(f"[ERROR] Error in rescheduleAppointment: {str(e)}")
+                    traceback.print_exc()
+                    return json.dumps({
+                        "success": False,
+                        "error": f"Error rescheduling appointment: {str(e)}"
+                    })
+                
+            # cancelAppointment tool
+            elif tool_name == 'cancelAppointment':
+                print(f"[DEBUG] Executing cancelAppointment tool with args: {tool_args}")
+                booking_id = tool_args.get('booking_id')
+                
+                if not booking_id:
+                    print("[DEBUG] Missing booking_id parameter in cancelAppointment")
+                    return json.dumps({
+                        "success": False,
+                        "error": "Missing booking_id parameter"
+                    })
+                    
+                try:
+                    # Call the cancel_appointment function from api_views.py
+                    print(f"[DEBUG] Calling cancel_appointment function with business ID={business.businessId}, booking_id={booking_id}")
+                    result = cancel_appointment(business, booking_id)
+                    print(f"[DEBUG] cancel_appointment returned: {result}")
+                    return json.dumps(result)
+                except Exception as e:
+                    print(f"[ERROR] Error in cancelAppointment: {str(e)}")
+                    traceback.print_exc()
+                    return json.dumps({
+                        "success": False,
+                        "error": f"Error canceling appointment: {str(e)}"
+                    })
+                
             else:
                 return json.dumps({
                     "error": f"Unknown tool: {tool_name}"
@@ -766,6 +877,44 @@ class OpenAIAgent:
                     "parameters": {
                         "type": "object",
                         "properties": {}
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "rescheduleAppointment",
+                    "description": "Reschedule an existing appointment to a new date and time",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "booking_id": {
+                                "type": "string",
+                                "description": "The booking ID of the appointment to reschedule"
+                            },
+                            "new_date_time": {
+                                "type": "string",
+                                "description": "The new date and time for the appointment in natural language (e.g. 'tomorrow at 10am', 'next Monday at 2pm')"
+                            }
+                        },
+                        "required": ["booking_id", "new_date_time"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "cancelAppointment",
+                    "description": "Cancel an existing appointment",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "booking_id": {
+                                "type": "string",
+                                "description": "The booking ID of the appointment to cancel"
+                            }
+                        },
+                        "required": ["booking_id"]
                     }
                 }
             }
@@ -1271,12 +1420,7 @@ def chat_api(request):
                 'error': 'SMS limit exceeded'
             }, status=400)
         
-        print(f"\n[DEBUG] Chat API request")
-        print(f"[DEBUG] Business ID: {business_id}")
-        print(f"[DEBUG] Client phone number: {client_phone_number}")
-        print(f"[DEBUG] Message: {message_text}")
-        
-        # Validate required fields
+       
         if not business_id or not (client_phone_number or session_key) or not message_text:
             return JsonResponse({
                 'error': 'Missing required fields'

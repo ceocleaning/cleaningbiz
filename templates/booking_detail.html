@@ -13,6 +13,13 @@
                         <h4 class="mb-1 text-primary">Booking #{{ booking.bookingId }}</h4>
                         <p class="text-muted mb-0">Created on {{ booking.createdAt|date:"F d, Y" }}</p>
                     </div>
+                    {% if booking.cancelled_at %}
+                    <div class="d-flex gap-2 mt-2 mt-sm-0">
+                        <span class="badge bg-danger rounded-pill px-3 py-2">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelled
+                        </span>
+                    {% else %}
                     <div class="d-flex gap-2 mt-2 mt-sm-0">
                         <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
                             <i class="fas {% if booking.isCompleted %}fa-check{% else %}fa-clock{% endif %} me-1"></i>
@@ -25,6 +32,7 @@
                         </span>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

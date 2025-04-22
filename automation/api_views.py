@@ -18,20 +18,11 @@ import traceback
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business):
-    """ Fetch all active cleaners who are available for work. """
-    print("Finding cleaners for business:", business)
     cleaners = Cleaners.objects.filter(business=business, isActive=True, isAvailable=True)
-    print("Found cleaners:", cleaners)
     return cleaners
 
 # Function to get cleaner availabilities for a specific day
 def get_cleaner_availabilities(cleaner, date_to_check):
-    """ 
-    Fetch cleaner availabilities for a specific date.
-    First checks for specific date exception, then falls back to weekly schedule.
-    Returns None if the cleaner is off on the requested date.
-    """
-    # First check for specific date exception
     specific_availability = CleanerAvailability.objects.filter(
         cleaner=cleaner,
         availability_type='specific',
@@ -60,15 +51,9 @@ def get_cleaner_availabilities(cleaner, date_to_check):
 
 # Function to check if a timeslot is available
 def is_slot_available(cleaners, time_to_check, available_cleaners=None):
-    """
-    Check if at least one cleaner is available for the given time.
-    Returns True if any cleaner is available, False otherwise.
-    Also populates available_cleaners list with all cleaners available for this slot.
-    """
     if available_cleaners is None:
         available_cleaners = []
     
-    # Clear the list to ensure we don't append to existing data
     available_cleaners.clear()
     
     logs = []
@@ -750,3 +735,55 @@ def sendCommercialFormLink(request):
             'success': False,
             'message': f'Error sending email: {str(e)}'
         }, status=500)
+
+
+from ai_agent.api_views import reschedule_appointment, cancel_appointment
+
+@csrf_exempt
+@api_view(['POST'])
+def reschedule_booking(request):
+    try:
+        data = json.loads(request.body)
+        booking_id = data.get('booking_id')
+        new_date_time = data.get('new_date_time')
+        
+        booking = Booking.objects.get(bookingId=booking_id)
+        
+        reschedule_response = reschedule_appointment(booking, new_date_time)
+
+        if reschedule_response['success']:
+            return JsonResponse({'success': True, 'message': 'Booking rescheduled successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': reschedule_response['error']}, status=500)
+    
+
+    except Exception as e:
+        print(f"Error rescheduling booking: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': f'Error rescheduling booking: {str(e)}'}, status=500)
+
+
+
+
+@csrf_exempt
+@api_view(['POST'])
+def cancel_booking(request):
+    try:
+        data = json.loads(request.body)
+        booking_id = data.get('booking_id')
+        
+        booking = Booking.objects.filter(bookingId=booking_id).first()
+        
+        cancel_response = cancel_appointment(booking)
+
+        if cancel_response['success']:
+            return JsonResponse({'success': True, 'message': 'Booking cancelled successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': cancel_response['error']}, status=500)
+
+    except Exception as e:
+        print(f"Error cancelling booking: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': f'Error cancelling booking: {str(e)}'}, status=500)
+
+

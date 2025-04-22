@@ -395,6 +395,9 @@
             const chatMessagesContent = document.getElementById('chatMessagesContent');
             chatMessagesContent.style.display = 'block';
             
+            // Log the response structure for debugging
+            console.log('GET messages response:', data);
+            
             // Check status field from the response
             if (data.status === 'success' && data.messages && data.messages.length > 0) {
                 // Clear existing messages
@@ -408,7 +411,22 @@
                         const date = new Date(message.createdAt);
                         timestamp = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     }
-                    appendMessage(message.role, message.message, timestamp);
+                    
+                    // Extract message content correctly
+                    let messageContent = message.content;
+                    if (messageContent === undefined) {
+                        messageContent = message.message;
+                    }
+                    
+                    // Log each message for debugging
+                    console.log('Processing message:', { 
+                        role: message.role, 
+                        content: messageContent, 
+                        timestamp: timestamp,
+                        original: message 
+                    });
+                    
+                    appendMessage(message.role, messageContent, timestamp);
                 });
                 chatLoader.classList.add('d-none');
             } else {
@@ -490,6 +508,9 @@
                 loadingDiv.parentNode.removeChild(loadingDiv);
             }
             
+            // Debug response structure
+            console.log('API Response:', data);
+            
             if (data.error) {
                 console.error('API Error:', data.error);
                 window.showToast('Error', data.error, 'error');
@@ -497,8 +518,9 @@
                 return;
             }
             
-            // Add AI response to chat
-            appendMessage('assistant', data.response);
+            // Add AI response to chat - try multiple possible response formats
+            const messageContent = data.response || data.content || (typeof data === 'string' ? data : JSON.stringify(data));
+            appendMessage('assistant', messageContent);
             
             // Handle tool call results if any
             if (data.tool_call_results && data.tool_call_results.length > 0) {
@@ -546,6 +568,18 @@
         const messageDiv = document.createElement('div');
         messageDiv.className = 'mb-3';
         
+        // Ensure content is a string
+        let displayContent = content;
+        if (content === undefined || content === null) {
+            displayContent = "No message content";
+        } else if (typeof content !== 'string') {
+            try {
+                displayContent = JSON.stringify(content);
+            } catch (e) {
+                displayContent = String(content);
+            }
+        }
+        
         // Get current time if no timestamp is provided
         const messageTime = timestamp || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
@@ -553,7 +587,7 @@
             messageDiv.innerHTML = `
                 <div class="d-flex justify-content-end">
                     <div class="bg-primary text-white p-2 rounded-3 mw-75">
-                        <div class="small text-start">${content}</div>
+                        <div class="small text-start">${displayContent}</div>
                         <div class="text-end mt-1" style="font-size: 0.7rem; opacity: 0.8;">${messageTime}</div>
                     </div>
                 </div>
@@ -562,7 +596,7 @@
             messageDiv.innerHTML = `
                 <div class="d-flex justify-content-center">
                     <div class="bg-info bg-opacity-25 p-2 rounded-3 mw-100">
-                        <div class="small text-start">${content}</div>
+                        <div class="small text-start">${displayContent}</div>
                         <div class="text-end mt-1" style="font-size: 0.7rem; opacity: 0.8;">${messageTime}</div>
                     </div>
                 </div>
@@ -571,7 +605,7 @@
             messageDiv.innerHTML = `
                 <div class="d-flex">
                     <div class="bg-light p-2 rounded-3 mw-75">
-                        <div class="small text-start">${content}</div>
+                        <div class="small text-start">${displayContent}</div>
                         <div class="text-end mt-1" style="font-size: 0.7rem; opacity: 0.8;">${messageTime}</div>
                     </div>
                 </div>

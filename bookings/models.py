@@ -97,6 +97,9 @@ class Booking(models.Model):
     paymentMethod = models.CharField(max_length=20, choices=paymentMethods, null=True, blank=True)
     totalPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    # cancelled
+    cancelled_at = models.DateTimeField(null=True, blank=True)
     
     # Status Fields
     isCompleted = models.BooleanField(default=False)
