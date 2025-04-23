@@ -1182,3 +1182,341 @@ def admin_change_plan(request):
         return redirect(redirect_url)
     
     return redirect(redirect_url)
+
+@login_required
+@user_passes_test(is_admin)
+def analytics(request):
+    """View for analytics dashboard page"""
+    context = {
+        'active_tab': 'analytics'
+    }
+    return render(request, 'admin_dashboard/analytics.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def api_analytics(request):
+    """API endpoint to provide analytics data with date range filtering"""
+    from django.db.models import Count, Sum, F, Q, ExpressionWrapper, FloatField, IntegerField
+    from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    from usage_analytics.services.retell_api_service import RetellAPIService
+    from retell_agent.models import RetellAgent
+    from ai_agent.models import Chat
+    from bookings.models import Booking
+    import json
+    
+    # Get date range from request parameters
+    try:
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            # Default to last 30 days
+            end_date = timezone.now().date()
+            start_date = end_date - timedelta(days=29)
+    except (ValueError, TypeError):
+        # Handle invalid date format
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Query bookings within date range
+    bookings_in_range = Booking.objects.filter(
+        cleaningDate__gte=start_date,
+        cleaningDate__lte=end_date
+    )
+    
+    # Count total bookings
+    total_bookings = bookings_in_range.count()
+    
+    # Calculate total revenue
+    total_revenue = bookings_in_range.aggregate(
+        total=Sum('totalPrice')
+    )['total'] or 0
+
+  
+    try:
+        retell_calls = RetellAPIService.list_calls(start_date=start_date, end_date=end_date)
+        total_retell_calls = len(retell_calls)
+       
+    except Exception as e:
+        print(f"Error fetching Retell calls: {e}")
+        total_retell_calls = 0
+    
+    # Convert date objects to datetime for Chat filtering
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
+    try:
+        total_chats = Chat.objects.filter(createdAt__gte=start_datetime, createdAt__lte=end_datetime).count()
+    except Exception as e:
+        print(f"Error fetching chat count: {e}")
+        total_chats = 0
+    
+    # Calculate conversion rate (completed/total)
+    completed_bookings = bookings_in_range.filter(isCompleted=True).count()
+    
+    conversion_rate = round((total_bookings / (total_chats + total_retell_calls)) * 100)
+  
+    
+    # Get distribution data for pie chart (by service type)
+    service_type_counts = bookings_in_range.values(
+        'serviceType'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    distribution_labels = []
+    distribution_values = []
+
+    from bookings.models import serviceTypes
+    
+    for service in service_type_counts:
+        service_name = dict(serviceTypes).get(service['serviceType'], 'Unknown')
+        distribution_labels.append(service_name)
+        distribution_values.append(service['count'])
+    
+    # Get time series data
+    # Determine appropriate grouping based on date range
+    range_days = (end_date - start_date).days + 1
+    
+    if range_days <= 31:
+        # Group by day for ranges up to a month
+        time_bookings = bookings_in_range.annotate(
+            date=TruncDay('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %d'  # Aug 15
+    elif range_days <= 90:
+        # Group by week for ranges up to 3 months
+        time_bookings = bookings_in_range.annotate(
+            date=TruncWeek('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %d'  # Aug 15
+    else:
+        # Group by month for longer ranges
+        time_bookings = bookings_in_range.annotate(
+            date=TruncMonth('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %Y'  # Aug 2023
+    
+    time_series_labels = []
+    time_series_values = []
+    
+    for entry in time_bookings:
+        if entry['date']:
+            time_series_labels.append(entry['date'].strftime(date_format))
+            time_series_values.append(entry['count'])
+    
+    # Compile response data
+    response_data = {
+        'total_bookings': total_bookings,
+        'total_revenue': float(total_revenue),
+        'total_chats': total_chats,
+        'total_calls': total_retell_calls,
+        'conversion_rate': conversion_rate,
+        'distribution_data': {
+            'labels': distribution_labels,
+            'values': distribution_values
+        },
+        'time_series_data': {
+            'labels': time_series_labels,
+            'values': time_series_values
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+# Add the business_analytics view function
+@login_required
+@user_passes_test(is_admin)
+def business_analytics(request, business_id):
+    """View for displaying analytics for a specific business"""
+    business = get_object_or_404(Business, id=business_id)
+    
+    context = {
+        'business': business,
+        'active_tab': 'businesses'
+    }
+    
+    return render(request, 'admin_dashboard/business_analytics.html', context)
+
+# Add the business_analytics_api endpoint
+@login_required
+@user_passes_test(is_admin)
+def business_analytics_api(request, business_id):
+    """API endpoint to provide analytics data for a specific business with date range filtering"""
+    from django.db.models import Count, Sum, F, Q, ExpressionWrapper, FloatField, IntegerField
+    from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    from usage_analytics.services.retell_api_service import RetellAPIService
+    from retell_agent.models import RetellAgent
+    from ai_agent.models import Chat
+    from bookings.models import Booking, serviceTypes
+    import json
+    
+    # Get the business
+    business = get_object_or_404(Business, id=business_id)
+    
+    # Get date range from request parameters
+    try:
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            # Default to last 30 days
+            end_date = timezone.now().date()
+            start_date = end_date - timedelta(days=29)
+    except (ValueError, TypeError):
+        # Handle invalid date format
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Query bookings for this business within date range
+    bookings_in_range = Booking.objects.filter(
+        business=business,
+        cleaningDate__gte=start_date,
+        cleaningDate__lte=end_date
+    )
+    
+    # Count total bookings
+    total_bookings = bookings_in_range.count()
+    
+    # Calculate total revenue
+    total_revenue = bookings_in_range.aggregate(
+        total=Sum('totalPrice')
+    )['total'] or 0
+    
+    # Get Retell calls for this business
+    try:
+        # Filter calls for this specific business
+        retell_calls = RetellAPIService.list_calls(
+            start_date=start_date, 
+            end_date=end_date,
+            business=business
+        )
+        total_retell_calls = len(retell_calls)
+    except Exception as e:
+        print(f"Error fetching Retell calls: {e}")
+        total_retell_calls = 0
+    
+    # Convert date objects to datetime for Chat filtering
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
+    # Get chat count for this business
+    try:
+        total_chats = Chat.objects.filter(
+            business=business,
+            createdAt__gte=start_datetime, 
+            createdAt__lte=end_datetime
+        ).count()
+    except Exception as e:
+        print(f"Error fetching chat count: {e}")
+        total_chats = 0
+    
+
+    conversion_rate = round((total_bookings/(total_chats + total_retell_calls)) * 100)
+    
+    # Get distribution data for pie chart (by service type)
+    service_type_counts = bookings_in_range.values(
+        'serviceType'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    distribution_labels = []
+    distribution_values = []
+    
+    for service in service_type_counts:
+        service_name = dict(serviceTypes).get(service['serviceType'], 'Unknown')
+        distribution_labels.append(service_name)
+        distribution_values.append(service['count'])
+    
+    # Get time series data
+    # Determine appropriate grouping based on date range
+    range_days = (end_date - start_date).days + 1
+    
+    if range_days <= 31:
+        # Group by day for ranges up to a month
+        time_bookings = bookings_in_range.annotate(
+            date=TruncDay('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %d'  # Aug 15
+    elif range_days <= 90:
+        # Group by week for ranges up to 3 months
+        time_bookings = bookings_in_range.annotate(
+            date=TruncWeek('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %d'  # Aug 15
+    else:
+        # Group by month for longer ranges
+        time_bookings = bookings_in_range.annotate(
+            date=TruncMonth('cleaningDate')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        date_format = '%b %Y'  # Aug 2023
+    
+    time_series_labels = []
+    time_series_values = []
+    
+    for entry in time_bookings:
+        if entry['date']:
+            time_series_labels.append(entry['date'].strftime(date_format))
+            time_series_values.append(entry['count'])
+    
+    # Get recent bookings
+    recent_bookings = []
+    for booking in bookings_in_range.order_by('-createdAt')[:10]:
+        status = 'pending'
+        if booking.isCompleted:
+            status = 'completed'
+        elif booking.cancelled_at is not None:
+            status = 'cancelled'
+        
+        service_name = dict(serviceTypes).get(booking.serviceType, 'Other')
+        
+        recent_bookings.append({
+            'id': booking.bookingId,
+            'customer_name': f"{booking.firstName} {booking.lastName}",
+            'service_type': service_name,
+            'date': booking.cleaningDate.strftime('%b %d, %Y'),
+            'amount': float(booking.totalPrice),
+            'status': status
+        })
+    
+    # Compile response data
+    response_data = {
+        'total_bookings': total_bookings,
+        'total_revenue': float(total_revenue),
+        'total_chats': total_chats,
+        'total_calls': total_retell_calls,
+        'conversion_rate': conversion_rate,
+        'distribution_data': {
+            'labels': distribution_labels,
+            'values': distribution_values
+        },
+        'time_series_data': {
+            'labels': time_series_labels,
+            'values': time_series_values
+        },
+        'recent_bookings': recent_bookings
+    }
+    
+    return JsonResponse(response_data)

@@ -1,0 +1,266 @@
+# CEO Cleaners Platform – User Guide
+
+---
+
+## Introduction
+
+**Description:**
+This section introduces CEO Cleaners, explaining what the platform does and who it is designed for. It helps users understand the overall purpose and value of the application before they begin using it.
+
+Welcome to CEO Cleaners! This platform is designed for cleaning businesses, their staff, and cleaners to manage bookings, customers, schedules, invoices, payments, and more—all in one place. Whether you are a business owner, a cleaner, or an admin, CEO Cleaners helps you streamline your cleaning operations, improve customer service, and grow your business.
+
+---
+
+## Getting Started: Creating Your Account & First Steps
+
+**Description:**
+This section guides you step-by-step through the process of creating your account, verifying your email, and what to expect when you log in for the first time.
+
+### 1. Starting Out
+To use CEO Cleaners, you first need to create an account. This helps us personalize your experience and keep your data secure.
+
+### 2. Creating Your Account
+- Go to the CEO Cleaners website and click **Sign Up** or **Register**.
+- Choose your role (Business Owner or Cleaner).
+- Fill in your details:
+  - Name
+  - Email address
+  - Password
+  - (For business owners) Business information such as company name and contact details
+- Agree to the terms and conditions, then click **Create Account**.
+
+
+### 4. First Login & Welcome
+- Once verified, return to the login page.
+- Enter your email and password, then click **Login**.
+- You may be asked to complete a reCAPTCHA for security.
+
+### 5. Your First Dashboard Experience
+- After logging in, you will see your personalized dashboard.
+- Explore the sidebar or top menu to access features like Bookings, Customers, Invoices, and more.
+- If you are a business owner, you may be prompted to complete your business profile or add your first booking.
+- If you are a cleaner, you will see your assigned jobs and can update their status.
+
+### Tips & Notes
+- Make sure to use a valid email address so you can receive important notifications.
+- If you forget your password, use the **Forgot Password** link on the login page to reset it.
+- You can update your profile and settings at any time from the dashboard.
+
+---
+
+## User Roles Overview
+
+**Description:**
+Learn about the different types of users on the platform (Business Owner, Cleaner, Admin), what each role can do, and how permissions shape your experience.
+
+**Business Owner:**
+- Register and manage your cleaning business
+- Create and manage bookings
+- Assign and manage cleaners
+- View and manage customers
+- Generate and track invoices
+- Manage subscription plans and business settings
+- Access analytics and reports
+
+**Cleaner:**
+- View assigned jobs and schedules
+- Update job status (e.g., completed)
+- Manage personal profile and password
+
+**Admin:**
+- Approve or reject new business registrations
+- Manage all users, businesses, and cleaners
+- Oversee platform analytics, subscriptions, and settings
+
+---
+
+## Getting Started
+
+**Description:**
+This guide walks you through accessing the platform, signing up for an account, and logging in for the first time.
+
+### Accessing the Platform
+- Open your web browser and go to your platform’s website (e.g., https://yourplatformurl.com).
+
+### Signing Up
+- Click on **Sign Up** or **Register**.
+- Choose your role (Business or Cleaner).
+- Fill in your details (name, email, password, etc.).
+- Business owners may need to provide business information.
+- Check your email for a verification link and click to activate your account.
+
+### Logging In
+- Enter your email and password on the login page.
+- Complete the reCAPTCHA if prompted.
+- Click **Login** to access your dashboard.
+
+---
+
+## Dashboard Tour
+
+**Description:**
+Discover what you see after logging in. This section explains the dashboard layout, navigation menus, and how to quickly find the most important information or actions.
+
+After logging in, you’ll see your personalized dashboard. The layout may vary depending on your role:
+
+- **Sidebar or Top Menu:** Navigate to Bookings, Customers, Invoices, Subscription, Analytics, Settings, and more.
+- **Dashboard Cards:** See quick stats—upcoming bookings, pending invoices, completed jobs, etc.
+- **Quick Actions:** Buttons for creating bookings, adding customers, or managing cleaners.
+
+---
+
+## Feature-by-Feature Usage Guide
+
+**Description:**
+A detailed, step-by-step walkthrough of each core feature in CEO Cleaners. Follow these instructions to make the most of the platform’s capabilities.
+
+### 1. Bookings
+- **View Bookings:** See all scheduled, completed, and pending bookings.
+- **Create Booking:**
+  1. Go to **Bookings** > **Create Booking**.
+  2. Enter customer and property details.
+  3. Select service type (Standard, Deep, Move In/Out, Airbnb, Commercial).
+  4. Add any desired add-ons (e.g., window cleaning, fridge cleaning).
+  5. Assign a cleaner (optional).
+  6. Set date, time, and recurring options.
+  7. Save to confirm the booking.
+- **Edit/Cancel Booking:** Click on a booking to update or cancel it.
+- **Mark as Completed:** Cleaners or owners can mark jobs as finished.
+
+**Tip:** You can filter bookings by status or date for easier management.
+
+### 2. Customers
+- **View Customers:** Access a list of all your customers.
+- **Customer Details:** Click a customer to see their info and booking history.
+
+### 3. Cleaners
+- **Manage Cleaners:** Add, edit, or remove cleaners from your business.
+- **Assign Jobs:** Assign bookings to cleaners.
+- **Cleaner Profile:** Cleaners can update their own profile and password.
+
+### 4. Invoices & Payments
+- **Generate Invoice:** Create invoices for completed jobs.
+- **Send Invoice:** Email invoices to customers for payment.
+- **Track Payment Status:** See which invoices are paid, pending, or overdue.
+- **Payment Integration:** Accept payments via Square (if enabled).
+
+### 5. Subscription & Billing
+- **View Plans:** See available subscription plans and features.
+- **Upgrade/Downgrade:** Change your plan as your business grows.
+- **Billing History:** View past invoices and payment records.
+- **Apply Coupons:** Enter coupon codes for discounts.
+
+### 6. Analytics & Reports
+- **Usage Analytics:** View charts and reports on bookings, revenue, and more.
+- **Export Data:** Download reports for your records.
+
+### 7. AI Agent (if enabled)
+- **Automated Chat:** Use the AI Agent to answer customer queries or automate bookings.
+- **Configure Agent:** Adjust AI settings in the AI Agent section.
+
+### 8. Notifications & Alerts
+- **Email Alerts:** Receive emails for booking confirmations, invoices, and important updates.
+- **In-App Notifications:** See alerts for upcoming jobs, expiring subscriptions, or required actions.
+- **OTP Emails:** For password resets, you’ll receive a one-time password (OTP) via email.
+
+---
+
+## Navigation & UI
+
+**Description:**
+Learn how to move around the platform, understand the layout, and find features quickly and easily.
+
+- **Sidebar/Top Menu:** Main way to move between sections
+- **Breadcrumbs:** Show your current location in the app
+- **Action Buttons:** Clearly labeled for common tasks (e.g., Add Booking, Save, Cancel)
+- **Forms:** Use clear labels, required fields marked with *
+- **Tables/Lists:** Click rows for more detail or actions
+
+**Tip:** Use the search bar or filters to quickly find bookings, customers, or invoices.
+
+---
+
+## Forms & Input
+
+**Description:**
+Guidance on how to fill out forms, what to expect with validations, and how to successfully submit information.
+
+- **Filling Forms:** Enter details as prompted; required fields must be completed.
+- **Validation:** Errors will be shown if any required information is missing or invalid.
+- **Saving:** Click **Save** or **Submit** to complete the action.
+- **Editing:** Click **Edit** on any item to update its details.
+
+---
+
+## Notifications & Alerts
+
+**Description:**
+Understand when and why you’ll see notifications, success messages, warnings, or alerts while using the platform.
+
+- **Success Messages:** Shown after completing actions (e.g., "Booking created successfully!")
+- **Error Messages:** Shown if something goes wrong (e.g., missing info, invalid email)
+- **Warnings:** For important issues (e.g., "Your subscription is about to expire.")
+- **OTP/Verification:** For password reset, you'll receive an OTP email with instructions.
+
+---
+
+## Account Management
+
+**Description:**
+How to manage your profile, update passwords, and change business settings.
+
+- **Profile:** Update your name, email, phone, and profile picture.
+- **Change Password:** Go to Profile > Change Password.
+- **Forgot Password:** Use the **Forgot Password** link on the login page. Enter your email, verify the OTP sent to your inbox, and set a new password.
+- **Business Settings:** Owners can update business info, pricing, add-ons, and payment details.
+
+---
+
+## Permissions
+
+**Description:**
+A summary of what each user role can and cannot do, so you always know your capabilities and limitations.
+
+- **Business Owners:** Full access to all business features, bookings, invoices, settings, and cleaners.
+- **Cleaners:** Access only to assigned jobs and personal profile.
+- **Admins:** Manage all users, businesses, and platform settings.
+- **Some actions (like deleting bookings or changing plans) may be restricted based on your role.**
+
+---
+
+## FAQ (Usage Only)
+
+**Description:**
+Answers to the most common questions about using CEO Cleaners, focused on everyday user actions.
+
+**Q: How do I reset my password?**
+A: Click "Forgot Password" on the login page, enter your email, and follow the OTP instructions sent to your inbox.
+
+**Q: Where can I view my bookings?**
+A: Go to the Bookings section from your dashboard or sidebar.
+
+**Q: How do I assign a cleaner to a job?**
+A: When creating or editing a booking, select a cleaner from the dropdown list.
+
+**Q: How do I pay my subscription?**
+A: Go to the Subscription section, select a plan, and follow the payment instructions.
+
+**Q: What happens if my session times out?**
+A: For your security, you’ll be logged out after a period of inactivity. Simply log in again to continue.
+
+---
+
+## Log Out and Session Behavior
+
+**Description:**
+Explains how to log out, what happens if you are inactive, and how session management keeps your account secure.
+
+- **Logging Out:** Click your profile icon or the logout link in the navigation menu.
+- **Session Timeout:** If you are inactive for a while, you may be automatically logged out for security. You’ll need to log in again to continue.
+- **Multiple Devices:** You can access your account from any device, but avoid sharing your login details.
+
+---
+
+Thank you for using CEO Cleaners! For further help, use the in-app Help section or contact support via the Contact Us page.
+
+# END OF USER GUIDE

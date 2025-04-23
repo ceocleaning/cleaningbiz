@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from datetime import datetime
 from django.utils.timezone import make_aware
+from retell_agent.models import RetellAgent
 
 logger = logging.getLogger(__name__)
 
@@ -10,52 +11,46 @@ class RetellAPIService:
     """Service for interacting with the Retell API."""
     
     @staticmethod
-    def list_calls(business, start_date=None, end_date=None, limit=100):
-        """
-        Retrieve call data from Retell API with filtering by business agent ID and date range.
+    def list_calls(business=None, start_date=None, end_date=None, limit=10000):
         
-        Args:
-            business: The business to get calls for
-            start_date: Start date for filtering (datetime object)
-            end_date: End date for filtering (datetime object)
-            limit: Maximum number of calls to retrieve
+        if business is not None:
+            agents = RetellAgent.objects.filter(business=business)
             
-        Returns:
-            List of call data dictionaries
-        """
-        from retell_agent.models import RetellAgent
+            if not agents.exists():
+                logger.warning(f"No Retell agents found for business {business.id}")
+                return []
+            
+            # Collect all agent IDs
+            agent_ids = [agent.agent_id for agent in agents if agent.agent_id]
+            
+            if not agent_ids:
+                logger.warning(f"No valid agent IDs found for business {business.id}")
+                return []
+            
+            # Prepare filter criteria
+            filter_criteria = {
+                "agent_id": agent_ids,
+            }
         
-        # Get all Retell agents for this business
-        agents = RetellAgent.objects.filter(business=business)
-        
-        if not agents.exists():
-            logger.warning(f"No Retell agents found for business {business.id}")
-            return []
-        
-        # Collect all agent IDs
-        agent_ids = [agent.agent_id for agent in agents if agent.agent_id]
-        
-        if not agent_ids:
-            logger.warning(f"No valid agent IDs found for business {business.id}")
-            return []
-        
-        # Prepare filter criteria
-        filter_criteria = {
-            "agent_id": agent_ids,
-        }
-        
-        # Add date range filtering if provided
+        else:
+            all_agents = RetellAgent.objects.all()
+            agent_ids = [agent.agent_id for agent in all_agents if agent.agent_id]
+            filter_criteria = {
+                'agent_id': agent_ids
+            }
+  
+     
         if start_date or end_date:
             timestamp_filter = {}
             
             if start_date:
-                # Convert to milliseconds timestamp
+
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 start_timestamp = int(start_datetime.timestamp() * 1000)
                 timestamp_filter["lower_threshold"] = start_timestamp
                 
             if end_date:
-                # Convert to milliseconds timestamp
+         
                 end_datetime = datetime.combine(end_date, datetime.min.time())
                 end_timestamp = int(end_datetime.timestamp() * 1000)
                 timestamp_filter["upper_threshold"] = end_timestamp
@@ -64,9 +59,11 @@ class RetellAPIService:
                 filter_criteria["start_timestamp"] = timestamp_filter
         
         # Prepare the API request
+        retell_api_key = settings.RETELL_API_KEY
+        print(retell_api_key)
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {settings.RETELL_API_KEY}'
+            'Authorization': f'Bearer {retell_api_key}'
         }
         
         payload = {
@@ -86,7 +83,7 @@ class RetellAPIService:
             if response.status_code == 200:
                 call_data = response.json()
                 
-                # Handle the case where the API returns a list instead of a dict with 'calls' key
+           
                 calls = []
                 if isinstance(call_data, list):
                     calls = call_data

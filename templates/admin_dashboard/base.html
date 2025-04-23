@@ -13,6 +13,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Admin Dashboard CSS - Now inline -->
     <style>
+        /* Decrease font sizes by 25% for all tags */
+        html {
+            font-size: 12px; /* Default is 16px, so 12px is 75% */
+        }
+        
+        /* Scale specific elements to maintain proportions */
+        body {
+            font-size: 0.875rem; /* ~10.5px */
+        }
+        
+        .h1, h1 {
+            font-size: 1.75rem; /* ~21px */
+        }
+        
+        .h2, h2 {
+            font-size: 1.5rem; /* ~18px */
+        }
+        
+        .h3, h3 {
+            font-size: 1.25rem; /* ~15px */
+        }
+        
+        .h4, h4 {
+            font-size: 1.125rem; /* ~13.5px */
+        }
+        
+        .h5, h5 {
+            font-size: 1rem; /* ~12px */
+        }
+        
+        .h6, h6 {
+            font-size: 0.875rem; /* ~10.5px */
+        }
+        
+        /* Ensure buttons and form controls are properly sized */
+        .btn, input, select, textarea {
+            font-size: 0.875rem;
+        }
+        
+        /* Table text */
+        .table {
+            font-size: 0.875rem;
+        }
+        
+        /* Small text */
+        small, .small {
+            font-size: 0.75rem;
+        }
+        
         /* Admin Dashboard Styles */
         :root {
             --primary-color: #3a7bd5;
@@ -426,6 +475,12 @@
                     <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="{% url 'admin_dashboard:index' %}">
                         <i class="fas fa-fw fa-tachometer-alt"></i>
                         <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/admin-dashboard/analytics/' %}active{% endif %}" href="{% url 'admin_dashboard:analytics' %}">
+                        <i class="fas fa-fw fa-chart-bar"></i>
+                        <span>Analytics</span>
                     </a>
                 </li>
             </ul>

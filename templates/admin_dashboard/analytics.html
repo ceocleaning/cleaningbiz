@@ -1,0 +1,456 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Analytics - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Cleaner date filter card */
+    .date-filter-card {
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Button group for date ranges */
+    .date-range-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .date-range-button {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .date-range-button:hover {
+        background-color: #e9ecef;
+    }
+    
+    .date-range-button.active {
+        background-color: #4e73df;
+        color: white;
+        border-color: #4e73df;
+    }
+    
+    /* Date inputs style */
+    .date-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .date-inputs {
+            flex-direction: column;
+        }
+    }
+    
+    /* Fix for card stacking */
+    .card {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Analytics Dashboard</h1>
+    </div>
+
+    <!-- Date Range Selector - Redesigned -->
+    <div class="card date-filter-card">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Date Range Filter</h6>
+        </div>
+        <div class="card-body">
+            <form id="date-range-form">
+                <div class="date-inputs">
+                    <div class="form-group">
+                        <label for="start-date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start-date" name="start_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="end-date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end-date" name="end_date">
+                    </div>
+                    <div class="form-group d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="d-block mb-2">Quick Select:</label>
+                    <div class="date-range-buttons">
+                        <button type="button" class="date-range-button" data-range="today">Today</button>
+                        <button type="button" class="date-range-button" data-range="yesterday">Yesterday</button>
+                        <button type="button" class="date-range-button" data-range="last7days">Last 7 Days</button>
+                        <button type="button" class="date-range-button" data-range="last30days">Last 30 Days</button>
+                        <button type="button" class="date-range-button" data-range="thismonth">This Month</button>
+                        <button type="button" class="date-range-button" data-range="lastmonth">Last Month</button>
+                        <button type="button" class="date-range-button" data-range="thisyear">This Year</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row">
+        <!-- Total Bookings Card -->
+        <div class="col-xl-2 col-md-3 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Bookings</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-bookings-count">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Revenue Card -->
+        <div class="col-xl-2 col-md-3 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-revenue">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Chats Card -->
+        <div class="col-xl-2 col-md-3 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Chats</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-chats">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Calls Card -->
+        <div class="col-xl-2 col-md-3 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Total Calls</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-calls">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-phone fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversion Rate Card -->
+        <div class="col-xl-2 col-md-3 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Conversion Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="conversion-rate">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pie Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Bookings Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="bookingsDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Over Time Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Bookings Over Time</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="bookingsTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Global variables for charts
+    let bookingsDistributionChart;
+    let bookingsTimeChart;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date range (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('start-date').value = formatDate(thirtyDaysAgo);
+        document.getElementById('end-date').value = formatDate(today);
+        
+        // Load initial data
+        loadAnalyticsData();
+        
+        // Handle form submission
+        document.getElementById('date-range-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            loadAnalyticsData();
+        });
+        
+        // Handle quick date selection - now using buttons
+        const dateRangeButtons = document.querySelectorAll('.date-range-button');
+        dateRangeButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Clear active state from all buttons
+                dateRangeButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Set active state for clicked button
+                this.classList.add('active');
+                
+                const range = this.getAttribute('data-range');
+                setDateRange(range);
+                loadAnalyticsData();
+            });
+        });
+        
+        // Highlight "Last 30 Days" as default active button
+        document.querySelector('.date-range-button[data-range="last30days"]').classList.add('active');
+    });
+    
+    // Format date as YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    // Set date range based on quick selection
+    function setDateRange(range) {
+        const today = new Date();
+        let startDate = new Date();
+        
+        switch(range) {
+            case 'today':
+                startDate = new Date(today);
+                break;
+            case 'yesterday':
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() - 1);
+                today.setDate(today.getDate() - 1);
+                break;
+            case 'last7days':
+                startDate.setDate(today.getDate() - 6);
+                break;
+            case 'last30days':
+                startDate.setDate(today.getDate() - 29);
+                break;
+            case 'thismonth':
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                break;
+            case 'lastmonth':
+                startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                today = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+            case 'thisyear':
+                startDate = new Date(today.getFullYear(), 0, 1);
+                break;
+        }
+        
+        document.getElementById('start-date').value = formatDate(startDate);
+        document.getElementById('end-date').value = formatDate(today);
+    }
+    
+    // Load analytics data from API
+    function loadAnalyticsData() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+        
+        // Show loading indicators
+        document.getElementById('total-bookings-count').textContent = 'Loading...';
+        document.getElementById('total-revenue').textContent = 'Loading...';
+        document.getElementById('total-chats').textContent = 'Loading...';
+        document.getElementById('total-calls').textContent = 'Loading...';
+        document.getElementById('conversion-rate').textContent = 'Loading...';
+        
+        // API call to get analytics data
+        fetch(`/admin-dashboard/api/analytics/?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(response => {
+                // Update metrics cards
+                document.getElementById('total-bookings-count').textContent = response.total_bookings;
+                document.getElementById('total-revenue').textContent = '$' + response.total_revenue.toFixed(2);
+                document.getElementById('total-chats').textContent = response.total_chats;
+                document.getElementById('total-calls').textContent = response.total_calls;
+                document.getElementById('conversion-rate').textContent = response.conversion_rate + '%';
+                
+                // Update charts
+                updateDistributionChart(response.distribution_data);
+                updateTimeChart(response.time_series_data);
+            })
+            .catch(error => {
+                console.error('Error loading analytics data:', error);
+                alert('Failed to load analytics data. Please try again.');
+            });
+    }
+    
+    // Update pie chart for bookings distribution
+    function updateDistributionChart(distributionData) {
+        const ctx = document.getElementById('bookingsDistributionChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (bookingsDistributionChart) {
+            bookingsDistributionChart.destroy();
+        }
+        
+        // Create new chart
+        bookingsDistributionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: distributionData.labels,
+                datasets: [{
+                    data: distributionData.values,
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'],
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.formattedValue || '';
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.raw / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update time series chart for bookings over time
+    function updateTimeChart(timeSeriesData) {
+        const ctx = document.getElementById('bookingsTimeChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (bookingsTimeChart) {
+            bookingsTimeChart.destroy();
+        }
+        
+        // Create new chart
+        bookingsTimeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeSeriesData.labels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: timeSeriesData.values,
+                    fill: false,
+                    borderColor: '#4e73df',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        precision: 0
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %} 

@@ -7,6 +7,14 @@ urlpatterns = [
     # Dashboard index
     path('', views.dashboard_index, name='index'),
     
+    # Analytics Dashboard
+    path('analytics/', views.analytics, name='analytics'),
+    path('api/analytics/', views.api_analytics, name='api_analytics'),
+    
+    # Business Analytics
+    path('businesses/<int:business_id>/analytics/', views.business_analytics, name='business_analytics'),
+    path('api/business-analytics/<int:business_id>/', views.business_analytics_api, name='business_analytics_api'),
+    
     # Subscription Plans
     path('subscription-plans/', views.subscription_plans, name='subscription_plans'),
     path('subscription-plans/add/', views.add_plan, name='add_plan'),
