@@ -1,0 +1,763 @@
+{% extends 'base.html' %}
+{% load booking_filters %}
+
+{% block title %}Booking Calendar{% endblock %}
+
+{% block styles %}
+<style>
+    h1{
+        font-size: 1.5rem !important;
+    }
+    h2{
+        font-size: 1.2rem !important;
+    }
+
+    a{
+        font-size: 0.8rem !important;
+    }
+
+    p{
+        font-size: 0.8rem !important;
+    }
+    span{
+        font-size: 0.8rem !important    ;
+    }
+    /* Google Calendar Style Redesign */
+    .calendar-container {
+        --border-color: #dadce0;
+        --paid-color: #0d904f;
+        --pending-color: #f59e0b;
+        --unpaid-color: #d93025;
+        --completed-color: #0d904f;
+        --today-color: #1a73e8;
+        --other-month-color: #f1f3f4;
+        --grid-line-color: #e0e0e0;
+        
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+       
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+    }
+    
+    /* Full screen container */
+    .calendar-page {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        overflow: auto;
+        z-index: 1030; /* Above most content */
+    }
+    
+    /* Compact header for more calendar space */
+    .calendar-page-header {
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    /* Calendar Header */
+    .calendar-header {
+        background-color: white;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 60px; /* Increased for better visibility */
+    }
+    
+    .calendar-title {
+        font-size: 1.5rem;
+        font-weight: 500; /* Slightly bolder */
+        margin: 0;
+        color: #3c4043;
+        display: flex;
+        align-items: center;
+    }
+    
+    .calendar-nav {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .calendar-nav-btn {
+        background-color: white;
+        border: 1px solid var(--border-color);
+        color: #3c4043;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    
+    .calendar-nav-btn:hover {
+        background-color: #f1f3f4;
+    }
+    
+    .today-btn {
+        background-color: #f1f3f4;
+    }
+    
+    .view-toggle-btn {
+        background-color: white;
+        border: 1px solid var(--border-color);
+        color: #3c4043;
+        border-radius: 4px;
+        padding: 8px 16px;
+    }
+    
+    /* Calendar Body */
+    .calendar-body {
+        display: flex;
+        flex: 1;
+        overflow: auto;
+        padding: 0 0 40px 0; /* Increased bottom padding */
+    }
+    
+    /* Time column styles */
+    .time-column {
+        width: 80px;
+        border-right: 1px solid var(--border-color);
+        background-color: white;
+        flex-shrink: 0; /* Prevent time column from shrinking */
+        position: sticky;
+        left: 0;
+        z-index: 10;
+    }
+    
+    .time-cell {
+        height: 60px;
+        padding: 0 12px 0 0;
+        text-align: right;
+        color: #70757a;
+        font-size: 0.8rem;
+        position: relative;
+        border-bottom: 1px solid var(--border-color);
+        line-height: 0;
+    }
+
+    .time-label:first-child {
+        top: 10px;
+    }
+    
+    .time-label {
+        position: absolute;
+        right: 12px;
+        top: -10px; /* Adjusted to better center with horizontal gridlines */
+        white-space: nowrap;
+        padding: 2px 4px;
+        background-color: white; /* Ensure labels are clearly visible */
+    }
+    
+    /* Week grid - main calendar area */
+    .week-grid {
+        display: flex;
+        flex: 1;
+        position: relative;
+        min-width: 0;
+        min-height: calc(60px * 18); /* 18 hours (6am to midnight) */
+    }
+    
+    /* Day columns */
+    .day-column {
+        flex: 1;
+        min-width: 120px;
+        border-right: 1px solid var(--border-color);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box; /* Ensure padding is included in width calculation */
+    }
+    
+    .day-column:last-child {
+        border-right: none;
+    }
+    
+    .day-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        cursor: pointer;
+    }
+    
+    .day-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #70757a;
+        margin-bottom: 4px; /* Add space between day name and number */
+    }
+    
+    .day-number {
+        font-size: 1.5rem; /* Slightly smaller to ensure it fits */
+        font-weight: 400;
+        height: 32px;
+        width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+    
+    .day-header:hover .day-number {
+        background-color: #f1f3f4;
+    }
+    
+    .today .day-header {
+        background-color: rgba(26, 115, 232, 0.05);
+    }
+    
+    .today .day-number {
+        background-color: var(--today-color);
+        color: white;
+        font-weight: 500;
+    }
+    
+    .today .day-name {
+        color: var(--today-color);
+        font-weight: 600;
+    }
+    
+    .other-month .day-header {
+        background-color: var(--other-month-color);
+    }
+    
+    /* Time grid within each day column */
+    .time-grid {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: auto !important; /* Force height to auto */
+    }
+    
+    /* Hour rows */
+    .hour-row {
+        height: 60px;
+        min-height: 60px; /* Force minimum height */
+        border-bottom: 1px solid var(--border-color) !important; /* Force border */
+        position: relative;
+        width: 100%;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    /* Half-hour markers */
+    .half-hour-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        border-bottom: 1px dotted var(--border-color);
+        z-index: 1;
+    }
+
+    /* Use JavaScript to calculate this instead of template tags */
+    .time-grid {
+        min-height: 1080px; /* 18 hours × 60px = 1080px */
+    }
+    
+    /* Booking Event Styles */
+    .booking-event {
+        position: absolute;
+        left: 4px;
+        right: 4px;
+        background-color: #4285f4;
+        color: white;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.8125rem;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        z-index: 2;
+        min-height: 25px;
+    }
+    
+    .booking-event.completed, .booking-event.paid {
+        background-color: var(--paid-color);
+    }
+    
+    .booking-event.unpaid {
+        background-color: var(--unpaid-color);
+    }
+    
+    .booking-event.pending {
+        background-color: var(--pending-color);
+    }
+    
+    .booking-event-title {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .booking-event-time {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    
+    /* Timeline indicator */
+    .now-indicator {
+        position: absolute;
+        left: 0;
+        right: 0;
+        border-top: 2px solid red;
+        z-index: 5;
+        pointer-events: none; /* Don't block events */
+    }
+    
+    .now-indicator::before {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background-color: red;
+        border-radius: 50%;
+        left: -6px;
+        top: -7px;
+    }
+    
+    /* Modal styles */
+    .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+    }
+    
+    .modal-title {
+        font-weight: 500;
+        color: #3c4043;
+    }
+    
+    /* Timeline Styles for Day Detail */
+    .timeline-container {
+        background-color: #1a1a1a;
+        color: #f5f5f5;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #333;
+    }
+    
+    .timeline-header {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        background-color: #2a2a2a;
+        padding: 10px;
+        border-bottom: 1px solid #333;
+    }
+    
+    .timeline {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .timeline-slot {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        border-bottom: 1px solid #333;
+        min-height: 50px;
+    }
+    
+    .timeline-time {
+        padding: 10px;
+        text-align: right;
+        font-size: 0.9rem;
+        border-right: 1px solid #333;
+        color: #ccc;
+    }
+    
+    .timeline-events {
+        padding: 5px;
+        position: relative;
+    }
+    
+    .timeline-event {
+        margin: 3px 0;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        background-color: #2563eb;
+        color: white;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .timeline-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    .timeline-event.completed, .timeline-event.paid {
+        background-color: #059669;
+    }
+    
+    .timeline-event.unpaid {
+        background-color: #dc2626;
+    }
+    
+    .timeline-event-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .timeline-event-subtitle {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    
+    /* Dark scrollbar for timeline */
+    .timeline::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .timeline::-webkit-scrollbar-track {
+        background: #2a2a2a;
+    }
+    
+    .timeline::-webkit-scrollbar-thumb {
+        background-color: #555;
+        border-radius: 4px;
+    }
+    
+    .timeline::-webkit-scrollbar-thumb:hover {
+        background: #666;
+    }
+    
+    /* Calendar scrollbar */
+    .week-grid::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .week-grid::-webkit-scrollbar-track {
+        background: #f1f3f4;
+        border-radius: 4px;
+    }
+    
+    .week-grid::-webkit-scrollbar-thumb {
+        background-color: #c1c1c1;
+        border-radius: 4px;
+        border: 2px solid #f1f3f4;
+    }
+    
+    .week-grid::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 992px) {
+        .calendar-container {
+            height: calc(100vh - 160px);
+        }
+        
+        .day-column {
+            min-width: 100px;
+        }
+        
+        /* Ensure time column stays fixed on mobile */
+        .time-column {
+            box-shadow: 1px 0 5px rgba(0, 0, 0, 0.1);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .time-column {
+            width: 70px;
+        }
+        
+        .day-column {
+            min-width: 80px;
+        }
+        
+        .day-name {
+            font-size: 0.75rem;
+        }
+        
+        .day-number {
+            font-size: 1.25rem;
+            height: 32px;
+            width: 32px;
+        }
+        
+        .calendar-title {
+            font-size: 1.25rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .calendar-container {
+            height: calc(100vh - 120px);
+            min-height: 500px;
+        }
+        
+        .calendar-header {
+            flex-direction: column;
+            gap: 8px;
+            height: auto;
+            padding: 8px;
+        }
+        
+        .time-column {
+            width: 60px;
+        }
+        
+        .time-cell {
+            padding: 0 4px 0 0;
+        }
+        
+        .time-label {
+            right: 4px;
+            font-size: 0.7rem;
+        }
+        
+        .day-column {
+            min-width: 60px;
+        }
+    }
+    
+    /* No Bookings Message */
+    .text-muted.text-center.mt-4 {
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .text-muted.text-center.mt-4 p {
+        margin-bottom: 0;
+        color: #9ca3af;
+    }
+    
+    .text-muted.text-center.mt-4 i {
+        margin-bottom: 8px;
+        color: #d1d5db;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+    <!-- Compact Header -->
+    <div class="calendar-page-header">
+        <h1 class="h3 mb-0">Booking Calendar</h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-home me-1"></i>Dashboard
+            </a>
+            <a href="{% url 'bookings:all_bookings' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i>Bookings
+            </a>
+            <a href="{% url 'bookings:create_booking' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>New Booking
+            </a>
+        </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div>
+                <h2 class="calendar-title">{{ month_name }} {{ year }}</h2>
+            </div>
+            <div class="calendar-nav">
+                <a href="{% url 'bookings:booking_calendar' %}?month={{ prev_month }}&year={{ prev_year }}" class="calendar-nav-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="{% url 'bookings:booking_calendar' %}" class="calendar-nav-btn today-btn">
+                    Today
+                </a>
+                <a href="{% url 'bookings:booking_calendar' %}?month={{ next_month }}&year={{ next_year }}" class="calendar-nav-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <select class="view-toggle-btn ms-2" disabled>
+                    <option value="month" selected>Month</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="calendar-body">
+            <div class="time-column">
+                <!-- Empty cell for day headers -->
+                <div class="day-header"></div>
+                
+                <!-- Time labels -->
+                {% for hour in working_hours %}
+                <div class="time-cell">
+                    <span class="time-label">
+                        {% if hour < 12 or hour == 24 %}
+                            {{ hour }} AM
+                        {% else %}
+                            {% if hour == 12 %}
+                                {{ hour }} PM
+                            {% else %}
+                                {{ hour|add:"-12" }} PM
+                            {% endif %}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="week-grid">
+                <!-- Day columns -->
+                {% for week in calendar_weeks %}
+                    {% for day in week %}
+                    <div class="day-column {% if day.other_month %}other-month{% endif %} {% if day.is_today %}today{% endif %}"
+                         data-date="{{ day.date|date:'Y-m-d' }}" 
+                         data-formatted-date="{{ day.formatted_date }}">
+                        
+                        <!-- Day header -->
+                        <div class="day-header">
+                            <span class="day-name">{{ day_names|index:day.weekday|slice:":3" }}</span>
+                            <span class="day-number">{{ day.day }}</span>
+                        </div>
+                        
+                        <!-- Time grid -->
+                        <div class="time-grid">
+                            {% for hour in working_hours %}
+                            <div class="hour-row" data-hour="{{ hour }}">
+                                <div class="half-hour-line"></div>
+                                
+                                <!-- Bookings for this hour -->
+                                {% for booking in day.bookings %}
+                                    {% if booking.hour == hour %}
+                                    <div class="booking-event {{ booking.status|lower }}" 
+                                         data-booking-id="{{ booking.id }}"
+                                         data-booking-time="{{ booking.time|time:'g:i A' }}"
+                                         data-booking-client="{{ booking.client_name }}"
+                                         data-booking-service="{{ booking.service_type }}"
+                                         data-booking-status="{{ booking.status }}"
+                                         data-booking-cleaner="{{ booking.cleaner }}"
+                                         style="top: calc({{ booking.minute }} / 60 * 100%); height: {{ booking.duration }}px;"
+                                         onclick="window.location.href='{% url 'bookings:booking_detail' booking.id %}'">
+                                        <div class="booking-event-title">{{ booking.client_name }}</div>
+                                        <div class="booking-event-time">{{ booking.time|time:"g:i A" }} - {{ booking.service_type }}</div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                            
+                            {% if day.is_today %}
+                            <div class="now-indicator" style="top: {{ current_time_position }}px;"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adjust calendar height based on window size
+        function adjustCalendarHeight() {
+            const calendarContainer = document.querySelector('.calendar-container');
+            if (calendarContainer) {
+                calendarContainer.style.height = `${window.innerHeight - 80}px`;
+            }
+        }
+        
+        // Call once on load and add resize listener
+        adjustCalendarHeight();
+        window.addEventListener('resize', adjustCalendarHeight);
+        
+        // Make sure all hour rows are properly displayed
+        const timeGrids = document.querySelectorAll('.time-grid');
+        timeGrids.forEach(grid => {
+            const hourRows = grid.querySelectorAll('.hour-row');
+            hourRows.forEach(row => {
+                row.style.minHeight = '60px';
+                row.style.height = '60px';
+                row.style.flexShrink = '0';
+            });
+        });
+        
+        // Find today's column if it exists
+        const todayColumn = document.querySelector('.day-column.today');
+        
+        // Scroll to today's column horizontally first, if it exists
+        if (todayColumn) {
+            // Use requestAnimationFrame to ensure DOM is fully loaded
+            requestAnimationFrame(() => {
+                // Scroll today's column into view horizontally
+                todayColumn.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest', 
+                    inline: 'center' 
+                });
+                
+                // Then scroll to current time vertically
+                setTimeout(() => {
+                    const now = new Date();
+                    const currentHour = now.getHours();
+                    
+                    // Don't scroll if current hour is outside working hours
+                    if (currentHour < 6 || currentHour > 23) return;
+                    
+                    // Find closest hour row
+                    const hourRow = todayColumn.querySelector(`.hour-row[data-hour="${currentHour}"]`);
+                    if (hourRow) {
+                        // Get the parent scrollable container
+                        const weekGrid = document.querySelector('.week-grid');
+                        
+                        // Calculate scroll position with offset to show a bit above current time
+                        const scrollPosition = hourRow.offsetTop - 100;
+                        weekGrid.scrollTop = scrollPosition;
+                    }
+                }, 300);
+            });
+        }
+        
+        // Set up today button functionality
+        document.querySelector('.today-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = "{% url 'bookings:booking_calendar' %}";
+        });
+        
+        // Handle view toggle between week and month
+        const viewToggle = document.querySelector('.view-toggle-btn');
+        viewToggle.addEventListener('change', function() {
+            // For now, just alert that this feature is coming soon
+            if (this.value === 'week') {
+                alert('Week view is coming soon!');
+                this.value = 'month'; // Reset to month view
+            }
+        });
+    });
+</script>
+{% endblock %} 

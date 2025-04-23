@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
@@ -10,10 +10,10 @@ from accounts.models import Business, BusinessSettings, CustomAddons
 from automation.models import CleanerAvailability, Cleaners
 from decimal import Decimal
 import json
-from datetime import datetime
 from django.db.models import Min, Count
 from django.http import JsonResponse
 from automation.utils import format_phone_number
+from django.utils import timezone
 
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
@@ -509,3 +509,152 @@ def bulk_delete_bookings(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def booking_calendar(request):
+    """
+    Display a Google Calendar style view of all bookings.
+    """
+    if not Business.objects.filter(user=request.user).exists():
+        return redirect('accounts:register_business')
+    
+    business = request.user.business_set.first()
+    
+    # Get the month and year from the request, default to current month
+    today = timezone.now().date()
+    month = int(request.GET.get('month', today.month))
+    year = int(request.GET.get('year', today.year))
+    
+    # Calculate first day of the month and last day of the month
+    first_day = date(year, month, 1)
+    
+    # Calculate last day of month
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    last_day = date(next_year, next_month, 1) - timedelta(days=1)
+    
+    # Calculate previous and next month for navigation
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    
+    # Get month name
+    month_name = first_day.strftime('%B')
+    
+    # Get day names for the calendar header
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    
+    # Calculate the first day to display (might be from the previous month)
+    first_weekday = first_day.weekday()
+    # Adjust for Sunday as first day (Python uses Monday=0, Sunday=6)
+    first_display_day = first_day - timedelta(days=(first_weekday + 1) % 7)
+    
+    # Query all bookings for this business in the displayed period
+    # Include 6 weeks to cover the entire month view
+    display_end = first_display_day + timedelta(days=42)  # Max 6 weeks
+    
+    bookings = Booking.objects.filter(
+        business=business,
+        cleaningDate__gte=first_display_day,
+        cleaningDate__lte=display_end
+    ).select_related('cleaner').order_by('startTime')
+    
+    # Define working hours for the day columns (6 AM to 11 PM)
+    working_hours = list(range(6, 24))  # 6 AM to 11 PM
+    
+    # Get current time for the now indicator
+    now = timezone.now()
+    current_hour = now.hour
+    current_minute = now.minute
+    # Calculate position for the now indicator (pixels from top)
+    current_time_position = (current_hour - working_hours[0]) * 60 + current_minute
+    
+    # Organize bookings by date
+    bookings_by_date = {}
+    for booking in bookings:
+        if booking.cleaningDate not in bookings_by_date:
+            bookings_by_date[booking.cleaningDate] = []
+        
+        status = "Pending"
+        if booking.isCompleted:
+            status = "Completed"
+        elif hasattr(booking, 'invoice') and booking.invoice:
+            if booking.invoice.isPaid:
+                status = "Paid"
+            else:
+                status = "Unpaid"
+        
+        # Calculate booking time details for positioning
+        start_time_obj = datetime.strptime(booking.startTime.strftime('%H:%M'), '%H:%M')
+        end_time = None
+        
+        if booking.endTime:
+            end_time_obj = datetime.strptime(booking.endTime.strftime('%H:%M'), '%H:%M')
+        else:
+            # Default to 1 hour duration if no end time
+            end_time_obj = start_time_obj + timedelta(hours=1)
+        
+        # Calculate hours and minutes for positioning
+        hour = start_time_obj.hour
+        minute = start_time_obj.minute
+        
+        # Calculate duration in minutes
+        duration_minutes = (end_time_obj.hour * 60 + end_time_obj.minute) - (hour * 60 + minute)
+        # Convert to pixels (1 minute = 1 pixel in height)
+        duration_pixels = max(25, duration_minutes)  # Minimum height of 25px
+        
+        bookings_by_date[booking.cleaningDate].append({
+            'id': booking.bookingId,
+            'time': booking.startTime,
+            'hour': hour,  # For positioning in the correct hour row
+            'minute': minute,  # For positioning within the hour
+            'duration': duration_pixels,  # For determining height of booking
+            'client_name': f"{booking.firstName} {booking.lastName}",
+            'service_type': booking.get_serviceType_display(),
+            'status': status,
+            'cleaner': booking.cleaner.name if booking.cleaner else "Unassigned"
+        })
+    
+    # Build the calendar
+    calendar_weeks = []
+    current_day = first_display_day
+    
+    for _ in range(6):  # Maximum 6 weeks in a month view
+        week = []
+        for i in range(7):  # 7 days in a week
+            # Get the weekday index (0=Sunday, 1=Monday, etc)
+            weekday = current_day.weekday()
+            # Adjust from Python's Monday=0 to Sunday=0
+            weekday = (weekday + 1) % 7
+            
+            day_data = {
+                'day': current_day.day,
+                'date': current_day,
+                'weekday': weekday,  # Add the weekday index
+                'formatted_date': current_day.strftime('%B %d, %Y'),
+                'other_month': current_day.month != month,
+                'is_today': current_day == today,
+                'bookings': bookings_by_date.get(current_day, [])
+            }
+            week.append(day_data)
+            current_day += timedelta(days=1)
+        
+        calendar_weeks.append(week)
+        
+        # If we've gone past the end of the month and completed a week, we can stop
+        if current_day.month != month and current_day.weekday() == 6:
+            break
+    
+    context = {
+        'month_name': month_name,
+        'year': year,
+        'day_names': day_names,
+        'calendar_weeks': calendar_weeks,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year,
+        'working_hours': working_hours,
+        'current_time_position': current_time_position
+    }
+    
+    return render(request, 'booking_calendar.html', context)
