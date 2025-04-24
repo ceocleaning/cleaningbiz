@@ -285,7 +285,7 @@ def send_day_before_reminder():
         # Get all confirmed paid bookings scheduled for tomorrow
         bookings = Booking.objects.filter(
             cleaningDate=tomorrow,
-            isCancelled=False,
+            cancelled_at__isnull=True,
             isCompleted=False
         )
         
@@ -504,7 +504,7 @@ def send_hour_before_reminder():
             cleaningDate=current_date,
             startTime__gte=one_hour_from_now.time(),
             startTime__lt=two_hours_from_now.time(),
-            isCancelled=False,
+            cancelled_at__isnull=True,
             isCompleted=False
         )
         
@@ -702,7 +702,7 @@ def send_post_service_followup():
         bookings = Booking.objects.filter(
             cleaningDate=yesterday,
             isCompleted=True,
-            isCancelled=False
+            cancelled_at__isnull=True
         )
         
         followup_count = 0
