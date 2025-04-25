@@ -21,6 +21,8 @@ def all_bookings(request):
     
     # Get all bookings for the user's business
     all_bookings = Booking.objects.filter(business__user=request.user)
+
+    cancelled_bookings = all_bookings.filter(cancelled_at__isnull=False)
     
     # Get current date for filtering
     today = datetime.now().date()
@@ -64,7 +66,8 @@ def all_bookings(request):
         'total_bookings': total_bookings,
         'pending_count': pending_count,
         'completed_count': completed_count,
-        'upcoming_paid_count': upcoming_paid_count
+        'upcoming_paid_count': upcoming_paid_count,
+        'cancelled_bookings': cancelled_bookings
     }
     return render(request, 'bookings.html', context)
 

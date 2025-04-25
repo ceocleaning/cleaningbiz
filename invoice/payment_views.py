@@ -7,7 +7,7 @@ import json
 import uuid
 from square.client import Client
 from .models import Invoice, Payment
-from accounts.models import Business, SquareCredentials
+from accounts.models import Business, SquareCredentials, PayPalCredentials
 
 
 
@@ -21,12 +21,12 @@ def process_payment(request):
         source_id = data.get('sourceId')
         invoice_id = data.get('invoiceId')
         auto_complete = data.get('autoComplete', True)
-        
+
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
         square_credentials = business.square_credentials
-        
+
         if not source_id:
             return JsonResponse({'success': False, 'error': 'No payment source provided'}, status=400)
 
@@ -57,7 +57,7 @@ def process_payment(request):
 
         if result.is_success():
             payment_data = result.body['payment']
-            
+
             # Save payment details without timezone conversion
             payment = Payment.objects.create(
                 invoice=invoice,
@@ -66,7 +66,7 @@ def process_payment(request):
                 squarePaymentId=payment_data['id'],
                 status='COMPLETED' if auto_complete else 'AUTHORIZED'
             )
-            
+
             # Only mark invoice as paid if payment is completed
             if auto_complete:
                 payment.paidAt = timezone.now()
@@ -84,7 +84,7 @@ def process_payment(request):
             if result.errors:
                 error = result.errors[0]
                 error_message = error.get('detail', error.get('category', 'Unknown error occurred'))
-            
+
             return JsonResponse({
                 'success': False,
                 'error': error_message
@@ -128,7 +128,7 @@ def process_manual_payment(request):
             try:
                 # Find the existing payment
                 payment = Payment.objects.get(invoice=invoice, squarePaymentId=square_payment_id, status='AUTHORIZED')
-                
+
                 # Initialize Square client
                 client = Client(
                     access_token=square_credentials.access_token,
@@ -160,7 +160,7 @@ def process_manual_payment(request):
                     if result.errors:
                         error = result.errors[0]
                         error_message = error.get('detail', error.get('category', 'Unknown error occurred'))
-                    
+
                     return JsonResponse({
                         'success': False,
                         'error': error_message
@@ -215,11 +215,11 @@ def process_stripe_payment(request):
         payment_method_id = data.get('payment_method_id')
         invoice_id = data.get('invoice_id')
         auto_complete = data.get('auto_complete', True)
-        
+
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
-        
+
         # Get Stripe credentials
         try:
             stripe_credentials = business.stripe_credentials
@@ -228,7 +228,7 @@ def process_stripe_payment(request):
                 'success': False,
                 'error': 'Stripe credentials not found for this business'
             }, status=400)
-        
+
         if not payment_method_id:
             return JsonResponse({
                 'success': False,
@@ -236,15 +236,15 @@ def process_stripe_payment(request):
             }, status=400)
 
         import stripe
-        
+
         stripe.api_key = stripe_credentials.stripe_secret_key
-        
-      
+
+
         idempotency_key = f"invoice_{invoice.invoiceId}_{timezone.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
-        
+
         try:
             amount_in_cents = int(invoice.amount * 100)
-            
+
             if auto_complete:
                 payment_intent = stripe.PaymentIntent.create(
                     amount=amount_in_cents,
@@ -262,7 +262,7 @@ def process_stripe_payment(request):
                         'allow_redirects': 'never'
                     }
                 )
-                
+
                 if payment_intent.status == 'succeeded':
                     payment = Payment.objects.create(
                         invoice=invoice,
@@ -272,10 +272,10 @@ def process_stripe_payment(request):
                         status='COMPLETED',
                         paidAt=timezone.now()
                     )
-                    
+
                     invoice.isPaid = True
                     invoice.save()
-                    
+
                     return JsonResponse({
                         'success': True,
                         'payment_id': payment.paymentId,
@@ -286,16 +286,16 @@ def process_stripe_payment(request):
                         'success': False,
                         'error': f'Payment failed. Status: {payment_intent.status}'
                     }, status=400)
-            
+
             else:
                 payment_intent = stripe.PaymentIntent.create(
                     amount=amount_in_cents,
                     currency='usd',
                     payment_method=payment_method_id,
-                    confirmation_method='manual',    
+                    confirmation_method='manual',
                     capture_method='manual',
                     confirm=True,
-                    payment_method_types=["card"], 
+                    payment_method_types=["card"],
                     description=f"Authorization for invoice {invoice.invoiceId}",
                     metadata={
                         'invoice_id': invoice.invoiceId,
@@ -303,7 +303,7 @@ def process_stripe_payment(request):
                     },
                     idempotency_key=idempotency_key
                 )
-                                
+
                 if payment_intent.status in ['requires_capture', 'succeeded']:
                     payment = Payment.objects.create(
                         invoice=invoice,
@@ -312,7 +312,7 @@ def process_stripe_payment(request):
                         transactionId=payment_intent.id,
                         status='AUTHORIZED'
                     )
-                    
+
                     return JsonResponse({
                         'success': True,
                         'payment_id': payment.paymentId,
@@ -323,7 +323,7 @@ def process_stripe_payment(request):
                         'success': False,
                         'error': f'Authorization failed. Status: {payment_intent.status}'
                     }, status=400)
-                
+
         except stripe.error.CardError as e:
             error_message = e.error.message
             return JsonResponse({
@@ -335,7 +335,7 @@ def process_stripe_payment(request):
                 'success': False,
                 'error': f'Stripe error: {str(e)}'
             }, status=400)
-            
+
     except Exception as e:
         print(f"Stripe payment processing error: {str(e)}")
         return JsonResponse({
@@ -349,39 +349,39 @@ def capture_stripe_payment(request):
     try:
         data = json.loads(request.body)
         payment_id = data.get('payment_id')
-        
+
         payment = get_object_or_404(Payment, paymentId=payment_id, status='AUTHORIZED')
         invoice = payment.invoice
         business = invoice.booking.business
-        
+
         try:
             stripe_credentials = business.stripe_credentials
         except:
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': 'Stripe credentials not found for this business'
             }, status=400)
-        
+
         # Import Stripe
         import stripe
-        
+
         # Set the Stripe API key
         stripe.api_key = stripe_credentials.stripe_secret_key
-        
+
         try:
             payment_intent = stripe.PaymentIntent.capture(
                 payment.transactionId,
                 amount_to_capture=int(payment.amount * 100)
             )
-            
+
             if payment_intent.status == 'succeeded':
                 payment.status = 'COMPLETED'
                 payment.paidAt = timezone.now()
                 payment.save()
-                
+
                 invoice.isPaid = True
                 invoice.save()
-                
+
                 return JsonResponse({
                     'success': True,
                     'message': 'Payment captured successfully'
@@ -391,16 +391,73 @@ def capture_stripe_payment(request):
                     'success': False,
                     'error': f'Payment capture failed. Status: {payment_intent.status}'
                 }, status=400)
-                
+
         except stripe.error.StripeError as e:
             return JsonResponse({
                 'success': False,
                 'error': f'Stripe error: {str(e)}'
             }, status=400)
-            
+
     except Exception as e:
         print(f"Stripe payment capture error: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': 'An unexpected error occurred while capturing the payment.'
+        }, status=500)
+
+
+# PAYPAL PAYMENT VIEWS
+@require_http_methods(["POST"])
+def process_paypal_payment(request):
+    """Process a PayPal payment for an invoice"""
+    try:
+        # Parse the request body
+        data = json.loads(request.body)
+        order_id = data.get('orderID')
+        invoice_id = data.get('invoiceId')
+
+        # Get the invoice
+        invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        business = invoice.booking.business
+
+        # Get PayPal credentials
+        try:
+            paypal_credentials = business.paypal_credentials
+        except:
+            return JsonResponse({
+                'success': False,
+                'error': 'PayPal credentials not found for this business'
+            }, status=400)
+
+        if not order_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'No PayPal order ID provided'
+            }, status=400)
+
+        # Create payment record
+        payment = Payment.objects.create(
+            invoice=invoice,
+            amount=invoice.amount,
+            paymentMethod='PayPal',
+            transactionId=order_id,
+            status='COMPLETED',
+            paidAt=timezone.now()
+        )
+
+        # Mark invoice as paid
+        invoice.isPaid = True
+        invoice.save()
+
+        return JsonResponse({
+            'success': True,
+            'payment_id': payment.paymentId,
+            'status': 'COMPLETED'
+        })
+
+    except Exception as e:
+        print(f"PayPal payment processing error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred while processing your payment. Please try again.'
         }, status=500)
