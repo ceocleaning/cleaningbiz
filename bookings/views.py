@@ -315,8 +315,6 @@ def create_booking(request):
 
 
 
-
-
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def edit_booking(request, bookingId):

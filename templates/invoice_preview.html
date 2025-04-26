@@ -945,7 +945,14 @@
     </script>
 
 {% elif booking.business.defaultPaymentMethod == 'paypal' %}
-<script src="https://www.paypal.com/sdk/js?client-id={{ booking.business.paypal_credentials.paypal_client_id }}&currency=USD&components=buttons"></script>
+<!-- PayPal SDK with Sandbox-specific configuration -->
+<script>
+    // Log PayPal integration status to console for debugging
+    console.log('Loading PayPal SDK with client ID:', '{{ booking.business.paypal_credentials.paypal_client_id }}');
+</script>
+
+<!-- Load the PayPal SDK with specific parameters for Sandbox environment -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ booking.business.paypal_credentials.paypal_client_id }}&currency=USD&intent=capture"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -956,14 +963,69 @@
         // Format for PayPal (2 decimal places)
         const formattedAmount = invoiceAmount.toFixed(2);
 
-        // Initialize PayPal buttons
-        paypal.Buttons({
-            style: {
-                layout: 'vertical',
-                color: 'blue',
-                shape: 'rect',
-                label: 'paypal'
-            },
+        // Function to manually process PayPal payment when capture fails or times out
+        function processPayPalPaymentManually(orderID) {
+            console.log('Manually processing PayPal payment for order:', orderID);
+            const paypalContainer = document.getElementById('paypal-button-container');
+            
+            // Send the payment details directly to our server
+            return fetch('{% url "invoice:process_paypal_payment" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    orderID: orderID,
+                    invoiceId: '{{ invoice.invoiceId }}',
+                    manualVerification: true
+                })
+            })
+            .then(response => {
+                console.log('Manual verification server response received', response);
+                if (!response.ok) {
+                    console.error('Manual verification server response not OK', response.status, response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Manual verification server response parsed', data);
+                if (data.success) {
+                    console.log('Manual verification successful, preparing to redirect');
+                    // Show success message
+                    paypalContainer.innerHTML = '<div class="alert alert-success text-center"><i class="fas fa-check-circle me-2"></i>Payment successful! Redirecting...</div>';
+
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        console.log('Reloading page after manual verification...');
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    console.error('Manual verification failed', data.error);
+                    // Show error message
+                    paypalContainer.innerHTML = `<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Payment processing failed. Please try again.'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error during manual verification:', error);
+                paypalContainer.innerHTML = `<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle me-2"></i>Payment verification failed. Please contact support.</div>`;
+            });
+        }
+        
+        // Initialize PayPal buttons if SDK is loaded
+        if (typeof paypal !== 'undefined') {
+            console.log('PayPal SDK is available, initializing buttons');
+            
+            // Initialize PayPal buttons with enhanced configuration for Sandbox
+            paypal.Buttons({
+                // Enable the PayPal buttons
+                env: 'sandbox', // Force sandbox mode for testing
+                style: {
+                    layout: 'vertical',
+                    color: 'gold',  // Using gold for better visibility
+                    shape: 'rect',
+                    label: 'pay'
+                },
 
             // Set up the transaction
             createOrder: function(data, actions) {
@@ -980,40 +1042,74 @@
 
             // Handle approved transactions
             onApprove: function(data, actions) {
+                console.log('PayPal onApprove triggered', data);
                 // Show processing message
                 const paypalContainer = document.getElementById('paypal-button-container');
                 paypalContainer.innerHTML = '<div class="alert alert-info text-center"><i class="fas fa-spinner fa-spin me-2"></i>Processing your payment...</div>';
 
+                // Set a timeout to handle cases where the capture process hangs
+                const captureTimeout = setTimeout(function() {
+                    console.log('PayPal capture timeout - proceeding with manual verification');
+                    // If capture is taking too long, try to process with just the order ID
+                    processPayPalPaymentManually(data.orderID);
+                }, 10000); // 10 second timeout
+                
                 // Capture the funds
-                return actions.order.capture().then(function(orderData) {
-                    // Send the payment details to our server
-                    return fetch('{% url "invoice:process_paypal_payment" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
+                console.log('Starting PayPal order capture...');
+                try {
+                    return actions.order.capture().then(function(orderData) {
+                        // Clear the timeout since capture succeeded
+                        clearTimeout(captureTimeout);
+                        console.log('PayPal order captured successfully', orderData);
+                        // Send the payment details to our server
+                        console.log('Sending payment details to server...', {
                             orderID: orderData.id,
                             invoiceId: '{{ invoice.invoiceId }}'
+                        });
+                        return fetch('{% url "invoice:process_paypal_payment" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                orderID: orderData.id,
+                                invoiceId: '{{ invoice.invoiceId }}'
+                            })
                         })
+                    .then(response => {
+                        console.log('Server response received', response);
+                        if (!response.ok) {
+                            console.error('Server response not OK', response.status, response.statusText);
+                        }
+                        return response.json();
                     })
-                    .then(response => response.json())
                     .then(data => {
+                        console.log('Server response parsed', data);
                         if (data.success) {
+                            console.log('Payment successful, preparing to redirect');
                             // Show success message
                             paypalContainer.innerHTML = '<div class="alert alert-success text-center"><i class="fas fa-check-circle me-2"></i>Payment successful! Redirecting...</div>';
 
                             // Reload the page after a short delay
                             setTimeout(() => {
+                                console.log('Reloading page...');
                                 window.location.reload();
                             }, 2000);
                         } else {
+                            console.error('Payment failed', data.error);
                             // Show error message
                             paypalContainer.innerHTML = `<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Payment processing failed. Please try again.'}</div>`;
-
+                            // Log detailed error information
+                            console.error('Payment failed with error:', data.error);
+                            console.error('Payment failed with error details:', {
+                                message: data.error.message,
+                                stack: data.error.stack,
+                                name: data.error.name
+                            });
                             // Re-render the PayPal buttons after a delay
                             setTimeout(() => {
+                                console.log('Initializing new PayPal buttons');
                                 paypal.Buttons({
                                     // Re-initialize with the same options
                                     // This is a simplified version - in production you'd want to reuse the full configuration
@@ -1032,7 +1128,38 @@
                             }).render('#paypal-button-container');
                         }, 3000);
                     });
+                }).catch(function(error) {
+                    // Clear the timeout since we got a response (even if it's an error)
+                    clearTimeout(captureTimeout);
+                    
+                    console.error('Error during PayPal payment processing:', error);
+                    
+                    // Check if this is the specific 'Target window is closed' error
+                    if (error && error.message && error.message.includes('Target window is closed')) {
+                        console.log('Detected PayPal window closed error - attempting manual verification');
+                        // This is a common error when the PayPal popup is closed but payment might have been processed
+                        // Try to process with just the order ID
+                        processPayPalPaymentManually(data.orderID);
+                        return;
+                    }
+                    
+                    // For other errors, show error message
+                    paypalContainer.innerHTML = `<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle me-2"></i>Payment processing failed. Please try again.</div>`;
+                    // Log detailed error information
+                    console.error('PayPal payment error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        name: error.name
+                    });
                 });
+                } catch (e) {
+                    // Clear the timeout since we caught an exception
+                    clearTimeout(captureTimeout);
+                    
+                    console.error('Exception during PayPal capture:', e);
+                    // Try to process with just the order ID
+                    processPayPalPaymentManually(data.orderID);
+                }
             },
 
             // Handle errors
@@ -1049,6 +1176,14 @@
                 }, 3000);
             }
         }).render('#paypal-button-container');
+        } else {
+            console.error('PayPal SDK not loaded properly');
+            // Display error message to user
+            const paypalContainer = document.getElementById('paypal-button-container');
+            if (paypalContainer) {
+                paypalContainer.innerHTML = '<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle me-2"></i>Unable to load PayPal checkout. Please refresh the page or try again later.</div>';
+            }
+        }
     });
 </script>
 
