@@ -41,8 +41,8 @@ def check_chat_status():
                     business = chat.business
                     retellAgent = RetellAgent.objects.get(business=business)
                     print(f"[TASK] Using business: {business.businessName}")
-                except ApiCredential.DoesNotExist:
-                    print(f"[TASK] No API credentials found for business ID: {chat.business.id}")
+                except RetellAgent.DoesNotExist:
+                    print(f"[TASK] No Retell agent found for business ID: {chat.business.id}")
                     results['errors'] += 1
                     continue
                 
@@ -109,7 +109,7 @@ def check_chat_status():
                     
                     results['processed'] += 1
                     print(f"[TASK] Successfully processed chat ID: {chat.id}")
-                
+
             except Exception as chat_error:
                 print(f"[TASK] Error processing chat ID: {chat.id}: {str(chat_error)}")
                 print(traceback.format_exc())

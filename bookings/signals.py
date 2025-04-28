@@ -72,8 +72,7 @@ def schedule_delete_unpaid_bookings():
 def schedule_day_before_reminder():
     try:
         existing_schedule = Schedule.objects.filter(
-            func='bookings.tasks.send_day_before_reminder',
-            schedule_type=Schedule.DAILY
+            func='bookings.tasks.send_day_before_reminder'
         ).first()
         
         if not existing_schedule:
@@ -83,9 +82,11 @@ def schedule_day_before_reminder():
                 
             schedule(
                 'bookings.tasks.send_day_before_reminder',
-                schedule_type='D', 
-                next_run=next_run,
-                repeats=-1
+                schedule_type=Schedule.MINUTES, 
+                minutes=5,
+
+                repeats=-1,
+                next_run=timezone.now() + timedelta(minutes=1)
             )
             
     except Exception as e:
@@ -95,15 +96,16 @@ def schedule_day_before_reminder():
 def schedule_hour_before_reminder():
     try:
         existing_schedule = Schedule.objects.filter(
-            func='bookings.tasks.send_hour_before_reminder',
-            schedule_type=Schedule.HOURLY
+            func='bookings.tasks.send_hour_before_reminder'
         ).first()
         
         if not existing_schedule:
             schedule(
                 'bookings.tasks.send_hour_before_reminder',
-                schedule_type='H', 
-                repeats=-1  
+                schedule_type=Schedule.MINUTES, 
+                minutes=5,
+                repeats=-1,
+                next_run=timezone.now() + timedelta(minutes=1)
             )
             
     except Exception as e:
