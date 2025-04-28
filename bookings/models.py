@@ -126,6 +126,14 @@ class Booking(models.Model):
             return False
         return False
     
+    def get_payment_status(self):
+        """Get the payment status of the booking."""
+        if hasattr(self, 'invoice') and self.invoice:
+            if hasattr(self.invoice, 'payment_details'):
+                return self.invoice.payment_details.status
+            return 'Unpaid'
+        return 'No Invoice'
+    
     def generateBookingId(self):
         prefix = "bk"
         id = random.choices(string.digits, k=5)

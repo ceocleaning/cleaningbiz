@@ -111,7 +111,7 @@ def send_payment_reminder(booking_id):
             To secure your booking, please complete your payment here:
             {settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/
                 
-            If you have any questions, please contact us at {business.user.email or business.phoneNumber}.
+            If you have any questions, please contact us at {business.user.email or business.phone}.
                 
             This is an automated message from {business.businessName}.
             """
@@ -458,7 +458,7 @@ def send_day_before_reminder():
                         client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
                         
                         # SMS message content
-                        sms_message = f"Reminder from {business.businessName}: Your cleaning service is scheduled for tomorrow, {booking.cleaningDate.strftime('%A, %B %d')} at {booking.startTime.strftime('%I:%M %p')}. Please ensure access to your property. Questions? Call {business.phoneNumber}."
+                        sms_message = f"Reminder from {business.businessName}: Your cleaning service is scheduled for tomorrow, {booking.cleaningDate.strftime('%A, %B %d')} at {booking.startTime.strftime('%I:%M %p')}. Please ensure access to your property. Questions? Call {business.phone}."
                         
                         # Send SMS
                         message = client.messages.create(
@@ -475,7 +475,7 @@ def send_day_before_reminder():
                 print(f"[ERROR] Failed to send day-before reminder SMS: {str(e)}")
             
             # Update the booking to record that the day-before reminder was sent
-            booking.dayBeforeReminderSent = True
+            booking.dayBeforeReminderSentAt = timezone.now()
             booking.save()
             
             reminder_count += 1
@@ -577,7 +577,7 @@ def send_hour_before_reminder():
                     
                     <p>Please ensure that access to your property is available. Our cleaning professionals will arrive shortly.</p>
                     
-                    <p>If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phoneNumber}.</p>
+                    <p>If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phone}.</p>
                 </div>
                 <div class="footer">
                     <p>This is an automated message from {business.businessName}.</p>
@@ -601,7 +601,7 @@ def send_hour_before_reminder():
             
             Please ensure that access to your property is available. Our cleaning professionals will arrive shortly.
             
-            If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phoneNumber}.
+            If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phone}.
             
             This is an automated message from {business.businessName}.
             """
@@ -664,7 +664,7 @@ def send_hour_before_reminder():
                         client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
                         
                         # SMS message content
-                        sms_message = f"REMINDER: Your {business.businessName} cleaning service begins in 1 hour at {booking.startTime.strftime('%I:%M %p')}. Please ensure property access. Questions? Call {business.phoneNumber}."
+                        sms_message = f"REMINDER: Your {business.businessName} cleaning service begins in 1 hour at {booking.startTime.strftime('%I:%M %p')}. Please ensure property access. Questions? Call {business.phone}."
                         
                         # Send SMS
                         message = client.messages.create(
@@ -681,7 +681,7 @@ def send_hour_before_reminder():
                 print(f"[ERROR] Failed to send hour-before reminder SMS: {str(e)}")
             
             # Update the booking to record that the hour-before reminder was sent
-            booking.hourBeforeReminderSent = True
+            booking.hourBeforeReminderSentAt = timezone.now()
             booking.save()
             
             reminder_count += 1
@@ -768,7 +768,7 @@ def send_post_service_followup():
                         <a href="{settings.BASE_URL}/book/{business.businessId}/" class="button" style="background-color: #2ecc71;">Book Again</a>
                     </div>
                     
-                    <p>If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phoneNumber or business.user.email}.</p>
+                    <p>If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.</p>
                 </div>
                 <div class="footer">
                     <p>This is an automated message from {business.businessName}.</p>
@@ -797,7 +797,7 @@ def send_post_service_followup():
             Would you like to schedule your next cleaning service? Visit the link below to book your preferred date and time.
             {settings.BASE_URL}/book/{business.businessId}/
             
-            If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phoneNumber or business.user.email}.
+            If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.
             
             This is an automated message from {business.businessName}.
             """

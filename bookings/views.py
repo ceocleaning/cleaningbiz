@@ -46,10 +46,18 @@ def all_bookings(request):
         isCompleted=True,
     ).order_by('-cleaningDate', '-startTime')
     
+    # Past bookings (past date and paid)
+    past_bookings = all_bookings.filter(
+        cleaningDate__lt=today,
+        invoice__isnull=False,
+        invoice__isPaid=True
+    ).order_by('-cleaningDate', '-startTime')
+    
     # Pending bookings (unpaid invoices)
     pending_bookings = all_bookings.filter(
-        invoice__isnull=False,  # Has an invoice
-        invoice__isPaid=False,  # Invoice is not paid
+        isCompleted=False,
+        invoice__isnull=False,
+        invoice__isPaid=False
     ).order_by('cleaningDate', 'startTime')
     
     # Counts for the dashboard cards
@@ -58,16 +66,27 @@ def all_bookings(request):
     completed_count = completed_bookings.count()
     upcoming_paid_count = upcoming_paid_bookings.count()
     
+    # Count for past bookings
+    past_bookings_count = past_bookings.count()
+    
+    # Count for cancelled bookings
+    cancelled_bookings_count = cancelled_bookings.count()
+    
     context = {
+        'all_bookings': all_bookings,
         'upcoming_bookings': upcoming_bookings,
         'upcoming_paid_bookings': upcoming_paid_bookings,
         'completed_bookings': completed_bookings,
         'pending_bookings': pending_bookings,
+        'past_bookings': past_bookings,
         'total_bookings': total_bookings,
         'pending_count': pending_count,
         'completed_count': completed_count,
         'upcoming_paid_count': upcoming_paid_count,
-        'cancelled_bookings': cancelled_bookings
+        'past_bookings_count': past_bookings_count,
+        'cancelled_bookings_count': cancelled_bookings_count,
+        'cancelled_bookings': cancelled_bookings,
+        'today': today
     }
     return render(request, 'bookings.html', context)
 
