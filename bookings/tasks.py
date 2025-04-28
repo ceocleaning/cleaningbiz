@@ -1,6 +1,7 @@
 from .models import Booking
 from accounts.models import ApiCredential, SMTPConfig
 from django.core.mail import send_mail, EmailMultiAlternatives
+from django.db import Q
 import datetime
 from django.conf import settings
 from django.utils import timezone
@@ -284,10 +285,12 @@ def send_day_before_reminder():
         
         # Get all confirmed paid bookings scheduled for tomorrow
         bookings = Booking.objects.filter(
-            cleaningDate=tomorrow,
+            Q(cleaningDate=tomorrow) | Q(cleaningDate=timezone.now().date()),
             cancelled_at__isnull=True,
             isCompleted=False
         )
+
+        print(f"[INFO] Found {bookings.count()} bookings for day-before reminder")
         
         reminder_count = 0
         for booking in bookings:
@@ -507,6 +510,8 @@ def send_hour_before_reminder():
             cancelled_at__isnull=True,
             isCompleted=False
         )
+
+        print(f"[INFO] Found {bookings.count()} bookings for hour-before reminder")
         
         reminder_count = 0
         for booking in bookings:
