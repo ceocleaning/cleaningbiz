@@ -18,8 +18,8 @@ class Invoice(models.Model):
         return f"{self.invoiceId}"
 
     def generateInvoiceId(self):
-        prefix = "INV"
-        id = random.choices(string.ascii_letters + string.digits, k=5)
+        prefix = "inv"
+        id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
     
     def save(self, *args, **kwargs):
@@ -55,8 +55,8 @@ class Payment(models.Model):
         return f"{self.paymentId}"
     
     def generatePaymentId(self):
-        prefix = "PY"
-        id = random.choices(string.ascii_letters + string.digits, k=5)
+        prefix = "pay"
+        id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
     
     def save(self, *args, **kwargs):

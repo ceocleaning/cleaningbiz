@@ -107,6 +107,8 @@ class Booking(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
 
     paymentReminderSentAt = models.DateTimeField(null=True, blank=True)
+    dayBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
+    hourBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.bookingId} for {self.firstName} {self.lastName}"
@@ -125,8 +127,8 @@ class Booking(models.Model):
         return False
     
     def generateBookingId(self):
-        prefix = "BK"
-        id = random.choices(string.ascii_letters + string.digits, k=5)
+        prefix = "bk"
+        id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
     
     def save(self, *args, **kwargs):
