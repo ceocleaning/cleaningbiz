@@ -76,15 +76,21 @@ def check_chat_status():
                             
                             lead_details = f"Here are the details about the lead:\nName: {lead.name}\nPhone: {lead.phone_number}\nEmail: {lead.email if lead.email else 'Not provided'}\nAddress: {lead.address1 if lead.address1 else 'Not provided'}\nCity: {lead.city if lead.city else 'Not provided'}\nState: {lead.state if lead.state else 'Not provided'}\nZip Code: {lead.zipCode if lead.zipCode else 'Not provided'}\nProposed Start Time: {lead.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if lead.proposed_start_datetime else 'Not provided'}\nNotes: {lead.notes if lead.notes else 'No additional notes'}"
                             
-                            call_response = client.call.create_phone_call(
-                                from_number=retellAgent.agent_number,
-                                to_number=lead.phone_number,
-                                retell_llm_dynamic_variables={
-                                    'name': lead.name,
-                                    'details': lead_details,
-                                    'service': 'cleaning'
-                                }
-                            )
+                            try:
+                                call_response = client.call.create_phone_call(
+                                    from_number=retellAgent.agent_number,
+                                    to_number=lead.phone_number,
+                                    retell_llm_dynamic_variables={
+                                        'name': lead.name,
+                                        'details': lead_details,
+                                        'service': 'cleaning'
+                                    }
+                                )
+                            
+                            except Exception as e:
+                                print(f"[TASK] Error making call: {str(e)}")
+                                results['errors'] += 1
+                                continue
                             
                             # Update lead and chat status
                             lead.follow_up_call_sent = True
