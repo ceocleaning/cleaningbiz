@@ -1,7 +1,7 @@
 from .models import Booking
 from accounts.models import ApiCredential, SMTPConfig
 from django.core.mail import send_mail, EmailMultiAlternatives
-from django.db import Q
+from django.db.models import Q
 import datetime
 from django.conf import settings
 from django.utils import timezone
