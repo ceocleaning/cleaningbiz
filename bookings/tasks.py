@@ -292,7 +292,7 @@ def send_day_before_reminder():
         reminder_count = 0
         for booking in bookings:
             # Skip if a day-before reminder has already been sent
-            if hasattr(booking, 'dayBeforeReminderSent') and booking.dayBeforeReminderSent:
+            if hasattr(booking, 'dayBeforeReminderSentAt') and booking.dayBeforeReminderSentAt:
                 continue
                 
             # Check if booking is paid
@@ -511,7 +511,7 @@ def send_hour_before_reminder():
         reminder_count = 0
         for booking in bookings:
             # Skip if an hour-before reminder has already been sent
-            if hasattr(booking, 'hourBeforeReminderSent') and booking.hourBeforeReminderSent:
+            if hasattr(booking, 'hourBeforeReminderSentAt') and booking.hourBeforeReminderSentAt:
                 continue
                 
             # Check if booking is paid
