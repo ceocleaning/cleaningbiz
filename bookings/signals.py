@@ -82,11 +82,9 @@ def schedule_day_before_reminder():
                 
             schedule(
                 'bookings.tasks.send_day_before_reminder',
-                schedule_type=Schedule.MINUTES, 
-                minutes=5,
-
+                schedule_type=Schedule.DAILY, 
                 repeats=-1,
-                next_run=timezone.now() + timedelta(minutes=1)
+                next_run=next_run
             )
             
     except Exception as e:
@@ -102,10 +100,9 @@ def schedule_hour_before_reminder():
         if not existing_schedule:
             schedule(
                 'bookings.tasks.send_hour_before_reminder',
-                schedule_type=Schedule.MINUTES, 
-                minutes=5,
+                schedule_type=Schedule.DAILY, 
                 repeats=-1,
-                next_run=timezone.now() + timedelta(minutes=1)
+                next_run=timezone.now() + timedelta(minutes=60)
             )
             
     except Exception as e:
