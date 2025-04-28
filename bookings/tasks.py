@@ -367,7 +367,7 @@ def send_day_before_reminder():
                         </ul>
                     </div>
                     
-                    <p>If you need to reschedule or have any questions, please contact us as soon as possible at {business.phoneNumber or business.user.email}.</p>
+                    <p>If you need to reschedule or have any questions, please contact us as soon as possible at {business.phone or business.user.email}.</p>
                 </div>
                 <div class="footer">
                     <p>This is an automated message from {business.businessName}.</p>
@@ -395,7 +395,7 @@ def send_day_before_reminder():
             - Clear any personal items that may obstruct cleaning
             - Secure pets in a safe area if necessary
             
-            If you need to reschedule or have any questions, please contact us as soon as possible at {business.phoneNumber or business.user.email}.
+            If you need to reschedule or have any questions, please contact us as soon as possible at {business.phone or business.user.email}.
             
             This is an automated message from {business.businessName}.
             """
