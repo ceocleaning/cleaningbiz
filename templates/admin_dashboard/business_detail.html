@@ -245,6 +245,17 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label text-muted">Twilio SMS Webhook URL</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ api_credentials.getTwilioWebhookUrl }}" readonly id="twilioWebhookUrl">
+                                <button class="btn btn-outline-secondary copy-to-clipboard" type="button" data-clipboard-target="#twilioWebhookUrl">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <h6 class="text-muted mb-3">Twilio Credentials</h6>
