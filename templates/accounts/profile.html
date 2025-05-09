@@ -664,6 +664,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    
                                 </div>
 
                                
@@ -705,6 +707,47 @@
                                                 title="Copy to Clipboard">
                                             <i class="fas fa-clipboard"></i>
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100 credential-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                                                <i class="fas fa-lock text-white"></i>
+                                            </div>
+                                            <h5 class="card-title mb-0">SMS Webhook URL</h5>
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-4 pt-2">
+                                        {% if credentials.secretKey %}
+                                        <div class="input-group mb-3">
+                                            <input type="text" 
+                                                   class="form-control api-key-input" 
+                                                   id="twilioWebhookUrl" 
+                                                   value="{{ credentials.getTwilioWebhookUrl|default:'' }}" 
+                                                   placeholder="Twilio Webhook URL"
+                                                   readonly>
+                                            <button class="btn btn-sm btn-outline-primary key-action-btn" 
+                                                   type="button" 
+                                                   onclick="copyToClipboard('twilioWebhookUrl')"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-placement="top"
+                                                   title="Copy to clipboard">
+                                               <i class="fas fa-copy"></i>
+                                           </button>
+                    
+                                        </div>
+                                        
+                                  
+                                        {% else %}
+                                        <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-sm btn-outline-primary key-action-btn">
+                                            <i class="fas fa-plus"></i> Generate Secret Key
+                                        </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

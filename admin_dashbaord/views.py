@@ -463,7 +463,7 @@ def businesses(request):
             business.active_subscription = None
     
     # Pagination
-    paginator = Paginator(businesses, 10)
+    paginator = Paginator(businesses, 20)
     page_number = request.GET.get('page', 1)
     businesses = paginator.get_page(page_number)
     
@@ -494,8 +494,6 @@ def business_detail(request, business_id):
         is_active=True
     ).exclude(status='ended').order_by('-start_date')
 
-    print(business.all_subscriptions)
-    
     # Get subscription plans for the add subscription form
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
     
@@ -532,6 +530,19 @@ def add_business(request):
         is_active = 'isActive' in request.POST
         use_call = 'useCall' in request.POST
         time_to_wait = request.POST.get('timeToWait', 0)
+        
+        # Clean and validate phone number
+        if phone:
+            # Remove all non-digit characters
+            phone_digits = ''.join(filter(str.isdigit, phone))
+            
+            # Validate phone number length
+            if len(phone_digits) == 10:
+                # Format as +1XXXXXXXXXX for storage
+                phone = '+1' + phone_digits
+            elif len(phone_digits) != 0:
+                messages.error(request, 'Please enter a valid 10-digit phone number.')
+                return redirect('admin_dashboard:businesses')
         
         # Get the user or return error if not found
         try:
@@ -575,7 +586,23 @@ def edit_business(request):
         
         # Update business fields
         business.businessName = request.POST.get('businessName')
-        business.phone = request.POST.get('phone')
+        
+        # Clean and validate phone number
+        phone = request.POST.get('phone')
+        if phone:
+            # Remove all non-digit characters
+            phone_digits = ''.join(filter(str.isdigit, phone))
+            
+            # Validate phone number length
+            if len(phone_digits) == 10:
+                # Format as +1XXXXXXXXXX for storage
+                business.phone = '+1' + phone_digits
+            elif len(phone_digits) != 0:
+                messages.error(request, 'Please enter a valid 10-digit phone number.')
+                return redirect('admin_dashboard:businesses')
+        else:
+            business.phone = phone
+            
         business.address = request.POST.get('address')
         business.isApproved = 'isApproved' in request.POST
         business.isActive = 'isActive' in request.POST
@@ -698,6 +725,29 @@ def delete_business(request):
         return redirect('admin_dashboard:businesses')
     
     return redirect('admin_dashboard:businesses')
+
+@login_required
+@user_passes_test(is_admin)
+def edit_api_credentials(request):
+    if request.method == 'POST':
+        business_id = request.POST.get('business_id')
+        business = get_object_or_404(Business, id=business_id)
+        
+        # Get or create API credentials for the business
+        api_credentials, created = ApiCredential.objects.get_or_create(business=business)
+        
+
+        api_credentials.twilioSmsNumber = request.POST.get('twilioSmsNumber', api_credentials.twilioSmsNumber)
+        api_credentials.twilioAccountSid = request.POST.get('twilioAccountSid', api_credentials.twilioAccountSid)
+        api_credentials.twilioAuthToken = request.POST.get('twilioAuthToken', api_credentials.twilioAuthToken)
+        
+        # Save the updated credentials
+        api_credentials.save()
+        
+        messages.success(request, f'API credentials for {business.businessName} have been updated successfully.')
+        return redirect('admin_dashboard:business_detail', business_id=business.id)
+    
+    return redirect('admin_dashboard:business_detail', business_id=business.id)
 
 @login_required
 @user_passes_test(is_admin)

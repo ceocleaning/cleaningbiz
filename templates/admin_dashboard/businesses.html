@@ -234,8 +234,21 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="phone" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone text-muted"></i></span>
+                                <span class="input-group-text">+1</span>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="phone" 
+                                       name="phone" 
+                                       placeholder="(555) 555-5555"
+                                       pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                       title="Please enter a valid 10-digit phone number">
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Enter a 10-digit phone number
+                            </small>
                         </div>
                         <div class="col-md-6">
                             <label for="address" class="form-label">Address</label>
@@ -305,8 +318,21 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="edit_phone" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="edit_phone" name="phone">
+                            <label for="edit_phone" class="form-label">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone text-muted"></i></span>
+                                <span class="input-group-text">+1</span>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="edit_phone" 
+                                       name="phone" 
+                                       placeholder="(555) 555-5555"
+                                       pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                       title="Please enter a valid 10-digit phone number">
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Enter a 10-digit phone number
+                            </small>
                         </div>
                         <div class="col-md-6">
                             <label for="edit_address" class="form-label">Address</label>
@@ -592,4 +618,88 @@
         });
     });
 </script>
+
+<!-- Phone number formatting script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format phone number as user types for Add Business modal
+    const phoneInput = document.getElementById('phone');
+    const editPhoneInput = document.getElementById('edit_phone');
+    const addForm = document.querySelector('#addBusinessModal form');
+    const editForm = document.querySelector('#editBusinessModal form');
+    
+    // Function to format phone number
+    function formatPhoneNumber(input) {
+        input.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+    }
+    
+    // Apply formatting to both phone inputs
+    formatPhoneNumber(phoneInput);
+    formatPhoneNumber(editPhoneInput);
+    
+    // Handle form submission for Add Business form
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            const phoneValue = phoneInput.value.replace(/\D/g, '');
+            if (phoneValue.length > 0 && phoneValue.length !== 10) {
+                e.preventDefault();
+                alert('Please enter a valid 10-digit phone number');
+            }
+        });
+    }
+    
+    // Handle form submission for Edit Business form
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            const phoneValue = editPhoneInput.value.replace(/\D/g, '');
+            if (phoneValue.length > 0 && phoneValue.length !== 10) {
+                e.preventDefault();
+                alert('Please enter a valid 10-digit phone number');
+            }
+        });
+    }
+    
+    // Format phone number when edit modal is opened
+    document.querySelectorAll('.edit-business-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const phone = this.getAttribute('data-phone');
+            if (phone) {
+                // Format the phone number for display
+                const cleaned = phone.replace(/\D/g, '');
+                const match = cleaned.match(/(\d{3})(\d{3})(\d{4})/);
+                if (match) {
+                    editPhoneInput.value = '(' + match[1] + ') ' + match[2] + '-' + match[3];
+                } else {
+                    editPhoneInput.value = phone;
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: none;
+    }
+    
+    .form-control {
+        border-left: none;
+    }
+    
+    .form-control:focus {
+        border-left: none;
+        box-shadow: none;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: #86b7fe;
+    }
+</style>
 {% endblock %}
