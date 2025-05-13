@@ -161,10 +161,10 @@
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="fw-bold">Total:</span>
                                     {% if plan.billing_cycle == 'yearly' %}
-                                    <span id="total-price" class="fw-bold">${{ plan.price|floatformat:2|multiply:12|multiply:0.8 }}</span>
+                                    <span id="total-price" class="" class="fw-bold total-price">${{ plan.price|floatformat:2|multiply:12|multiply:0.8 }}</span>
                                     <input type="hidden" id="original-price" value="{{ plan.price|floatformat:2|multiply:12|multiply:0.8 }}">
                                     {% else %}
-                                    <span id="total-price" class="fw-bold">${{ plan.price }}</span>
+                                    <span id="total-price" class="fw-bold total-price">${{ plan.price }}</span>
                                     <input type="hidden" id="original-price" value="{{ plan.price }}">
                                     {% endif %}
                                 </div>
@@ -284,7 +284,10 @@
                     };
                     
                     // Update the UI
-                    updatePriceWithDiscount();
+                    // updatePriceWithDiscount();
+                    let total_price = document.getElementById('total-price');
+                    total_price.textContent = '$' + data.discounted_price;
+
                     
                     // Disable the input and button
                     couponInput.disabled = true;

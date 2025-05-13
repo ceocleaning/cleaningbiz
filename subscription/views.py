@@ -864,6 +864,8 @@ def validate_coupon(request):
         original_price = float(plan.price)
         discount_amount = float(coupon.calculate_discount(original_price))
         discounted_price = float(coupon.apply_discount(original_price))
+
+        print(original_price, discount_amount, discounted_price)
         
         # Format the discount description
         if coupon.discount_type == 'percentage':
