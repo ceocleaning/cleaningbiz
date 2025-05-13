@@ -251,6 +251,7 @@
             applyButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Applying...';
             
             // Make API call to validate coupon
+            console.log(couponCode, '{{ plan.id }}')
             fetch('/subscription/validate-coupon/', {
                 method: 'POST',
                 headers: {
@@ -261,6 +262,7 @@
                     coupon_code: couponCode,
                     plan_id: '{{ plan.id }}'
                 })
+                
             })
             .then(response => response.json())
             .then(data => {

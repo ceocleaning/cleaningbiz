@@ -829,8 +829,13 @@ def validate_coupon(request):
     if request.method != 'POST':
         return JsonResponse({'valid': False, 'message': 'Invalid request method'})
     
-    code = request.POST.get('code')
-    plan_id = request.POST.get('plan_id')
+    data = json.loads(request.body)
+    code = data.get('coupon_code')
+    plan_id = data.get('plan_id')
+
+    print(code, plan_id)
+
+
     
     if not code or not plan_id:
         return JsonResponse({'valid': False, 'message': 'Missing required parameters'})
