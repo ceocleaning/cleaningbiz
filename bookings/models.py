@@ -107,6 +107,8 @@ class Booking(models.Model):
     updatedAt = models.DateTimeField(auto_now=True)
 
     paymentReminderSentAt = models.DateTimeField(null=True, blank=True)
+    dayBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
+    hourBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.bookingId} for {self.firstName} {self.lastName}"
@@ -124,9 +126,17 @@ class Booking(models.Model):
             return False
         return False
     
+    def get_payment_status(self):
+        """Get the payment status of the booking."""
+        if hasattr(self, 'invoice') and self.invoice:
+            if hasattr(self.invoice, 'payment_details'):
+                return self.invoice.payment_details.status
+            return 'Unpaid'
+        return 'No Invoice'
+    
     def generateBookingId(self):
-        prefix = "BK"
-        id = random.choices(string.ascii_letters + string.digits, k=5)
+        prefix = "bk"
+        id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
     
     def save(self, *args, **kwargs):

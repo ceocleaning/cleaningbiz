@@ -19,10 +19,9 @@
     </div>
 </div>
 
-<!-- Modified card layout: 2 cards in first row, 1 card in second row on mobile -->
-<div class="row g-2 g-md-4 mb-4">
-    <!-- First row on mobile: 2 cards side by side -->
-    <div class="col-6 col-md-3">
+<!-- Modified card layout: All cards in a single row -->
+<div class="row g-1 g-md-4 mb-4">
+    <div class="col-6 col-md-2">
         <div class="card bg-primary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -30,12 +29,12 @@
                         <h6 class="card-title mb-0">Total Bookings</h6>
                         <h2 class="mt-2 mb-0">{{ total_bookings }}</h2>
                     </div>
-                    <i class="fas fa-calendar fa-3x opacity-50"></i>
+                    <i class="fas fa-calendar fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
         <div class="card bg-info text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -43,7 +42,7 @@
                         <h6 class="card-title mb-0">Upcoming</h6>
                         <h2 class="mt-2 mb-0">{{ upcoming_paid_count|default:"0" }}</h2>
                     </div>
-                    <i class="fas fa-money-bill-wave fa-3x opacity-50"></i>
+                    <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
@@ -53,55 +52,177 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title mb-0">Pending Bookings</h6>
+                        <h6 class="card-title mb-0">Awaiting Payment</h6>
                         <h2 class="mt-2 mb-0">{{ pending_count }}</h2>
                     </div>
-                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                    <i class="fas fa-clock fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Second row on mobile: 2 cards side by side -->
-    <div class="col-6 col-md-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-6 col-md-2">
+        <div class="card bg-secondary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title mb-0">Completed Bookings</h6>
-                        <h2 class="mt-2 mb-0">{{ completed_count }}</h2>
+                        <h6 class="card-title mb-0">Past Bookings</h6>
+                        <h2 class="mt-2 mb-0">{{ past_bookings_count }}</h2>
                     </div>
-                    <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                    <i class="fas fa-history fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
     </div>
-    
+    <div class="col-6 col-md-2">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Cancelled</h6>
+                        <h2 class="mt-2 mb-0">{{ cancelled_bookings_count }}</h2>
+                    </div>
+                    <i class="fas fa-ban fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Tabs for different booking categories -->
-<div class="card">
-    <div class="card-body p-0">
+<div class="card shadow-sm">
+    <div class="card-body p-0 pb-3">
         <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
-                    <i class="fas fa-calendar-day me-2"></i>Upcoming
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    <i class="fas fa-list-ul me-2"></i>All Bookings <span class="badge rounded-pill bg-primary ms-1">{{ total_bookings }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
-                    <i class="fas fa-check-circle me-2"></i>Completed
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                    <i class="fas fa-calendar-day me-2"></i>Upcoming <span class="badge rounded-pill bg-info ms-1">{{ upcoming_paid_count|default:"0" }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
-                    <i class="fas fa-clock me-2"></i>Pending Payment
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#awaiting" type="button" role="tab">
+                    <i class="fas fa-clock me-2"></i>Awaiting Payment <span class="badge rounded-pill bg-warning ms-1">{{ pending_count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab">
+                    <i class="fas fa-history me-2"></i>Past <span class="badge rounded-pill bg-secondary ms-1">{{ past_bookings_count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab">
+                    <i class="fas fa-ban me-2"></i>Cancelled <span class="badge rounded-pill bg-danger ms-1">{{ cancelled_bookings_count }}</span>
                 </button>
             </li>
         </ul>
 
-        <div class="tab-content p-3">
+        <div class="tab-content p-4">
+            <!-- All Bookings Tab -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllAll" onchange="toggleAllCheckboxes('all')">
+                                    </div>
+                                </th>
+                                <th class="d-none d-md-table-cell">ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Payment Status</th>
+                                <th class="text-end text-md-start">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in all_bookings %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="all">
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
+                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if booking.cancelled_at %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    {% elif booking.isCompleted %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif booking.cleaningDate < today and booking.is_paid %}
+                                    <span class="badge bg-secondary">Past</span>
+                                    {% elif booking.is_paid %}
+                                    <span class="badge bg-info">Upcoming</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending Payment</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% with status=booking.get_payment_status %}
+                                    {% if status == 'COMPLETED' or status == 'APPROVED' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                    {% elif status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% elif status == 'FAILED' or status == 'DECLINED' %}
+                                    <span class="badge bg-danger">{{ status }}</span>
+                                    {% elif status == 'Unpaid' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-end text-md-start">
+                                    <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
+                                        <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="View booking details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not booking.cancelled_at and not booking.isCompleted %}
+                                        <a href="{% url 'bookings:edit_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-info d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Edit booking">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if not booking.invoice %}
+                                        <a href="{% url 'invoice:create_invoice' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-success d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Create invoice for this booking">
+                                            <i class="fas fa-file-invoice-dollar"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% endif %}
+                                        <a href="{% url 'bookings:delete_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-danger d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Delete booking">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No bookings found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
             <!-- Upcoming Bookings Tab -->
-            <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+            <div class="tab-pane fade" id="upcoming" role="tabpanel">
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -115,6 +236,7 @@
                                 <th>Customer</th>
                                 <th>Date</th>
                                 <th>Status</th>
+                                <th>Payment Status</th>
                                 <th class="text-end text-md-start">Actions</th>
                             </tr>
                         </thead>
@@ -133,6 +255,21 @@
                                     <span class="badge bg-info">
                                         Upcoming
                                     </span>
+                                </td>
+                                <td>
+                                    {% with status=booking.get_payment_status %}
+                                    {% if status == 'COMPLETED' or status == 'APPROVED' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                    {% elif status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% elif status == 'FAILED' or status == 'DECLINED' %}
+                                    <span class="badge bg-danger">{{ status }}</span>
+                                    {% elif status == 'Unpaid' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                    {% endif %}
+                                    {% endwith %}
                                 </td>
                                 <td class="text-end text-md-start">
                                     <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
@@ -175,76 +312,24 @@
                 </div>
             </div>
 
-            <!-- Completed Bookings Tab -->
-            <div class="tab-pane fade" id="completed" role="tabpanel">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="selectAllCompleted" onchange="toggleAllCheckboxes('completed')">
-                                    </div>
-                                </th>
-                                <th class="d-none d-md-table-cell">ID</th>
-                                <th>Customer</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th class="text-end text-md-start">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for booking in completed_bookings %}
-                            <tr>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="completed">
-                                    </div>
-                                </td>
-                                <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
-                                <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
-                                <td>
-                                    <span class="badge bg-success">
-                                        Completed
-                                    </span>
-                                </td>
-                                <td class="text-end text-md-start">
-                                    <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
-                                        <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
-                                           class="btn btn-sm btn-outline-primary"
-                                           data-bs-toggle="tooltip" 
-                                           data-bs-title="View booking details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">No completed bookings found</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Pending Payment Tab -->
-            <div class="tab-pane fade" id="pending" role="tabpanel">
+            
+            <!-- Awaiting Payment Tab -->
+            <div class="tab-pane fade" id="awaiting" role="tabpanel">
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="selectAllPending" onchange="toggleAllCheckboxes('pending')">
+                                        <input class="form-check-input" type="checkbox" id="selectAllAwaiting" onchange="toggleAllCheckboxes('awaiting')">
                                     </div>
                                 </th>
                                 <th class="d-none d-md-table-cell">ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
                                 <th>Status</th>
+                                <th>Payment Status</th>
                                 <th class="text-end text-md-start">Actions</th>
                             </tr>
                         </thead>
@@ -253,7 +338,7 @@
                             <tr>
                                 <td>
                                     <div class="form-check">
-                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="pending">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="awaiting">
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
@@ -261,8 +346,23 @@
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     <span class="badge bg-warning text-dark">
-                                        Pending Payment
+                                        Awaiting Payment
                                     </span>
+                                </td>
+                                <td>
+                                    {% with status=booking.get_payment_status %}
+                                    {% if status == 'COMPLETED' or status == 'APPROVED' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                    {% elif status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% elif status == 'FAILED' or status == 'DECLINED' %}
+                                    <span class="badge bg-danger">{{ status }}</span>
+                                    {% elif status == 'Unpaid' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                    {% endif %}
+                                    {% endwith %}
                                 </td>
                                 <td class="text-end text-md-start">
                                     <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
@@ -272,18 +372,192 @@
                                            data-bs-title="View booking details">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        <a href="{% url 'bookings:edit_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-info d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Edit booking">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if booking.invoice %}
                                         <a href="{% url 'invoice:invoice_detail' booking.invoice.id %}" 
-                                           class="btn btn-sm btn-outline-warning"
+                                           class="btn btn-sm btn-outline-warning d-none d-md-inline-flex"
                                            data-bs-toggle="tooltip" 
                                            data-bs-title="View invoice">
                                             <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{% url 'bookings:delete_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-danger d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Delete booking">
+                                            <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No pending payments found</td>
+                                <td colspan="7" class="text-center">No bookings awaiting payment found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Past Bookings Tab -->
+            <div class="tab-pane fade" id="past" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPast" onchange="toggleAllCheckboxes('past')">
+                                    </div>
+                                </th>
+                                <th class="d-none d-md-table-cell">ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Payment Status</th>
+                                <th class="text-end text-md-start">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in past_bookings %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="past">
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
+                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        Past
+                                    </span>
+                                </td>
+                                <td>
+                                    {% with status=booking.get_payment_status %}
+                                    {% if status == 'COMPLETED' or status == 'APPROVED' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                    {% elif status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% elif status == 'FAILED' or status == 'DECLINED' %}
+                                    <span class="badge bg-danger">{{ status }}</span>
+                                    {% elif status == 'Unpaid' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-end text-md-start">
+                                    <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
+                                        <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="View booking details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'bookings:edit_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-info d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Edit booking">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'bookings:delete_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-danger d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Delete booking">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No past bookings found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Cancelled Bookings Tab -->
+            <div class="tab-pane fade" id="cancelled" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllCancelled" onchange="toggleAllCheckboxes('cancelled')">
+                                    </div>
+                                </th>
+                                <th class="d-none d-md-table-cell">ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Payment Status</th>
+                                <th class="text-end text-md-start">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in cancelled_bookings %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input booking-checkbox" type="checkbox" value="{{ booking.bookingId }}" data-tab="cancelled">
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
+                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        Cancelled
+                                    </span>
+                                </td>
+                                <td>
+                                    {% with status=booking.get_payment_status %}
+                                    {% if status == 'COMPLETED' or status == 'APPROVED' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                    {% elif status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% elif status == 'FAILED' or status == 'DECLINED' %}
+                                    <span class="badge bg-danger">{{ status }}</span>
+                                    {% elif status == 'Unpaid' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-end text-md-start">
+                                    <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
+                                        <a href="{% url 'bookings:booking_detail' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="View booking details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'bookings:delete_booking' booking.bookingId %}" 
+                                           class="btn btn-sm btn-outline-danger d-none d-md-inline-flex"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-title="Delete booking">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No cancelled bookings found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -297,28 +571,40 @@
 <!-- Add responsive styles specifically for this page -->
 <style>
     .nav-tabs-custom {
-        border-bottom: 1px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+        background-color: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+        overflow: hidden;
     }
     
     .nav-tabs-custom .nav-link {
         border: none;
-        color: #6c757d;
-        padding: 1rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
+        color: #495057;
+        padding: 1.2rem 1.8rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        margin-right: 2px;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .nav-tabs-custom .nav-link i {
+        font-size: 1.1rem;
+        margin-right: 8px;
     }
     
     .nav-tabs-custom .nav-link:hover {
         color: #0d6efd;
-        background: none;
-        border: none;
+        background-color: rgba(13, 110, 253, 0.05);
     }
     
     .nav-tabs-custom .nav-link.active {
         color: #0d6efd;
-        background: none;
-        border: none;
-        border-bottom: 2px solid #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-bottom: 3px solid #0d6efd;
+        box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.05);
     }
     
     @media (max-width: 767.98px) {
@@ -344,8 +630,14 @@
         }
         
         .nav-tabs-custom .nav-link {
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
+            padding: 0.8rem 0.9rem;
+            font-size: 0.8rem;
+            letter-spacing: 0;
+        }
+        
+        .nav-tabs-custom .nav-link i {
+            font-size: 1rem;
+            margin-right: 5px;
         }
     }
     

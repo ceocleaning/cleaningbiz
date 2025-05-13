@@ -339,7 +339,7 @@ def check_availability_for_booking(request):
         
         datetime_to_check = datetime.combine(date_obj, time_obj)
         
-        current_business = request.user.business
+        current_business = request.user.business_set.first()
         cleaners = get_cleaners_for_business(current_business)
         
         # Check availability

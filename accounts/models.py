@@ -64,11 +64,6 @@ class Business(models.Model):
 
         
     def active_subscription(self):
-        """
-        Returns the active subscription for this business if one exists.
-        Used by the UsageTracker to compare usage against plan limits.
-        """
-        # Import here to avoid circular imports
         from subscription.models import BusinessSubscription
         
         try:
@@ -108,6 +103,9 @@ class ApiCredential(models.Model):
     
     def getThumbtackUrl(self):
         return f"{URL}/webhook/thumbtack/{self.secretKey}/"
+    
+    def getTwilioWebhookUrl(self):
+        return f"{URL}/ai_agent/api/twilio/webhook/{self.secretKey}/"
 
 
 class SMTPConfig(models.Model):

@@ -42,6 +42,7 @@ urlpatterns = [
     path('businesses/delete/', views.delete_business, name='delete_business'),
     path('businesses/export/', views.export_businesses, name='export_businesses'),
     path('businesses/<int:business_id>/', views.business_detail, name='business_detail'),
+    path('businesses/edit-api-credentials/', views.edit_api_credentials, name='edit_api_credentials'),
     
     # Subscription Management
     path('subscriptions/', views.subscriptions, name='subscriptions'),

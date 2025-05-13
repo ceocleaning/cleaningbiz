@@ -5,9 +5,15 @@ from retell_agent.api import RetellAgentAPI
 from retell_agent.models import RetellAgent
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
-from accounts.models import Business, CleanerProfile
+from accounts.models import Business, CleanerProfile, ApiCredential
 from automation.models import Cleaners
 from django.apps import apps
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+twilio_sid = os.getenv('TWILIO_SID')
+twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 
 @receiver(post_save, sender=ApiCredential)
 def update_api_credential(sender, instance, **kwargs):
@@ -46,3 +52,13 @@ def assign_owner_group(sender, instance, created, **kwargs):
         except Exception as e:
             print(f"Error assigning owner group: {e}")
         
+
+@receiver(post_save, sender=Business)
+def add_twilio_credentials(sender, instance, created, **kwargs):
+    if created:
+        api_credential, created = ApiCredential.objects.get_or_create(business=instance)
+        if created:
+            api_credential.twilioAccountSid = twilio_sid
+            api_credential.twilioAuthToken = twilio_auth_token
+            api_credential.save()
+    

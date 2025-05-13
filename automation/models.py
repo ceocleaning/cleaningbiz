@@ -84,8 +84,8 @@ class Lead(models.Model):
         super().save(*args, **kwargs)
     
     def generateLeadId(self):
-        prefix = "ld-"
-        id = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+        prefix = "ld"
+        id = ''.join(random.choices(string.digits, k=5))
         return f"{prefix}{id}"
     
     def clean_phone_number(self, phone):
