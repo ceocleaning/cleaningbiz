@@ -31,6 +31,11 @@
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" value="{{ business.user.email|default:'Not Set' }}" required>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="cleaner_pay_percentage" class="form-label">Cleaner Pay Percentage</label>
+                            <input type="number" class="form-control" id="cleaner_pay_percentage" name="cleaner_pay_percentage" value="{{ business.cleaner_pay_percentage }}" required>
+                        </div>
                         
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>

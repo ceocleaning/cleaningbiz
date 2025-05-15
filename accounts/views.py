@@ -183,6 +183,7 @@ def register_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+        cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         
         # Validate required fields
         if not all([businessName, phone, address]):
@@ -196,6 +197,7 @@ def register_business(request):
                 businessName=businessName,
                 phone=phone,
                 address=address,
+                cleaner_pay_percentage=cleaner_pay_percentage,
                 isActive=False,  # Set to False by default
                 isApproved=False  # Set to False by default
             )
@@ -229,6 +231,7 @@ def edit_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+        cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         email = request.POST.get('email')
         
         if not all([businessName, phone, address]):
@@ -239,6 +242,7 @@ def edit_business(request):
             business.businessName = businessName
             business.phone = phone
             business.address = address
+            business.cleaner_pay_percentage = cleaner_pay_percentage
             business.user.email = email
             business.user.save()
             business.save()

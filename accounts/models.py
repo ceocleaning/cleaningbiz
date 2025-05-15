@@ -32,6 +32,8 @@ class Business(models.Model):
 
     defaultPaymentMethod = models.CharField(max_length=255, null=True, blank=True, help_text="Default payment method for collecting payments", choices=PAYMENT_METHODS)
 
+    cleaner_pay_percentage = models.IntegerField(default=25)
+
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
 

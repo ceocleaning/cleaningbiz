@@ -185,3 +185,6 @@ class CleanerAvailability(models.Model):
             return f"{self.cleaner.name} - {self.dayOfWeek}"
         else:
             return f"{self.cleaner.name} - {self.specific_date.strftime('%Y-%m-%d')}"
+        
+
+
