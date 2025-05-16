@@ -233,6 +233,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="cleaner_id" id="reset-cleaner-id">
                             <div class="row g-3">
+                                <!-- Current password field removed as it's not needed for admin password reset -->
                                 <div class="col-md-6">
                                     <div class="form-floating">
                                         <input type="password" class="form-control" id="new_password" name="new_password" placeholder="New Password" required>

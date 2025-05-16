@@ -17,12 +17,55 @@ import pytz
 import traceback
 
 # Function to get available cleaners for a business
-def get_cleaners_for_business(business):
-    cleaners = Cleaners.objects.filter(business=business, isActive=True, isAvailable=True)
+def get_cleaners_for_business(business, exclude_ids=None, assignment_check_null=False):
+    print(f"get_cleaners_for_business called for business {business.id} with exclude_ids={exclude_ids}, assignment_check_null={assignment_check_null}")
+    
+    # First get all cleaners for this business
+    all_cleaners = Cleaners.objects.filter(business=business)
+    print(f"Total cleaners for business: {all_cleaners.count()}")
+    
+    # Apply active filter
+    active_cleaners = all_cleaners.filter(isActive=True)
+    print(f"Active cleaners: {active_cleaners.count()}")
+    
+    # Apply available filter
+    available_cleaners = active_cleaners.filter(isAvailable=True)
+    print(f"Available cleaners: {available_cleaners.count()}")
+    
+    cleaners = available_cleaners
+    
+    # Apply rating filter if needed
+    if business.job_assignment == 'high_rated' and not assignment_check_null:
+        high_rated_cleaners = cleaners.filter(rating__gte=4)
+        print(f"High-rated cleaners: {high_rated_cleaners.count()}")
+        cleaners = high_rated_cleaners
+    
+    # Apply exclusion filter if needed
+    if exclude_ids:
+        filtered_cleaners = cleaners.exclude(id__in=exclude_ids)
+        print(f"Cleaners after exclusion: {filtered_cleaners.count()} (excluded IDs: {exclude_ids})")
+        cleaners = filtered_cleaners
+    else:
+        print(f"No cleaners excluded, final count: {cleaners.count()}")
+
     return cleaners
 
 # Function to get cleaner availabilities for a specific day
 def get_cleaner_availabilities(cleaner, date_to_check):
+    # Ensure date_to_check is a datetime object
+    from datetime import datetime
+    if isinstance(date_to_check, str):
+        try:
+            # Try to parse the string as a datetime
+            date_to_check = datetime.strptime(date_to_check, "%Y-%m-%d %H:%M")
+        except ValueError:
+            # If it fails, it might be just a date string
+            try:
+                date_to_check = datetime.strptime(date_to_check, "%Y-%m-%d")
+            except ValueError:
+                # If all parsing fails, return None
+                return None
+    
     specific_availability = CleanerAvailability.objects.filter(
         cleaner=cleaner,
         availability_type='specific',
@@ -98,6 +141,32 @@ def is_slot_available(cleaners, time_to_check, available_cleaners=None):
 
     # Return True if we found any available cleaners, along with the logs
     return len(available_cleaners) > 0, logs
+
+
+# FUnction to Find All Available Cleaners for a given time slot
+def find_all_available_cleaners(cleaners, time_to_check):
+    print(f"Finding available cleaners at time: {time_to_check}")
+    print(f"Number of cleaners to check: {cleaners.count() if hasattr(cleaners, 'count') else len(cleaners)}")
+    
+    available_cleaners = []
+    for cleaner in cleaners:
+        print(f"Checking availability for cleaner ID: {cleaner.id}")
+        availability = get_cleaner_availabilities(cleaner, time_to_check)
+        print(f"Cleaner {cleaner.id} availability result: {availability}")
+        
+        if availability is None:
+            print(f"Cleaner {cleaner.id} is not available at {time_to_check}")
+            continue
+        
+        print(f"Cleaner {cleaner.id} is available at {time_to_check}")
+        available_cleaners.append(cleaner.id)
+    
+    print(f"Total available cleaners found: {len(available_cleaners)}")
+    return available_cleaners
+
+
+
+
 
 # Function to find an available cleaner
 def find_available_cleaner(cleaners, time_to_check):

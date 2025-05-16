@@ -12,6 +12,7 @@ from bookings.models import Booking
 from accounts.models import ApiCredential, Business
 from invoice.models import Invoice, Payment
 from subscription.models import UsageTracker
+from django.db import transaction
 from retell import Retell
 import random
 import pytz
@@ -538,6 +539,10 @@ def cleaner_detail(request, cleaner_id):
     
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
     
+    # Get cleaner profile for open jobs
+    from accounts.models import CleanerProfile
+    cleaner_profile = CleanerProfile.objects.filter(cleaner=cleaner).first()
+    
     # Define the correct order of days
     day_order = {
         'Monday': 0,
@@ -675,6 +680,15 @@ def cleaner_detail(request, cleaner_id):
         else:
             is_available = False
     
+    # Get open jobs for this cleaner
+    from automation.models import OpenJob
+    open_jobs = []
+    if cleaner_profile:
+        open_jobs = OpenJob.objects.filter(
+            cleaner=cleaner_profile,
+            status='pending'
+        ).select_related('booking').order_by('-createdAt')
+    
     context = {
         'cleaner': cleaner,
         'weekly_availabilities': weekly_availabilities,
@@ -684,6 +698,7 @@ def cleaner_detail(request, cleaner_id):
         'current_booking': current_booking,
         'upcoming_bookings': upcoming_bookings,
         'past_bookings': past_bookings,
+        'open_jobs': open_jobs,
         'is_available': is_available,
         'today': current_date,
         'monday_date': monday_date,
@@ -1575,3 +1590,165 @@ def sitemap(request):
     Render the sitemap page showing all available routes in the application.
     """
     return render(request, 'sitemap.html')
+
+
+@login_required
+def open_jobs(request, cleaner_id=None):
+    """
+    Display open jobs for a specific cleaner
+    """
+    # Check if user is logged in as a cleaner
+    if hasattr(request.user, 'cleaner_profile'):
+        # User is a cleaner, only show their jobs
+        from automation.models import OpenJob
+        cleaner_profile = request.user.cleaner_profile
+        business = cleaner_profile.business
+        cleaner = cleaner_profile.cleaner
+        
+        open_jobs = OpenJob.objects.filter(
+            cleaner=cleaner_profile,
+            status='pending'
+        ).select_related('booking').order_by('booking__cleaningDate', 'booking__startTime')
+        
+    else:
+        # User is a business owner/admin
+        business = request.user.business_set.first()
+        if not business:
+            messages.error(request, 'No business found.')
+            return redirect('accounts:register_business')
+        
+        cleaner = None
+        open_jobs = []
+        
+        if cleaner_id:
+            # Get specific cleaner's open jobs
+            cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
+            
+            # Get cleaner profile for open jobs
+            from accounts.models import CleanerProfile
+            cleaner_profile = CleanerProfile.objects.filter(cleaner=cleaner).first()
+            
+            if cleaner_profile:
+                from automation.models import OpenJob
+                open_jobs = OpenJob.objects.filter(
+                    cleaner=cleaner_profile,
+                    status='pending'
+                ).select_related('booking').order_by('booking__cleaningDate', 'booking__startTime')
+        else:
+            # Get all open jobs for the business
+            from automation.models import OpenJob
+            from accounts.models import CleanerProfile
+            
+            cleaner_profiles = CleanerProfile.objects.filter(business=business)
+            open_jobs = OpenJob.objects.filter(
+                cleaner__in=cleaner_profiles,
+                status='pending'
+            ).select_related('booking', 'cleaner__cleaner').order_by('booking__cleaningDate', 'booking__startTime')
+    
+    context = {
+        'cleaner': cleaner,
+        'open_jobs': open_jobs,
+        'title': f'Open Jobs - {cleaner.name if cleaner else "All Cleaners"}',
+    }
+    
+    return render(request, 'automation/open_jobs.html', context)
+
+
+@login_required
+@require_POST
+def accept_open_job(request, job_id):
+    """
+    Accept an open job for a cleaner
+    """
+    from automation.models import OpenJob
+    
+    # Get the open job
+    job = get_object_or_404(OpenJob, id=job_id)
+    
+    if job.cleaner.user != request.user:
+        messages.error(request, 'You do not have permission to accept this job.')
+        return redirect('cleaner_open_jobs', cleaner_id=job.cleaner.cleaner.id)
+    
+    # Update the job status
+    job.status = 'accepted'
+    job.save()
+    
+    # Assign the booking to the cleaner
+    booking = job.booking
+    booking.cleaner = job.cleaner
+    booking.save()
+
+    other_job_objs = OpenJob.objects.filter(booking=booking).exclude(id=job.id)
+    print(f"other_job_objs: {other_job_objs.count()}")
+    for other_job_obj in other_job_objs:
+        other_job_obj.status = 'closed'
+        other_job_obj.save()
+    
+    # Add success message
+    messages.success(request, f'Job {job.id} has been accepted successfully!')
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=job.cleaner.cleaner.id)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def reject_open_job(request, job_id):
+    """
+    Reject an open job for a cleaner and send the job to other available cleaners if no pending jobs exist
+    """
+    from automation.models import OpenJob
+    from bookings.utils import send_jobs_to_cleaners
+    
+    print(f"Processing job rejection for job_id: {job_id}")
+    
+    # Get the open job
+    job = get_object_or_404(OpenJob, id=job_id)
+    print(f"Found job: {job.id} for booking: {job.booking.bookingId} and cleaner: {job.cleaner.cleaner.id}")
+    
+    if job.cleaner.user != request.user:
+        messages.error(request, 'You do not have permission to reject this job.')
+        return redirect('cleaner_open_jobs', cleaner_id=job.cleaner.cleaner.id)
+    
+    # Update the job status
+    job.status = 'rejected'
+    job.save()
+    print(f"Job {job.id} marked as rejected")
+
+    booking = job.booking
+    if booking.business.job_assignment == 'high_rated':
+        cleaner_id_to_exclude = job.cleaner.cleaner.id
+        print(f"Checking for other pending jobs for booking {booking.bookingId}")
+
+        # Get all pending jobs for this booking (regardless of assignment type)
+        other_job_objs = OpenJob.objects.filter(booking=booking, status='pending').exclude(id=job.id)
+        print(f"other_job_objs: {other_job_objs.count()}")
+        
+        # If no other pending jobs exist, send this job to all other available cleaners
+        if other_job_objs.count() == 0:
+            print("Sending jobs to cleaners")
+            print(f"exclude_ids: {cleaner_id_to_exclude}")
+            print(f"No pending jobs found, sending to other cleaners excluding cleaner {cleaner_id_to_exclude}")
+            
+            # Get all previously rejected cleaners for this booking to exclude them too
+            rejected_cleaner_ids = list(OpenJob.objects.filter(
+                booking=booking, 
+                status='rejected'
+            ).values_list('cleaner__cleaner__id', flat=True))
+            
+            # Make sure the current cleaner is in the exclude list
+            if cleaner_id_to_exclude not in rejected_cleaner_ids:
+                rejected_cleaner_ids.append(cleaner_id_to_exclude)
+                
+            print(f"Excluding these cleaner IDs: {rejected_cleaner_ids}")
+            
+            # Send jobs to all available cleaners except those who already rejected
+            result = send_jobs_to_cleaners(booking.business, booking, exclude_ids=rejected_cleaner_ids, assignment_check_null=True)
+            print(f"send_jobs_to_cleaners result: {result}")
+        else:
+            print("Other pending jobs exist, not sending to more cleaners")
+    
+    # Add success message
+    messages.success(request, f'Job {job.id} has been rejected successfully!')
+    return redirect('cleaner_open_jobs', cleaner_id=job.cleaner.cleaner.id)

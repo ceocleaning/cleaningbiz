@@ -16,6 +16,11 @@ PAYMENT_METHODS = [
 ]
 
 
+JOB_ASSIGNMENT_OPTIONS = [
+    ('high_rated', 'High Rated'),
+    ('all_available', 'All Available'),
+]
+
 class Business(models.Model):
     businessId = models.CharField(max_length=11, unique=True, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='business_set')
@@ -33,6 +38,7 @@ class Business(models.Model):
     defaultPaymentMethod = models.CharField(max_length=255, null=True, blank=True, help_text="Default payment method for collecting payments", choices=PAYMENT_METHODS)
 
     cleaner_pay_percentage = models.IntegerField(default=25)
+    job_assignment = models.CharField(max_length=255, null=True, blank=True, help_text="Job assignment method", choices=JOB_ASSIGNMENT_OPTIONS, default='all_available')
 
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)

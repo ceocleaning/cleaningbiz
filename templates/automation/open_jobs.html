@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load automation_filters %}
+{% load math_filters %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button and Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'cleaners_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Cleaners
+        </a>
+        <h1 class="h3 mb-0">Open Jobs</h1>
+    </div>
+
+    <!-- Cleaner Info Card -->
+    {% if cleaner %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="display-4 me-3 text-primary">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div>
+                    <h2 class="h4 mb-1">{{ cleaner.name }}</h2>
+                    <div class="d-flex flex-wrap align-items-center text-muted small">
+                        <div class="me-3">
+                            <i class="fas fa-phone me-1"></i>{{ cleaner.phoneNumber }}
+                        </div>
+                        {% if cleaner.email %}
+                        <div class="me-3">
+                            <i class="fas fa-envelope me-1"></i>{{ cleaner.email }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <span class="badge {% if cleaner.isAvailable %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                {% if cleaner.isAvailable %}Available{% else %}Unavailable{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Open Jobs Section -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Filters and Search -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+                        <h3 class="h5 mb-3 mb-md-0">
+                            <i class="fas fa-briefcase me-2"></i>Pending Jobs
+                            <span class="badge bg-primary rounded-pill ms-2">{{ open_jobs|length }}</span>
+                        </h3>
+                        <div class="d-flex">
+                            <div class="input-group">
+                                <input type="text" id="jobSearch" class="form-control" placeholder="Search jobs...">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all">
+                            All Jobs
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary filter-btn" data-filter="today">
+                            Today
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary filter-btn" data-filter="tomorrow">
+                            Tomorrow
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary filter-btn" data-filter="this-week">
+                            This Week
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobs List -->
+            {% if open_jobs %}
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush job-list">
+                        {% for job in open_jobs %}
+                        <div class="list-group-item job-item" 
+                             data-date="{{ job.booking.cleaningDate|date:'Y-m-d' }}"
+                             data-customer="{{ job.booking.customerName }}"
+                             data-address="{{ job.booking.address1 }} {{ job.booking.city }}"
+                             data-service="{{ job.booking.get_serviceType_display }}">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body p-0">
+                                    <div class="row g-0">
+                                        <!-- Date Column with improved visual hierarchy -->
+                                        <div class="col-md-2 bg-light rounded-start">
+                                            <div class="d-flex flex-column justify-content-center align-items-center h-100 p-3">
+                                                <div class="text-center">
+                                                    <div class="h3 mb-0 text-primary">{{ job.booking.cleaningDate|date:"d" }}</div>
+                                                    <div class="h5 text-primary mb-1">{{ job.booking.cleaningDate|date:"M" }}</div>
+                                                    <div class="small text-muted">{{ job.booking.cleaningDate|date:"Y" }}</div>
+                                                    <div class="badge bg-primary text-white mt-2 px-3 py-2">
+                                                        {{ job.booking.cleaningDate|date:"l" }}
+                                                    </div>
+                                                    <div class="mt-3 small fw-bold">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {{ job.booking.startTime|time:"g:i A" }} - {{ job.booking.endTime|time:"g:i A" }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Job Details Column with better spacing -->
+                                        <div class="col-md-6 p-4">
+                                            <div class="d-flex flex-column h-100">
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <h4 class="mb-0">{{ job.booking.customerName }}</h4>
+                                                    <span class="badge bg-secondary px-3 py-2">{{ job.booking.get_serviceType_display }}</span>
+                                                </div>
+                                                
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <div class="bg-light rounded-circle p-2 me-3">
+                                                        <i class="fas fa-map-marker-alt text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ job.booking.address1 }}</div>
+                                                        <div class="text-muted">{{ job.booking.city }}, {{ job.booking.stateOrProvince }} {{ job.booking.zipCode }}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row g-2 mb-3">
+                                                    {% if job.booking.squareFeet %}
+                                                    <div class="col-auto">
+                                                        <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1">
+                                                            <i class="fas fa-home text-secondary me-2"></i>
+                                                            <span>{{ job.booking.squareFeet }} sq ft</span>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if job.booking.bedrooms %}
+                                                    <div class="col-auto">
+                                                        <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1">
+                                                            <i class="fas fa-bed text-secondary me-2"></i>
+                                                            <span>{{ job.booking.bedrooms }} bed</span>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if job.booking.bathrooms %}
+                                                    <div class="col-auto">
+                                                        <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1">
+                                                            <i class="fas fa-bath text-secondary me-2"></i>
+                                                            <span>{{ job.booking.bathrooms }} bath</span>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                {% if job.booking.otherRequests %}
+                                                <div class="mt-3 p-3 bg-light rounded">
+                                                    <div class="d-flex">
+                                                        <i class="fas fa-comment-alt text-secondary mt-1 me-2"></i>
+                                                        <div>
+                                                            <div class="small fw-medium mb-1">Special Requests:</div>
+                                                            <div class="text-muted">{{ job.booking.otherRequests|truncatechars:100 }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Payment and Actions Column -->
+                                        <div class="col-md-4 bg-light rounded-end">
+                                            <div class="d-flex flex-column justify-content-between h-100 p-4">
+                                                <!-- Payment information with clear breakdown -->
+                                                <div class="price-tag mb-4">
+                                                    <div class="card border-0 shadow-sm mb-3">
+                                                        <div class="card-header bg-primary text-white py-2">
+                                                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Payment Details</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Total Amount:</span>
+                                                                <span class="fw-bold">${{ job.booking.totalPrice }}</span>
+                                                            </div>
+                                                            
+                                                            {% if job.cleaner.business.cleaner_pay_percentage %}
+                                                                {% with cleaner_percentage=job.cleaner.business.cleaner_pay_percentage %}
+                                                                    {% with cleaner_pay=job.booking.totalPrice|multiply:cleaner_percentage|divide:100 %}
+                                                                        <div class="d-flex justify-content-between text-muted small mb-3">
+                                                                            <span>Business Fee ({{ 100|subtract:cleaner_percentage }}%):</span>
+                                                                            <span>-${{ job.booking.totalPrice|multiply:100|subtract:cleaner_percentage|divide:100|floatformat:2 }}</span>
+                                                                        </div>
+                                                                        <div class="d-flex justify-content-between fw-bold text-success">
+                                                                            <span>Your Payout ({{ cleaner_percentage }}%):</span>
+                                                                            <span>${{ cleaner_pay|floatformat:2 }}</span>
+                                                                        </div>
+                                                                    {% endwith %}
+                                                                {% endwith %}
+                                                            {% else %}
+                                                                <div class="d-flex justify-content-between fw-bold text-success">
+                                                                    <span>Your Payout:</span>
+                                                                    <span>${{ job.booking.totalPrice }}</span>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Action buttons -->
+                                                <div class="d-grid gap-3">
+                                                    <form action="{% url 'accept_open_job' job_id=job.id %}" method="POST">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-success btn-lg w-100 py-3">
+                                                            <i class="fas fa-check-circle me-2"></i>Accept Job
+                                                        </button>
+                                                    </form>
+                                                    <form action="{% url 'reject_open_job' job_id=job.id %}" method="POST">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-outline-danger w-100">
+                                                            <i class="fas fa-times-circle me-2"></i>Decline
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="display-1 text-muted mb-4">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <h3 class="h4 mb-3">No Open Jobs Available</h3>
+                    <p class="text-muted mb-4">There are currently no pending jobs assigned to you.</p>
+                    <a href="{% url 'cleaners_list' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Cleaners
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('jobSearch');
+        const jobItems = document.querySelectorAll('.job-item');
+        
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            jobItems.forEach(item => {
+                const customer = item.dataset.customer.toLowerCase();
+                const address = item.dataset.address.toLowerCase();
+                const service = item.dataset.service.toLowerCase();
+                
+                if (customer.includes(searchTerm) || 
+                    address.includes(searchTerm) || 
+                    service.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0];
+        const oneWeekLater = new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0];
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                
+                jobItems.forEach(item => {
+                    const jobDate = item.dataset.date;
+                    
+                    switch(filter) {
+                        case 'all':
+                            item.style.display = '';
+                            break;
+                        case 'today':
+                            item.style.display = jobDate === today ? '' : 'none';
+                            break;
+                        case 'tomorrow':
+                            item.style.display = jobDate === tomorrow ? '' : 'none';
+                            break;
+                        case 'this-week':
+                            item.style.display = jobDate >= today && jobDate <= oneWeekLater ? '' : 'none';
+                            break;
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

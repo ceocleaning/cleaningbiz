@@ -35,17 +35,24 @@ def SignupPage(request):
         email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
-        recaptcha_response = request.POST.get('g-recaptcha-response')
         
-        # Verify reCAPTCHA first
-        if not recaptcha_response:
-            messages.error(request, 'Please complete the reCAPTCHA verification.')
-            return redirect('accounts:signup')
+        # Skip reCAPTCHA verification in debug mode
+        if settings.DEBUG:
+            recaptcha_verified = True
+        else:
+            recaptcha_response = request.POST.get('g-recaptcha-response')
             
-        recaptcha_result = verify_recaptcha_token(recaptcha_response)
-        if not recaptcha_result.get('success'):
-            messages.error(request, 'reCAPTCHA verification failed. Please try again.')
-            return redirect('accounts:signup')
+            # Verify reCAPTCHA first
+            if not recaptcha_response:
+                messages.error(request, 'Please complete the reCAPTCHA verification.')
+                return redirect('accounts:signup')
+                
+            recaptcha_result = verify_recaptcha_token(recaptcha_response)
+            recaptcha_verified = recaptcha_result.get('success')
+            
+            if not recaptcha_verified:
+                messages.error(request, 'reCAPTCHA verification failed. Please try again.')
+                return redirect('accounts:signup')
         
         if password1 == password2:
             if User.objects.filter(username=username).exists():
@@ -60,7 +67,10 @@ def SignupPage(request):
             messages.error(request, 'Passwords do not match.')
             return redirect('accounts:signup')
     
-    return render(request, 'accounts/signup.html')
+    context = {
+        'debug': settings.DEBUG
+    }
+    return render(request, 'accounts/signup.html', context)
 
 
 def loginPage(request):
@@ -70,17 +80,21 @@ def loginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        recaptcha_response = request.POST.get('g-recaptcha-response')
+
+        if settings.DEBUG:
+            recaptcha_response = '1'
+        else:
+            recaptcha_response = request.POST.get('g-recaptcha-response')
         
-        # Verify reCAPTCHA first
-        if not recaptcha_response:
-            messages.error(request, 'Please complete the reCAPTCHA verification.')
-            return redirect('accounts:login')
-            
-        recaptcha_result = verify_recaptcha_token(recaptcha_response)
-        if not recaptcha_result.get('success'):
-            messages.error(request, 'reCAPTCHA verification failed. Please try again.')
-            return redirect('accounts:login')
+            # Verify reCAPTCHA first
+            if not recaptcha_response:
+                messages.error(request, 'Please complete the reCAPTCHA verification.')
+                return redirect('accounts:login')
+                
+            recaptcha_result = verify_recaptcha_token(recaptcha_response)
+            if not recaptcha_result.get('success'):
+                messages.error(request, 'reCAPTCHA verification failed. Please try again.')
+                return redirect('accounts:login')
         
         user = authenticate(request, username=username, password=password)
         
@@ -90,7 +104,7 @@ def loginPage(request):
             
             # Check if the user is a cleaner
             if hasattr(user, 'cleaner_profile'):
-                return redirect('accounts:cleaner_detail', cleaner_id=user.cleaner_profile.cleaner.id)
+                return redirect('cleaner_detail', cleaner_id=user.cleaner_profile.cleaner.id)
             
             # Check if the user has a business and if it's approved
             if user.business_set.exists():
@@ -102,7 +116,10 @@ def loginPage(request):
         else:
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'accounts/login.html')
+    context = {
+        'debug': settings.DEBUG
+    }
+    return render(request, 'accounts/login.html', context)
 
 
 def logoutUser(request):
@@ -184,11 +201,12 @@ def register_business(request):
         phone = request.POST.get('phone')
         address = request.POST.get('address')
         cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
+        job_assignment = request.POST.get('job_assignment')
         
         # Validate required fields
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/register_business.html')
+            return redirect('accounts:register_business')
         
         try:
             # Create business
@@ -198,6 +216,7 @@ def register_business(request):
                 phone=phone,
                 address=address,
                 cleaner_pay_percentage=cleaner_pay_percentage,
+                job_assignment=job_assignment,
                 isActive=False,  # Set to False by default
                 isApproved=False  # Set to False by default
             )
@@ -217,7 +236,13 @@ def register_business(request):
             messages.error(request, f'Error registering business: {str(e)}')
             raise Exception(str(e))
     
-    return render(request, 'accounts/register_business.html')
+    from .models import JOB_ASSIGNMENT_OPTIONS
+    
+    context = {
+        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS
+    }
+    
+    return render(request, 'accounts/register_business.html', context)
 
 
 @login_required
@@ -232,17 +257,19 @@ def edit_business(request):
         phone = request.POST.get('phone')
         address = request.POST.get('address')
         cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
+        job_assignment = request.POST.get('job_assignment')
         email = request.POST.get('email')
         
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
-            return render(request, 'accounts/edit_business.html', {'business': business})
+            return redirect('accounts:edit_business')
         
         try:
             business.businessName = businessName
             business.phone = phone
             business.address = address
             business.cleaner_pay_percentage = cleaner_pay_percentage
+            business.job_assignment = job_assignment
             business.user.email = email
             business.user.save()
             business.save()
@@ -254,7 +281,14 @@ def edit_business(request):
             messages.error(request, f'Error updating business: {str(e)}')
             raise Exception(str(e))
     
-    return render(request, 'accounts/edit_business.html', {'business': business})
+    from .models import JOB_ASSIGNMENT_OPTIONS
+    
+    context = {
+        'business': business,
+        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS
+    }
+    
+    return render(request, 'accounts/edit_business.html', context)
 
 
 @login_required
@@ -1594,6 +1628,19 @@ def reset_cleaner_password(request):
         messages.error(request, 'No cleaner specified.')
         return redirect('accounts:manage_cleaners')
     
+    # Get form data
+    new_password = request.POST.get('new_password')
+    confirm_password = request.POST.get('confirm_password')
+    
+    # Validate passwords
+    if not new_password or not confirm_password:
+        messages.error(request, 'Please provide both new password and confirmation.')
+        return redirect('accounts:manage_cleaners')
+        
+    if new_password != confirm_password:
+        messages.error(request, 'Passwords do not match.')
+        return redirect('accounts:manage_cleaners')
+    
     # Get the user's business
     business = request.user.business_set.first()
     if not business:
@@ -1611,20 +1658,17 @@ def reset_cleaner_password(request):
     # Get the user account
     user = cleaner.user_profile.user
     
-    # Generate a temporary password
-    temp_password = User.objects.make_random_password()
-    
-    # Update user's password
-    user.set_password(temp_password)
+    # Update user's password with the provided password
+    user.set_password(new_password)
     user.save()
     
     # Send reset email
     try:
-        subject = f'{business.businessName} - Your Password Has Been Reset'
+        subject = f'{business.businessName} - Your Password Has Been Changed'
         html_message = f"""
         <p>Hello {cleaner.name},</p>
-        <p>Your password has been reset by your business administrator.</p>
-        <p>Your temporary password is: <strong>{temp_password}</strong></p>
+        <p>Your password has been changed by your business administrator.</p>
+        <p>Please contact your administrator if you did not request this change.</p>
         <p>Thank you,<br>{business.businessName}</p>
         """
         # Check for business configured email settings
@@ -1635,13 +1679,13 @@ def reset_cleaner_password(request):
             else:
                 # Fallback to Django's default email
                 from django.core.mail import send_mail
-                plain_message = f"Hello {cleaner.name}, Your password has been reset. Your temporary password is: {temp_password}"
+                plain_message = f"Hello {cleaner.name}, Your password has been changed by your business administrator. Please contact them if you did not request this change."
                 send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
         except Exception as e:
-            messages.warning(request, f'Password was reset but we could not send the email: {str(e)}')
+            messages.warning(request, f'Password was changed but we could not send the email notification: {str(e)}')
             return redirect('accounts:manage_cleaners')
             
-        messages.success(request, f'Password for {cleaner.name} has been reset and a temporary password has been sent to {user.email}.')
+        messages.success(request, f'Password for {cleaner.name} has been changed successfully. A notification has been sent to {user.email}.')
     except Exception as e:
         messages.error(request, f'Error sending password reset email: {str(e)}')
     
