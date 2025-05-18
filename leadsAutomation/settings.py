@@ -21,6 +21,14 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+    # Add your LAN IP or any IP you access from, e.g.:
+    '192.168.1.101',
+    '192.168.8.1'  
+]
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -31,8 +39,8 @@ DEBUG = True
 
 
 BASE_URL = 'https://cleaningbizai.com'
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'cleaningbizai.com', 'www.cleaningbizai.com', 'ai.cleaningbizai.com', 'cleaningbizai.up.railway.app', 'ceocleaners.up.railway.app']
+DEBUG_PROPAGATE_EXCEPTIONS = True
 # Trust Proxy Headers (Needed for Cloudflare)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -132,9 +140,17 @@ WSGI_APPLICATION = 'leadsAutomation.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
-}
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+    }
 
 
 # Password validation

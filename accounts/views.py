@@ -1028,6 +1028,9 @@ def approval_pending(request):
     Shown after a business registers and before they are approved
     """
     # Check if user has a business
+    from django.conf import settings
+
+    print(f"DEBUG: {settings.DEBUG}")
     if not request.user.business_set.exists():
         messages.warning(request, 'You need to register a business first.')
         return redirect('accounts:register_business')

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Reminder - 1 Day Left</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
+        .header { color: #27ae60; font-size: 1.6em; margin-bottom: 12px; }
+        .details { margin: 18px 0; }
+        .cta { margin-top: 30px; }
+        .footer { color: #888; font-size: 0.95em; margin-top: 32px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Cleaning Appointment Reminder - 1 Day Left</div>
+        <p>Hi <strong>{{ cleaner_name }}</strong>,</p>
+        <div class="details">
+            This is a reminder that you have a cleaning appointment scheduled for tomorrow.<br>
+            <strong>Booking Details:</strong><br>
+            Date & Time: <strong>{{ booking_datetime }}</strong><br>
+            Address: <strong>{{ booking_address }}</strong>
+        </div>
+        <div class="cta">
+            Please review your schedule and ensure you are prepared for the appointment.<br>
+            If you have any questions, please reach out to the support team.
+        </div>
+        <div class="footer">
+            We appreciate your dedication and hard work!<br>
+            CEO Cleaners Team
+        </div>
+    </div>
+</body>
+</html>

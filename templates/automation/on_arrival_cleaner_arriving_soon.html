@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cleaner Arriving Soon</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
+        .header { color: #f39c12; font-size: 1.6em; margin-bottom: 12px; }
+        .details { margin: 18px 0; }
+        .cta { margin-top: 30px; }
+        .footer { color: #888; font-size: 0.95em; margin-top: 32px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Your Cleaner is On the Way!</div>
+        <p>Dear <strong>{{ client_name }}</strong>,</p>
+        <div class="details">
+            Great news! Your assigned cleaner, <strong>{{ cleaner_name }}</strong>, has just pressed the "I am coming" button and is now on the way to your location.<br>
+            <strong>Booking Details:</strong><br>
+            Date & Time: <strong>{{ booking_datetime }}</strong><br>
+            Address: <strong>{{ booking_address }}</strong>
+        </div>
+        <div class="cta">
+            Please be ready to welcome your cleaner. If you have any special instructions or requests, kindly prepare them in advance.
+        </div>
+        <div class="footer">
+            Thank you for choosing CEO Cleaners!<br>
+            We look forward to providing you with excellent service.
+        </div>
+    </div>
+</body>
+</html>

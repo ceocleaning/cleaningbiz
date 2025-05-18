@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Reminder - 1 Hour Left</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
+        .header { color: #2d9cdb; font-size: 1.6em; margin-bottom: 12px; }
+        .details { margin: 18px 0; }
+        .cta { margin-top: 30px; }
+        .footer { color: #888; font-size: 0.95em; margin-top: 32px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Your Cleaning Appointment is in 1 Hour!</div>
+        <p>Hi <strong>{{ cleaner_name }}</strong>,</p>
+        <div class="details">
+            This is a friendly reminder that you have a cleaning appointment scheduled in one hour.<br>
+            <strong>Booking Details:</strong><br>
+            Date & Time: <strong>{{ booking_datetime }}</strong><br>
+            Address: <strong>{{ booking_address }}</strong>
+        </div>
+        <div class="cta">
+            Please make sure you have all your cleaning supplies and are ready to go.<br>
+            If you have any questions or need to update the client, please contact them directly.
+        </div>
+        <div class="footer">
+            Thank you for being a valued member of our cleaning team!<br>
+            CEO Cleaners Team
+        </div>
+    </div>
+</body>
+</html>
