@@ -79,10 +79,10 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         
         Booking Details:
         - Service: {booking.serviceType}
-        - Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {squareFeet}
+        - Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {booking.squareFeet}
         - Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
         - Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
-        - Address: {booking.address1}, {booking.city}, {booking.state} {booking.zipCode}
+        - Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
         
         You can view the full booking details in your dashboard.
         
@@ -239,7 +239,8 @@ def send_email_payment_completed(instance):
             """
             
             # Set up email parameters
-            from_email = f"{business.businessName} <{business.email}>" if business.email else settings.DEFAULT_FROM_EMAIL
+            from_email = f"{business.businessName} <{settings.DEFAULT_FROM_EMAIL}>"
+            reply_to_email = business.user.email if business.user.email else settings.DEFAULT_FROM_EMAIL
             recipient_email = booking.email
             
             # Send email based on available configuration
@@ -249,6 +250,7 @@ def send_email_payment_completed(instance):
                 msg['Subject'] = subject
                 msg['From'] = from_email
                 msg['To'] = recipient_email
+                msg['Reply-To'] = reply_to_email
                 
                 # Attach parts
                 part1 = MIMEText(text_body, 'plain')
@@ -269,7 +271,8 @@ def send_email_payment_completed(instance):
                     subject=subject,
                     body=text_body,
                     from_email=from_email,
-                    to=[recipient_email]
+                    to=[recipient_email],
+                    reply_to=[reply_to_email]
                 )
                 email_message.attach_alternative(html_body, "text/html")
                 email_message.send()

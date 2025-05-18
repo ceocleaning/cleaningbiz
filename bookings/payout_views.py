@@ -34,7 +34,7 @@ def payouts_dashboard(request):
         selected_cleaner_profile = None
         
         # Base queryset for payouts
-        payouts_queryset = CleanerPayout.objects.filter(business=business)
+        payouts_queryset = CleanerPayout.objects.filter(business=business).exclude(status='cancelled')
         
         # Apply cleaner filter if selected
         if selected_cleaner_id:
@@ -59,23 +59,7 @@ def payouts_dashboard(request):
         pending_amount = pending_payouts.aggregate(Sum('amount'))['amount__sum'] or 0
         paid_amount = paid_payouts.aggregate(Sum('amount'))['amount__sum'] or 0
         
-        # Get completed bookings that don't have payouts yet
-        completed_bookings_without_payouts_query = Booking.objects.filter(
-            business=business,
-            isCompleted=True,
-            cleaner__isnull=False
-        ).exclude(
-            payouts__isnull=False
-        )
-        
-        # Apply cleaner filter to completed bookings if a cleaner is selected
-        if selected_cleaner_profile:
-            completed_bookings_without_payouts_query = completed_bookings_without_payouts_query.filter(
-                cleaner=selected_cleaner_profile.cleaner
-            )
-            
-        # Order the results
-        completed_bookings_without_payouts = completed_bookings_without_payouts_query.order_by('-cleaningDate')
+        # Completed bookings without payouts section has been removed
         
         context = {
             'is_business_owner': is_business_owner,
@@ -85,7 +69,6 @@ def payouts_dashboard(request):
             'payouts': payouts,
             'pending_payouts': pending_payouts,
             'paid_payouts': paid_payouts,
-            'completed_bookings_without_payouts': completed_bookings_without_payouts,
             'payout_status_choices': PAYOUT_STATUS_CHOICES,
             'total_amount': total_amount,
             'pending_amount': pending_amount,
@@ -200,7 +183,7 @@ def create_payout(request):
     
     if not cleaner_profile_id or not booking_ids:
         messages.error(request, "Please select a cleaner and at least one booking.")
-        return redirect('payouts_dashboard')
+        return redirect('bookings:payouts_dashboard')
     
     try:
         cleaner_profile = CleanerProfile.objects.get(id=cleaner_profile_id, business=business)
@@ -215,7 +198,7 @@ def create_payout(request):
         
         if not bookings:
             messages.error(request, "No valid bookings selected.")
-            return redirect('payouts_dashboard')
+            return redirect('bookings:payouts_dashboard')
         
         # Calculate total payout amount
         total_amount = sum(booking.get_cleaner_payout() for booking in bookings)
@@ -233,11 +216,11 @@ def create_payout(request):
         payout.bookings.set(bookings)
         
         messages.success(request, f"Payout created successfully for {cleaner_profile.cleaner.name}.")
-        return redirect('payout_detail', payout_id=payout.payout_id)
+        return redirect('bookings:payout_detail', payout_id=payout.payout_id)
         
     except Exception as e:
         messages.error(request, f"Error creating payout: {str(e)}")
-        return redirect('payouts_dashboard')
+        return redirect('bookings:payouts_dashboard')
 
 
 @login_required
@@ -251,7 +234,7 @@ def mark_payout_as_paid(request, payout_id):
     
     if request.method != 'POST':
         messages.error(request, "Invalid request method.")
-        return redirect('payouts_dashboard')
+        return redirect('bookings:payouts_dashboard')
     
     business = Business.objects.get(user=request.user)
     payout = get_object_or_404(CleanerPayout, payout_id=payout_id, business=business)
@@ -265,7 +248,7 @@ def mark_payout_as_paid(request, payout_id):
     except Exception as e:
         messages.error(request, f"Error updating payout: {str(e)}")
     
-    return redirect('payout_detail', payout_id=payout.payout_id)
+    return redirect('bookings:payout_detail', payout_id=payout.payout_id)
 
 
 @login_required
@@ -279,14 +262,14 @@ def cancel_payout(request, payout_id):
     
     if request.method != 'POST':
         messages.error(request, "Invalid request method.")
-        return redirect('payouts_dashboard')
+        return redirect('bookings:payouts_dashboard')
     
     business = Business.objects.get(user=request.user)
     payout = get_object_or_404(CleanerPayout, payout_id=payout_id, business=business)
     
     if payout.status == 'paid':
         messages.error(request, "Cannot cancel a payout that has already been paid.")
-        return redirect('payout_detail', payout_id=payout.payout_id)
+        return redirect('bookings:payout_detail', payout_id=payout.payout_id)
     
     try:
         payout.status = 'cancelled'
@@ -295,4 +278,4 @@ def cancel_payout(request, payout_id):
     except Exception as e:
         messages.error(request, f"Error cancelling payout: {str(e)}")
     
-    return redirect('payout_detail', payout_id=payout.payout_id)
+    return redirect('bookings:payout_detail', payout_id=payout.payout_id)
