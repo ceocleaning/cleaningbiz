@@ -53,6 +53,11 @@ urlpatterns = [
     path('cleaners/<int:cleaner_id>/toggle-availability/', views.toggle_cleaner_availability, name='toggle_cleaner_availability'),
     path('cleaners/<int:cleaner_id>/toggle-active/', views.toggle_cleaner_active, name='toggle_cleaner_active'),
     path('cleaners/<int:cleaner_id>/delete/', views.delete_cleaner, name='delete_cleaner'),
+    
+    # Open Jobs URLs
+    path('cleaners/<int:cleaner_id>/jobs/', views.open_jobs, name='cleaner_open_jobs'),
+    path('jobs/<str:job_id>/accept/', views.accept_open_job, name='accept_open_job'),
+    path('jobs/<str:job_id>/reject/', views.reject_open_job, name='reject_open_job'),
 
     # Business Schedule URLs
     path('business-schedule/', views.business_monthly_schedule, name='business_monthly_schedule'),

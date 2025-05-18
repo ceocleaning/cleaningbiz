@@ -130,7 +130,8 @@
                         </div>
                     </div>
 
-                    <!-- Add reCAPTCHA -->
+                    <!-- Add reCAPTCHA only in production -->
+                    {% if not debug %}
                     <div class="mt-6">
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Verify you're not a robot <span class="text-red-500">*</span></label>
@@ -140,6 +141,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
 
                     {% if messages %}
                     <div class="mt-4">
@@ -191,12 +193,16 @@
         </div>
     </div>
 
-    <!-- Add reCAPTCHA script and validation logic -->
+    {% if not debug %}
+    <!-- Add reCAPTCHA script and validation logic only in production -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
     <script>
         // Function to enable submit button when reCAPTCHA is verified
         function enableSubmitButton() {
-            document.getElementById('recaptchaError').style.display = 'none';
+            if (document.getElementById('recaptchaError')) {
+                document.getElementById('recaptchaError').style.display = 'none';
+            }
             document.getElementById('submitButton').disabled = false;
         }
 
@@ -205,10 +211,17 @@
             const submitButton = document.getElementById('submitButton');
             const recaptchaError = document.getElementById('recaptchaError');
 
-            // Ensure submit button is disabled initially
+            // In debug mode, enable the submit button immediately
+            {% if debug %}
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+            {% else %}
+            // In production, ensure submit button is disabled initially until reCAPTCHA is verified
             if (submitButton) {
                 submitButton.disabled = true;
             }
+            {% endif %}
 
             if (form) {
                 form.addEventListener('submit', function(event) {
@@ -219,19 +232,21 @@
                         return;
                     }
 
-                    // Verify reCAPTCHA
+                    {% if not debug %}
+                    // Verify reCAPTCHA in production mode
                     const recaptchaResponse = grecaptcha.getResponse();
                     if (!recaptchaResponse) {
                         recaptchaError.style.display = 'block';
                         return;
                     }
-
+                    
                     // Add reCAPTCHA response to form
                     const recaptchaInput = document.createElement('input');
                     recaptchaInput.type = 'hidden';
                     recaptchaInput.name = 'g-recaptcha-response';
                     recaptchaInput.value = recaptchaResponse;
                     form.appendChild(recaptchaInput);
+                    {% endif %}
 
                     // Submit the form
                     form.submit();

@@ -11,6 +11,57 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+def send_email_util(subject, recipient_email, html_body, text_body=None, from_email=None, smtp_config=None):
+    from django.conf import settings
+    from django.core.mail import EmailMultiAlternatives
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    if not text_body:
+        # Fallback: strip HTML tags for plain text
+        import re
+        text_body = re.sub('<[^<]+?>', '', html_body)
+
+    if isinstance(recipient_email, str):
+        recipient_list = [recipient_email]
+    else:
+        recipient_list = recipient_email
+
+    try:
+        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
+            # Use custom SMTP
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = from_email or smtp_config.username
+            msg['To'] = ', '.join(recipient_list)
+            part1 = MIMEText(text_body, 'plain')
+            part2 = MIMEText(html_body, 'html')
+            msg.attach(part1)
+            msg.attach(part2)
+            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
+            server.starttls()
+            server.login(smtp_config.username, smtp_config.password)
+            server.sendmail(msg['From'], recipient_list, msg.as_string())
+            server.quit()
+            return True
+        else:
+            # Use Django's email system
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=from_email or getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                to=recipient_list
+            )
+            email_message.attach_alternative(html_body, "text/html")
+            email_message.send()
+            return True
+    except Exception as e:
+        return False
+
+from .email_template import get_email_template
+
+
 def send_payment_reminder(booking_id):
     """
     Send a payment reminder email and SMS to clients when payment has not been made within 2 hours.
@@ -290,7 +341,7 @@ def send_day_before_reminder():
             isCompleted=False
         )
 
-        print(f"[INFO] Found {bookings.count()} bookings for day-before reminder")
+       
         
         reminder_count = 0
         for booking in bookings:
@@ -300,201 +351,56 @@ def send_day_before_reminder():
                 
             # Check if booking is paid
             if not booking.is_paid():
-                print(f"[INFO] Booking {booking.bookingId} is not paid, skipping day-before reminder")
                 continue
                 
             business = booking.business
-            
+            to_whom = ['client', 'cleaner']
             # Prepare email content
             email_subject = f"Reminder: Your Cleaning Service with {business.businessName} Tomorrow"
-            
-            # Create HTML email body
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Booking Reminder</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
-                    .content {{ padding: 20px; background-color: #f9f9f9; }}
-                    .details {{ margin: 20px 0; }}
-                    .details table {{ width: 100%; border-collapse: collapse; }}
-                    .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                    .details table td:first-child {{ font-weight: bold; width: 40%; }}
-                    .tips {{ background-color: #e8f4fb; padding: 15px; border-radius: 5px; margin-top: 20px; }}
-                    .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Your Cleaning Service Is Tomorrow</h1>
-                </div>
-                <div class="content">
-                    <p>Hello {booking.firstName} {booking.lastName},</p>
-                    <p>This is a friendly reminder that your cleaning service with {business.businessName} is scheduled for tomorrow.</p>
-                    
-                    <div class="details">
-                        <h3>Booking Details:</h3>
-                        <table>
-                            <tr>
-                                <td>Service:</td>
-                                <td>{booking.get_serviceType_display()}</td>
-                            </tr>
-                            <tr>
-                                <td>Date:</td>
-                                <td>{booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
-                            </tr>
-                            <tr>
-                                <td>Time:</td>
-                                <td>{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}</td>
-                            </tr>
-                            <tr>
-                                <td>Address:</td>
-                                <td>{booking.address1}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div class="tips">
-                        <h3>Preparation Tips:</h3>
-                        <ul>
-                            <li>Please ensure access to your property is available at the scheduled time</li>
-                            <li>Clear any personal items that may obstruct cleaning</li>
-                            <li>Secure pets in a safe area if necessary</li>
-                        </ul>
-                    </div>
-                    
-                    <p>If you need to reschedule or have any questions, please contact us as soon as possible at {business.phone or business.user.email}.</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message from {business.businessName}.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text version
-            text_body = f"""
-            BOOKING REMINDER - {business.businessName}
-            
-            Hello {booking.firstName} {booking.lastName},
-            
-            This is a friendly reminder that your cleaning service with {business.businessName} is scheduled for tomorrow.
-            
-            Booking Details:
-            - Service: {booking.get_serviceType_display()}
-            - Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-            - Time: {booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}
-            - Address: {booking.address1}
-            
-            Preparation Tips:
-            - Please ensure access to your property is available at the scheduled time
-            - Clear any personal items that may obstruct cleaning
-            - Secure pets in a safe area if necessary
-            
-            If you need to reschedule or have any questions, please contact us as soon as possible at {business.phone or business.user.email}.
-            
-            This is an automated message from {business.businessName}.
-            """
-            
-            # Send email
-            try:
-                # Get SMTP configuration for the business
+            for to in to_whom:
+                html_body = get_email_template(booking, to=to, when='tomorrow')
+                recipient_email = booking.email if to == 'client' else booking.cleaner.email
                 smtp_config = SMTPConfig.objects.filter(business=business).first()
-                
-                # Set up email parameters
-                from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
-                recipient_email = booking.email
-                
-                # Send email based on available configuration
-                if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-                    # Create message container
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = email_subject
-                    msg['From'] = from_email
-                    msg['To'] = recipient_email
-                    
-                    # Attach parts
-                    part1 = MIMEText(text_body, 'plain')
-                    part2 = MIMEText(html_body, 'html')
-                    msg.attach(part1)
-                    msg.attach(part2)
-                    
-                    # Send using custom SMTP
-                    server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-                    server.starttls()
-                    server.login(smtp_config.username, smtp_config.password)
-                    server.send_message(msg)
-                    server.quit()
-                    
-                    print(f"[INFO] Day-before reminder email sent to {booking.email} using business SMTP config")
-                else:
-                    # Use Django's email system
-                    email_message = EmailMultiAlternatives(
-                        subject=email_subject,
-                        body=text_body,
-                        from_email=from_email,
-                        to=[recipient_email]
-                    )
-                    email_message.attach_alternative(html_body, "text/html")
-                    email_message.send()
-                    
-                    print(f"[INFO] Day-before reminder email sent to {booking.email} using default SMTP settings")
-                
-            except Exception as e:
-                print(f"[ERROR] Failed to send day-before reminder email: {str(e)}")
-            
-            # Send SMS reminder
+                from_email = smtp_config.username if smtp_config else (business.email if hasattr(business, 'email') and business.email else settings.DEFAULT_FROM_EMAIL)
+
+                # Send email using the new utility
+                send_email_util(
+                    subject=email_subject,
+                    recipient_email=recipient_email,
+                    html_body=html_body,
+                    from_email=from_email,
+                    smtp_config=smtp_config
+                )
+
+            # Send SMS (unchanged)
             try:
-                # Check if business has Twilio credentials
                 if hasattr(business, 'apicredentials') and business.apicredentials:
                     api_cred = business.apicredentials
-                    
                     if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-                        # Initialize Twilio client
                         client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
-                        
-                        # SMS message content
                         sms_message = f"Reminder from {business.businessName}: Your cleaning service is scheduled for tomorrow, {booking.cleaningDate.strftime('%A, %B %d')} at {booking.startTime.strftime('%I:%M %p')}. Please ensure access to your property. Questions? Call {business.phone}."
-                        
-                        # Send SMS
-                        message = client.messages.create(
+                        client.messages.create(
                             body=sms_message,
                             from_=api_cred.twilioSmsNumber,
                             to=booking.phoneNumber
                         )
-                        
-                        print(f"[INFO] Day-before reminder SMS sent to {booking.phoneNumber}, SID: {message.sid}")
-                    else:
-                        print("[INFO] No Twilio credentials found for business, skipping SMS reminder")
-                        
             except Exception as e:
                 print(f"[ERROR] Failed to send day-before reminder SMS: {str(e)}")
-            
-            # Update the booking to record that the day-before reminder was sent
             booking.dayBeforeReminderSentAt = timezone.now()
             booking.save()
-            
             reminder_count += 1
-            
-        print(f"[INFO] Sent {reminder_count} day-before reminders")
+        print(f"[INFO] Sent {reminder_count} day-before reminders (client & cleaner)")
         return reminder_count
-        
     except Exception as e:
         print(f"[ERROR] Error in send_day_before_reminder: {str(e)}")
         return 0
 
-
 def send_hour_before_reminder():
     """
-    Send a reminder email and SMS to clients one hour before their scheduled cleaning service.
-    This final reminder helps ensure the client is prepared for the service arrival.
+    Send a reminder email and SMS to clients and cleaners one hour before their scheduled cleaning service.
+    This final reminder helps ensure everyone is prepared for the service arrival.
     """
     try:
-        # Calculate the time range for bookings scheduled in the next hour
         now = timezone.now()
         one_hour_from_now = now + datetime.timedelta(hours=1)
         two_hours_from_now = now + datetime.timedelta(hours=2)
@@ -521,137 +427,28 @@ def send_hour_before_reminder():
                 
             # Check if booking is paid
             if not booking.is_paid():
-                print(f"[INFO] Booking {booking.bookingId} is not paid, skipping hour-before reminder")
                 continue
                 
             business = booking.business
             
             # Prepare email content
-            email_subject = f"Your {business.businessName} Cleaning Service Is Coming Soon"
-            
-            # Create HTML email body
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Service Reminder</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background-color: #2ecc71; color: white; padding: 20px; text-align: center; }}
-                    .content {{ padding: 20px; background-color: #f9f9f9; }}
-                    .details {{ margin: 20px 0; }}
-                    .details table {{ width: 100%; border-collapse: collapse; }}
-                    .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                    .details table td:first-child {{ font-weight: bold; width: 40%; }}
-                    .urgent {{ color: #e74c3c; font-weight: bold; }}
-                    .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Your Cleaning Service Is Coming Soon</h1>
-                </div>
-                <div class="content">
-                    <p>Hello {booking.firstName} {booking.lastName},</p>
-                    <p class="urgent">Your cleaning service with {business.businessName} is scheduled to begin in approximately one hour.</p>
-                    
-                    <div class="details">
-                        <h3>Booking Details:</h3>
-                        <table>
-                            <tr>
-                                <td>Service:</td>
-                                <td>{booking.get_serviceType_display()}</td>
-                            </tr>
-                            <tr>
-                                <td>Start Time:</td>
-                                <td>{booking.startTime.strftime('%I:%M %p')}</td>
-                            </tr>
-                            <tr>
-                                <td>Address:</td>
-                                <td>{booking.address1}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <p>Please ensure that access to your property is available. Our cleaning professionals will arrive shortly.</p>
-                    
-                    <p>If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phone}.</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message from {business.businessName}.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text version
-            text_body = f"""
-            YOUR CLEANING SERVICE IS COMING SOON - {business.businessName}
-            
-            Hello {booking.firstName} {booking.lastName},
-            
-            Your cleaning service with {business.businessName} is scheduled to begin in approximately one hour.
-            
-            Booking Details:
-            - Service: {booking.get_serviceType_display()}
-            - Start Time: {booking.startTime.strftime('%I:%M %p')}
-            - Address: {booking.address1}
-            
-            Please ensure that access to your property is available. Our cleaning professionals will arrive shortly.
-            
-            If you have any urgent questions or need to provide last-minute instructions, please contact us immediately at {business.phone}.
-            
-            This is an automated message from {business.businessName}.
-            """
-            
-            # Send email
-            try:
-                # Get SMTP configuration for the business
+            to_whom = ['client', 'cleaner'] 
+            for to in to_whom:
+                email_subject = f"Your {business.businessName} Cleaning Service Is Coming Soon"
+                html_body = get_email_template(booking, to=to, when='in one hour')
+                recipient_email = booking.email if to == 'client' else booking.cleaner.email
                 smtp_config = SMTPConfig.objects.filter(business=business).first()
-                
-                # Set up email parameters
-                from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
-                recipient_email = booking.email
-                
-                # Send email based on available configuration
-                if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-                    # Create message container
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = email_subject
-                    msg['From'] = from_email
-                    msg['To'] = recipient_email
-                    
-                    # Attach parts
-                    part1 = MIMEText(text_body, 'plain')
-                    part2 = MIMEText(html_body, 'html')
-                    msg.attach(part1)
-                    msg.attach(part2)
-                    
-                    # Send using custom SMTP
-                    server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-                    server.starttls()
-                    server.login(smtp_config.username, smtp_config.password)
-                    server.send_message(msg)
-                    server.quit()
-                    
-                    print(f"[INFO] Hour-before reminder email sent to {booking.email} using business SMTP config")
-                else:
-                    # Use Django's email system
-                    email_message = EmailMultiAlternatives(
-                        subject=email_subject,
-                        body=text_body,
-                        from_email=from_email,
-                        to=[recipient_email]
-                    )
-                    email_message.attach_alternative(html_body, "text/html")
-                    email_message.send()
-                    
-                    print(f"[INFO] Hour-before reminder email sent to {booking.email} using default SMTP settings")
-                
-            except Exception as e:
-                print(f"[ERROR] Failed to send hour-before reminder email: {str(e)}")
+                from_email = smtp_config.username if smtp_config else (business.email if hasattr(business, 'email') and business.email else settings.DEFAULT_FROM_EMAIL)
+
+                # Send email using the new utility
+                send_email_util(
+                    subject=email_subject,
+                    recipient_email=recipient_email,
+                    html_body=html_body,
+                    from_email=from_email,
+                    smtp_config=smtp_config
+                )
+
             
             # Send SMS reminder
             try:
@@ -673,9 +470,7 @@ def send_hour_before_reminder():
                             to=booking.phoneNumber
                         )
                         
-                        print(f"[INFO] Hour-before reminder SMS sent to {booking.phoneNumber}, SID: {message.sid}")
-                    else:
-                        print("[INFO] No Twilio credentials found for business, skipping SMS reminder")
+                       
                         
             except Exception as e:
                 print(f"[ERROR] Failed to send hour-before reminder SMS: {str(e)}")
@@ -686,7 +481,7 @@ def send_hour_before_reminder():
             
             reminder_count += 1
             
-        print(f"[INFO] Sent {reminder_count} hour-before reminders")
+      
         return reminder_count
         
     except Exception as e:
@@ -831,8 +626,7 @@ def send_post_service_followup():
                     server.login(smtp_config.username, smtp_config.password)
                     server.send_message(msg)
                     server.quit()
-                    
-                    print(f"[INFO] Post-service followup email sent to {booking.email} using business SMTP config")
+                   
                 else:
                     # Use Django's email system
                     email_message = EmailMultiAlternatives(
@@ -843,8 +637,7 @@ def send_post_service_followup():
                     )
                     email_message.attach_alternative(html_body, "text/html")
                     email_message.send()
-                    
-                    print(f"[INFO] Post-service followup email sent to {booking.email} using default SMTP settings")
+                   
                 
             except Exception as e:
                 print(f"[ERROR] Failed to send post-service followup email: {str(e)}")

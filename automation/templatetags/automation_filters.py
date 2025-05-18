@@ -1,6 +1,7 @@
 from django import template
 from datetime import datetime, timezone
 import pytz
+from decimal import Decimal, InvalidOperation
 
 register = template.Library()
 
@@ -59,4 +60,28 @@ def format_time(value):
         # Format just the time part
         return value.strftime("%I:%M %p")
     except (ValueError, AttributeError):
+        return value
+
+@register.filter
+def multiply(value, arg):
+    """Multiply the value by the argument"""
+    try:
+        # Convert to Decimal for precise calculation
+        value = Decimal(str(value))
+        arg = Decimal(str(arg))
+        return value * arg
+    except (ValueError, TypeError, decimal.InvalidOperation):
+        return value
+
+@register.filter
+def divide(value, arg):
+    """Divide the value by the argument"""
+    try:
+        # Convert to Decimal for precise calculation
+        value = Decimal(str(value))
+        arg = Decimal(str(arg))
+        if arg == 0:
+            return 0
+        return value / arg
+    except (ValueError, TypeError, decimal.InvalidOperation):
         return value

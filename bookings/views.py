@@ -7,7 +7,7 @@ from django.db import transaction
 from .models import Booking, BookingCustomAddons
 from invoice.models import Invoice, Payment
 from accounts.models import Business, BusinessSettings, CustomAddons
-from automation.models import CleanerAvailability, Cleaners
+from automation.models import CleanerAvailability, Cleaners, OpenJob
 from decimal import Decimal
 import json
 from django.db.models import Min, Count
@@ -211,6 +211,7 @@ def customer_detail(request, identifier):
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def create_booking(request):
+    from datetime import datetime, timedelta
     business = Business.objects.get(user=request.user)
     business_settings = BusinessSettings.objects.get(business=business)
     customAddons = CustomAddons.objects.filter(business=business)
@@ -257,15 +258,9 @@ def create_booking(request):
                 totalPrice=totalPrice
             )
             
-            # Assign cleaner if selected
-            cleaner_id = request.POST.get('selectedCleaner')
-            if cleaner_id:
-                try:
-                    cleaner = Cleaners.objects.get(id=cleaner_id)
-                    booking.cleaner = cleaner
-                    booking.save()
-                except Cleaners.DoesNotExist:
-                    pass  # Silently ignore if cleaner doesn't exist
+            from .utils import send_jobs_to_cleaners
+            send_jobs_to_cleaners(business, booking)
+            
 
             # Handle standard add-ons
             addon_fields = [

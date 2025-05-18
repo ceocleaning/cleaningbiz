@@ -178,9 +178,11 @@
                 <div class="step-content">
                     <div class="step-title">Sign Up for 30-Day Trial</div>
                     <p>Get full access to all CleaningBiz AI features for 30 days for just $30. Experience the power of our platform with no long-term commitment.</p>
+                    {% if trial_plan %}
                     <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="btn trial-btn mt-2">
                         <i class="fas fa-rocket me-2"></i>Start 30-Day Trial for $30
                     </a>
+                    {% endif %}
                 </div>
             </div>
             

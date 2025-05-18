@@ -187,4 +187,44 @@ class CleanerAvailability(models.Model):
             return f"{self.cleaner.name} - {self.specific_date.strftime('%Y-%m-%d')}"
         
 
+OPEN_JOB_CLEANER_STATUS = (
+    ('pending', 'Pending'),
+    ('accepted', 'Accepted'),
+    ('rejected', 'Rejected'),
+    ('closed', 'Closed'),
+)
 
+OPEN_JOB_ASSIGNMENT_TYPE = (
+    ('top_rated', 'Top Rated'),
+    ('all_available', 'All Available'),
+)
+
+class OpenJob(models.Model):
+    id = models.CharField(max_length=255, primary_key=True)
+
+    booking = models.ForeignKey('bookings.Booking', on_delete=models.CASCADE)
+    cleaner = models.ForeignKey('accounts.CleanerProfile', on_delete=models.CASCADE)
+    status = models.CharField(max_length=255, choices=OPEN_JOB_CLEANER_STATUS, default='pending')
+    assignment_type = models.CharField(max_length=255, choices=OPEN_JOB_ASSIGNMENT_TYPE, default='all_available')
+
+
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.booking.id} - {self.cleaner.cleaner.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = self.generateOpenJobId()
+        super().save(*args, **kwargs)
+    
+    def generateOpenJobId(self):
+        prefix = "job_"
+        id = ''.join(random.choices(string.digits, k=5))
+        return f"{prefix}{id}"
+    
+   
+        
+    
+    
