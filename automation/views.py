@@ -457,10 +457,11 @@ def delete_lead(request, leadId):
 
 @login_required
 def cleaners_list(request):
+    # Only process for cleaner users with 'Cleaner' group
+    if request.user.groups.filter(name='Cleaner').exists():
+        return redirect('cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
+
     business = request.user.business_set.first()
-    if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
     cleaners = Cleaners.objects.filter(business=business)
     
     # Get availability for each cleaner

@@ -393,10 +393,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
 
         import threading
         
-        from bookings.utils import send_jobs_to_cleaners
-        cleaner_thread = threading.Thread(target=send_jobs_to_cleaners, args=(business, newBooking))
-        cleaner_thread.daemon = True
-        cleaner_thread.start()
+       
         
         from automation.webhooks import send_booking_data
         webhook_thread = threading.Thread(target=send_booking_data, args=(newBooking,))

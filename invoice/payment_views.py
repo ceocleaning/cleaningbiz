@@ -121,7 +121,7 @@ def process_manual_payment(request):
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
-        square_credentials = business.square_credentials
+        square_credentials = SquareCredentials.objects.filter(business=business).first()
 
         # Check if this is an existing Square payment with AUTHORIZED status
         if payment_method == 'Square' and square_payment_id:

@@ -258,8 +258,7 @@ def create_booking(request):
                 totalPrice=totalPrice
             )
             
-            from .utils import send_jobs_to_cleaners
-            send_jobs_to_cleaners(business, booking)
+            
             
 
             # Handle standard add-ons

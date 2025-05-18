@@ -612,11 +612,7 @@ def create_booking(request):
         # Import threading for background execution
         import threading
         
-        # Run send_jobs_to_cleaners in background thread
-        from bookings.utils import send_jobs_to_cleaners
-        cleaner_thread = threading.Thread(target=send_jobs_to_cleaners, args=(business, booking))
-        cleaner_thread.daemon = True
-        cleaner_thread.start()
+      
         
         # Send booking data to integration in background thread
         from .webhooks import send_booking_data

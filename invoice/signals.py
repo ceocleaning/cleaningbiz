@@ -1,11 +1,11 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from bookings.models import Booking
-from accounts.models import ApiCredential, SMTPConfig
+from accounts.models import ApiCredential, SMTPConfig, Business
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -14,6 +14,7 @@ from twilio.rest import Client
 from .models import Invoice, Payment
 from automation.utils import sendEmailtoClientInvoice
 from django.utils import timezone
+import json
 
 
 def send_booking_confirmation_sms(sender, instance, created, **kwargs):
@@ -222,7 +223,107 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
         except Exception as e:
             print(f"Error sending email with invoice: {str(e)}")
             return False
+# Store previous payment state to check for status changes
+_payment_status_cache = {}
 
+@receiver(pre_save, sender=Payment)
+def cache_payment_status(sender, instance, **kwargs):
+    """Cache the previous payment status before saving"""
+    if instance.pk:  # Only for existing instances
+        try:
+            # Get the current state from the database
+            previous_instance = Payment.objects.get(pk=instance.pk)
+            # Store the previous status in our cache
+            _payment_status_cache[instance.pk] = previous_instance.status
+        except Payment.DoesNotExist:
+            # This is a new instance
+            pass
+
+@receiver(post_save, sender=Payment)
+def handle_payment_completed(sender, instance, created, **kwargs):
+    """Handle actions when a payment is completed (status changed to COMPLETED)"""
+    # Get previous status from cache
+    previous_status = _payment_status_cache.get(instance.pk)
+    
+    # Clear the cache entry
+    if instance.pk in _payment_status_cache:
+        del _payment_status_cache[instance.pk]
+    
+    # Only proceed if status changed from something else to COMPLETED
+    if previous_status and previous_status != 'COMPLETED' and instance.status == 'COMPLETED':
+        try:
+            invoice = instance.invoice
+            booking = invoice.booking
+            business = booking.business
+            
+            # Log the payment completion
+            print(f"Payment {instance.paymentId} status changed from {previous_status} to COMPLETED")
+
+            from bookings.utils import send_jobs_to_cleaners
+            send_jobs_to_cleaners(business, booking)
+            
+            
+            notify_business_owner_payment_completed(business, instance, invoice, booking)
+            
+            return True
+        except Exception as e:
+            print(f"Error in payment completion handler: {str(e)}")
+            return False
+    
+    return False
+
+def notify_business_owner_payment_completed(business, payment, invoice, booking):
+    """Send notification to business owner when payment is completed"""
+    try:
+        # Get business owner's email
+        owner_email = business.user.email
+        
+        # Create email subject
+        subject = f"New Payment Received - {business.businessName}"
+        
+        # Create email body
+        body = f"""
+        Hello {business.user.first_name},
+        
+        A new payment has been received for booking #{booking.bookingId}.
+        
+        Payment Details:
+        - Invoice ID: {invoice.invoiceId}
+        - Payment ID: {payment.paymentId}
+        - Amount: ${invoice.amount:.2f}
+        - Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
+        
+        Customer Details:
+        - Name: {booking.firstName} {booking.lastName}
+        - Email: {booking.email}
+        - Phone: {booking.phoneNumber}
+        
+        Booking Details:
+        - Service: {booking.serviceType}
+        - Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
+        - Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
+        - Address: {booking.address1}, {booking.city}, {booking.state} {booking.zipCode}
+        
+        You can view the full booking details in your dashboard.
+        
+        Thank you,
+        CleaningBiz AI
+        """
+        
+        # Send email using Django's built-in email function
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[owner_email],
+            fail_silently=False,
+        )
+        
+        print(f"Payment notification email sent to business owner: {owner_email}")
+        return True
+    except Exception as e:
+        print(f"Error sending payment notification to business owner: {str(e)}")
+        return False
 
 @receiver(post_save, sender=Payment)
 def send_email_payment_completed(sender, instance, created, **kwargs):
