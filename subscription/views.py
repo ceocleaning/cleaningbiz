@@ -39,8 +39,8 @@ def subscription_management(request):
         payment_method = False
         next_plan = None
     
-    # Get all available plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price').exclude(name='Trial Plan')
+    # Get all available plans (exclude invite-only plans)
+    plans = SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).order_by('price').exclude(name='Trial Plan')
 
     trial_plan = SubscriptionPlan.objects.filter(is_active=True, name='Trial Plan').first()
     is_eligible_for_trial = False if BusinessSubscription.objects.filter(business=business, plan=trial_plan).exists() else True
@@ -447,9 +447,9 @@ def get_subscription_data(request):
         end_date=end_date
     )
     
-    # Get available plans
+    # Get available plans (exclude invite-only plans)
     available_plans = []
-    for plan in SubscriptionPlan.objects.filter(is_active=True).order_by('price'):
+    for plan in SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).order_by('price'):
         available_plans.append({
             'id': plan.id,
             'name': plan.name,
@@ -479,7 +479,13 @@ def select_plan(request, plan_id=None):
         # Get the specific plan
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
-            if "Trial" in plan.name:
+            
+            # Check if the plan is invite-only and handle accordingly
+            if plan.is_invite_only:
+                # Allow access if the user has the direct link
+                pass  # The user has the direct link since they're accessing with plan_id
+                
+            if "Trial" in plan.name and not plan.is_invite_only:
                 trial_already_availed = BusinessSubscription.objects.filter(business=business, plan__name__icontains="Trial").exists()
                 if trial_already_availed:
                     messages.error(request, "You have already availed the trial plan.")
@@ -893,6 +899,7 @@ def validate_coupon(request):
 def manage_card(request):
     """View for saving or updating card details."""
     business = request.user.business_set.first()
+
     
     # Get redirect URL if provided
     redirect_url = request.GET.get('redirect_url') or request.POST.get('redirect_url')
@@ -974,6 +981,8 @@ def manage_card(request):
             customer_result = square_client.customers.create_customer(
                 body=customer_request
             )
+
+            print(customer_result)
             
             if customer_result.is_success():
                 customer_id = customer_result.body['customer']['id']

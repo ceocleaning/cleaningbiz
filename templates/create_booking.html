@@ -139,37 +139,26 @@
                             <div class="col-md-6 mb-3">
                                 <label for="serviceType" class="form-label">Service Type</label>
                                 <select class="form-control form-select" name="serviceType" id="serviceType" required>
-                                    <option value="" disabled selected>Select a service type</option>
-                                    <option value="standard">Standard Cleaning</option>
+                                    <option value="" disabled>Select a service type</option>
+                                    <option value="standard" selected>Standard Cleaning</option>
                                     <option value="deep">Deep Cleaning</option>
                                     <option value="moveinmoveout">Move In/Move Out</option>
                                     <option value="airbnb">Airbnb Cleaning</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="recurring" class="form-label">Recurring Service</label>
                                 <select class="form-control form-select" name="recurring" id="recurring">
-                                    <option value="" disabled selected>Select frequency</option>
-                                    <option value="one-time">One Time</option>
+                                    <option value="" disabled>Select frequency</option>
+                                    <option value="one-time" selected>One Time</option>
                                     <option value="weekly">Weekly</option>
                                     <option value="biweekly">Bi-weekly</option>
                                     <option value="monthly">Monthly</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="paymentMethod" class="form-label">Payment Method</label>
-                                <select class="form-control form-select" name="paymentMethod" id="paymentMethod">
-                                    <option value="" disabled selected>Select payment method</option>
-                                    <option value="creditcard">Credit Card</option>
-                                    <option value="paypal">PayPal</option>
-                                    <option value="stripe">Stripe</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
                         </div>
+
+                        
                         
                         <!-- Availability Check Alert -->
                         <div id="availability-alert" class="alert alert-danger mt-2" style="display: none;">
@@ -217,7 +206,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="squareFeet" class="form-label">Square Footage</label>
-                                <input type="number" class="form-control" id="squareFeet" name="squareFeet" min="0" placeholder="1000" required>
+                                <input type="number" class="form-control" id="squareFeet" name="squareFeet" min="100" placeholder="1000" required>
                             </div>
                         </div>
                         
@@ -453,7 +442,7 @@
                 </div>
                 
                 <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                    <input class="form-check-input" checked type="checkbox" id="termsCheck" required>
                     <label class="form-check-label small" for="termsCheck">
                         I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
                     </label>

@@ -83,6 +83,7 @@ def add_plan(request):
         leads = request.POST.get('leads')
         cleaners = request.POST.get('cleaners')
         is_active = 'is_active' in request.POST
+        is_invite_only = 'is_invite_only' in request.POST
         
         # Create plan
         plan = SubscriptionPlan.objects.create(
@@ -94,7 +95,8 @@ def add_plan(request):
             agents=agents,
             leads=leads,
             cleaners=cleaners,
-            is_active=is_active
+            is_active=is_active,
+            is_invite_only=is_invite_only
         )
         
         # Add selected features
@@ -156,6 +158,7 @@ def edit_plan(request):
         plan.leads = request.POST.get('leads')
         plan.cleaners = request.POST.get('cleaners')
         plan.is_active = 'is_active' in request.POST
+        plan.is_invite_only = 'is_invite_only' in request.POST
         
         # Save the plan
         plan.save()

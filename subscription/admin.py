@@ -13,7 +13,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
     filter_horizontal = ('features',)  # This adds a nice widget for managing many-to-many relationships
     fieldsets = (
         (None, {
-            'fields': ('name', 'description', 'price', 'billing_cycle', 'is_active')
+            'fields': ('name', 'description', 'price', 'billing_cycle', 'is_active', 'is_invite_only')
         }),
         ('Usage Metrics', {
             'fields': ('voice_minutes', 'sms_messages', 'agents', 'leads')
