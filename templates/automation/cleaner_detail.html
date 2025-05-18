@@ -332,7 +332,7 @@
                                         <span class="badge bg-info">Scheduled</span>
                                     </td>
                                     <td class="text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        <button type="button" class="btn btn-sm btn-outline-primary booking-view-btn" 
                                                data-bs-toggle="modal" 
                                                data-bs-target="#viewBookingModal" 
                                                data-booking-id="{{ booking.bookingId }}"
@@ -349,7 +349,11 @@
                                                data-booking-bathrooms="{{ booking.bathrooms }}"
                                                data-booking-addons="{% for field, value in booking.get_all_addons %}{{ field }}{% if value %}: {{ value }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}"
                                                data-booking-custom-addons="{% for addon in booking.customAddons.all %}{{ addon.addon.addonName }}: {{ addon.qty }}{% if not forloop.last %}, {% endif %}{% endfor %}"
-                                               data-booking-square-feet="{{ booking.squareFeet }}">
+                                               data-booking-square-feet="{{ booking.squareFeet }}"
+                                               data-booking-price="{{ booking.totalPrice }}"
+                                               data-booking-payout="{{ booking.get_cleaner_payout }}"
+                                               data-arrival-confirmed="{% if booking.arrival_confirmed_at %}true{% else %}false{% endif %}"
+                                               data-completed="{% if booking.isCompleted %}true{% else %}false{% endif %}">
                                             <i class="fas fa-eye"></i> View
                                         </button>
                                     </td>
@@ -415,7 +419,11 @@
                                                data-booking-bathrooms="{{ booking.bathrooms }}"
                                                data-booking-addons="{% for field, value in booking.get_all_addons %}{{ field }}{% if value %}: {{ value }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}"
                                                data-booking-custom-addons="{% for addon in booking.customAddons.all %}{{ addon.addon.addonName }}: {{ addon.qty }}{% if not forloop.last %}, {% endif %}{% endfor %}"
-                                               data-booking-square-feet="{{ booking.squareFeet }}">
+                                               data-booking-square-feet="{{ booking.squareFeet }}"
+                                               data-booking-price="{{ booking.totalPrice }}"
+                                               data-booking-payout="{{ booking.get_cleaner_payout }}"
+                                               data-arrival-confirmed="{% if booking.arrival_confirmed_at %}true{% else %}false{% endif %}"
+                                               data-completed="{% if booking.isCompleted %}true{% else %}false{% endif %}">
                                             <i class="fas fa-eye"></i> View
                                         </button>
                                     </td>
@@ -667,7 +675,15 @@
                 <h5 class="modal-title" id="viewBookingModalLabel">
                     <i class="fas fa-calendar-check text-primary me-2"></i>Booking Details
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="d-flex gap-2 justify-content-between align-items-center">
+                  
+                    <div id="booking-action-buttons">
+                        <a href="" id="confirm-arrival-btn" class="btn btn-primary" style="display: none;">Confirm Arrival</a>
+                        <a href="" id="mark-completed-btn" class="btn btn-success" style="display: none;">Mark Completed</a>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
             </div>
             <div class="modal-body p-4">
                 <!-- Booking ID and Status Banner -->
@@ -680,7 +696,7 @@
                 
                 <div class="row g-4">
                     <!-- Left Column -->
-                    <div class="col-md-6">
+                    <div class="col-lg-6">
                         <!-- Basic Information Card -->
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom-0 pt-3">
@@ -720,6 +736,20 @@
                                         </div>
                                         <div class="fw-medium me-2">Booking ID:</div>
                                         <div class="ms-auto" id="modal-booking-id"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Total Price:</div>
+                                        <div class="ms-auto" id="modal-booking-price"></div>
+                                    </li>
+                                    <li class="list-group-item px-0 py-2 d-flex">
+                                        <div class="text-muted me-3" style="width: 24px;">
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                        </div>
+                                        <div class="fw-medium me-2">Your Payout:</div>
+                                        <div class="ms-auto" id="modal-booking-payout"></div>
                                     </li>
                                 </ul>
                             </div>
@@ -772,7 +802,7 @@
                     </div>
                     
                     <!-- Right Column -->
-                    <div class="col-md-6">
+                    <div class="col-lg-6">
                         <!-- Property Details Card -->
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom-0 pt-3">
@@ -880,7 +910,7 @@
         </div>
     </div>
 </div>
-
+{% endblock %}
 {% block extra_css %}
 <style>
     .booking-status {
@@ -1041,7 +1071,7 @@
         transform: translateY(-2px);
     }
 </style>
-{% endblock %}
+{% endblock extra_css %}
 
 {% block extra_js %}
 <script>
@@ -1217,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                   cleanNumber.substring(6, 10);
             element.textContent = formattedNumber;
         }
-    });
+        });
 
     // Phone number formatting for edit modal
     const editPhoneInput = document.getElementById('editPhoneNumber');
@@ -1263,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (viewBookingModal) {
         viewBookingModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
+            console.log('Modal opened, button:', button);
             
             // Extract booking data from button attributes
             const bookingId = button.getAttribute('data-booking-id');
@@ -1278,22 +1309,93 @@ document.addEventListener('DOMContentLoaded', function() {
             const bookingBedrooms = button.getAttribute('data-booking-bedrooms');
             const bookingBathrooms = button.getAttribute('data-booking-bathrooms');
             const bookingSquareFeet = button.getAttribute('data-booking-square-feet');
+            const bookingPrice = button.getAttribute('data-booking-price');
+            const bookingPayout = button.getAttribute('data-booking-payout');
             const bookingAddons = button.getAttribute('data-booking-addons');
             const bookingCustomAddons = button.getAttribute('data-booking-custom-addons');
+            const arrivalConfirmed = button.getAttribute('data-arrival-confirmed') === 'true';
+            const isCompleted = button.getAttribute('data-completed') === 'true';
             
-            // Update modal with booking data
-            document.getElementById('modal-booking-id').textContent = bookingId;
-            document.getElementById('modal-booking-id-display').textContent = `Booking #${bookingId}`;
-            document.getElementById('modal-booking-date').textContent = bookingDate;
-            document.getElementById('modal-booking-time').textContent = bookingTime;
-            document.getElementById('modal-booking-client').textContent = bookingClient;
-            document.getElementById('modal-booking-service').textContent = bookingService;
-            document.getElementById('modal-booking-address').textContent = bookingAddress;
+            console.log('Booking data:', {
+                id: bookingId,
+                date: bookingDate,
+                time: bookingTime,
+                client: bookingClient,
+                service: bookingService,
+                status: bookingStatus,
+                arrivalConfirmed: arrivalConfirmed,
+                isCompleted: isCompleted,
+                price: bookingPrice,
+                payout: bookingPayout,
+                addons: bookingAddons,
+                customAddons: bookingCustomAddons,
+            });
             
-            // Property details
-            document.getElementById('modal-booking-bedrooms').textContent = bookingBedrooms || '0';
-            document.getElementById('modal-booking-bathrooms').textContent = bookingBathrooms || '0';
-            document.getElementById('modal-booking-square-feet').textContent = bookingSquareFeet || '0';
+            // Set up action buttons
+            const confirmArrivalBtn = document.getElementById('confirm-arrival-btn');
+            const markCompletedBtn = document.getElementById('mark-completed-btn');
+            
+            if (confirmArrivalBtn && markCompletedBtn && bookingId) {
+                // Reset button display
+                confirmArrivalBtn.style.display = 'none';
+                markCompletedBtn.style.display = 'none';
+                
+                // Set up URLs with the correct booking ID
+                if (!arrivalConfirmed && !isCompleted) {
+                    // Direct URL format that matches Django URL patterns
+                    confirmArrivalBtn.href = `/${bookingId}/confirm-arrival/`;
+                    confirmArrivalBtn.style.display = 'inline-block';
+                } else if (arrivalConfirmed && !isCompleted) {
+                    // Direct URL format that matches Django URL patterns
+                    markCompletedBtn.href = `/${bookingId}/confirm-completed/`;
+                    markCompletedBtn.style.display = 'inline-block';
+                }
+            }
+            
+            // Update modal with booking data - with error handling
+            try {
+                // Basic booking info
+                if (document.getElementById('modal-booking-id')) {
+                    document.getElementById('modal-booking-id').textContent = bookingId || '';
+                }
+                if (document.getElementById('modal-booking-id-display')) {
+                    document.getElementById('modal-booking-id-display').textContent = bookingId ? `Booking #${bookingId}` : 'Booking';
+                }
+                if (document.getElementById('modal-booking-date')) {
+                    document.getElementById('modal-booking-date').textContent = bookingDate || '';
+                }
+                if (document.getElementById('modal-booking-time')) {
+                    document.getElementById('modal-booking-time').textContent = bookingTime || '';
+                }
+                if (document.getElementById('modal-booking-client')) {
+                    document.getElementById('modal-booking-client').textContent = bookingClient || '';
+                }
+                if (document.getElementById('modal-booking-service')) {
+                    document.getElementById('modal-booking-service').textContent = bookingService || '';
+                }
+                if (document.getElementById('modal-booking-price')) {
+                    document.getElementById('modal-booking-price').textContent = bookingPrice ? `$${bookingPrice}` : '$0.00';
+                }
+                if (document.getElementById('modal-booking-payout')) {
+                    document.getElementById('modal-booking-payout').textContent = bookingPayout ? `$${parseFloat(bookingPayout).toFixed(2)}` : '$0.00';
+                }
+                if (document.getElementById('modal-booking-address')) {
+                    document.getElementById('modal-booking-address').textContent = bookingAddress || '';
+                }
+                
+                // Property details
+                if (document.getElementById('modal-booking-bedrooms')) {
+                    document.getElementById('modal-booking-bedrooms').textContent = bookingBedrooms || '0';
+                }
+                if (document.getElementById('modal-booking-bathrooms')) {
+                    document.getElementById('modal-booking-bathrooms').textContent = bookingBathrooms || '0';
+                }
+                if (document.getElementById('modal-booking-square-feet')) {
+                    document.getElementById('modal-booking-square-feet').textContent = bookingSquareFeet || '0';
+                }
+            } catch (error) {
+                console.error('Error updating booking data:', error);
+            }
             
             // Set status badge color
             const statusBadge = document.getElementById('modal-booking-status-badge');
@@ -1443,20 +1545,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Phone and email with links
-            if (bookingPhone) {
-                document.getElementById('modal-booking-phone').textContent = bookingPhone;
-                document.getElementById('modal-booking-phone-link').href = `tel:${bookingPhone}`;
-            } else {
-                document.getElementById('modal-booking-phone').textContent = 'Not provided';
-                document.getElementById('modal-booking-phone-link').removeAttribute('href');
-            }
-            
-            if (bookingEmail) {
-                document.getElementById('modal-booking-email').textContent = bookingEmail;
-                document.getElementById('modal-booking-email-link').href = `mailto:${bookingEmail}`;
-            } else {
-                document.getElementById('modal-booking-email').textContent = 'Not provided';
-                document.getElementById('modal-booking-email-link').removeAttribute('href');
+            try {
+                if (bookingPhone) {
+                    document.getElementById('modal-booking-phone').textContent = bookingPhone;
+                    document.getElementById('modal-booking-phone-link').href = `tel:${bookingPhone}`;
+                } else {
+                    document.getElementById('modal-booking-phone').textContent = 'Not provided';
+                    document.getElementById('modal-booking-phone-link').removeAttribute('href');
+                }
+                
+                if (bookingEmail) {
+                    document.getElementById('modal-booking-email').textContent = bookingEmail;
+                    document.getElementById('modal-booking-email-link').href = `mailto:${bookingEmail}`;
+                } else {
+                    document.getElementById('modal-booking-email').textContent = 'Not provided';
+                    document.getElementById('modal-booking-email-link').removeAttribute('href');
+                }
+            } catch (error) {
+                console.error('Error updating phone/email:', error);
             }
             
             // Show/hide notes section based on if there are notes
@@ -1471,5 +1577,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
-{% endblock %}
+{% endblock extra_js %}

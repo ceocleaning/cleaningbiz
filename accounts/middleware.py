@@ -136,6 +136,9 @@ class CleanerAccessMiddleware:
         
         if '/jobs/' in request.path:
             return self.get_response(request)
+        
+        if '/confirm-arrival/' or '/confirm-completed/' in request.path:
+            return self.get_response(request)
             
         # Special check for login-related pages
         if '/accounts/' in request.path and any(x in request.path for x in ['/login/', '/logout/']):

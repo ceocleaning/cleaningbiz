@@ -628,18 +628,17 @@ def cleaner_detail(request, cleaner_id):
     if current_booking:
         logger.info(f"Current booking found: {current_booking.id}")
     
-    # Get upcoming bookings (future bookings)
+    # Get upcoming bookings (future bookings that are not completed)
     upcoming_bookings = Booking.objects.filter(
-        cleaner=cleaner
+        cleaner=cleaner,
+        isCompleted=False
     ).filter(
         # Future dates OR current date with future start time
         models.Q(cleaningDate__gt=current_date) |
         models.Q(cleaningDate=current_date, startTime__gt=current_time)
     ).exclude(
         id=current_booking.id if current_booking else None
-    ).order_by('cleaningDate', 'startTime')[:5]
-    
-    logger.info(f"Found {upcoming_bookings.count()} upcoming bookings")
+    ).order_by('cleaningDate', 'startTime')
     
     # Get past bookings
     past_bookings = Booking.objects.filter(
@@ -647,12 +646,12 @@ def cleaner_detail(request, cleaner_id):
     ).filter(
         # Past dates OR current date with past end time
         models.Q(cleaningDate__lt=current_date) |
-        models.Q(cleaningDate=current_date, endTime__lte=current_time)
+        models.Q(cleaningDate=current_date, endTime__lte=current_time) |
+        models.Q(isCompleted=True)
     ).exclude(
         id=current_booking.id if current_booking else None
-    ).order_by('-cleaningDate', '-startTime')[:5]
+    ).order_by('-cleaningDate', '-startTime')
     
-    logger.info(f"Found {past_bookings.count()} past bookings")
     
     # Calculate availability status
     is_available = True
@@ -1656,6 +1655,7 @@ def open_jobs(request, cleaner_id=None):
 
 @login_required
 @require_POST
+@transaction.atomic
 def accept_open_job(request, job_id):
     """
     Accept an open job for a cleaner
@@ -1675,7 +1675,7 @@ def accept_open_job(request, job_id):
     
     # Assign the booking to the cleaner
     booking = job.booking
-    booking.cleaner = job.cleaner
+    booking.cleaner = job.cleaner.cleaner
     booking.save()
 
     other_job_objs = OpenJob.objects.filter(booking=booking).exclude(id=job.id)
@@ -1752,3 +1752,88 @@ def reject_open_job(request, job_id):
     # Add success message
     messages.success(request, f'Job {job.id} has been rejected successfully!')
     return redirect('cleaner_open_jobs', cleaner_id=job.cleaner.cleaner.id)
+
+
+
+def confirm_arrival(request, booking_id):
+    print(request.user)
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    from .emails import send_arrival_confirmation_email
+    # Send Email to Client
+    send_arrival_confirmation_email(booking)
+    
+    # Update Booking Status
+    booking.arrival_confirmed_at = timezone.now()
+    booking.save()
+    
+    # Add success message
+    messages.success(request, 'Arrival confirmed successfully!')
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+def confirm_completed(request, booking_id):
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    # Update Booking Status
+    booking.completed_at = timezone.now()
+    booking.isCompleted = True
+    booking.save()
+    
+    # Add booking to existing pending payout or create a new one
+    try:
+        from accounts.models import CleanerProfile
+        from bookings.payout_models import CleanerPayout
+        import uuid
+        
+        # Get the cleaner profile
+        cleaner_profile = CleanerProfile.objects.get(cleaner=booking.cleaner)
+        
+        # Calculate payout amount
+        amount = booking.get_cleaner_payout()
+        
+        # Check if there's an existing pending payout for this cleaner
+        existing_payout = CleanerPayout.objects.filter(
+            business=booking.business,
+            cleaner_profile=cleaner_profile,
+            status='pending'
+        ).first()
+        
+        if existing_payout:
+            # Add this booking to the existing payout
+            existing_payout.bookings.add(booking)
+            
+            # Update the payout amount
+            existing_payout.amount += amount
+            existing_payout.save()
+            
+            # Add success message about adding to existing payout
+            messages.success(request, f"Booking marked as completed and added to existing payout #{existing_payout.payout_id}. New payout total: ${existing_payout.amount:.2f}")
+        else:
+            # Create a new payout
+            payout = CleanerPayout.objects.create(
+                business=booking.business,
+                cleaner_profile=cleaner_profile,
+                amount=amount,
+                status='pending',
+                notes=f"Automatically created when booking {booking.bookingId} was completed"
+            )
+            
+            # Add this booking to the payout
+            payout.bookings.add(booking)
+            
+            # Add success message about new payout
+            messages.success(request, f"Booking marked as completed and new payout of ${amount:.2f} has been created.")
+    except Exception as e:
+        logger.error(f"Error creating automatic payout: {str(e)}")
+        messages.success(request, 'Booking marked as completed successfully!')
+        messages.warning(request, 'There was an issue creating the automatic payout. Please contact your administrator.')
+    
+    # Send completion notification emails to cleaner, client, and business owner
+    from .emails import send_completion_notification_emails
+    send_completion_notification_emails(booking)
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)

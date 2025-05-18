@@ -6,6 +6,7 @@ import string
 from httpx._transports import default
 from accounts.models import Business
 from automation.models import Cleaners
+from .payout_models import CleanerPayout
 
 User = get_user_model()
 
@@ -109,6 +110,9 @@ class Booking(models.Model):
     paymentReminderSentAt = models.DateTimeField(null=True, blank=True)
     dayBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
     hourBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
+
+    arrival_confirmed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.bookingId} for {self.firstName} {self.lastName}"
@@ -174,3 +178,9 @@ class Booking(models.Model):
             addons.append((custom_addon.addon.addonName, custom_addon.qty))
         
         return addons
+    
+
+    def get_cleaner_payout(self):
+        payout = float(self.totalPrice * self.business.cleaner_pay_percentage/100)
+
+        return payout

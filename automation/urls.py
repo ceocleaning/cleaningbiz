@@ -72,4 +72,8 @@ urlpatterns = [
     path('privacy-policy/', views.PrivacyPolicyPage, name='privacy_policy'),
     path('terms-of-service/', views.TermsOfServicePage, name='terms_of_service'),
     path('sitemap/', views.sitemap, name='sitemap'),
+    
+    # Booking status updates
+    path('<str:booking_id>/confirm-arrival/', views.confirm_arrival, name='confirm_arrival'),
+    path('<str:booking_id>/confirm-completed/', views.confirm_completed, name='confirm_completed'),
 ]

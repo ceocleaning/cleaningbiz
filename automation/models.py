@@ -207,6 +207,8 @@ class OpenJob(models.Model):
     status = models.CharField(max_length=255, choices=OPEN_JOB_CLEANER_STATUS, default='pending')
     assignment_type = models.CharField(max_length=255, choices=OPEN_JOB_ASSIGNMENT_TYPE, default='all_available')
 
+    
+
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)

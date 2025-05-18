@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payout Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for tables */
+    .table-container {
+        overflow-x: auto;
+    }
+    .table th {
+        cursor: pointer;
+    }
+    .table th:hover {
+        background-color: #f8f9fa;
+    }
+    .table th.sort-asc::after {
+        content: ' ↑';
+        color: #2563eb;
+    }
+    .table th.sort-desc::after {
+        content: ' ↓';
+        color: #2563eb;
+    }
+    .search-container {
+        margin-bottom: 1rem;
+    }
+    .search-container input {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        width: 100%;
+        max-width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payout Details for {{ payout.cleaner_profile.cleaner.name }}</h1>
+        <div>
+            <a href="{% url 'bookings:payouts_dashboard' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Payouts
+            </a>
+            {% if is_business_owner and payout.status == 'pending' %}
+            <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#markAsPaidModal">
+                <i class="fas fa-check"></i> Mark as Paid
+            </button>
+            <button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#cancelPayoutModal">
+                <i class="fas fa-times"></i> Cancel Payout
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payout Information -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payout Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Payout ID:</div>
+                        <div class="col-md-8">{{ payout.payout_id }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Cleaner:</div>
+                        <div class="col-md-8">{{ payout.cleaner_profile.cleaner.name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Amount:</div>
+                        <div class="col-md-8 text-success font-weight-bold">${{ payout.amount }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Status:</div>
+                        <div class="col-md-8">
+                            {% if payout.status == 'pending' %}
+                            <span class="bg-warning text-dark px-2 py-1 rounded">Pending</span>
+                            {% elif payout.status == 'paid' %}
+                            <span class="bg-success text-white px-2 py-1 rounded">Paid</span>
+                            {% elif payout.status == 'cancelled' %}
+                            <span class="bg-danger text-white px-2 py-1 rounded">Cancelled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Created Date:</div>
+                        <div class="col-md-8">{{ payout.created_at|date:"F d, Y h:i A" }}</div>
+                    </div>
+                    {% if payout.paid_at %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Paid Date:</div>
+                        <div class="col-md-8">{{ payout.paid_at|date:"F d, Y h:i A" }}</div>
+                    </div>
+                    {% endif %}
+                    {% if payout.payment_method %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Payment Method:</div>
+                        <div class="col-md-8">{{ payout.payment_method|title }}</div>
+                    </div>
+                    {% endif %}
+                    {% if payout.payment_reference %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Payment Reference:</div>
+                        <div class="col-md-8">{{ payout.payment_reference }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notes</h6>
+                </div>
+                <div class="card-body">
+                    {% if payout.notes %}
+                    <p>{{ payout.notes|linebreaks }}</p>
+                    {% else %}
+                    <p class="text-muted">No notes available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Associated Bookings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Associated Bookings</h6>
+                </div>
+                <div class="card-body">
+                    {% if bookings %}
+                    <div class="table-responsive" id="bookingsTableContainer">
+                        <table class="table table-bordered" id="bookingsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Service Type</th>
+                                    <th>Amount</th>
+                                    {% if is_business_owner %}
+                                    <th>Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in bookings %}
+                                <tr>
+                                    <td>{{ booking.bookingId }}</td>
+                                    <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                    <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                    <td>{{ booking.get_serviceType_display }}</td>
+                                    <td>${{ booking.get_cleaner_payout }}</td>
+                                    {% if is_business_owner %}
+                                    <td>
+                                        <a href="{% url 'bookings:booking_detail' booking.bookingId %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No bookings associated with this payout</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Paid Modal -->
+{% if is_business_owner and payout.status == 'pending' %}
+<div class="modal fade" id="markAsPaidModal" tabindex="-1" role="dialog" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markAsPaidModalLabel">Mark Payout as Paid</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'bookings:mark_payout_as_paid' payout.payout_id %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to mark this payout as paid?</p>
+                    <p>Payout ID: <strong>{{ payout.payout_id }}</strong></p>
+                    <p>Amount: <strong>${{ payout.amount }}</strong></p>
+                    <p>Cleaner: <strong>{{ payout.cleaner_profile.cleaner.name }}</strong></p>
+                    
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="check">Check</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="payment_reference">Payment Reference (Optional)</label>
+                        <input type="text" class="form-control" id="payment_reference" name="payment_reference" placeholder="Transaction ID, Check Number, etc.">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Mark as Paid</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Payout Modal -->
+<div class="modal fade" id="cancelPayoutModal" tabindex="-1" role="dialog" aria-labelledby="cancelPayoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelPayoutModalLabel">Cancel Payout</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'bookings:cancel_payout' payout.payout_id %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this payout?</p>
+                    <p>Payout ID: <strong>{{ payout.payout_id }}</strong></p>
+                    <p>Amount: <strong>${{ payout.amount }}</strong></p>
+                    <p>Cleaner: <strong>{{ payout.cleaner_profile.cleaner.name }}</strong></p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No, Keep Payout</button>
+                    <button type="submit" class="btn btn-danger">Yes, Cancel Payout</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Vanilla JS for modal functionality
+        // Add click event listeners to modal trigger buttons
+        const markAsPaidBtn = document.querySelector('[data-target="#markAsPaidModal"]');
+        const markAsPaidModal = document.getElementById('markAsPaidModal');
+        
+        if (markAsPaidBtn && markAsPaidModal) {
+            markAsPaidBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                markAsPaidModal.classList.add('show');
+                markAsPaidModal.style.display = 'block';
+                markAsPaidModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+                
+                // Create backdrop if it doesn't exist
+                let backdrop = document.querySelector('.modal-backdrop');
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.classList.add('modal-backdrop', 'fade', 'show');
+                    document.body.appendChild(backdrop);
+                }
+            });
+        }
+        
+        const cancelPayoutBtn = document.querySelector('[data-target="#cancelPayoutModal"]');
+        const cancelPayoutModal = document.getElementById('cancelPayoutModal');
+        
+        if (cancelPayoutBtn && cancelPayoutModal) {
+            cancelPayoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                cancelPayoutModal.classList.add('show');
+                cancelPayoutModal.style.display = 'block';
+                cancelPayoutModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+                
+                // Create backdrop if it doesn't exist
+                let backdrop = document.querySelector('.modal-backdrop');
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.classList.add('modal-backdrop', 'fade', 'show');
+                    document.body.appendChild(backdrop);
+                }
+            });
+        }
+        
+        // Close modal functionality for all close buttons and backdrop clicks
+        document.querySelectorAll('[data-dismiss="modal"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('modal-open');
+                    
+                    // Remove backdrop
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                }
+            });
+        });
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+                event.target.style.display = 'none';
+                event.target.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-open');
+                
+                // Remove backdrop
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            }
+        });
+        
+        // Table sorting functionality
+        function setupTableSorting(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                header.addEventListener('click', function() {
+                    sortTable(table, index);
+                });
+            });
+        }
+        
+        function sortTable(table, columnIndex) {
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const headers = table.querySelectorAll('th');
+            const currentHeader = headers[columnIndex];
+            
+            // Toggle sort direction
+            const isAscending = !currentHeader.classList.contains('sort-asc');
+            
+            // Remove sort classes from all headers
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add appropriate sort class to current header
+            currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[columnIndex].textContent.trim();
+                const cellB = b.querySelectorAll('td')[columnIndex].textContent.trim();
+                
+                // Check if the content is a date
+                const dateA = new Date(cellA);
+                const dateB = new Date(cellB);
+                
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    return isAscending ? dateA - dateB : dateB - dateA;
+                }
+                
+                // Check if the content is a number (possibly with $ sign)
+                const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ''));
+                const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ''));
+                
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return isAscending ? numA - numB : numB - numA;
+                }
+                
+                // Default to string comparison
+                return isAscending ? 
+                    cellA.localeCompare(cellB) : 
+                    cellB.localeCompare(cellA);
+            });
+            
+            // Reinsert rows in the new order
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Initialize table functionality
+        setupTableSorting('bookingsTable');
+        
+        // Add search box to the table
+        const tableContainer = document.getElementById('bookingsTableContainer');
+        if (tableContainer) {
+            const searchId = 'bookingsTable-search';
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'search-container';
+            searchContainer.innerHTML = `
+                <input type="text" id="${searchId}" placeholder="Search bookings..." class="form-control">
+            `;
+            
+            tableContainer.parentNode.insertBefore(searchContainer, tableContainer);
+            
+            const searchInput = document.getElementById(searchId);
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const table = document.getElementById('bookingsTable');
+                    if (!table) return;
+                    
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}

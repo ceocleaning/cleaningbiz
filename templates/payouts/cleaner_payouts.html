@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Payouts{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for tables */
+    .table-container {
+        overflow-x: auto;
+    }
+    .table th {
+        cursor: pointer;
+    }
+    .table th:hover {
+        background-color: #f8f9fa;
+    }
+    .table th.sort-asc::after {
+        content: ' ↑';
+        color: #2563eb;
+    }
+    .table th.sort-desc::after {
+        content: ' ↓';
+        color: #2563eb;
+    }
+    .search-container {
+        margin-bottom: 1rem;
+    }
+    .search-container input {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        width: 100%;
+        max-width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Payouts</h1>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row">
+        <!-- Total Earnings Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Earnings</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_amount|default:"0.00" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Payouts Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Payouts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ pending_amount|default:"0.00" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Jobs Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_bookings.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- My Payouts -->
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">My Payouts</h6>
+                </div>
+                <div class="card-body">
+                    {% if payouts %}
+                    <div class="table-responsive" id="payoutsTableContainer">
+                        <table class="table table-bordered" id="payoutsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Payout ID</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Paid Date</th>
+                                    <th>Payment Method</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payout in payouts %}
+                                <tr>
+                                    <td>{{ payout.payout_id }}</td>
+                                    <td>${{ payout.amount }}</td>
+                                    <td>
+                                        {% if payout.status == 'pending' %}
+                                        <span class="bg-warning text-white px-2 py-1 rounded">Pending</span>
+                                        {% elif payout.status == 'paid' %}
+                                        <span class="bg-success text-white px-2 py-1 rounded">Paid</span>
+                                        {% elif payout.status == 'cancelled' %}
+                                        <span class="bg-danger text-white px-2 py-1 rounded">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ payout.created_at|date:"M d, Y" }}</td>
+                                    <td>{{ payout.paid_at|date:"M d, Y"|default:"-" }}</td>
+                                    <td>{{ payout.payment_method|default:"-"|title }}</td>
+                                    <td>
+                                        <a href="{% url 'bookings:payout_detail' payout.payout_id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No payouts found</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Bookings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">My Completed Bookings</h6>
+                </div>
+                <div class="card-body">
+                    {% if completed_bookings %}
+                    <div class="table-responsive" id="completedBookingsTableContainer">
+                        <table class="table table-bordered" id="completedBookingsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Service Type</th>
+                                    <th>Amount</th>
+                                    <th>Payout Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in completed_bookings %}
+                                <tr>
+                                    <td>{{ booking.bookingId }}</td>
+                                    <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                    <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                    <td>{{ booking.get_serviceType_display }}</td>
+                                    <td>${{ booking.get_cleaner_payout }}</td>
+                                    <td>
+                                        {% if booking.payouts.all %}
+                                            {% with payout=booking.payouts.first %}
+                                                {% if payout.status == 'pending' %}
+                                                <span class="badge badge-warning">Pending</span>
+                                                {% elif payout.status == 'paid' %}
+                                                <span class="badge badge-success">Paid</span>
+                                                {% elif payout.status == 'cancelled' %}
+                                                <span class="badge badge-danger">Cancelled</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="badge badge-secondary">Not Processed</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No completed bookings found</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Table sorting functionality
+        function setupTableSorting(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                header.addEventListener('click', function() {
+                    sortTable(table, index);
+                });
+            });
+        }
+        
+        function sortTable(table, columnIndex) {
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const headers = table.querySelectorAll('th');
+            const currentHeader = headers[columnIndex];
+            
+            // Toggle sort direction
+            const isAscending = !currentHeader.classList.contains('sort-asc');
+            
+            // Remove sort classes from all headers
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add appropriate sort class to current header
+            currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[columnIndex].textContent.trim();
+                const cellB = b.querySelectorAll('td')[columnIndex].textContent.trim();
+                
+                // Check if the content is a date
+                const dateA = new Date(cellA);
+                const dateB = new Date(cellB);
+                
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    return isAscending ? dateA - dateB : dateB - dateA;
+                }
+                
+                // Check if the content is a number (possibly with $ sign)
+                const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ''));
+                const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ''));
+                
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return isAscending ? numA - numB : numB - numA;
+                }
+                
+                // Default to string comparison
+                return isAscending ? 
+                    cellA.localeCompare(cellB) : 
+                    cellB.localeCompare(cellA);
+            });
+            
+            // Reinsert rows in the new order
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Add search functionality
+        function setupTableSearch(tableId, searchId) {
+            const searchInput = document.getElementById(searchId);
+            if (!searchInput) return;
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById(tableId);
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+        
+        // Initialize table functionality
+        setupTableSorting('payoutsTable');
+        setupTableSorting('completedBookingsTable');
+        
+        // Add search boxes to tables
+        const tables = [
+            { tableId: 'payoutsTable', containerId: 'payoutsTableContainer' },
+            { tableId: 'completedBookingsTable', containerId: 'completedBookingsTableContainer' }
+        ];
+        
+        tables.forEach(({ tableId, containerId }) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const searchId = `${tableId}-search`;
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'search-container';
+            searchContainer.innerHTML = `
+                <input type="text" id="${searchId}" placeholder="Search table..." class="form-control">
+            `;
+            
+            const tableElement = document.getElementById(tableId);
+            if (tableElement) {
+                tableElement.parentNode.insertBefore(searchContainer, tableElement);
+                setupTableSearch(tableId, searchId);
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -35,11 +35,11 @@ INTERNAL_IPS = [
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-syzuy1&t#m7pny%j2x71-k^vwvde^9a^t8v7v_0z4%$vov*c7r')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.getenv('DEBUG') == 'True' else False
+DEBUG = True if os.getenv('DJANGO_DEBUG') == 'True' else False
 
 
 BASE_URL = 'https://cleaningbizai.com'
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'cleaningbizai.com', 'www.cleaningbizai.com', 'ai.cleaningbizai.com', 'cleaningbizai.up.railway.app', 'ceocleaners.up.railway.app']
+ALLOWED_HOSTS = ['*']
 DEBUG_PROPAGATE_EXCEPTIONS = True
 # Trust Proxy Headers (Needed for Cloudflare)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

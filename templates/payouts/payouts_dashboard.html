@@ -1,0 +1,667 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cleaner Payouts Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for tables */
+    .table-container {
+        overflow-x: auto;
+    }
+    .table th {
+        cursor: pointer;
+    }
+    .table th:hover {
+        background-color: #f8f9fa;
+    }
+    .table th.sort-asc::after {
+        content: ' ↑';
+        color: #2563eb;
+    }
+    .table th.sort-desc::after {
+        content: ' ↓';
+        color: #2563eb;
+    }
+    .pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+        justify-content: center;
+    }
+    .pagination li {
+        margin: 0 0.25rem;
+    }
+    .pagination li a {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        color: #2563eb;
+        text-decoration: none;
+    }
+    .pagination li.active a {
+        background-color: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+    .pagination li.disabled a {
+        color: #6c757d;
+        pointer-events: none;
+        cursor: default;
+    }
+    .search-container {
+        margin-bottom: 1rem;
+    }
+    .search-container input {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        width: 100%;
+        max-width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex gap-2 align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Cleaner Payouts</h1>
+        <div class="d-flex">
+            <div class="mr-3">
+                <form id="cleanerFilterForm" method="get" class="form-inline">
+                    <div class="input-group p-2">
+                        <select class="form-control w-50 mx-2" name="cleaner_id" id="cleanerFilter">
+                            <option value="">All Cleaners</option>
+                            {% for profile in cleaner_profiles %}
+                            <option value="{{ profile.id }}" {% if selected_cleaner_id == profile.id|stringformat:'s' %}selected{% endif %}>
+                                {{ profile.cleaner.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-group-append">
+                            {% if selected_cleaner_id %}
+                            <a href="{% url 'bookings:payouts_dashboard' %}" class="btn btn-outline-danger">Clear</a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+           
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row">
+        <!-- Total Payouts Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Payouts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_amount|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Payouts Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Payouts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ pending_amount|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paid Payouts Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Paid Payouts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ paid_amount|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Without Payouts Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Bookings Without Payouts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_bookings_without_payouts.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabbed Interface for Payouts -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="payoutTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="pending-tab" data-toggle="tab" href="#pending" role="tab" aria-controls="pending" aria-selected="true">
+                                <i class="fas fa-clock mr-1"></i> Pending Payouts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="paid-tab" data-toggle="tab" href="#paid" role="tab" aria-controls="paid" aria-selected="false">
+                                <i class="fas fa-check-circle mr-1"></i> Paid Payouts
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="payoutTabsContent">
+                        <!-- Pending Payouts Tab -->
+                        <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card shadow">
+                                        <div class="card-header py-3">
+                                            <h6 class="m-0 font-weight-bold text-warning">Pending Payouts</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if pending_payouts %}
+                                            <div class="table-responsive" id="pendingPayoutsContainer">
+                                                <table class="table table-bordered" id="pendingPayoutsTable" width="100%" cellspacing="0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Payout ID</th>
+                                                            <th>Cleaner</th>
+                                                            <th>Amount</th>
+                                                            <th>Created</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for payout in pending_payouts %}
+                                                        <tr>
+                                                            <td>{{ payout.payout_id }}</td>
+                                                            <td>{{ payout.cleaner_profile.cleaner.name }}</td>
+                                                            <td>${{ payout.amount }}</td>
+                                                            <td>{{ payout.created_at|date:"M d, Y" }}</td>
+                                                            <td>
+                                                                <a href="{% url 'bookings:payout_detail' payout.payout_id %}" class="btn btn-sm btn-info">
+                                                                    <i class="fas fa-eye"></i> View
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% else %}
+                                            <p class="text-center">No pending payouts</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card shadow">
+                                        <div class="card-header py-3">
+                                            <h6 class="m-0 font-weight-bold text-info">Completed Bookings Without Payouts</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if completed_bookings_without_payouts %}
+                                            <div class="table-responsive" id="bookingsWithoutPayoutsContainer">
+                                                <table class="table table-bordered" id="bookingsWithoutPayoutsTable" width="100%" cellspacing="0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Booking ID</th>
+                                                            <th>Cleaner</th>
+                                                            <th>Date</th>
+                                                            <th>Amount</th>
+                                                            <th>Payout</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for booking in completed_bookings_without_payouts %}
+                                                        <tr>
+                                                            <td>{{ booking.bookingId }}</td>
+                                                            <td>{{ booking.cleaner.name }}</td>
+                                                            <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
+                                                            <td>${{ booking.get_cleaner_payout }}</td>
+                                                            <td>
+                                                                <div class="form-check">
+                                                                     <input class="form-check-input booking-checkbox" type="checkbox" 
+                                                                            value="{{ booking.id }}" data-cleaner="{{ booking.cleaner.id }}"
+                                                                            data-amount="{{ booking.get_cleaner_payout }}">
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% else %}
+                                            <p class="text-center">No completed bookings without payouts</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Paid Payouts Tab -->
+                        <div class="tab-pane fade" id="paid" role="tabpanel" aria-labelledby="paid-tab">
+                            {% if paid_payouts %}
+                            <div class="table-responsive" id="paidPayoutsContainer">
+                                <table class="table table-bordered" id="paidPayoutsTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Payout ID</th>
+                                            <th>Cleaner</th>
+                                            <th>Amount</th>
+                                            <th>Created</th>
+                                            <th>Paid Date</th>
+                                            <th>Payment Method</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payout in paid_payouts %}
+                                        <tr>
+                                            <td>{{ payout.payout_id }}</td>
+                                            <td>{{ payout.cleaner_profile.cleaner.name }}</td>
+                                            <td>${{ payout.amount }}</td>
+                                            <td>{{ payout.created_at|date:"M d, Y" }}</td>
+                                            <td>{{ payout.paid_at|date:"M d, Y"|default:"-" }}</td>
+                                            <td>{{ payout.payment_method|default:"-"|title }}</td>
+                                            <td>
+                                                <a href="{% url 'bookings:payout_detail' payout.payout_id %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-center">No paid payouts found</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Payout Modal -->
+<div class="modal fade" id="createPayoutModal" tabindex="-1" role="dialog" aria-labelledby="createPayoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createPayoutModalLabel">Create New Payout</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'bookings:create_payout' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="cleaner_profile_id">Cleaner</label>
+                        <select class="form-control" id="cleaner_profile_id" name="cleaner_profile_id" required>
+                            <option value="">Select Cleaner</option>
+                            {% for profile in cleaner_profiles %}
+                            <option value="{{ profile.id }}" data-cleaner="{{ profile.cleaner.id }}">{{ profile.cleaner.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Selected Bookings</label>
+                        <div id="selected-bookings-container" class="border p-3 mb-3" style="min-height: 100px;">
+                            <p id="no-bookings-selected" class="text-muted">No bookings selected</p>
+                            <div id="selected-bookings-list"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select class="form-control" id="payment_method" name="payment_method">
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="check">Check</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Total Payout Amount</label>
+                        <h4 id="total-payout-amount" class="text-success">$0.00</h4>
+                    </div>
+                    
+                    <!-- Hidden input for selected booking IDs -->
+                    <div id="booking-ids-container"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="create-payout-btn" disabled>Create Payout</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit cleaner filter when selection changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const cleanerFilter = document.getElementById('cleanerFilter');
+        if (cleanerFilter) {
+            cleanerFilter.addEventListener('change', function() {
+                document.getElementById('cleanerFilterForm').submit();
+            });
+        }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab functionality
+        const tabLinks = document.querySelectorAll('a[data-toggle="tab"]');
+        const tabContents = document.querySelectorAll('.tab-pane');
+        
+        tabLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all tabs
+                tabLinks.forEach(tab => {
+                    tab.classList.remove('active');
+                    tab.setAttribute('aria-selected', 'false');
+                });
+                
+                // Add active class to current tab
+                this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.remove('show', 'active');
+                });
+                
+                // Show current tab content
+                const targetId = this.getAttribute('href').substring(1);
+                const targetContent = document.getElementById(targetId);
+                targetContent.classList.add('show', 'active');
+            });
+        });
+        
+        // Table sorting functionality
+        function setupTableSorting(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                header.addEventListener('click', function() {
+                    sortTable(table, index);
+                });
+            });
+        }
+        
+        function sortTable(table, columnIndex) {
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const headers = table.querySelectorAll('th');
+            const currentHeader = headers[columnIndex];
+            
+            // Toggle sort direction
+            const isAscending = !currentHeader.classList.contains('sort-asc');
+            
+            // Remove sort classes from all headers
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add appropriate sort class to current header
+            currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[columnIndex].textContent.trim();
+                const cellB = b.querySelectorAll('td')[columnIndex].textContent.trim();
+                
+                // Check if the content is a date
+                const dateA = new Date(cellA);
+                const dateB = new Date(cellB);
+                
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    return isAscending ? dateA - dateB : dateB - dateA;
+                }
+                
+                // Check if the content is a number (possibly with $ sign)
+                const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ''));
+                const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ''));
+                
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return isAscending ? numA - numB : numB - numA;
+                }
+                
+                // Default to string comparison
+                return isAscending ? 
+                    cellA.localeCompare(cellB) : 
+                    cellB.localeCompare(cellA);
+            });
+            
+            // Reinsert rows in the new order
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Add search functionality
+        function setupTableSearch(tableId, searchId) {
+            const searchInput = document.getElementById(searchId);
+            if (!searchInput) return;
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById(tableId);
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+        
+        // Initialize table functionality
+        setupTableSorting('pendingPayoutsTable');
+        setupTableSorting('bookingsWithoutPayoutsTable');
+        setupTableSorting('paidPayoutsTable');
+        
+        // Add search boxes to tables
+        const tables = [
+            { tableId: 'pendingPayoutsTable', containerId: 'pendingPayoutsContainer' },
+            { tableId: 'bookingsWithoutPayoutsTable', containerId: 'bookingsWithoutPayoutsContainer' },
+            { tableId: 'paidPayoutsTable', containerId: 'paidPayoutsContainer' }
+        ];
+        
+        tables.forEach(({ tableId, containerId }) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const searchId = `${tableId}-search`;
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'search-container';
+            searchContainer.innerHTML = `
+                <input type="text" id="${searchId}" placeholder="Search table..." class="form-control">
+            `;
+            
+            const tableElement = document.getElementById(tableId);
+            if (tableElement) {
+                tableElement.parentNode.insertBefore(searchContainer, tableElement);
+                setupTableSearch(tableId, searchId);
+            }
+        });
+        
+        // Track selected bookings
+        let selectedBookings = [];
+        let totalAmount = 0;
+        
+        // Handle booking checkbox changes
+        const bookingCheckboxes = document.querySelectorAll('.booking-checkbox');
+        bookingCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const bookingId = this.value;
+                const cleanerId = this.getAttribute('data-cleaner');
+                const amount = parseFloat(this.getAttribute('data-amount'));
+                const bookingRow = this.closest('tr');
+                const bookingInfo = {
+                    id: bookingId,
+                    cleaner: cleanerId,
+                    amount: amount,
+                    text: bookingRow.cells[0].textContent + ' - ' + bookingRow.cells[2].textContent
+                };
+                
+                if (this.checked) {
+                    // Add to selected bookings
+                    selectedBookings.push(bookingInfo);
+                    
+                    // Filter to only show bookings from the same cleaner
+                    bookingCheckboxes.forEach(cb => {
+                        if (cb.getAttribute('data-cleaner') != cleanerId) {
+                            cb.disabled = true;
+                        }
+                    });
+                    
+                    // Find the cleaner profile option that has this cleaner ID and select it
+                    const cleanerProfileSelect = document.getElementById('cleaner_profile_id');
+                    const options = cleanerProfileSelect.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].getAttribute('data-cleaner') == cleanerId) {
+                            cleanerProfileSelect.value = options[i].value;
+                            break;
+                        }
+                    }
+                    cleanerProfileSelect.disabled = true;
+                } else {
+                    // Remove from selected bookings
+                    selectedBookings = selectedBookings.filter(b => b.id !== bookingId);
+                    
+                    // If no bookings selected, enable all checkboxes
+                    if (selectedBookings.length === 0) {
+                        bookingCheckboxes.forEach(cb => cb.disabled = false);
+                        document.getElementById('cleaner_profile_id').disabled = false;
+                    }
+                }
+                
+                updateSelectedBookingsUI();
+            });
+        });
+        
+        // Update the UI when selected bookings change
+        function updateSelectedBookingsUI() {
+            const container = document.getElementById('selected-bookings-list');
+            const noBookingsMsg = document.getElementById('no-bookings-selected');
+            const bookingIdsContainer = document.getElementById('booking-ids-container');
+            const createPayoutBtn = document.getElementById('create-payout-btn');
+            
+            // Clear previous content
+            container.innerHTML = '';
+            bookingIdsContainer.innerHTML = '';
+            
+            // Calculate total amount
+            totalAmount = selectedBookings.reduce((sum, booking) => sum + booking.amount, 0);
+            document.getElementById('total-payout-amount').textContent = '$' + totalAmount.toFixed(2);
+            
+            if (selectedBookings.length > 0) {
+                noBookingsMsg.style.display = 'none';
+                
+                // Add each booking to the list
+                selectedBookings.forEach(booking => {
+                    const bookingElement = document.createElement('div');
+                    bookingElement.className = 'selected-booking mb-2';
+                    bookingElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <span>${booking.text}</span>
+                            <span class="text-success">$${booking.amount.toFixed(2)}</span>
+                        </div>
+                        <input type="hidden" name="booking_ids" value="${booking.id}">
+                    `;
+                    container.appendChild(bookingElement);
+                    
+                    // Add hidden input for form submission
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'booking_ids';
+                    hiddenInput.value = booking.id;
+                    bookingIdsContainer.appendChild(hiddenInput);
+                });
+                
+                createPayoutBtn.disabled = false;
+            } else {
+                noBookingsMsg.style.display = 'block';
+                createPayoutBtn.disabled = true;
+            }
+        }
+        
+        // Reset modal when closed
+        const createPayoutModal = document.getElementById('createPayoutModal');
+        if (createPayoutModal) {
+            createPayoutModal.addEventListener('hidden.bs.modal', function() {
+                selectedBookings = [];
+                totalAmount = 0;
+                const cleanerProfileSelect = document.getElementById('cleaner_profile_id');
+                cleanerProfileSelect.value = '';
+                cleanerProfileSelect.disabled = false;
+                
+                bookingCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                    cb.checked = false;
+                });
+                
+                updateSelectedBookingsUI();
+            });
+        }
+    });
+</script>
+{% endblock %}
