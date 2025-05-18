@@ -8,18 +8,24 @@
                 <div class="card-header">
                     <h3 class="mb-0">Edit Business Information</h3>
                 </div>
-                <div class="card-body">
+                <div class="row p-4">
                     <form method="post">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
-                            <label for="businessName" class="form-label">Business Name</label>
-                            <input type="text" class="form-control" id="businessName" name="businessName" value="{{ business.businessName }}" required>
-                        </div>
                         
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ business.phone }}" required>
+                        <div class="input-group gap-2">
+                            <div class="mb-3 col-4">
+                                <label for="businessName" class="form-label">Business Name</label>
+                                <input type="text" class="form-control" id="businessName" name="businessName" value="{{ business.businessName }}" required>
+                            </div>
+                            <div class="mb-3 col-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" value="{{ business.phone }}" required>
+                            </div>
+                            <div class="mb-3 col-4">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ business.user.email|default:'Not Set' }}" required>
+                            </div>
                         </div>
                         
                         <div class="mb-3">
@@ -27,29 +33,27 @@
                             <input type="text" class="form-control" id="address" name="address" value="{{ business.address }}" required>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ business.user.email|default:'Not Set' }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="cleaner_pay_percentage" class="form-label">Cleaner Pay Percentage</label>
-                            <input type="number" class="form-control" id="cleaner_pay_percentage" name="cleaner_pay_percentage" value="{{ business.cleaner_pay_percentage }}" required>
+                        
+                        <div class="input-group gap-3">
+                            <div class="mb-3 col-5">
+                                <label for="cleaner_pay_percentage" class="form-label">Cleaner Pay Percentage</label>
+                                <input type="number" class="form-control" min="0" max="100" id="cleaner_pay_percentage" name="cleaner_pay_percentage" value="{{ business.cleaner_pay_percentage }}" required>
+                            </div>
+                            
+                            <div class="mb-3 col-6">
+                                <label for="job_assignment" class="form-label">Which Cleaners will have the Job First?</label>
+                                <select class="form-select" id="job_assignment" name="job_assignment" required>
+                                 
+                                    {% for value, display in job_assignment_options %}
+                                        <option value="{{ value }}" {% if business.job_assignment == value %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="job_assignment" class="form-label">How Jobs are Assigned</label>
-                            <select class="form-select" id="job_assignment" name="job_assignment" required>
-                                <option value="" selected disabled>Select an option</option>
-                                {% for value, display in job_assignment_options %}
-                                    <option value="{{ value }}" {% if business.job_assignment == value %}selected{% endif %}>
-                                        {{ display }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-end gap-3 mt-4 mb-3">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>

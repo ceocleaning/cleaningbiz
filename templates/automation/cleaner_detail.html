@@ -477,6 +477,7 @@
                             </div>
                             <small class="form-text text-muted">Enter your 10-digit phone number</small>
                         </div>
+                        {% if request.user == cleaner.business.user %}
                         <div class="col-12">
                             <label class="form-label">Rating</label>
                             <div class="star-rating-container">
@@ -493,6 +494,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                         <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="isActive" id="isActive" {% if cleaner.isActive %}checked{% endif %}>
@@ -701,7 +703,7 @@
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom-0 pt-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-circle bg-primary text-white me-3">
+                                    <div style="height: 36px; width: 36px;" class="d-flex align-items-center justify-content-center rounded-5 bg-primary text-white me-3">
                                         <i class="fas fa-info-circle"></i>
                                     </div>
                                     <h6 class="mb-0 fw-bold">Appointment Details</h6>
@@ -745,11 +747,11 @@
                                         <div class="ms-auto" id="modal-booking-price"></div>
                                     </li>
                                     <li class="list-group-item px-0 py-2 d-flex">
-                                        <div class="text-muted me-3" style="width: 24px;">
+                                        <div class="text-info me-3" style="width: 24px;">
                                             <i class="fas fa-hand-holding-usd"></i>
                                         </div>
-                                        <div class="fw-medium me-2">Your Payout:</div>
-                                        <div class="ms-auto" id="modal-booking-payout"></div>
+                                        <div class="fw-medium text-info me-2">Your Payout:</div>
+                                        <div class="ms-auto text-info" id="modal-booking-payout"></div>
                                     </li>
                                 </ul>
                             </div>
@@ -759,7 +761,7 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-white border-bottom-0 pt-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-circle bg-success text-white me-3">
+                                    <div style="height: 36px; width: 36px;" class="d-flex align-items-center justify-content-center rounded-5 bg-primary text-white me-3">
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <h6 class="mb-0 fw-bold">Client Information</h6>
@@ -807,7 +809,7 @@
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom-0 pt-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-circle bg-info text-white me-3">
+                                    <div style="height: 36px; width: 36px;" class="d-flex align-items-center justify-content-center rounded-5 bg-primary text-white me-3">
                                         <i class="fas fa-home"></i>
                                     </div>
                                     <h6 class="mb-0 fw-bold">Property Details</h6>
@@ -817,19 +819,19 @@
                                 <div class="row g-3 mt-1">
                                     <div class="col-4">
                                         <div class="p-3 bg-light rounded text-center h-100">
-                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-bedrooms">0</h3>
-                                            <small class="text-muted d-block">Bedrooms</small>
+                                            <h4 class="mb-1 h5 display-7 fw-bold text-primary" id="modal-booking-bedrooms">0</h4>
+                                            <small class="text-muted d-block">Bedroom</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="p-3 bg-light rounded text-center h-100">
-                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-bathrooms">0</h3>
-                                            <small class="text-muted d-block">Bathrooms</small>
+                                            <h4 class="mb-1 h5 display-7 fw-bold text-primary" id="modal-booking-bathrooms">0</h4>
+                                            <small class="text-muted d-block">Bathroom</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="p-3 bg-light rounded text-center h-100">
-                                            <h3 class="mb-1 h4 display-6 fw-bold text-primary" id="modal-booking-square-feet">0</h3>
+                                            <h4 class="mb-1 h5 display-7 fw-bold text-primary" id="modal-booking-square-feet">0</h4>
                                             <small class="text-muted d-block">Sq. Ft</small>
                                         </div>
                                     </div>
@@ -841,7 +843,7 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-white border-bottom-0 pt-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-circle bg-warning text-white me-3">
+                                    <div style="height: 36px; width: 36px;" class="d-flex align-items-center justify-content-center rounded-5 bg-primary text-white me-3">
                                         <i class="fas fa-map-marker-alt"></i>
                                     </div>
                                     <h6 class="mb-0 fw-bold">Service Location</h6>

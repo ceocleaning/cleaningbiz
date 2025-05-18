@@ -193,9 +193,7 @@
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card shadow">
-                                        <div class="card-header py-3">
-                                            <h6 class="m-0 font-weight-bold text-warning">Pending Payouts</h6>
-                                        </div>
+                                      
                                         <div class="card-body">
                                             {% if pending_payouts %}
                                             <div class="table-responsive" id="pendingPayoutsContainer">
@@ -204,9 +202,10 @@
                                                         <tr>
                                                             <th>Payout ID</th>
                                                             <th>Cleaner</th>
+                                                            <th class="text-center">Total Jobs</th>
                                                             <th>Amount</th>
                                                             <th>Created</th>
-                                                            <th>Actions</th>
+                                                            <th class="text-end">Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -214,9 +213,10 @@
                                                         <tr>
                                                             <td>{{ payout.payout_id }}</td>
                                                             <td>{{ payout.cleaner_profile.cleaner.name }}</td>
+                                                            <td class="text-center">{{ payout.bookings.count }}</td>
                                                             <td>${{ payout.amount }}</td>
                                                             <td>{{ payout.created_at|date:"M d, Y" }}</td>
-                                                            <td>
+                                                            <td class="text-end">
                                                                 <a href="{% url 'bookings:payout_detail' payout.payout_id %}" class="btn btn-sm btn-info">
                                                                     <i class="fas fa-eye"></i> View
                                                                 </a>
@@ -227,7 +227,13 @@
                                                 </table>
                                             </div>
                                             {% else %}
-                                            <p class="text-center">No pending payouts</p>
+                                            <p class="text-center">No paid payouts found for 
+                                                {% if selected_cleaner_profile %}
+                                                {{selected_cleaner_profile.cleaner.name}}
+                                                {% else %}
+                                                all Cleaners
+                                                {% endif %}
+                                            </p>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -273,7 +279,13 @@
                                                 </table>
                                             </div>
                                             {% else %}
-                                            <p class="text-center">No completed bookings without payouts</p>
+                                            <p class="text-center">No paid payouts found for 
+                                                {% if selected_cleaner_profile %}
+                                                {{selected_cleaner_profile.cleaner.name}}
+                                                {% else %}
+                                                all Cleaners
+                                                {% endif %}
+                                            </p>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -317,7 +329,13 @@
                                 </table>
                             </div>
                             {% else %}
-                            <p class="text-center">No paid payouts found</p>
+                            <p class="text-center">No paid payouts found for 
+                                {% if selected_cleaner_profile %}
+                                {{selected_cleaner_profile.cleaner.name}}
+                                {% else %}
+                                all Cleaners
+                                {% endif %}
+                            </p>
                             {% endif %}
                         </div>
                     </div>
@@ -531,9 +549,9 @@
             
             const searchId = `${tableId}-search`;
             const searchContainer = document.createElement('div');
-            searchContainer.className = 'search-container';
+            searchContainer.className = 'search-container py-3';
             searchContainer.innerHTML = `
-                <input type="text" id="${searchId}" placeholder="Search table..." class="form-control">
+                <input type="text" id="${searchId}" placeholder="Search table..." class="form-control w-25">
             `;
             
             const tableElement = document.getElementById(tableId);
