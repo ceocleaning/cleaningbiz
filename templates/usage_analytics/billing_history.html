@@ -99,7 +99,13 @@
                         </div>
                     </div>
                     <h2 class="mb-1">${{ next_billing.amount|default:"0.00" }}</h2>
-                    <p class="text-muted mb-0">{{ next_billing.date|default:"Apr 15, 2023" }}</p>
+                    <p class="text-muted mb-0">
+                        {% if next_billing.date %}
+                            {{ next_billing.date|date:"M d, Y" }}
+                        {% else %}
+                            <span class="text-danger">No Next Billing Date</span>
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>

@@ -151,37 +151,36 @@ def billing_history(request):
     ).order_by('-billing_date').first()
     
     # Get current subscription for next billing info
+    subscription = None
+    next_billing = {'date': None, 'amount': 0}
+    current_balance = 0.00
     try:
         subscription = business.active_subscription()
-        
-        # Check if there's a next plan scheduled
-        next_plan_price = 0
-        if subscription:
-            next_plan_price = subscription.plan.price
-        if subscription and subscription.next_plan_id:
+    except BusinessSubscription.DoesNotExist:
+        subscription = None
+
+    next_plan_price = 0
+    if subscription:
+        try:
+            next_plan_price = subscription.plan.price if subscription.plan else 0
+        except Exception:
+            next_plan_price = 0
+        if subscription.next_plan_id:
             try:
                 next_plan = SubscriptionPlan.objects.get(id=subscription.next_plan_id)
                 next_plan_price = next_plan.price
             except SubscriptionPlan.DoesNotExist:
                 pass
-        
-            # Set next billing info
-            next_billing = {
-                'date': subscription.next_billing_date or subscription.end_date,
-                'amount': next_plan_price
-            }
-        
-        # Set current balance if subscription is past_due
-        current_balance = 0.00
-        if subscription and subscription.status == 'past_due':
-            current_balance = float(next_plan_price)
-            
-    except BusinessSubscription.DoesNotExist:
         next_billing = {
-            'date': None,
-            'amount': 0
+            'date': getattr(subscription, 'next_billing_date', None) or getattr(subscription, 'end_date', None),
+            'amount': next_plan_price
         }
+        if getattr(subscription, 'status', None) == 'past_due':
+            current_balance = float(next_plan_price)
+    else:
+        next_billing = {'date': None, 'amount': 0}
         current_balance = 0.00
+
     
     # Get payment method info from Square
     payment_method = {
@@ -224,18 +223,6 @@ def billing_history(request):
     invoices = []
     for record in billing_records:
         try:
-            subscription = None
-            plan_name = "Unknown"
-            
-            if record.subscription_id:
-                try:
-                    subscription = BusinessSubscription.objects.get(id=record.subscription_id)
-                    plan_name = subscription.plan.name
-                except BusinessSubscription.DoesNotExist:
-                    pass
-            
-            # Extract period details from the JSON field
-            details = record.details or {}
             
             # Properly serialize the details to JSON for the template
             # This ensures it will be valid JSON in the script tag
