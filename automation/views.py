@@ -9,7 +9,7 @@ from django.core.mail import send_mail, EmailMessage
 import logging
 from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
-from accounts.models import ApiCredential, Business
+from accounts.models import ApiCredential, Business, CleanerProfile
 from invoice.models import Invoice, Payment
 from subscription.models import UsageTracker
 from django.db import transaction
@@ -654,31 +654,36 @@ def cleaner_detail(request, cleaner_id):
     ).order_by('-cleaningDate', '-startTime')
     
     
-    # Calculate availability status
-    is_available = True
+    # Calculate availability status based on business hours and current bookings
     current_weekday = now.strftime('%A')
     
     # First check if there's a specific date entry for today
     today_specific_availability = specific_availabilities.filter(specific_date=current_date).first()
     
-    if today_specific_availability:
-        # Specific date entry takes precedence
-        is_available = (
-            not today_specific_availability.offDay and
-            today_specific_availability.startTime <= current_time <= today_specific_availability.endTime
-            and not current_booking
-        )
+    # Default to not available
+    is_available = False
+    
+    # Check if cleaner has a current booking - if so, they're not available
+    if current_booking:
+        is_available = False
     else:
-        # Fall back to weekly schedule
-        today_weekly_availability = weekly_availabilities_queryset.filter(dayOfWeek=current_weekday).first()
-        if today_weekly_availability:
-            is_available = (
-                not today_weekly_availability.offDay and
-                today_weekly_availability.startTime <= current_time <= today_weekly_availability.endTime
-                and not current_booking
-            )
+        # No current booking, check schedule availability
+        if today_specific_availability:
+            # Specific date entry takes precedence
+            if not today_specific_availability.offDay:
+                # Check if current time is within the specific date's working hours
+                is_available = (today_specific_availability.startTime <= current_time <= today_specific_availability.endTime)
         else:
-            is_available = False
+            # Fall back to weekly schedule
+            today_weekly_availability = weekly_availabilities_queryset.filter(dayOfWeek=current_weekday).first()
+            if today_weekly_availability and not today_weekly_availability.offDay:
+                # Check if current time is within the regular working hours
+                is_available = (today_weekly_availability.startTime <= current_time <= today_weekly_availability.endTime)
+    
+    # Update cleaner's availability status in the database if it has changed
+    if cleaner.isAvailable != is_available:
+        cleaner.isAvailable = is_available
+        cleaner.save(update_fields=['isAvailable'])
     
     # Get open jobs for this cleaner
     from automation.models import OpenJob
@@ -706,6 +711,7 @@ def cleaner_detail(request, cleaner_id):
         'prev_week_monday': prev_week_monday,
         'next_week_monday': next_week_monday,
         'title': f'Cleaner - {cleaner.name}',
+        'cleaner_profile': cleaner_profile,
     }
     
     return render(request, 'automation/cleaner_detail.html', context)
@@ -1838,3 +1844,30 @@ def confirm_completed(request, booking_id):
     
     # Redirect back to the cleaner detail page
     return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+
+def update_cleaner_login(request, cleaner_id):
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id)
+    cleaner_profile = CleanerProfile.objects.get(cleaner=cleaner)
+    
+    if request.method == 'POST':
+        try:
+            username = request.POST.get('username')
+            print(f"Username: {username}")
+            cleaner_profile.user.username = username
+            # Update password if provided
+            password1 = request.POST.get('password1')
+            password2 = request.POST.get('password2')
+            if password1 and password2 and password1 == password2:
+                cleaner_profile.user.set_password(password1)
+            
+            cleaner_profile.user.save()
+            cleaner_profile.save()
+            messages.success(request, 'Login details updated successfully.')
+            return redirect('cleaner_detail', cleaner_id=cleaner.id)
+        except Exception as e:
+            messages.error(request, f'Error updating login details: {str(e)}')
+    
+    messages.error(request, 'Invalid request method.')
+    return redirect('cleaner_detail', cleaner_id=cleaner.id)

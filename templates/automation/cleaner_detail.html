@@ -35,6 +35,9 @@
                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editScheduleModal">
                         <i class="fas fa-calendar-alt me-2"></i>Manage Schedule
                     </a></li>
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginDetailsModal">
+                        <i class="fas fa-key me-2"></i>Login Details
+                    </a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteCleanerModal">
                         <i class="fas fa-trash-alt me-2"></i>Delete Cleaner
@@ -54,11 +57,16 @@
                         <div class="display-1 mb-2">
                             <i class="fas fa-user-circle text-primary"></i>
                         </div>
-                        <h2 class="h4 mb-1">{{ cleaner.name }}</h2>
-                        <div class="mb-2">
+                        <h2 class="h4 mb-1">{{ cleaner.name }} <br><span class="text-muted" style="font-size: 16px;">@{{cleaner_profile.user.username}}</span></h2>
+                        <div class="mb-2 mt-2">
                             {% with is_available=cleaner.isAvailable %}
                             <span class="badge {% if is_available %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
-                                {% if is_available %}Available Now{% else %}Unavailable{% endif %}
+                                {% if is_available %}Available{% else %}Unavailable{% endif %}
+                            </span>
+                            {% endwith %}
+                            {% with is_active=cleaner.isActive %}
+                            <span class="badge {% if is_active %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                {% if is_active %}Active{% else %}Inactive{% endif %}
                             </span>
                             {% endwith %}
                         </div>
@@ -629,6 +637,70 @@
     </div>
 </div>
 
+<!-- Login Details Modal -->
+<div class="modal fade" id="loginDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'update_cleaner_login' cleaner.id %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2 text-primary"></i>Cleaner Login Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Update the login credentials for <strong>{{ cleaner.name }}</strong>
+                    </div>
+                    
+                    
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" name="username" value="{{cleaner_profile.user.username}}">
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" name="password1" id="password">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Leave blank to keep current password</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" name="password2" id="confirmPassword">
+                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                  
+                    
+                  
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Login Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- View Booking Detail Modal -->
 <div class="modal fade" id="viewBookingModal" tabindex="-1" aria-labelledby="viewBookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1043,6 +1115,30 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Password visibility toggle for login details modal
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+    
+    if (toggleConfirmPassword && confirmPassword) {
+        toggleConfirmPassword.addEventListener('click', function() {
+            const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPassword.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+    
     // Toggle cleaner availability
     const toggleAvailabilityBtn = document.getElementById('toggleAvailabilityBtn');
     if (toggleAvailabilityBtn) {
