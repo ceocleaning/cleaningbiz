@@ -165,15 +165,15 @@ def billing_history(request):
             except SubscriptionPlan.DoesNotExist:
                 pass
         
-        # Set next billing info
-        next_billing = {
-            'date': subscription.next_billing_date or subscription.end_date,
-            'amount': next_plan_price
-        }
+            # Set next billing info
+            next_billing = {
+                'date': subscription.next_billing_date or subscription.end_date,
+                'amount': next_plan_price
+            }
         
         # Set current balance if subscription is past_due
         current_balance = 0.00
-        if subscription.status == 'past_due':
+        if subscription and subscription.status == 'past_due':
             current_balance = float(next_plan_price)
             
     except BusinessSubscription.DoesNotExist:
