@@ -111,8 +111,9 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
     'accounts.middleware.CleanerAccessMiddleware',  # Add cleaner access middleware
+    'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
+    
     'subscription.middleware.SubscriptionRequiredMiddleware',  # Add subscription middleware
 ]
 
