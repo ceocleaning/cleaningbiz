@@ -155,8 +155,10 @@ def billing_history(request):
         subscription = business.active_subscription()
         
         # Check if there's a next plan scheduled
-        next_plan_price = subscription.plan.price
-        if subscription.next_plan_id:
+        next_plan_price = 0
+        if subscription:
+            next_plan_price = subscription.plan.price
+        if subscription and subscription.next_plan_id:
             try:
                 next_plan = SubscriptionPlan.objects.get(id=subscription.next_plan_id)
                 next_plan_price = next_plan.price
