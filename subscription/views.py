@@ -223,20 +223,16 @@ def billing_history(request):
     invoices = []
     for record in billing_records:
         try:
-            
-            # Properly serialize the details to JSON for the template
-            # This ensures it will be valid JSON in the script tag
-            details_json = json.dumps(details)
-            
+            details_json = json.dumps(record.details)
             invoices.append({
                 'id': record.id,
                 'date': record.billing_date,
                 'amount': record.amount,
-                'plan': plan_name,
+                'plan': record.subscription.plan.name,
                 'status': record.status,
                 'square_payment_id': record.square_payment_id,
                 'square_invoice_id': record.square_invoice_id,
-                'details': details,  # Original Python dict for template access
+                'details': record.details,  # Original Python dict for template access
                 'details_json': details_json  # JSON string for script tag
             })
         except Exception as e:
@@ -284,9 +280,6 @@ def change_plan(request):
         new_plan_id = data.get('new_plan_id')
         current_plan_id = data.get('current_plan_id')
 
-        print("new_plan_id:", new_plan_id)
-        print("current_plan_id:", current_plan_id)
-        
         if not new_plan_id or not current_plan_id:
             return JsonResponse({'status': 'error', 'message': 'Missing plan IDs'}, status=400)
         
@@ -302,14 +295,10 @@ def change_plan(request):
     
     # Check if business already has an active subscription
     try:
-        current_subscription = BusinessSubscription.objects.get(
-            business=business,
-            is_active=True,
-            plan_id=current_plan_id
-        )
+        current_subscription = business.active_subscription()
         
         # Don't change immediately, just mark for change at next billing date
-        if current_subscription.plan.id == new_plan.id:
+        if current_subscription and current_subscription.plan.id == new_plan.id:
             return JsonResponse({
                 'success': False, 
                 'error': f"You are already subscribed to the {new_plan.name} plan."
