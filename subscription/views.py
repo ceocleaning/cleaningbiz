@@ -183,13 +183,7 @@ def billing_history(request):
 
     
     # Get payment method info from Square
-    payment_method = {
-        'last4': '4242',
-        'exp_month': '12',
-        'exp_year': '2025',
-        'card_brand': 'visa'
-    }
-    
+    payment_method = None
     # Fetch actual card details from Square if available
     if business.square_card_id and business.square_customer_id:
         try:
@@ -224,12 +218,15 @@ def billing_history(request):
     for record in billing_records:
         try:
             details_json = json.dumps(record.details)
+            # Calculate billing period based on subscription start and end dates
+            billing_period = f"{record.subscription.start_date.strftime('%B %d')} - {record.subscription.next_billing_date.strftime('%B %d')}"
             invoices.append({
                 'id': record.id,
                 'date': record.billing_date,
                 'amount': record.amount,
                 'plan': record.subscription.plan.name,
                 'status': record.status,
+                'billing_period': billing_period,
                 'square_payment_id': record.square_payment_id,
                 'square_invoice_id': record.square_invoice_id,
                 'details': record.details,  # Original Python dict for template access

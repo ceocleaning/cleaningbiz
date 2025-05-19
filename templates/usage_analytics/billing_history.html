@@ -117,34 +117,36 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Payment Method</h5>
-                    <a href="" class="btn btn-sm btn-outline-primary">Update Payment Method</a>
+                    <a href="{% url 'subscription:manage_card' %}?next={{ request.path }}&?redirect_url={{ request.path }}" class="btn btn-sm btn-outline-primary">Update Payment Method</a>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            {% if payment_method.card_brand|lower == 'visa' %}
-                                <i class="fab fa-cc-visa fa-2x text-primary"></i>
-                            {% elif payment_method.card_brand|lower == 'mastercard' %}
-                                <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
-                            {% elif payment_method.card_brand|lower == 'american_express' %}
-                                <i class="fab fa-cc-amex fa-2x text-info"></i>
-                            {% elif payment_method.card_brand|lower == 'discover' %}
-                                <i class="fab fa-cc-discover fa-2x text-warning"></i>
-                            {% else %}
-                                <i class="fas fa-credit-card fa-2x text-secondary"></i>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h6 class="mb-0">
-                                {% if payment_method.card_brand %}
-                                    {{ payment_method.card_brand|title }} ending in {{ payment_method.last4|default:"4242" }}
+                    {% if payment_method and payment_method.card_brand and payment_method.last4 %}
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if payment_method.card_brand|lower == 'visa' %}
+                                    <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                                {% elif payment_method.card_brand|lower == 'mastercard' %}
+                                    <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                                {% elif payment_method.card_brand|lower == 'american_express' %}
+                                    <i class="fab fa-cc-amex fa-2x text-info"></i>
+                                {% elif payment_method.card_brand|lower == 'discover' %}
+                                    <i class="fab fa-cc-discover fa-2x text-warning"></i>
                                 {% else %}
-                                    Card ending in {{ payment_method.last4|default:"4242" }}
+                                    <i class="fas fa-credit-card fa-2x text-secondary"></i>
                                 {% endif %}
-                            </h6>
-                            <p class="text-muted mb-0">Expires {{ payment_method.exp_month|default:"12" }}/{{ payment_method.exp_year|default:"2025" }}</p>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">
+                                    {{ payment_method.card_brand|title }} ending in {{ payment_method.last4 }}
+                                </h6>
+                                <p class="text-muted mb-0">Expires {{ payment_method.exp_month }}/{{ payment_method.exp_year }}</p>
+                            </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <span class="text-danger fw-bold">No Card Added</span>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -208,8 +210,8 @@
                                         </span>
                                     </td>
                                     <td>
-                                        {% if invoice.details.period_start %}
-                                            {{ invoice.details.period_start|date:"M d" }} - {{ invoice.details.period_end|date:"M d, Y" }}
+                                        {% if invoice.billing_period %}
+                                            {{ invoice.billing_period }}
                                         {% elif invoice.details.billing_cycle %}
                                             {{ invoice.date|date:"M d" }} ({{ invoice.details.billing_cycle|title }})
                                         {% else %}
