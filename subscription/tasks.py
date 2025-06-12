@@ -65,13 +65,29 @@ def process_subscription_renewals():
         # Use the next plan if available, otherwise use the current plan
         plan_to_use = next_plan if next_plan else current_plan
         
-        # Skip if business doesn't have a saved card
+        # Handle free plans (zero price) without payment processing
+        if plan_to_use.price == 0 or plan_to_use.price == 0.00:
+            print(f"Free plan detected for {business.businessName} - Plan: {plan_to_use.name}. Skipping payment processing.")
+            
+            # Create a mock payment result for the free plan
+            free_plan_result = {
+                'success': True,
+                'message': 'Free plan - no payment required',
+                'payment_id': str(uuid.uuid4()),  # Generate a UUID as a placeholder
+                'card_details': {'card': {'last_4': 'FREE'}}
+            }
+            
+            # Handle the renewal directly
+            _handle_successful_renewal(business, subscription, plan_to_use, free_plan_result, square_client)
+            continue
+            
+        # Skip if business doesn't have a saved card (for paid plans)
         if not business.square_card_id or not business.square_customer_id:
             print(f"No saved card for {business.businessName}, sending notification")
             _send_no_card_notification(business, subscription, plan_to_use)
             continue
         
-        # Process the renewal payment
+        # Process the renewal payment for paid plans
         renewal_result = _process_renewal_payment(business, subscription, plan_to_use, square_client)
         
         if renewal_result['success']:
