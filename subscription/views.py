@@ -537,6 +537,7 @@ def process_payment(request, plan_id):
         # Get payment details from form
         card_nonce = request.POST.get('card-nonce')
         use_existing_card = request.POST.get('use_existing_card') == 'true'
+        is_free_subscription = request.POST.get('is_free_subscription') == 'true'
         
         # Get coupon code if applied
         coupon_code = request.POST.get('coupon_code')
@@ -545,7 +546,7 @@ def process_payment(request, plan_id):
         # Calculate price (apply yearly discount if applicable)
         original_price = plan.price
         final_price = original_price
-        
+    
         # Apply yearly discount (20% off annual price)
         if plan.billing_cycle == 'yearly':
             final_price = original_price * 0.8
@@ -566,67 +567,76 @@ def process_payment(request, plan_id):
                     coupon = None
             except Coupon.DoesNotExist:
                 pass
+                
+        # Check if the final price is zero (free subscription)
+        is_free = final_price <= 0 or is_free_subscription
         
-        # Initialize Square client
-        square_client = Client(
-            access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment=settings.SQUARE_ENVIRONMENT
-        )
+        print(f"Coupon Code: {coupon_code}")
+        print(f"Coupon: {coupon}")
+        print(f"Final Price: {final_price}")
+
+        # Generate a unique transaction ID for free subscriptions or process payment
+        transaction_id = str(uuid.uuid4())  # Default transaction ID for free subscriptions
+        card_details = {}
+        card_last4 = '****'
+        customer_id = business.square_customer_id if business.square_customer_id else None
+        card_id = business.square_card_id if business.square_card_id else None
         
-        # Prepare payment amount
-        amount_money = {
-            "amount": int(final_price * 100),  # Convert to cents
-            "currency": "USD"
-        }
-        
-        # Generate a unique idempotency key for this payment
-        idempotency_key = str(uuid.uuid4())
-        
-        # Create payment and customer if needed
-        customer_id = None
-        card_id = None
-        
-        # If using existing card, get the customer and card IDs
-        if use_existing_card:
-            customer_id = business.square_customer_id
-            card_id = business.square_card_id
-        
-        # Create the payment
-        payment_body = {
-            "idempotency_key": idempotency_key,
-            "amount_money": amount_money,
-            "autocomplete": True,
-            "note": f"Subscription to {plan.name} ({plan.billing_cycle})",
-            "payment_method_types": ["CARD"]
-        }
-        
-        # Add source ID (card nonce) or source (saved card)
-        if use_existing_card and business.square_card_id:
-            payment_body["source_id"] = business.square_card_id
-            payment_body["customer_id"] = business.square_customer_id
-        else:
-            # If no card nonce and not using existing card, redirect back
-            if not card_nonce and not use_existing_card:
-                return redirect('subscription:select_plan', plan_id=plan_id)
-            payment_body["source_id"] = card_nonce
-        
-        # Process the payment
-        payment_result = square_client.payments.create_payment(
-            body=payment_body
-        )
-        
-        if not payment_result.is_success():
-            messages.error(request, "Failed to process payment. Please try again")
-            return redirect('subscription:select_plan', plan_id=plan_id)
+        # Only process payment if the final price is greater than zero
+        if not is_free:
+            # Initialize Square client
+            square_client = Client(
+                access_token=settings.SQUARE_ACCESS_TOKEN,
+                environment=settings.SQUARE_ENVIRONMENT
+            )
             
-        if payment_result.is_success():
-            payment_id = payment_result.body['payment']['id']
-        
-        # Get payment details
-        payment = payment_result.body['payment']
-        transaction_id = payment['id']
-        card_details = payment.get('card_details', {})
-        card_last4 = card_details.get('card', {}).get('last_4', '****')
+            # Prepare payment amount
+            amount_money = {
+                "amount": int(final_price * 100),  # Convert to cents
+                "currency": "USD"
+            }
+            
+            # Generate a unique idempotency key for this payment
+            idempotency_key = str(uuid.uuid4())
+            
+            # If using existing card, get the customer and card IDs
+            if use_existing_card:
+                customer_id = business.square_customer_id
+                card_id = business.square_card_id
+            
+            # Create the payment
+            payment_body = {
+                "idempotency_key": idempotency_key,
+                "amount_money": amount_money,
+                "autocomplete": True,
+                "note": f"Subscription to {plan.name} ({plan.billing_cycle})",
+                "payment_method_types": ["CARD"]
+            }
+            
+            # Add source ID (card nonce) or source (saved card)
+            if use_existing_card and business.square_card_id:
+                payment_body["source_id"] = business.square_card_id
+                payment_body["customer_id"] = business.square_customer_id
+            else:
+                # If no card nonce and not using existing card, redirect back
+                if not card_nonce and not use_existing_card:
+                    return redirect('subscription:select_plan', plan_id=plan_id)
+                payment_body["source_id"] = card_nonce
+            
+            # Process the payment
+            payment_result = square_client.payments.create_payment(
+                body=payment_body
+            )
+            
+            if not payment_result.is_success():
+                messages.error(request, "Failed to process payment. Please try again")
+                return redirect('subscription:select_plan', plan_id=plan_id)
+                
+            if payment_result.is_success():
+                payment = payment_result.body['payment']
+                transaction_id = payment['id']
+                card_details = payment.get('card_details', {})
+                card_last4 = card_details.get('card', {}).get('last_4', '****')
         
         # Check if the business already has an active subscription
         with transaction.atomic():
@@ -663,30 +673,22 @@ def process_payment(request, plan_id):
                 amount=final_price,  # Use discounted price if coupon applied
                 status='paid',
                 billing_date=timezone.now(),
-                square_payment_id=transaction_id,  # Store the Square payment ID
+                square_payment_id=transaction_id,  # Store the transaction ID (Square payment ID or UUID for free)
                 square_invoice_id=transaction_id,  # For now, using the same ID for both
                 details={
-                    'payment_method': 'square',
+                    'payment_method': 'square' if not is_free else 'free',
                     'payment_date': timezone.now().isoformat(),
                     'customer_id': customer_id if customer_id else None,
                     'card_id': card_id if card_id else None,
                     'payment_status': 'COMPLETED',
                     'coupon_code': coupon_code if coupon_code else None,
-                    'discount_amount': float(original_price - final_price) if coupon_code else 0.00
+                    'discount_amount': float(original_price - final_price) if coupon_code else 0.00,
+                    'is_free': is_free
                 }
             )
             
-            # Record coupon usage if a coupon was applied
-            if coupon:
-                # Increment the coupon usage count
-                coupon.use_coupon()
-                
-                # Record the specific usage for this user - use get_or_create to prevent duplicates
-                CouponUsage.objects.get_or_create(
-                    coupon=coupon,
-                    user=request.user,
-                    subscription=new_subscription
-                )
+            # Coupon usage is automatically recorded in the BusinessSubscription.save() method
+            # No need to record it here to avoid double-counting
 
             if not business.isApproved or not business.isActive:
                 business.isApproved = True
@@ -854,13 +856,24 @@ def validate_coupon(request):
         else:
             discount_description = f"${coupon.discount_value} off"
         
-        return JsonResponse({
+        print({
             'valid': True,
             'message': 'Coupon applied successfully!',
             'discount_amount': round(discount_amount, 2),
             'discounted_price': round(discounted_price, 2),
             'discount_description': discount_description,
             'coupon_code': coupon.code
+        })
+
+        return JsonResponse({
+            'valid': True,
+            'message': 'Coupon applied successfully!',
+            'discount_amount': round(discount_amount, 2),
+            'discount_type': coupon.discount_type,
+            'discount_value': coupon.discount_value,
+            'discounted_price': round(discounted_price, 2),
+            'discount_description': discount_description,
+            'coupon_code': coupon.code,
         })
     
     except Coupon.DoesNotExist:

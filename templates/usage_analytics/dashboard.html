@@ -177,7 +177,13 @@
                     <div class="position-relative" style="width: 180px; height: 180px;">
                         <canvas id="smsResponseRateChart"></canvas>
                         <div class="position-absolute top-50 start-50 translate-middle text-center">
-                            <h3 class="mb-0">85%</h3>
+                            <h3 class="mb-0">
+                                {% if usage_summary.total.sms_messages > 0 %}
+                                    {{ usage_summary.total.sms_responses|default:0|floatformat:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h3>
                             <p class="mb-0 small">Response Rate</p>
                         </div>
                     </div>
