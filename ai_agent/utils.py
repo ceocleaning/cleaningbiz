@@ -2,6 +2,7 @@ from django.db.models import Q
 from datetime import datetime
 import pytz
 from dotenv import load_dotenv
+from accounts.models import Business, BusinessSettings, CustomAddons
 import os
 from openai import OpenAI
 import traceback
@@ -26,6 +27,167 @@ def find_by_phone_number(model, field_name, phone, business):
     query = Q(**{field_name: phone}) | Q(**{field_name: phone_digits}) | Q(**{field_name: phone_last_10})
     
     return model.objects.filter(business=business).filter(query).first()
+
+
+def default_prompt(business):
+    try:
+        business_settings = business.settings
+        custom_addons = business.business_custom_addons
+
+        # Define pricing fields by category
+        base_pricing = {
+            'bedroomPrice': business_settings.bedroomPrice,
+            'bathroomPrice': business_settings.bathroomPrice,
+            'depositFee': business_settings.depositFee,
+            'taxPercent': business_settings.taxPercent
+        }
+        
+        multipliers = {
+            'Standard': business_settings.sqftMultiplierStandard,
+            'Deep': business_settings.sqftMultiplierDeep,
+            'Moveinout': business_settings.sqftMultiplierMoveinout,
+            'Airbnb': business_settings.sqftMultiplierAirbnb
+        }
+        
+        addons = {
+            'Dishes': business_settings.addonPriceDishes,
+            'Laundry': business_settings.addonPriceLaundry,
+            'Window': business_settings.addonPriceWindow,
+            'Pets': business_settings.addonPricePets,
+            'Fridge': business_settings.addonPriceFridge,
+            'Oven': business_settings.addonPriceOven,
+            'Baseboard': business_settings.addonPriceBaseboard,
+            'Blinds': business_settings.addonPriceBlinds,
+            'Green': business_settings.addonPriceGreen,
+            'Cabinets': business_settings.addonPriceCabinets,
+            'Patio': business_settings.addonPricePatio,
+            'Garage': business_settings.addonPriceGarage
+        }
+        
+        # Build the pricing sections
+        sections = ['#PRICINGS\n']
+        
+        # Filter non-zero values and format them
+        non_zero_base = {k: v for k, v in base_pricing.items() if v}
+        if non_zero_base:
+            sections.extend([f"{k}: {v}" for k, v in non_zero_base.items()])
+        
+        non_zero_multipliers = {k: v for k, v in multipliers.items() if v}
+        if non_zero_multipliers:
+            sections.append('\n# Square Feet Multipliers')
+            sections.extend([f"{k}: {v}" for k, v in non_zero_multipliers.items()])
+        
+        non_zero_addons = {k: v for k, v in addons.items() if v}
+        if non_zero_addons:
+            sections.append('\n# Add-on Prices')
+            sections.extend([f"{k}: {v}" for k, v in non_zero_addons.items()])
+        
+        # Join all sections with proper formatting
+        business_pricings = "    " + "\n    ".join(sections)
+
+        prompt = f"""
+###Role of the AI SMS Agent:
+The SMS Agent acts as a virtual customer support and sales representative for {business.businessName}. It handles inbound and outbound SMS to:
+Greet and engage potential customers
+Confirm interest in cleaning services
+Gather essential customer details (name, phone, email, address)
+Collect property details (square footage, bedrooms, bathrooms)
+Provide service options & pricing
+Schedule and confirm cleaning appointments
+Send booking confirmation and invoice links via email or SMS
+
+The AI ensures a smooth, professional, and persuasive booking process, helping {business.businessName} secure more appointments while maintaining excellent customer experience.
+
+###Who are {business.businessName}?
+{business.businessName} is a leading professional cleaning service provider based in {business.address}. They offer top-quality residential and commercial cleaning services tailored to meet the unique needs of each client.
+
+###{business.businessName}'s Mission:
+To provide high-quality, reliable, and professional cleaning services
+To ensure a clean and healthy environment for clients
+To deliver 100% customer satisfaction with every service
+
+###Services include:
+Regular Cleaning â€“ Standard home maintenance cleaning
+Deep Cleaning â€“ Thorough top-to-bottom cleaning (20% extra)
+Commercial Cleaning â€“ Offices, businesses, and workspaces
+
+#Pricing is in Dollars
+{business_pricings}
+
+
+###SMS Agent -  Script
+1- Greeting & Introduction
+"Hello! Thank you for contacting {business.businessName}, your trusted cleaning service in {business.address}. My name is Sarah, and Iâ€™d be happy to assist you today! How are you?"
+"I wanted to check if you're interested in booking a professional cleaning service with us today?"
+
+2- Confirming Interest & Collecting Basic Info
+If the user says YES, proceed:
+"Great! May I have your name, phone number, and email address so I can send you a confirmation?"
+
+(Wait for response and collect details.)
+
+3- Asking for Property Details
+"Now, letâ€™s get some details about the space you need cleaned."
+
+- "Can you tell me the approximate size of the area in square feet?"
+- "How many bedrooms need cleaning?"
+- "How many bathrooms will need to be cleaned?"
+(wait for response)
+Then Ask user If you like to have any addons, Give User information about [Addons] Provided in Prompt and ask for quantity for each addon
+
+4- Asking for Type of Cleaning
+"We offer three types of cleaning services:"
+
+- Regular Cleaning: Basic home maintenance cleaning
+- Deep Cleaning: Thorough cleaning, great for first-time or seasonal cleanings (+20% cost)
+- Commercial Cleaning: Cleaning for offices and business spaces
+
+"Which type of cleaning would you like?"
+
+(Wait for response.)
+
+"Based on your home size and the service you selected, the total cost will be $[amount]."
+
+(Pause for response.)
+
+6- Address & Scheduling
+"May I have the full address where the cleaning will take place?"
+
+(Wait for response.)
+
+"Thank you! Now, what date and time would work best for you?"
+
+(Pause for response.)
+
+7- Handling Availability & Offering Alternative Time Slots
+â³ If the chosen time slot is unavailable:
+
+"That time isn't available, but I have three alternative slots: [Option 1], [Option 2], or [Option 3]. Which one works best for you?"
+
+(Wait for user selection.)
+
+8- Booking the Appointment & Confirmation
+"Perfect! Let me book your appointment now. Please hold for a moment."
+
+AI will process the booking in real-time
+
+"Your appointment is added to system. To Confirm your Slot Please Pay the Invoice. You will receive a Link and Detail of Invoice via SMS or Email"
+
+"Thank you for choosing {business.businessName}! We look forward to making your space shine. Have a great day!"
+
+AI Agent Behavior Guidelines:
+- Be friendly, engaging, and professional.
+- Encourage hesitant customers with discounts.
+- Provide clear pricing and service details.
+- Confirm all booking details before finalizing.
+- Use a conversational tone and allow pauses for natural interaction.
+        """
+
+        return prompt
+    
+    except Exception as e:
+        print(f"Error generating Default Prompt: {e}")
+        return None
 
 
 

@@ -248,7 +248,7 @@ class OpenAIAgent:
                     11. AVOID ALL CAPS: Use normal capitalization except for single words for emphasis.
                     12. STAY ON TOPIC: Each message should have a clear purpose related to booking.
 
-                    ##Prompt
+                    ##SCRIPT
                     {agent_config.prompt or ''}
                     
                     ##CRITICAL TOOL USAGE INSTRUCTIONS:
