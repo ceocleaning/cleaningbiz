@@ -46,7 +46,7 @@ class BusinessApprovalMiddleware:
             try:
                 current_url = resolve(request.path_info).url_name
                 if not business.isApproved and current_url != 'approval_pending':
-                    messages.warning(request, 'Your business is pending approval. You will have access to all features once approved.')
+                    messages.warning(request, "You haven’t subscribed to a plan yet. Start with our Trial Plan to unlock full access to all features and get started right away!")
                     return redirect('accounts:approval_pending')
                 else:
                     pass
