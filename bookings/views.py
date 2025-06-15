@@ -19,13 +19,16 @@ def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
+    # Get the business and its timezone
+    business = request.user.business_set.first()
+    
     # Get all bookings for the user's business
     all_bookings = Booking.objects.filter(business__user=request.user)
 
     cancelled_bookings = all_bookings.filter(cancelled_at__isnull=False)
     
-    # Get current date for filtering
-    today = datetime.now().date()
+    # Get current date in business's timezone
+    today = business.get_local_time().date()
     
     # Upcoming bookings (not completed and future date)
     upcoming_bookings = all_bookings.filter(
@@ -86,9 +89,10 @@ def all_bookings(request):
         'past_bookings_count': past_bookings_count,
         'cancelled_bookings_count': cancelled_bookings_count,
         'cancelled_bookings': cancelled_bookings,
-        'today': today
+        'today': today,
+        'business': business  # Add business to context for template filters
     }
-    return render(request, 'bookings.html', context)
+    return render(request, 'bookings/bookings.html', context)
 
 @login_required
 def customers(request):
@@ -141,7 +145,7 @@ def customers(request):
         'total_customers': len(customers_list)
     }
     
-    return render(request, 'customers.html', context)
+    return render(request, 'bookings/customers.html', context)
 
 @login_required
 def customer_detail(request, identifier):
@@ -206,7 +210,7 @@ def customer_detail(request, identifier):
         }
     }
     
-    return render(request, 'customer_detail.html', context)
+    return render(request, 'bookings/customer_detail.html', context)
 
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
@@ -227,7 +231,7 @@ def create_booking(request):
             if not phone_number:
                 messages.error(request, 'Please enter a valid US phone number.')
                 return redirect('bookings:create_booking')
-
+            
             # Create the booking
             booking = Booking.objects.create(
                 business=business,
@@ -324,7 +328,7 @@ def create_booking(request):
         'prices': json.dumps(prices)
     }
 
-    return render(request, 'create_booking.html', context)
+    return render(request, 'bookings/create_booking.html', context)
 
 
 
@@ -463,7 +467,7 @@ def edit_booking(request, bookingId):
         'existing_custom_addons': {addon.addon.id: addon.qty for addon in booking.customAddons.all()}
     }
 
-    return render(request, 'edit_booking.html', context)
+    return render(request, 'bookings/edit_booking.html', context)
 
 
 def mark_completed(request, bookingId):
@@ -492,7 +496,7 @@ def booking_detail(request, bookingId):
     context = {
         'booking': booking
     }
-    return render(request, 'booking_detail.html', context)
+    return render(request, 'bookings/booking_detail.html', context)
 
 @require_http_methods(["POST"])
 @login_required
@@ -671,4 +675,4 @@ def booking_calendar(request):
         'current_time_position': current_time_position
     }
     
-    return render(request, 'booking_calendar.html', context)
+    return render(request, 'bookings/booking_calendar.html', context)

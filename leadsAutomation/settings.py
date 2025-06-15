@@ -14,6 +14,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 import os
+import logging
+import uuid
 
 load_dotenv()
 
@@ -111,6 +113,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
+    'leadsAutomation.middleware.CustomRollbarNotifierMiddleware',
     'accounts.middleware.CleanerAccessMiddleware',  # Add cleaner access middleware
     'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
     
@@ -257,5 +261,52 @@ Q_CLUSTER = {
     'label': 'Django Q2',
     'orm': 'default',
     'max_attempts': 3,
+}
+
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["console"],
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+ROLLBAR = {
+    'access_token': '92cb7249f2024f18aec00cb16b729224',
+    'environment': 'production',
+    'code_version': '1.0',
+    'root': BASE_DIR,
 }
 

@@ -41,7 +41,7 @@ def LandingPage(request):
     else:
         is_eligible_for_trial = True
     
-    return render(request, 'LandingPage.html', {
+    return render(request, 'core/LandingPage.html', {
         'plans': plans,
         'trial_plan': trial_plan,
         'is_eligible_for_trial': is_eligible_for_trial
@@ -59,18 +59,18 @@ def PricingPage(request):
     # Get all active features
     features = Feature.objects.filter(is_active=True).order_by('display_name')
     
-    return render(request, 'PricingPage.html', {
+    return render(request, 'core/PricingPage.html', {
         'plans': plans,
         'trial_plan': trial_plan,
         'feature_list': features
     })
 
 def FeaturesPage(request):
-    return render(request, 'FeaturesPage.html')
+    return render(request, 'core/FeaturesPage.html')
 
 
 def AboutUsPage(request):
-    return render(request, 'AboutUsPage.html')
+    return render(request, 'core/AboutUsPage.html')
 
 def ContactUsPage(request):
     if request.method == 'POST':
@@ -145,10 +145,10 @@ def ContactUsPage(request):
                     'message': f'An error occurred: {str(e)}'
                 })
     
-    return render(request, 'ContactUsPage.html')
+    return render(request, 'core/ContactUsPage.html')
 
 def DocsPage(request):
-    return render(request, 'DocsPage.html')
+    return render(request, 'core/DocsPage.html')
 
 
 @login_required(login_url='accounts:login')
@@ -246,7 +246,7 @@ def home(request):
         'recent_activities': recent_activities,
     }
     
-    return render(request, 'home.html', context)    
+    return render(request, 'core/home.html', context)    
 
 
 
@@ -262,7 +262,7 @@ def all_leads(request):
     context = {
         'leads': leads
     }
-    return render(request, 'leads.html', context)
+    return render(request, 'leads/leads.html', context)
 
 
 @login_required
@@ -271,7 +271,7 @@ def lead_detail(request, leadId):
     context = {
         'lead': lead
     }
-    return render(request, 'lead_detail.html', context)
+    return render(request, 'leads/lead_detail.html', context)
 
 
 @login_required
@@ -359,7 +359,7 @@ def create_lead(request):
             messages.error(request, f'Error creating lead: {str(e)}')
             return redirect('create_lead')
     
-    return render(request, 'create_lead.html')
+    return render(request, 'leads/create_lead.html')
 
 
 @login_required
@@ -436,7 +436,7 @@ def update_lead(request, leadId):
         'proposed_date': lead.proposed_start_datetime.strftime('%Y-%m-%d') if lead.proposed_start_datetime else '',
         'proposed_time': lead.proposed_start_datetime.strftime('%H:%M') if lead.proposed_start_datetime else '',
     }
-    return render(request, 'update_lead.html', context)
+    return render(request, 'leads/update_lead.html', context)
 
 
 @login_required
@@ -1509,7 +1509,7 @@ def book_demo(request):
             Phone: {phone}
             Company: {company or 'Not provided'}
             
-            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} UTC
             """
             
             # Send email using EmailMessage for more control

@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils import timezone
 import random
+import pytz
 
 
 User = get_user_model()
@@ -30,6 +31,7 @@ class Business(models.Model):
     square_card_id = models.CharField(max_length=255, null=True, blank=True, help_text="Square payment card ID for recurring payments")
     square_customer_id = models.CharField(max_length=255, null=True, blank=True, help_text="Square customer ID for recurring payments")
     auto_upgrade = models.BooleanField(default=False, help_text="Automatically upgrade to next plan when usage exceeds limits")
+    timezone = models.CharField(max_length=50, default='UTC', help_text="Business timezone (e.g., 'America/New_York', 'Europe/London')")
 
     isActive = models.BooleanField(default=False)
     isApproved = models.BooleanField(default=False)
@@ -90,6 +92,23 @@ class Business(models.Model):
             # Log the error but don't crash
             print(f"Error getting active subscription: {e}")
             return None
+
+    def get_timezone(self):
+        """Get the business timezone as a pytz timezone object"""
+        try:
+            return pytz.timezone(self.timezone)
+        except pytz.exceptions.UnknownTimeZoneError:
+            return pytz.UTC
+
+    def localize_datetime(self, dt):
+        """Convert a datetime to the business's local timezone"""
+        if dt.tzinfo is None:
+            dt = timezone.make_aware(dt)
+        return dt.astimezone(self.get_timezone())
+
+    def get_local_time(self):
+        """Get current time in business's timezone"""
+        return timezone.now().astimezone(self.get_timezone())
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)

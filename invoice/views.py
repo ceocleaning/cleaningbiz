@@ -52,7 +52,7 @@ def all_invoices(request):
         'paid_invoices': paid_invoices,
         'authorized_invoices': authorized_invoices,
     }
-    return render(request, 'invoices.html', context)
+    return render(request, 'invoices/invoices.html', context)
 
 @login_required
 def create_invoice(request, bookingId):
@@ -84,7 +84,7 @@ def edit_invoice(request, invoiceId):
     context = {
         'invoice': invoice
     }
-    return render(request, 'update_invoice.html', context)
+    return render(request, 'invoices/update_invoice.html', context)
 
 
 def delete_invoice(request, invoiceId):
@@ -104,7 +104,7 @@ def booking_detail(request, bookingId):
     context = {
         'booking': booking
     }
-    return render(request, 'booking_detail.html', context)
+    return render(request, 'invoices/booking_detail.html', context)
 
 @login_required
 def invoice_detail(request, invoiceId):
@@ -113,9 +113,9 @@ def invoice_detail(request, invoiceId):
         'invoice': invoice,
         'SQUARE_APP_ID': settings.SQUARE_APP_ID,
         'SQUARE_LOCATION_ID': settings.SQUARE_LOCATION_ID,
-        'SQUARE_ENVIRONMENT': settings.SQUARE_ENVIRONMENT,
+        'SQUARE_ENVIRONMENT': 'sandbox' if settings.DEBUG else 'production'
     }
-    return render(request, 'invoice_detail.html', context)
+    return render(request, 'invoices/invoice_detail.html', context)
 
 
 def invoice_preview(request, invoiceId):
@@ -123,8 +123,9 @@ def invoice_preview(request, invoiceId):
         invoice = Invoice.objects.get(invoiceId=invoiceId)
         booking = invoice.booking
         business = booking.business
-        square_credentials = business.square_credentials
-
+        
+        
+        
         # Only include add-ons with values > 0
         addons = [
             addon for addon in [
@@ -148,13 +149,19 @@ def invoice_preview(request, invoiceId):
             'booking': booking,
             'business': business,
             'addons': addons,
-            'settings': {
+        }
+
+        if business.defaultPaymentMethod == 'square':
+            square_credentials = business.square_credentials
+            context['settings'] = {
                 'SQUARE_APP_ID': square_credentials.app_id,
                 'SQUARE_LOCATION_ID': square_credentials.location_id,
                 'SQUARE_ENVIRONMENT': 'sandbox' if settings.DEBUG else 'production'
             }
-        }
-        return render(request, 'invoice_preview.html', context)
+        
+
+
+        return render(request, 'invoices/invoice_preview.html', context)
     except Invoice.DoesNotExist:
         messages.error(request, 'Invoice not found.')
         return redirect('invoice:all_invoices')
