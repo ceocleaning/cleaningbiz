@@ -74,8 +74,25 @@
                         </div>
 
                         <div class="form-group mb-4">
+                            <label for="cleaner_pay_percentage" class="form-label">
+                                <i class="fas fa-map-marker-alt text-primary me-2"></i>Cleaner Pay Percentage
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-map-marked-alt text-muted"></i>
+                                </span>
+                               <input type="number" 
+                                       class="form-control" 
+                                       id="cleaner_pay_percentage" 
+                                       name="cleaner_pay_percentage" 
+                                       placeholder="Enter Cleaner Pay Percentage"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
                             <label for="job_assignment" class="form-label">
-                                <i class="fas fa-map-marker-alt text-primary me-2"></i>Job Assignment
+                                <i class="fas fa-map-marker-alt text-primary me-2"></i>In What way should cleaners be assigned to jobs?
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text">
@@ -86,8 +103,8 @@
                                           name="job_assignment" 
                                           required>
                                     <option value="">Select Job Assignment</option>
-                                    {% for option in job_assignment_options %}
-                                        <option value="{{ option.value }}">{{ option.label }}</option>
+                                    {% for value, label in job_assignment_options %}
+                                        <option value="{{ value }}">{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

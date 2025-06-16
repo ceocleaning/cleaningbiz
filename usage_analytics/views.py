@@ -118,9 +118,9 @@ def usage_overview(request):
         # SMS module key metrics
         'sms_metrics': {
             'total_messages': usage_summary.get('total', {}).get('sms_messages', 0),
-            'response_rate': f"{round(usage_summary.get('total', {}).get('sms_responses', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100)}%",
+            'response_rate': f"{round(usage_summary.get('total', {}).get('sms_responses', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100 if usage_summary.get('total', {}).get('sms_messages', 0) > 0 else 0)}%",
             'avg_response_time': f"{usage_summary.get('total', {}).get('avg_response_time', 0)}s",
-            'conversion_rate': f"{round(usage_summary.get('total', {}).get('sms_conversions', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100)}%"
+            'conversion_rate': f"{round(usage_summary.get('total', {}).get('sms_conversions', 0) / usage_summary.get('total', {}).get('sms_messages', 1) * 100 if usage_summary.get('total', {}).get('sms_messages', 0) > 0 else 0)}%"
         },
         # Recent activities
         'recent_activities': recent_activities

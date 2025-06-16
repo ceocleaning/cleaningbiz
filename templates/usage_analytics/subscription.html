@@ -167,7 +167,7 @@
                             </div>
                         </div>
                         
-                        <!-- Voice Calls Usage -->
+                        <!-- SMS Usage -->
                         <div class="col-md-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span>SMS</span>
@@ -471,6 +471,11 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% empty %}
+                <div class="col-md-4 mx-auto">  
+                    <h4 class="text-danger">No available plans.</h4>
+                </div>
                 {% endfor %}
             </div>
 

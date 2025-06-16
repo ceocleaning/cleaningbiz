@@ -8,6 +8,8 @@ import uuid
 from square.client import Client
 from .models import Invoice, Payment
 from accounts.models import Business, SquareCredentials, PayPalCredentials
+from .utils import handle_payment_completed
+import threading
 
 
 
@@ -72,6 +74,11 @@ def process_payment(request):
                 payment.paidAt = timezone.now()
                 invoice.isPaid = True
                 invoice.save()
+            
+            payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
+            payment_thread.daemon = True
+            payment_thread.start()
+            
 
             return JsonResponse({
                 'success': True,
@@ -121,7 +128,7 @@ def process_manual_payment(request):
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
-        square_credentials = business.square_credentials
+        square_credentials = SquareCredentials.objects.filter(business=business).first()
 
         # Check if this is an existing Square payment with AUTHORIZED status
         if payment_method == 'Square' and square_payment_id:
@@ -189,6 +196,10 @@ def process_manual_payment(request):
         # Mark invoice as paid
         invoice.isPaid = True
         invoice.save()
+
+        payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
+        payment_thread.daemon = True
+        payment_thread.start()
 
         return JsonResponse({
             'success': True,
@@ -276,6 +287,10 @@ def process_stripe_payment(request):
                     invoice.isPaid = True
                     invoice.save()
 
+                    payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
+                    payment_thread.daemon = True
+                    payment_thread.start()
+
                     return JsonResponse({
                         'success': True,
                         'payment_id': payment.paymentId,
@@ -312,6 +327,10 @@ def process_stripe_payment(request):
                         transactionId=payment_intent.id,
                         status='AUTHORIZED'
                     )
+
+                    payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
+                    payment_thread.daemon = True
+                    payment_thread.start()
 
                     return JsonResponse({
                         'success': True,
@@ -560,16 +579,9 @@ def process_paypal_payment(request):
         invoice.save()
         print("Invoice updated successfully")
         
-        # Update usage tracking if applicable
-        try:
-            if hasattr(business, 'increment_leads'):
-                print("Updating usage tracking - incrementing leads")
-                business.increment_leads(1)
-                print("Usage tracking updated successfully")
-            else:
-                print("Business does not have increment_leads method - skipping usage tracking")
-        except Exception as usage_error:
-            print(f"Error updating usage tracking: {str(usage_error)}")
+        payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
+        payment_thread.daemon = True
+        payment_thread.start()
 
         print("Payment processing completed successfully")
         print("===== PAYPAL PAYMENT PROCESSING COMPLETED =====\n")

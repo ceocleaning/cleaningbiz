@@ -159,7 +159,13 @@
                                             
                                             <tr class="border-top">
                                                 <td class="text-muted fw-bold">Total Charged:</td>
-                                                <td class="text-end fw-bold fs-5">${{ payment_details.final_amount }}</td>
+                                                <td class="text-end fw-bold fs-5">
+                                                    {% if payment_details.final_amount == 0 %}
+                                                        Free
+                                                    {% else %}
+                                                        ${{ payment_details.final_amount }}
+                                                    {% endif %}
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -226,6 +232,24 @@
     history.pushState(null, null, document.URL);
     window.addEventListener('popstate', function () {
         window.location.href = "{% url 'home' %}";
+    });
+    
+    // Clear any applied coupon from localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all keys from localStorage that start with 'appliedCoupon_'
+        const keys = Object.keys(localStorage);
+        const couponKeys = keys.filter(key => key.startsWith('appliedCoupon_'));
+        const pendingClearKeys = keys.filter(key => key.startsWith('couponPendingClear_'));
+        
+        // Clear all coupon data
+        couponKeys.forEach(key => {
+            localStorage.removeItem(key);
+        });
+        
+        // Clear all pending clear flags
+        pendingClearKeys.forEach(key => {
+            localStorage.removeItem(key);
+        });
     });
     
     // Create confetti effect

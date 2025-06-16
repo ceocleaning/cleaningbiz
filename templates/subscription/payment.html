@@ -90,7 +90,8 @@
                                 {% if business.square_card_id %}
                                 <!-- Payment button for saved card -->
                                 <div class="mt-4">
-                                    <button type="submit" class="btn btn-primary btn-lg w-100" id="payment-button">
+                                    <button type="submit" class="btn btn-success btn-lg w-100 pay-button" id="payment-button">
+
                                         Complete Payment
                                     </button>
                                     <div class="form-text mt-2 text-center">
@@ -141,6 +142,7 @@
                             </div>
                             
                             <!-- Coupon System -->
+                             {% if plan.price > 0 %}
                             <div class="coupon-section mb-4">
                                 <div class="mb-3">
                                     <label for="coupon-input" class="form-label fw-medium">Have a coupon?</label>
@@ -155,17 +157,28 @@
                                     <span id="discount-amount" class="text-success">-$0.00</span>
                                 </div>
                             </div>
+                            {% endif %}
                             
                             <!-- Total -->
                             <div class="total-section">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="fw-bold">Total:</span>
                                     {% if plan.billing_cycle == 'yearly' %}
-                                    <span id="total-price" class="" class="fw-bold total-price">${{ plan.price|floatformat:2|multiply:12|multiply:0.8 }}</span>
-                                    <input type="hidden" id="original-price" value="{{ plan.price|floatformat:2|multiply:12|multiply:0.8 }}">
+                                        {% with yearly_price=plan.price|floatformat:2|multiply:12|multiply:0.8 %}
+                                            {% if yearly_price == '0.00' %}
+                                                <span id="total-price" class="display-8 total-price badge bg-success">Free</span>
+                                            {% else %}
+                                                <span id="total-price" class="fw-bold total-price">${{ yearly_price }}</span>
+                                            {% endif %}
+                                            <input type="hidden" id="original-price" value="{{ yearly_price }}">
+                                        {% endwith %}
                                     {% else %}
-                                    <span id="total-price" class="fw-bold total-price">${{ plan.price }}</span>
-                                    <input type="hidden" id="original-price" value="{{ plan.price }}">
+                                        {% if plan.price == 0 %}
+                                            <span id="total-price" class="display-8 badge bg-success">Free</span>
+                                        {% else %}
+                                            <span id="total-price" class="fw-bold total-price">${{ plan.price }}</span>
+                                        {% endif %}
+                                        <input type="hidden" id="original-price" value="{{ plan.price }}">
                                     {% endif %}
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -221,7 +234,8 @@
 {% if environment == 'production' %}
 <script src="https://js.squareup.com/v2/paymentform"></script>
 {% else %}
-<script src="https://sandbox.js.squareup.com/v2/paymentform"></script>
+<script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+
 {% endif %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -233,9 +247,86 @@
         const discountAmount = document.getElementById('discount-amount');
         const totalPrice = document.getElementById('total-price');
         const originalPrice = document.getElementById('original-price');
+        const planId = `{{ plan.id }}`;
         const payButton = document.querySelector('.pay-button');
         
+        // Check if plan is free initially and update UI
+        const originalPriceValue = parseFloat(originalPrice.value);
+        if (originalPriceValue === 0) {
+            totalPrice.textContent = 'Free';
+            if (payButton) {
+                payButton.textContent = 'Subscribe for Free';
+                
+                // Add a hidden input to indicate this is a free subscription
+                let freeInput = document.createElement('input');
+                freeInput.type = 'hidden';
+                freeInput.id = 'is-free-subscription';
+                freeInput.name = 'is_free_subscription';
+                freeInput.value = 'true';
+                payButton.closest('form').appendChild(freeInput);
+            }
+        }
+        
         let appliedCoupon = null;
+        
+        // Function to save coupon state to localStorage
+        function saveCouponState(coupon) {
+            if (coupon) {
+                localStorage.setItem('appliedCoupon_' + planId, JSON.stringify(coupon));
+                // Update hidden input field with coupon code
+                document.getElementById('coupon_code').value = coupon.code;
+            } else {
+                localStorage.removeItem('appliedCoupon_' + planId);
+                // Clear hidden input field
+                document.getElementById('coupon_code').value = '';
+            }
+        }
+        
+        // Function to restore coupon state from localStorage
+        function restoreCouponState() {
+            const savedCoupon = localStorage.getItem('appliedCoupon_' + planId);
+            if (savedCoupon) {
+                try {
+                    return JSON.parse(savedCoupon);
+                } catch (e) {
+                    console.error('Error parsing saved coupon:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+        
+        // Check if we have a saved coupon and restore it
+        const savedCoupon = restoreCouponState();
+        if (savedCoupon) {
+            appliedCoupon = savedCoupon;
+            couponInput.value = savedCoupon.code;
+            couponInput.disabled = true;
+            applyButton.textContent = 'Applied';
+            applyButton.classList.remove('btn-outline-primary');
+            applyButton.classList.add('btn-success');
+            
+            // Add the remove button
+            const removeButton = document.createElement('button');
+            removeButton.className = 'btn btn-sm btn-outline-danger ms-2';
+            removeButton.textContent = 'Remove';
+            removeButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                removeCoupon();
+            });
+            
+            applyButton.parentNode.appendChild(removeButton);
+            
+            // Update the UI with the discount
+            updatePriceWithDiscount();
+            
+            // Show success message
+            couponFeedback.textContent = 'Coupon applied successfully!';
+            couponFeedback.classList.add('text-success');
+            
+            // Set the hidden input field value
+            document.getElementById('coupon_code').value = savedCoupon.code;
+        }
         
         applyButton.addEventListener('click', function() {
             const couponCode = couponInput.value.trim();
@@ -276,35 +367,43 @@
                     couponFeedback.classList.remove('text-danger');
                     couponFeedback.classList.add('text-success');
                     
-                    // Store the applied coupon
-                    appliedCoupon = {
-                        code: couponCode,
-                        discount_type: data.discount_type,
-                        discount_value: data.discount_value
-                    };
-                    
-                    // Update the UI
-                    // updatePriceWithDiscount();
-                    let total_price = document.getElementById('total-price');
-                    total_price.textContent = '$' + data.discounted_price;
-
-                    
-                    // Disable the input and button
-                    couponInput.disabled = true;
-                    applyButton.textContent = 'Applied';
-                    applyButton.classList.remove('btn-outline-primary');
-                    applyButton.classList.add('btn-success');
-                    
-                    // Add a remove button
-                    const removeButton = document.createElement('button');
-                    removeButton.className = 'btn btn-sm btn-outline-danger ms-2';
-                    removeButton.textContent = 'Remove';
-                    removeButton.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        removeCoupon();
-                    });
-                    
-                    applyButton.parentNode.appendChild(removeButton);
+                    // Coupon is valid
+                appliedCoupon = {
+                    code: couponCode,
+                    discount_type: data.discount_type,
+                    discount_value: data.discount_value,
+                    discount_amount: data.discount_amount,
+                    discounted_price: data.discounted_price
+                };
+                        
+                        // Save to localStorage and update hidden input
+                        saveCouponState(appliedCoupon);
+                        
+                        // Update discount amount hidden input
+                        document.getElementById('discount_amount').value = data.discount_amount;
+                
+                // Update price display
+                updatePriceWithDiscount();
+                
+                // Update UI
+                couponFeedback.textContent = data.message;
+                couponFeedback.classList.add('text-success');
+                couponInput.disabled = true;
+                applyButton.disabled = true;
+                applyButton.textContent = 'Applied';
+                applyButton.classList.remove('btn-outline-primary');
+                applyButton.classList.add('btn-success');
+                
+                // Add a remove button
+                const removeButton = document.createElement('button');
+                removeButton.className = 'btn btn-sm btn-outline-danger ms-2';
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    removeCoupon();
+                });
+                
+                applyButton.parentNode.appendChild(removeButton);
                 } else {
                     // Coupon is invalid
                     couponFeedback.textContent = data.message;
@@ -324,12 +423,34 @@
         function updatePriceWithDiscount() {
             if (!appliedCoupon) {
                 // Reset to original price
-                totalPrice.textContent = '$' + originalPrice.value;
-                discountRow.classList.add('d-none');
-                
-                // Update payment button text
-                if (payButton) {
-                    payButton.textContent = 'Pay $' + originalPrice.value;
+                const originalPriceValue = parseFloat(originalPrice.value);
+                if (originalPriceValue === 0) {
+                    totalPrice.textContent = 'Free';
+                    discountRow.classList.add('d-none');
+                    
+                    // Update payment button text for free subscription
+                    if (payButton) {
+                        payButton.textContent = 'Subscribe for Free';
+                        
+                        // Add a hidden input to indicate this is a free subscription
+                        let freeInput = document.getElementById('is-free-subscription');
+                        if (!freeInput) {
+                            freeInput = document.createElement('input');
+                            freeInput.type = 'hidden';
+                            freeInput.id = 'is-free-subscription';
+                            freeInput.name = 'is_free_subscription';
+                            freeInput.value = 'true';
+                            payButton.closest('form').appendChild(freeInput);
+                        }
+                    }
+                } else {
+                    totalPrice.textContent = '$' + originalPriceValue.toFixed(2);
+                    discountRow.classList.add('d-none');
+                    
+                    // Update payment button text
+                    if (payButton) {
+                        payButton.textContent = 'Pay $' + originalPriceValue.toFixed(2);
+                    }
                 }
                 return;
             }
@@ -354,17 +475,51 @@
             // Update UI
             discountAmount.textContent = '-$' + formattedDiscount;
             discountRow.classList.remove('d-none');
-            totalPrice.textContent = '$' + newTotal;
             
-            // Update payment button text
-            if (payButton) {
-                payButton.textContent = 'Pay $' + newTotal;
+            // Check if the total is zero
+            if (parseFloat(newTotal) === 0) {
+                totalPrice.textContent = 'Free';
+                
+                // Update payment button text for free subscription
+                if (payButton) {
+                    payButton.textContent = 'Subscribe for Free';
+                    
+                    // Add a hidden input to indicate this is a free subscription
+                    let freeInput = document.getElementById('is-free-subscription');
+                    if (!freeInput) {
+                        freeInput = document.createElement('input');
+                        freeInput.type = 'hidden';
+                        freeInput.id = 'is-free-subscription';
+                        freeInput.name = 'is_free_subscription';
+                        freeInput.value = 'true';
+                        payButton.closest('form').appendChild(freeInput);
+                    }
+                }
+            } else {
+                totalPrice.textContent = '$' + newTotal;
+                
+                // Update payment button text
+                if (payButton) {
+                    payButton.textContent = 'Pay $' + newTotal;
+                    
+                    // Remove the free subscription flag if it exists
+                    const freeInput = document.getElementById('is-free-subscription');
+                    if (freeInput) {
+                        freeInput.remove();
+                    }
+                }
             }
         }
         
         function removeCoupon() {
-            // Reset coupon state
             appliedCoupon = null;
+            
+            // Remove from localStorage
+            saveCouponState(null);
+            
+            // Clear the hidden input fields
+            document.getElementById('coupon_code').value = '';
+            document.getElementById('discount_amount').value = '0';
             
             // Reset UI
             couponInput.disabled = false;
@@ -384,8 +539,34 @@
                 removeButton.remove();
             }
             
-            // Reset price
-            updatePriceWithDiscount();
+            // Reset price display
+            discountRow.classList.add('d-none');
+            
+            // Reset total price to original price
+            const originalPriceValue = parseFloat(originalPrice.textContent.replace('$', ''));
+            totalPrice.textContent = '$' + originalPriceValue.toFixed(2);
+            
+            // Update payment button text
+            if (payButton) {
+                payButton.textContent = 'Pay $' + originalPriceValue.toFixed(2);
+            }
+            
+            // Remove free subscription flag if it exists
+            const freeInput = document.getElementById('is-free-subscription');
+            if (freeInput) {
+                freeInput.remove();
+            }
+        }
+        
+        // Add event listener to the payment form to clear coupon on successful submission
+        const paymentForm = document.getElementById('payment-form');
+        if (paymentForm) {
+            paymentForm.addEventListener('submit', function() {
+                // We'll clear the coupon from localStorage only after form submission
+                // The actual removal will happen on the success page or when redirected back
+                // This ensures we don't lose the coupon if there's a payment error
+                localStorage.setItem('couponPendingClear_' + planId, 'true');
+            });
         }
         
         // Initialize Square payment form

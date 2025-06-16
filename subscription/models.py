@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from accounts.models import Business
+from django.conf import settings
 import json
 from datetime import datetime, timedelta
 
@@ -19,6 +20,7 @@ class SubscriptionPlan(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     billing_cycle = models.CharField(max_length=10, choices=BILLING_CYCLE_CHOICES, default='monthly')
     is_active = models.BooleanField(default=True)
+    is_invite_only = models.BooleanField(default=False, help_text="If enabled, this plan will only be available to users with a direct link")
     
     # Usage metrics
     voice_minutes = models.IntegerField(default=0)
@@ -35,6 +37,10 @@ class SubscriptionPlan(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.billing_cycle})"
+    
+
+    def get_invite_plan_url(self):
+        return f"{settings.BASE_URL}/subscription/select-plan/{self.id}"
     
     def get_monthly_display_price(self):
         """Get the monthly display price for yearly plans with 20% discount applied."""

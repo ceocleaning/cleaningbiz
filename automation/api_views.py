@@ -18,35 +18,28 @@ import traceback
 
 # Function to get available cleaners for a business
 def get_cleaners_for_business(business, exclude_ids=None, assignment_check_null=False):
-    print(f"get_cleaners_for_business called for business {business.id} with exclude_ids={exclude_ids}, assignment_check_null={assignment_check_null}")
     
-    # First get all cleaners for this business
     all_cleaners = Cleaners.objects.filter(business=business)
-    print(f"Total cleaners for business: {all_cleaners.count()}")
     
-    # Apply active filter
     active_cleaners = all_cleaners.filter(isActive=True)
-    print(f"Active cleaners: {active_cleaners.count()}")
     
     # Apply available filter
     available_cleaners = active_cleaners.filter(isAvailable=True)
-    print(f"Available cleaners: {available_cleaners.count()}")
     
     cleaners = available_cleaners
     
     # Apply rating filter if needed
     if business.job_assignment == 'high_rated' and not assignment_check_null:
         high_rated_cleaners = cleaners.filter(rating__gte=4)
-        print(f"High-rated cleaners: {high_rated_cleaners.count()}")
+ 
         cleaners = high_rated_cleaners
     
     # Apply exclusion filter if needed
     if exclude_ids:
         filtered_cleaners = cleaners.exclude(id__in=exclude_ids)
-        print(f"Cleaners after exclusion: {filtered_cleaners.count()} (excluded IDs: {exclude_ids})")
+        
         cleaners = filtered_cleaners
-    else:
-        print(f"No cleaners excluded, final count: {cleaners.count()}")
+    
 
     return cleaners
 
@@ -311,7 +304,7 @@ def check_availability_retell(request, secretKey):
             return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
         time_to_check = datetime.fromisoformat(cleaningDateTime)
-        cleaners = get_cleaners_for_business(business)
+        cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         available_cleaners = []
 
         # Check if the requested time is available
@@ -364,7 +357,7 @@ def test_check_availability(request, secretKey):
         if not cleaningDateTime:
             return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
-        cleaners = get_cleaners_for_business(business)
+        cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         time_to_check = datetime.fromisoformat(cleaningDateTime)
         available_cleaners = []
 
@@ -409,7 +402,7 @@ def check_availability_for_booking(request):
         datetime_to_check = datetime.combine(date_obj, time_obj)
         
         current_business = request.user.business_set.first()
-        cleaners = get_cleaners_for_business(current_business)
+        cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
         
         # Check availability
         available_cleaners = []
@@ -473,7 +466,7 @@ def create_booking(request):
             }, status=400)
         
         # Find an available cleaner
-        cleaners = get_cleaners_for_business(business)
+        cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         available_cleaner = find_available_cleaner(cleaners, dt_with_utc)
         
         if not available_cleaner:
@@ -500,7 +493,6 @@ def create_booking(request):
         # Create booking object with mapped fields
         booking = Booking(
             business=business,
-            cleaner=available_cleaner,
             firstName=data.get('first_name', 'Not Set'),
             lastName=data.get('last_name', 'Not Set'),
             email=data.get('email', 'Not Set'),
@@ -617,11 +609,16 @@ def create_booking(request):
             booking.customAddons.set(bookingCustomAddons)
             booking.save()
         
+        # Import threading for background execution
+        import threading
+        
       
         
-        # Send booking data to integration if needed
+        # Send booking data to integration in background thread
         from .webhooks import send_booking_data
-        send_booking_data(booking)
+        webhook_thread = threading.Thread(target=send_booking_data, args=(booking,))
+        webhook_thread.daemon = True
+        webhook_thread.start()
         
         return JsonResponse({
             'success': True,

@@ -105,13 +105,20 @@
                                 <i class="fas fa-credit-card text-muted me-2"></i>
                                 {{ booking.get_paymentMethod_display|default:"Payment method not specified" }}
                             </p>
-                            <p class="mb-0">
+                            <p class="mb-2">
                                 <i class="fas fa-dollar-sign text-muted me-2"></i>
                                 <span class="h5 text-success mb-0">${{ booking.totalPrice }}</span>
                                 {% if booking.tax %}
                                 <small class="text-muted">(+${{ booking.tax }} tax)</small>
                                 {% endif %}
                             </p>
+                            {% if booking.cleaner %}
+                            <p class="mb-0">
+                                <i class="fas fa-hand-holding-usd text-muted me-2"></i>
+                                <span class="h6 text-primary mb-0">Cleaner Payout: ${{ booking.get_cleaner_payout|floatformat:2 }}</span>
+                                <small class="text-muted">({{ booking.business.cleaner_pay_percentage }}% of total)</small>
+                            </p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

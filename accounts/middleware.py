@@ -46,7 +46,7 @@ class BusinessApprovalMiddleware:
             try:
                 current_url = resolve(request.path_info).url_name
                 if not business.isApproved and current_url != 'approval_pending':
-                    messages.warning(request, 'Your business is pending approval. You will have access to all features once approved.')
+                    messages.warning(request, "You haven’t subscribed to a plan yet. Start with our Trial Plan to unlock full access to all features and get started right away!")
                     return redirect('accounts:approval_pending')
                 else:
                     pass
@@ -68,18 +68,31 @@ class CleanerAccessMiddleware:
         # Skip middleware if user is not authenticated or is admin
         if not request.user.is_authenticated or request.user.is_staff or request.user.is_superuser:
             return self.get_response(request)
-            
+        
         # Only process for cleaner users with 'Cleaner' group
         if not request.user.groups.filter(name='Cleaner').exists():
             return self.get_response(request)
+        
+        # IMPORTANT: Explicitly block register-business URL for cleaners
+        # This is a critical check that needs to happen early
+        if '/accounts/register-business/' in request.path:
+            messages.error(request, 'Cleaners cannot register a business. Access denied.')
+            print("BLOCKED: Cleaner attempted to access register-business page")
             
-      
+            # If user has a cleaner profile, redirect to their detail page
+            if hasattr(request.user, 'cleaner_profile') and hasattr(request.user.cleaner_profile, 'cleaner'):
+                cleaner_id = str(request.user.cleaner_profile.cleaner.id)
+                return redirect(f'/cleaners/{cleaner_id}/')
+            # Otherwise redirect to home
+            return redirect('/')
+        
+        # Handle users with Cleaner group but no cleaner_profile yet
         if not hasattr(request.user, 'cleaner_profile'):
-            # User has Cleaner group but no cleaner_profile yet
             # Don't redirect to register business page, this would be wrong for cleaners
             # Instead let them access public pages
             return self.get_response(request)
-            
+        
+        # At this point, we know the user is a cleaner with a profile
         cleaner_id = str(request.user.cleaner_profile.cleaner.id)
         
         # List of URLs that are always accessible
@@ -88,7 +101,7 @@ class CleanerAccessMiddleware:
             'change_password', 'LandingPage', 
             'PricingPage', 'FeaturesPage', 'AboutUsPage',
             'ContactUsPage', 'DocsPage', 'PrivacyPolicyPage', 
-            'TermsOfServicePage', 'sitemap', 'home',
+            'TermsOfServicePage', 'sitemap',
             'update_cleaner_profile',
             'update_cleaner_schedule', 'add_specific_date', 'delete_specific_date',
             'accept_open_job', 'reject_open_job'
@@ -97,9 +110,6 @@ class CleanerAccessMiddleware:
         # Public paths always accessible
         allowed_paths = [
             '/accounts/logout/',
-            '/accounts/profile/',
-            '/accounts/profile/change-password/',
-            '/home/',
             '/pricing/',
             '/features/',
             '/about-us/',
@@ -113,7 +123,7 @@ class CleanerAccessMiddleware:
             # If on exempt URL, allow access
             if current_url in exempt_urls:
                 return self.get_response(request)
-                
+            
             # Check for cleaner detail pages - cleaner can only see their own page
             if current_url in ['cleaner_detail', 'cleaner_monthly_schedule']:
                 url_cleaner_id = resolve(request.path_info).kwargs.get('cleaner_id')
@@ -122,9 +132,9 @@ class CleanerAccessMiddleware:
                 else:
                     return redirect(f'/cleaners/{cleaner_id}/')
         except Exception as e:
+            # Continue with path-based checks if URL resolution fails
             pass
-            pass
-            
+        
         # Check if in allowed paths
         for path in allowed_paths:
             if request.path.startswith(path):
@@ -134,23 +144,27 @@ class CleanerAccessMiddleware:
         if '/cleaners/' in request.path and cleaner_id in request.path:
             return self.get_response(request)
         
+        # Allow access to jobs
         if '/jobs/' in request.path:
             return self.get_response(request)
-            
+        
+        # Allow access to payouts
+        if '/booking/payouts/' in request.path:
+            return self.get_response(request)
+        
+        # Allow access to confirmation URLs
+        if '/confirm-arrival/' in request.path or '/confirm-completed/' in request.path:
+            return self.get_response(request)
+        
         # Special check for login-related pages
         if '/accounts/' in request.path and any(x in request.path for x in ['/login/', '/logout/']):
             return self.get_response(request)
-            
         # Not allowed - redirect to appropriate cleaner detail page
-        
-        # Determine correct URL namespace based on current path
+        # Always redirect to cleaner detail page for any unauthorized access
         try:
-            # Force use of a hardcoded URL based on app
-            if '/cleaners/' in request.path:
-                redirect_url = f'/cleaners/{cleaner_id}/'
-           
-                
-            return redirect(redirect_url)
+            # Use the cleaner detail page URL as the default redirect
+            cleaner_url = f'/cleaners/{cleaner_id}/'
+            return redirect(cleaner_url)
         except Exception as e:
             # Log the error
             pass

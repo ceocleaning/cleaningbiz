@@ -43,10 +43,24 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label for="is_active" class="form-label">Status</label>
+                    <label class="form-label">Status & Visibility</label>
                     <div class="form-check form-switch mt-2">
                         <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if plan.is_active %}checked{% endif %}>
                         <label class="form-check-label" for="is_active">Active</label>
+                    </div>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="is_invite_only" name="is_invite_only" {% if plan.is_invite_only %}checked{% endif %}>
+                        <label class="form-check-label" for="is_invite_only">Invite Only</label>
+                        <small class="d-block text-muted">Only users with direct link can subscribe</small>
+                    </div>
+                    
+                    <div id="invite-url-section" class="mt-3 p-2 bg-light rounded border" {% if not plan.is_invite_only %}style="display: none;"{% endif %}>
+                        <label class="form-label mb-1"><strong>Invite URL:</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm" id="invite-url" value="{{ plan.get_invite_plan_url }}" readonly>
+                            <button class="btn btn-sm btn-outline-primary" type="button" onclick="copyInviteUrl()"><i class="fas fa-copy"></i></button>
+                        </div>
+                        <small class="text-muted">Share this URL to give access to this plan</small>
                     </div>
                 </div>
             </div>
@@ -122,6 +136,42 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+        
+        // Initialize the invite URL section visibility based on checkbox
+        updateInviteUrlVisibility();
+        
+        // Add event listener to the invite-only checkbox
+        document.getElementById('is_invite_only').addEventListener('change', updateInviteUrlVisibility);
     });
+    
+    // Function to copy invite URL to clipboard
+    function copyInviteUrl() {
+        var inviteUrlInput = document.getElementById('invite-url');
+        inviteUrlInput.select();
+        document.execCommand('copy');
+        
+        // Show a temporary success message
+        var copyBtn = document.querySelector('#invite-url + button');
+        var originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        copyBtn.classList.remove('btn-outline-primary');
+        copyBtn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-primary');
+        }, 1500);
+    }
+    
+    // Function to update the invite URL section visibility
+    function updateInviteUrlVisibility() {
+        var isInviteOnly = document.getElementById('is_invite_only').checked;
+        var inviteUrlSection = document.getElementById('invite-url-section');
+        
+        if (inviteUrlSection) {
+            inviteUrlSection.style.display = isInviteOnly ? 'block' : 'none';
+        }
+    }
 </script>
 {% endblock %}

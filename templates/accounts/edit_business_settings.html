@@ -6,47 +6,61 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="mb-0">Edit Business Settings</h3>
+                    <h3 class="mb-0 row align-items-center px-2">
+                        <span class="bg-primary text-white p-2 rounded-5 d-flex align-items-center mx-3" style="width: 36px; height: 36px;"><i class="fa fa-pencil me-5"></i></span>
+                         Edit Business Settings</h3>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
                         
                         <h4 class="mb-3">Base Pricing</h4>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                        <div class="row border-bottom mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="bedroomPrice" class="form-label">Bedroom Price</label>
-                                <input type="number" step="0.01" class="form-control" id="bedroomPrice" name="bedroomPrice" value="{{ settings.bedroomPrice }}" required>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="bedroomPrice" name="bedroomPrice" value="{{ settings.bedroomPrice }}" required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="bathroomPrice" class="form-label">Bathroom Price</label>
-                                <input type="number" step="0.01" class="form-control" id="bathroomPrice" name="bathroomPrice" value="{{ settings.bathroomPrice }}" required>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="bathroomPrice" name="bathroomPrice" value="{{ settings.bathroomPrice }}" required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="depositFee" class="form-label">Deposit Fee</label>
-                                <input type="number" step="0.01" class="form-control" id="depositFee" name="depositFee" value="{{ settings.depositFee }}" required>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="depositFee" name="depositFee" value="{{ settings.depositFee }}" required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="taxPercent" class="form-label">Tax Percentage</label>
+                                <div class="input-group">
+                                <span class="input-group-text">$</span>
                                 <input type="number" step="0.01" class="form-control" id="taxPercent" name="taxPercent" value="{{ settings.taxPercent }}" required>
+                            </div>
                             </div>
                         </div>
 
                         <h4 class="mb-3">Square Feet Multipliers</h4>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                        <div class="row mb-3 border-bottom">
+                            <div class="col-md-3 mb-3">
                                 <label for="sqftMultiplierStandard" class="form-label">Standard</label>
                                 <input type="number" step="0.01" class="form-control" id="sqftMultiplierStandard" name="sqftMultiplierStandard" value="{{ settings.sqftMultiplierStandard }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="sqftMultiplierDeep" class="form-label">Deep Clean</label>
                                 <input type="number" step="0.01" class="form-control" id="sqftMultiplierDeep" name="sqftMultiplierDeep" value="{{ settings.sqftMultiplierDeep }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="sqftMultiplierMoveinout" class="form-label">Move In/Out</label>
                                 <input type="number" step="0.01" class="form-control" id="sqftMultiplierMoveinout" name="sqftMultiplierMoveinout" value="{{ settings.sqftMultiplierMoveinout }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="sqftMultiplierAirbnb" class="form-label">Airbnb</label>
                                 <input type="number" step="0.01" class="form-control" id="sqftMultiplierAirbnb" name="sqftMultiplierAirbnb" value="{{ settings.sqftMultiplierAirbnb }}" required>
                             </div>
@@ -54,57 +68,57 @@
 
                         <h4 class="mb-3">Add-on Prices</h4>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceDishes" class="form-label">Dishes</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceDishes" name="addonPriceDishes" value="{{ settings.addonPriceDishes }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceLaundry" class="form-label">Laundry</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceLaundry" name="addonPriceLaundry" value="{{ settings.addonPriceLaundry }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceWindow" class="form-label">Window Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceWindow" name="addonPriceWindow" value="{{ settings.addonPriceWindow }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPricePets" class="form-label">Pet Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPricePets" name="addonPricePets" value="{{ settings.addonPricePets }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceFridge" class="form-label">Fridge Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceFridge" name="addonPriceFridge" value="{{ settings.addonPriceFridge }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceOven" class="form-label">Oven Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceOven" name="addonPriceOven" value="{{ settings.addonPriceOven }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceBaseboard" class="form-label">Baseboard Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceBaseboard" name="addonPriceBaseboard" value="{{ settings.addonPriceBaseboard }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceBlinds" class="form-label">Blinds Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceBlinds" name="addonPriceBlinds" value="{{ settings.addonPriceBlinds }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceGreen" class="form-label">Green Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceGreen" name="addonPriceGreen" value="{{ settings.addonPriceGreen }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceCabinets" class="form-label">Cabinet Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceCabinets" name="addonPriceCabinets" value="{{ settings.addonPriceCabinets }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPricePatio" class="form-label">Patio Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPricePatio" name="addonPricePatio" value="{{ settings.addonPricePatio }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="addonPriceGarage" class="form-label">Garage Cleaning</label>
                                 <input type="number" step="0.01" class="form-control" id="addonPriceGarage" name="addonPriceGarage" value="{{ settings.addonPriceGarage }}" required>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="d-flex justify-content-end mt-4 gap-2">
                             <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>

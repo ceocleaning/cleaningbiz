@@ -9,7 +9,7 @@ from django.core.mail import send_mail, EmailMessage
 import logging
 from .models import Lead, Cleaners, CleanerAvailability
 from bookings.models import Booking
-from accounts.models import ApiCredential, Business
+from accounts.models import ApiCredential, Business, CleanerProfile
 from invoice.models import Invoice, Payment
 from subscription.models import UsageTracker
 from django.db import transaction
@@ -41,7 +41,7 @@ def LandingPage(request):
     else:
         is_eligible_for_trial = True
     
-    return render(request, 'LandingPage.html', {
+    return render(request, 'core/LandingPage.html', {
         'plans': plans,
         'trial_plan': trial_plan,
         'is_eligible_for_trial': is_eligible_for_trial
@@ -59,18 +59,18 @@ def PricingPage(request):
     # Get all active features
     features = Feature.objects.filter(is_active=True).order_by('display_name')
     
-    return render(request, 'PricingPage.html', {
+    return render(request, 'core/PricingPage.html', {
         'plans': plans,
         'trial_plan': trial_plan,
         'feature_list': features
     })
 
 def FeaturesPage(request):
-    return render(request, 'FeaturesPage.html')
+    return render(request, 'core/FeaturesPage.html')
 
 
 def AboutUsPage(request):
-    return render(request, 'AboutUsPage.html')
+    return render(request, 'core/AboutUsPage.html')
 
 def ContactUsPage(request):
     if request.method == 'POST':
@@ -145,10 +145,10 @@ def ContactUsPage(request):
                     'message': f'An error occurred: {str(e)}'
                 })
     
-    return render(request, 'ContactUsPage.html')
+    return render(request, 'core/ContactUsPage.html')
 
 def DocsPage(request):
-    return render(request, 'DocsPage.html')
+    return render(request, 'core/DocsPage.html')
 
 
 @login_required(login_url='accounts:login')
@@ -246,7 +246,7 @@ def home(request):
         'recent_activities': recent_activities,
     }
     
-    return render(request, 'home.html', context)    
+    return render(request, 'core/home.html', context)    
 
 
 
@@ -262,7 +262,7 @@ def all_leads(request):
     context = {
         'leads': leads
     }
-    return render(request, 'leads.html', context)
+    return render(request, 'leads/leads.html', context)
 
 
 @login_required
@@ -271,7 +271,7 @@ def lead_detail(request, leadId):
     context = {
         'lead': lead
     }
-    return render(request, 'lead_detail.html', context)
+    return render(request, 'leads/lead_detail.html', context)
 
 
 @login_required
@@ -359,7 +359,7 @@ def create_lead(request):
             messages.error(request, f'Error creating lead: {str(e)}')
             return redirect('create_lead')
     
-    return render(request, 'create_lead.html')
+    return render(request, 'leads/create_lead.html')
 
 
 @login_required
@@ -436,7 +436,7 @@ def update_lead(request, leadId):
         'proposed_date': lead.proposed_start_datetime.strftime('%Y-%m-%d') if lead.proposed_start_datetime else '',
         'proposed_time': lead.proposed_start_datetime.strftime('%H:%M') if lead.proposed_start_datetime else '',
     }
-    return render(request, 'update_lead.html', context)
+    return render(request, 'leads/update_lead.html', context)
 
 
 @login_required
@@ -457,10 +457,11 @@ def delete_lead(request, leadId):
 
 @login_required
 def cleaners_list(request):
+    # Only process for cleaner users with 'Cleaner' group
+    if request.user.groups.filter(name='Cleaner').exists():
+        return redirect('cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
+
     business = request.user.business_set.first()
-    if not business:
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
     cleaners = Cleaners.objects.filter(business=business)
     
     # Get availability for each cleaner
@@ -628,18 +629,17 @@ def cleaner_detail(request, cleaner_id):
     if current_booking:
         logger.info(f"Current booking found: {current_booking.id}")
     
-    # Get upcoming bookings (future bookings)
+    # Get upcoming bookings (future bookings that are not completed)
     upcoming_bookings = Booking.objects.filter(
-        cleaner=cleaner
+        cleaner=cleaner,
+        isCompleted=False
     ).filter(
         # Future dates OR current date with future start time
         models.Q(cleaningDate__gt=current_date) |
         models.Q(cleaningDate=current_date, startTime__gt=current_time)
     ).exclude(
         id=current_booking.id if current_booking else None
-    ).order_by('cleaningDate', 'startTime')[:5]
-    
-    logger.info(f"Found {upcoming_bookings.count()} upcoming bookings")
+    ).order_by('cleaningDate', 'startTime')
     
     # Get past bookings
     past_bookings = Booking.objects.filter(
@@ -647,38 +647,43 @@ def cleaner_detail(request, cleaner_id):
     ).filter(
         # Past dates OR current date with past end time
         models.Q(cleaningDate__lt=current_date) |
-        models.Q(cleaningDate=current_date, endTime__lte=current_time)
+        models.Q(cleaningDate=current_date, endTime__lte=current_time) |
+        models.Q(isCompleted=True)
     ).exclude(
         id=current_booking.id if current_booking else None
-    ).order_by('-cleaningDate', '-startTime')[:5]
+    ).order_by('-cleaningDate', '-startTime')
     
-    logger.info(f"Found {past_bookings.count()} past bookings")
     
-    # Calculate availability status
-    is_available = True
+    # Calculate availability status based on business hours and current bookings
     current_weekday = now.strftime('%A')
     
     # First check if there's a specific date entry for today
     today_specific_availability = specific_availabilities.filter(specific_date=current_date).first()
     
-    if today_specific_availability:
-        # Specific date entry takes precedence
-        is_available = (
-            not today_specific_availability.offDay and
-            today_specific_availability.startTime <= current_time <= today_specific_availability.endTime
-            and not current_booking
-        )
+    # Default to not available
+    is_available = False
+    
+    # Check if cleaner has a current booking - if so, they're not available
+    if current_booking:
+        is_available = False
     else:
-        # Fall back to weekly schedule
-        today_weekly_availability = weekly_availabilities_queryset.filter(dayOfWeek=current_weekday).first()
-        if today_weekly_availability:
-            is_available = (
-                not today_weekly_availability.offDay and
-                today_weekly_availability.startTime <= current_time <= today_weekly_availability.endTime
-                and not current_booking
-            )
+        # No current booking, check schedule availability
+        if today_specific_availability:
+            # Specific date entry takes precedence
+            if not today_specific_availability.offDay:
+                # Check if current time is within the specific date's working hours
+                is_available = (today_specific_availability.startTime <= current_time <= today_specific_availability.endTime)
         else:
-            is_available = False
+            # Fall back to weekly schedule
+            today_weekly_availability = weekly_availabilities_queryset.filter(dayOfWeek=current_weekday).first()
+            if today_weekly_availability and not today_weekly_availability.offDay:
+                # Check if current time is within the regular working hours
+                is_available = (today_weekly_availability.startTime <= current_time <= today_weekly_availability.endTime)
+    
+    # Update cleaner's availability status in the database if it has changed
+    if cleaner.isAvailable != is_available:
+        cleaner.isAvailable = is_available
+        cleaner.save(update_fields=['isAvailable'])
     
     # Get open jobs for this cleaner
     from automation.models import OpenJob
@@ -706,6 +711,7 @@ def cleaner_detail(request, cleaner_id):
         'prev_week_monday': prev_week_monday,
         'next_week_monday': next_week_monday,
         'title': f'Cleaner - {cleaner.name}',
+        'cleaner_profile': cleaner_profile,
     }
     
     return render(request, 'automation/cleaner_detail.html', context)
@@ -1503,7 +1509,7 @@ def book_demo(request):
             Phone: {phone}
             Company: {company or 'Not provided'}
             
-            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} UTC
             """
             
             # Send email using EmailMessage for more control
@@ -1656,6 +1662,7 @@ def open_jobs(request, cleaner_id=None):
 
 @login_required
 @require_POST
+@transaction.atomic
 def accept_open_job(request, job_id):
     """
     Accept an open job for a cleaner
@@ -1675,7 +1682,7 @@ def accept_open_job(request, job_id):
     
     # Assign the booking to the cleaner
     booking = job.booking
-    booking.cleaner = job.cleaner
+    booking.cleaner = job.cleaner.cleaner
     booking.save()
 
     other_job_objs = OpenJob.objects.filter(booking=booking).exclude(id=job.id)
@@ -1752,3 +1759,115 @@ def reject_open_job(request, job_id):
     # Add success message
     messages.success(request, f'Job {job.id} has been rejected successfully!')
     return redirect('cleaner_open_jobs', cleaner_id=job.cleaner.cleaner.id)
+
+
+
+def confirm_arrival(request, booking_id):
+    print(request.user)
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    from .emails import send_arrival_confirmation_email
+    # Send Email to Client
+    send_arrival_confirmation_email(booking)
+    
+    # Update Booking Status
+    booking.arrival_confirmed_at = timezone.now()
+    booking.save()
+    
+    # Add success message
+    messages.success(request, 'Arrival confirmed successfully!')
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+def confirm_completed(request, booking_id):
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    # Update Booking Status
+    booking.completed_at = timezone.now()
+    booking.isCompleted = True
+    booking.save()
+    
+    # Add booking to existing pending payout or create a new one
+    try:
+        from accounts.models import CleanerProfile
+        from bookings.payout_models import CleanerPayout
+        import uuid
+        
+        # Get the cleaner profile
+        cleaner_profile = CleanerProfile.objects.get(cleaner=booking.cleaner)
+        
+        # Calculate payout amount
+        amount = booking.get_cleaner_payout()
+        
+        # Check if there's an existing pending payout for this cleaner
+        existing_payout = CleanerPayout.objects.filter(
+            business=booking.business,
+            cleaner_profile=cleaner_profile,
+            status='pending'
+        ).first()
+        
+        if existing_payout:
+            # Add this booking to the existing payout
+            existing_payout.bookings.add(booking)
+            
+            # Update the payout amount
+            existing_payout.amount += amount
+            existing_payout.save()
+            
+            # Add success message about adding to existing payout
+            messages.success(request, f"Booking marked as completed and added to existing payout #{existing_payout.payout_id}. New payout total: ${existing_payout.amount:.2f}")
+        else:
+            # Create a new payout
+            payout = CleanerPayout.objects.create(
+                business=booking.business,
+                cleaner_profile=cleaner_profile,
+                amount=amount,
+                status='pending',
+                notes=f"Automatically created when booking {booking.bookingId} was completed"
+            )
+            
+            # Add this booking to the payout
+            payout.bookings.add(booking)
+            
+            # Add success message about new payout
+            messages.success(request, f"Booking marked as completed and new payout of ${amount:.2f} has been created.")
+    except Exception as e:
+        logger.error(f"Error creating automatic payout: {str(e)}")
+        messages.success(request, 'Booking marked as completed successfully!')
+        messages.warning(request, 'There was an issue creating the automatic payout. Please contact your administrator.')
+    
+    # Send completion notification emails to cleaner, client, and business owner
+    from .emails import send_completion_notification_emails
+    send_completion_notification_emails(booking)
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+
+def update_cleaner_login(request, cleaner_id):
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id)
+    cleaner_profile = CleanerProfile.objects.get(cleaner=cleaner)
+    
+    if request.method == 'POST':
+        try:
+            username = request.POST.get('username')
+            print(f"Username: {username}")
+            cleaner_profile.user.username = username
+            # Update password if provided
+            password1 = request.POST.get('password1')
+            password2 = request.POST.get('password2')
+            if password1 and password2 and password1 == password2:
+                cleaner_profile.user.set_password(password1)
+            
+            cleaner_profile.user.save()
+            cleaner_profile.save()
+            messages.success(request, 'Login details updated successfully.')
+            return redirect('cleaner_detail', cleaner_id=cleaner.id)
+        except Exception as e:
+            messages.error(request, f'Error updating login details: {str(e)}')
+    
+    messages.error(request, 'Invalid request method.')
+    return redirect('cleaner_detail', cleaner_id=cleaner.id)

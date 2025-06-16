@@ -156,6 +156,7 @@ def agent_config_delete(request):
 @login_required
 def agent_config_unified(request):
     """Unified view to create or edit agent configuration on a single page"""
+    from .utils import default_prompt
     business = Business.objects.filter(user=request.user).first()
     
     if not business:
@@ -170,6 +171,12 @@ def agent_config_unified(request):
             'agent_name': 'Sarah'
         }
     )
+
+    if created:
+        prompt = default_prompt(business)
+        if prompt != None:
+            config.prompt = prompt
+            config.save()
     
     if request.method == 'POST':
         # Update configuration
