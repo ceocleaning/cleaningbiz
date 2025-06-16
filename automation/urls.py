@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook
 from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
+from . import twilio_views
 
 
 
@@ -77,4 +78,13 @@ urlpatterns = [
     # Booking status updates
     path('<str:booking_id>/confirm-arrival/', views.confirm_arrival, name='confirm_arrival'),
     path('<str:booking_id>/confirm-completed/', views.confirm_completed, name='confirm_completed'),
+
+    # Twilio URLs
+    path('twilio/phone-numbers/', twilio_views.twilio_phone_numbers, name='twilio_phone_numbers'),
+    path('twilio/phone-numbers/search/', twilio_views.search_twilio_numbers, name='search_twilio_numbers'),
+    path('twilio/phone-numbers/purchase/', twilio_views.purchase_twilio_number, name='purchase_twilio_number'),
+    path('twilio/phone-numbers/get/', twilio_views.get_twilio_numbers, name='get_twilio_numbers'),
+    path('twilio/phone-numbers/update-webhook/', twilio_views.update_twilio_webhook, name='update_twilio_webhook'),
+    path('twilio/phone-numbers/set-active/', twilio_views.set_active_number, name='set_active_number'),
+
 ]

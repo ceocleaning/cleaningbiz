@@ -177,6 +177,44 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Rollbar Configuration
+ROLLBAR = {
+    'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
+    'environment': 'production',
+    'root': os.path.dirname(os.path.realpath(__file__)),
+    'patch_debugview': False,  # Explicitly disable patch_debugview
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'rollbar': {
+            'class': 'rollbar.handler.RollbarHandler',
+            'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
+            'environment': 'production',
+            'level': 'ERROR',
+        },
+        'fallback': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['rollbar'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'fallback': {
+            'handlers': ['fallback'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
