@@ -62,7 +62,7 @@
                             </div>
                         </div>
                         <h1 class="display-5 fw-bold mb-2">Subscription Successful!</h1>
-                        <p class="lead mb-0">Thank you for subscribing to our {{ subscription.plan.name }} plan.</p>
+                        <p class="lead mb-0">Thank you for subscribing to our {{ subscription.plan.display_name }} plan.</p>
                     </div>
                     
                     <!-- Subscription details -->
@@ -79,7 +79,7 @@
                                             <i class="fas fa-tag text-primary me-3 fa-lg"></i>
                                             <div>
                                                 <div class="text-muted small">Plan</div>
-                                                <div class="fw-bold">{{ subscription.plan.name }}</div>
+                                                <div class="fw-bold">{{ subscription.plan.display_name }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -88,7 +88,7 @@
                                             <i class="fas fa-dollar-sign text-primary me-3 fa-lg"></i>
                                             <div>
                                                 <div class="text-muted small">Price</div>
-                                                <div class="fw-bold">${{ subscription.plan.price }}/{{ subscription.plan.billing_cycle }}</div>
+                                                <div class="fw-bold">${{ subscription.plan.get_display_price }}/{{ subscription.plan.billing_cycle }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -142,8 +142,20 @@
                                         <tbody>
                                             <tr>
                                                 <td class="text-muted">Base Price:</td>
-                                                <td class="text-end fw-bold">${{ payment_details.original_price }}</td>
+                                                <td class="text-end fw-bold">${{ subscription.plan.get_display_price }}</td>
                                             </tr>
+                                            
+                                            {% if payment_details.setup_fee_applied %}
+                                            <tr>
+                                                <td class="text-muted">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-tools text-primary me-2"></i>
+                                                        Setup Fee (One-time):
+                                                    </div>
+                                                </td>
+                                                <td class="text-end fw-bold">${{ payment_details.setup_fee_amount }}</td>
+                                            </tr>
+                                            {% endif %}
                                             
                                             {% if payment_details.coupon_applied %}
                                             <tr>

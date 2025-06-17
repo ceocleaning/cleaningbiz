@@ -32,9 +32,9 @@ def LandingPage(request):
     from subscription.models import SubscriptionPlan, BusinessSubscription
     
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True, name__in=['Starter Plan', 'Professional Plan', 'Enterprise Plan']).order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True).exclude(plan_tier='trial').order_by('price')
 
-    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name__icontains='Trial').first()
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial').first()
     if request.user.is_authenticated:
         business = request.user.business_set.first()
         is_eligible_for_trial = BusinessSubscription.objects.filter(plan=trial_plan, business=business).exists()
@@ -52,9 +52,9 @@ def PricingPage(request):
     from subscription.models import SubscriptionPlan, Feature
    
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True, name__in=['Starter Plan', 'Professional Plan', 'Enterprise Plan']).order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True).exclude(plan_tier='trial').order_by('price')
 
-    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name__icontains='Trial').first()
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial').first()
     
     # Get all active features
     features = Feature.objects.filter(is_active=True).order_by('display_name')
