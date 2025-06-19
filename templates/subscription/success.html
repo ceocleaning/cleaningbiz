@@ -40,6 +40,32 @@
         top: -10px;
         z-index: 1;
     }
+    
+    .demo-button {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .demo-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .demo-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: 0.5s;
+    }
+    
+    .demo-button:hover::before {
+        left: 100%;
+    }
 </style>
 {% endblock %}
 
@@ -194,6 +220,29 @@
                             </a>
                         </div>
                         
+                        {% if is_first_purchase %}
+                        <!-- Personalized Demo Button for First-time Subscribers -->
+                        <div class="card bg-gradient-primary border-0 shadow-lg mb-5 overflow-hidden">
+                            <div class="card-body p-4 text-center">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-8 text-lg-start mb-4 mb-lg-0">
+                                        <h4 class="text-white mb-2"><i class="fas fa-star me-2"></i>New User Exclusive: Get a Personalized Demo</h4>
+                                        <p class="text-white-50 mb-0">As a new subscriber, schedule a free personalized demo with our experts to maximize your subscription benefits.</p>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <button 
+                                            class="btn btn-light btn-lg w-100 demo-button shadow-sm" 
+                                            data-cal-link="kashif.m/cleaningbiz-demo" 
+                                            data-cal-namespace="cleaningbiz-demo" 
+                                            data-cal-config='{"layout":"month_view","theme":"auto"}'>
+                                            <i class="fas fa-calendar-check me-2"></i>Schedule Your Demo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <h4 class="text-center mb-4">What's Next?</h4>
                         <div class="row g-4">
                             <div class="col-md-4">
@@ -239,6 +288,14 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Cal element-click embed code begins -->
+<script type="text/javascript">
+  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+  Cal("init", "cleaningbiz-demo", {origin:"https://cal.com"});
+  Cal.ns["cleaningbiz-demo"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+</script>
+<!-- Cal element-click embed code ends -->
+
 <script>
     // Prevent going back to the payment page
     history.pushState(null, null, document.URL);

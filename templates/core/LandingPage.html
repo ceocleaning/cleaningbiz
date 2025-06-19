@@ -732,18 +732,39 @@
     </div>
 </section>
 
+{% if user.is_authenticated and business_subscriptions_count < 3 %}
+<!-- Floating Demo Button -->
+<div class="position-fixed" style="bottom: 30px; right: 30px; z-index: 1000;">
+    <button 
+        class="btn btn-lg btn-accent shadow-lg d-flex align-items-center justify-content-center" 
+        data-cal-link="kashif.m/cleaningbiz-demo"
+        data-cal-namespace="cleaningbiz-demo"
+        data-cal-config='{"layout":"month_view","theme":"auto"}'
+        onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.3)';"
+        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.25)';"
+    >
+        <i class="fas fa-calendar-check me-2"></i>
+        <span>Book Your Demo</span>
+    </button>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://chatbot-widget-khaki.vercel.app/chatbot-widget.js"></script>
+<!-- Conditionally load either Cal.com or chatbot widget -->
+{% if user.is_authenticated and business_subscriptions_count < 3 %}
+<!-- Cal element-click embed code begins -->
+<script type="text/javascript">
+  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+Cal("init", "cleaningbiz-demo", {origin:"https://cal.com"});
+  
+  Cal.ns["cleaningbiz-demo"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+</script>
+{% endif %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-
-        ChatbotWidget.init({
-            businessId: 'BUS-1143',
-            botName: 'Sarah',
-            initialMessage: 'Hello I am Sarah, how can I help you today?',
-        });
+        
 
         // Initialize toggle functionality
         const pricingToggle = document.getElementById('pricing-toggle');

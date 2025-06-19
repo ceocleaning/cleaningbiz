@@ -752,6 +752,8 @@ def subscription_success(request, subscription_id, transaction_id):
     """Show subscription success page after successful payment."""
     business = request.user.business_set.first()
     subscription = get_object_or_404(BusinessSubscription, id=subscription_id, business=business)
+
+    is_first_purchase = BusinessSubscription.objects.filter(business=business).exists() == 1
     
     # Get billing history record for this transaction to show payment details
     billing_record = BillingHistory.objects.filter(
@@ -786,12 +788,19 @@ def subscription_success(request, subscription_id, transaction_id):
             payment_details['setup_fee_applied'] = billing_record.details.get('setup_fee_applied', False)
             payment_details['setup_fee_amount'] = billing_record.details.get('setup_fee_amount', 0)
     
+    # Count active business subscriptions
+    business_subscriptions_count = BusinessSubscription.objects.filter(
+        business=business,
+        is_active=True
+    ).count()
+    
     context = {
         'subscription': subscription,
         'transaction_id': transaction_id,
         'payment_details': payment_details,
         'active_page': 'subscription',
-        'title': 'Subscription Successful'
+        'title': 'Subscription Successful',
+        'business_subscriptions_count': business_subscriptions_count
     }
     
     return render(request, 'subscription/success.html', context)
