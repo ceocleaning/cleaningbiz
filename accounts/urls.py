@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import thumbtack_views
 
 app_name = 'accounts'
 
@@ -65,4 +66,11 @@ urlpatterns = [
     path('cleaners/<int:cleaner_id>/edit-account/', views.edit_cleaner_account, name='edit_cleaner_account'),
     path('cleaners/reset-password/', views.reset_cleaner_password, name='reset_cleaner_password'),
     path('cleaners/change-password/', views.cleaner_change_password, name='cleaner_change_password'),
+
+
+    # Thumbtack URLs
+    path('thumbtack/connect/', thumbtack_views.thumbtack_connect, name='thumbtack_connect'),
+    path('thumbtack/disconnect/', thumbtack_views.thumbtack_disconnect, name='thumbtack_disconnect'),
+    path('thumbtack/callback/', thumbtack_views.thumbtack_callback_prod, name='thumbtack_callback_prod'),
+    path('thumbtack/callback/staging/', thumbtack_views.thumbtack_callback_dev, name='thumbtack_callback_dev'),
 ]

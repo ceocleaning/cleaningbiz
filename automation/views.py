@@ -1555,11 +1555,11 @@ def book_demo(request):
 
 
 def PrivacyPolicyPage(request):
-    return render(request, 'PrivacyPolicy_fixed.html')
+    return render(request, 'core/PrivacyPolicy_fixed.html')
 
 
 def TermsOfServicePage(request):
-    return render(request, 'TermsOfService.html')
+    return render(request, 'core/TermsOfService.html')
 
 @require_http_methods(["POST"])
 @login_required

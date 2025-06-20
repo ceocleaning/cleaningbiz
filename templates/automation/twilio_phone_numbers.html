@@ -1,0 +1,585 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Twilio Phone Numbers{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Twilio Phone Numbers</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Twilio Phone Numbers</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Twilio Credentials Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Twilio Credentials</h4>
+                    
+                    {% if not api_credential.twilioAccountSid or not api_credential.twilioAuthToken %}
+                    <div class="alert alert-warning">
+                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                        You need to configure your Twilio credentials before you can manage phone numbers.
+                        <a href="{% url 'accounts:profile' %}" class="alert-link">Configure Twilio Credentials</a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="mdi mdi-check-circle-outline me-2"></i>
+                        Twilio credentials are configured.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Account SID:</strong> 
+                                {% if api_credential.twilioAccountSid %}
+                                    {{ api_credential.twilioAccountSid|slice:":6" }}...{{ api_credential.twilioAccountSid|slice:"-4:" }}
+                                {% else %}
+                                    Not configured
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Active SMS Number:</strong> 
+                                {% if api_credential.twilioSmsNumber %}
+                                    {{ api_credential.twilioSmsNumber }}
+                                {% else %}
+                                    Not configured
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search for Phone Numbers Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Search for SMS-Capable Phone Numbers</h4>
+                    
+                    <form id="search-form" class="mb-4">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label for="country" class="form-label">Country</label>
+                                <select class="form-select" id="country" name="country">
+                                    <option value="US">United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="area-code" class="form-label">Area Code</label>
+                                <input type="text" class="form-control" id="area-code" name="area_code" placeholder="e.g. 415">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary" id="search-button">
+                                    <i class="mdi mdi-magnify me-1"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="search-results" class="mt-3" style="display: none;">
+                        <h5>Available SMS-Capable Phone Numbers</h5>
+                        <div class="table-responsive">
+                            <table class="table table-centered table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Phone Number</th>
+                                        <th>Location</th>
+                                        <th>Capabilities</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-table">
+                                    <!-- Results will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="search-loading" class="text-center mt-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Searching for available numbers...</p>
+                    </div>
+                    
+                    <div id="search-error" class="alert alert-danger mt-3" style="display: none;">
+                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                        <span id="error-message"></span>
+                        <div id="auth-error-help" class="mt-2" style="display: none;">
+                            <p><strong>Authentication Error?</strong> Please check your Twilio credentials:</p>
+                            <ol>
+                                <li>Verify your Account SID starts with "AC"</li>
+                                <li>Ensure your Auth Token is correct</li>
+                                <li>Check that your Twilio account is active</li>
+                            </ol>
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-primary">Update Credentials</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Phone Numbers Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Your Phone Numbers</h4>
+                    
+                    <div id="phone-numbers-loading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading your phone numbers...</p>
+                    </div>
+                    
+                    <div id="phone-numbers-container" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-centered table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Phone Number</th>
+                                        <th>Friendly Name</th>
+                                        <th>Webhook URL</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="phone-numbers-table">
+                                    <!-- Phone numbers will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="no-numbers" class="alert alert-info mt-3" style="display: none;">
+                            <i class="mdi mdi-information-outline me-2"></i>
+                            You don't have any phone numbers yet. Search and purchase a number above.
+                        </div>
+                    </div>
+                    
+                    <div id="phone-numbers-error" class="alert alert-danger mt-3" style="display: none;">
+                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                        <span id="phone-numbers-error-message"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Confirmation Modal -->
+<div class="modal fade" id="purchase-modal" tabindex="-1" aria-labelledby="purchase-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="purchase-modal-label">Purchase Phone Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to purchase this phone number?</p>
+                <p><strong>Phone Number:</strong> <span id="purchase-phone-number"></span></p>
+                <p class="text-muted">Note: This will incur charges on your Twilio account.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-purchase">Purchase</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Webhook Modal -->
+<div class="modal fade" id="webhook-modal" tabindex="-1" aria-labelledby="webhook-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="webhook-modal-label">Update Webhook URL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to update the webhook URL for this phone number?</p>
+                <p><strong>Phone Number:</strong> <span id="webhook-phone-number"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-webhook">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Load existing phone numbers
+        loadPhoneNumbers();
+        
+        // Search form submission
+        $('#search-form').on('submit', function(e) {
+            e.preventDefault();
+            searchPhoneNumbers();
+        });
+        
+        // Purchase button click
+        $(document).on('click', '.purchase-btn', function() {
+            const phoneNumber = $(this).data('phone');
+            $('#purchase-phone-number').text(phoneNumber);
+            $('#purchase-modal').modal('show');
+        });
+        
+        // Confirm purchase
+        $('#confirm-purchase').on('click', function() {
+            const phoneNumber = $('#purchase-phone-number').text();
+            purchasePhoneNumber(phoneNumber);
+        });
+        
+        // Update webhook button click
+        $(document).on('click', '.update-webhook-btn', function() {
+            const phoneSid = $(this).data('sid');
+            const phoneNumber = $(this).data('phone');
+            $('#webhook-phone-number').text(phoneNumber);
+            $('#webhook-modal').modal('show');
+            $('#confirm-webhook').data('sid', phoneSid);
+        });
+        
+        // Confirm webhook update
+        $('#confirm-webhook').on('click', function() {
+            const phoneSid = $(this).data('sid');
+            updateWebhook(phoneSid);
+        });
+        
+        // Set active number button click
+        $(document).on('click', '.set-active-btn', function() {
+            const phoneNumber = $(this).data('phone');
+            setActiveNumber(phoneNumber);
+        });
+    });
+    
+    function searchPhoneNumbers() {
+        const country = $('#country').val();
+        const areaCode = $('#area-code').val();
+        
+        // Show loading indicator
+        $('#search-results').hide();
+        $('#search-error').hide();
+        $('#search-loading').show();
+        
+        // Make API request
+        $.ajax({
+            url: '{% url "search_twilio_numbers" %}',
+            type: 'GET',
+            data: {
+                country: country,
+                area_code: areaCode
+            },
+            success: function(response) {
+                $('#search-loading').hide();
+                
+                // Clear previous results
+                $('#results-table').empty();
+                
+                // Check if any numbers were found
+                if (response.numbers && response.numbers.length > 0) {
+                    // Populate results table
+                    response.numbers.forEach(function(number) {
+                        const location = [
+                            number.locality,
+                            number.region,
+                            number.postal_code
+                        ].filter(Boolean).join(', ');
+                        
+                        const capabilities = [];
+                        if (number.capabilities.sms) capabilities.push('SMS');
+                        if (number.capabilities.voice) capabilities.push('Voice');
+                        if (number.capabilities.mms) capabilities.push('MMS');
+                        
+                        $('#results-table').append(`
+                            <tr>
+                                <td>${number.friendly_name}</td>
+                                <td>${location || 'N/A'}</td>
+                                <td>${capabilities.join(', ') || 'None'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary purchase-btn" data-phone="${number.phone_number}">
+                                        <i class="mdi mdi-cart-plus me-1"></i> Purchase
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                    
+                    $('#search-results').show();
+                } else {
+                    // No numbers found
+                    $('#results-table').append(`
+                        <tr>
+                            <td colspan="4" class="text-center">No SMS-capable phone numbers found matching your criteria. Try a different area code.</td>
+                        </tr>
+                    `);
+                    $('#search-results').show();
+                }
+            },
+            error: function(xhr) {
+                $('#search-loading').hide();
+                
+                // Show error message
+                let errorMessage = 'An error occurred while searching for phone numbers.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                
+                $('#error-message').text(errorMessage);
+                $('#search-error').show();
+                
+                // Show authentication help if it's an auth error
+                if (errorMessage.includes('Authentication Error') || errorMessage.includes('invalid username')) {
+                    $('#auth-error-help').show();
+                } else {
+                    $('#auth-error-help').hide();
+                }
+            }
+        });
+    }
+    
+    function purchasePhoneNumber(phoneNumber) {
+        // Close the modal
+        $('#purchase-modal').modal('hide');
+        
+        // Show loading indicator
+        const loadingHtml = `
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Purchasing phone number...</p>
+                </div>
+            </div>
+        `;
+        
+        Swal.fire({
+            title: 'Purchasing...',
+            html: loadingHtml,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                // Make API request
+                $.ajax({
+                    url: '{% url "purchase_twilio_number" %}',
+                    type: 'POST',
+                    data: JSON.stringify({ phone_number: phoneNumber }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: `Phone number ${response.phone_number} has been purchased successfully.`,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Reload phone numbers
+                            loadPhoneNumbers();
+                        });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred while purchasing the phone number.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    function loadPhoneNumbers() {
+        // Show loading indicator
+        $('#phone-numbers-container').hide();
+        $('#phone-numbers-error').hide();
+        $('#phone-numbers-loading').show();
+        
+        // Make API request
+        $.ajax({
+            url: '{% url "get_twilio_numbers" %}',
+            type: 'GET',
+            success: function(response) {
+                $('#phone-numbers-loading').hide();
+                
+                // Clear previous results
+                $('#phone-numbers-table').empty();
+                
+                // Check if any numbers were found
+                if (response.numbers && response.numbers.length > 0) {
+                    // Populate results table
+                    response.numbers.forEach(function(number) {
+                        const isActive = number.is_active;
+                        const statusBadge = isActive 
+                            ? '<span class="badge bg-success">Active</span>'
+                            : '<span class="badge bg-secondary">Inactive</span>';
+                        
+                        const setActiveBtn = isActive
+                            ? ''
+                            : `<button class="btn btn-sm btn-success set-active-btn" data-phone="${number.phone_number}">
+                                <i class="mdi mdi-check-circle-outline me-1"></i> Set Active
+                               </button>`;
+                        
+                        $('#phone-numbers-table').append(`
+                            <tr>
+                                <td>${number.phone_number}</td>
+                                <td>${number.friendly_name}</td>
+                                <td>
+                                    <small class="text-muted">${number.sms_url || 'Not set'}</small>
+                                </td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info update-webhook-btn me-1" data-sid="${number.sid}" data-phone="${number.phone_number}">
+                                        <i class="mdi mdi-link-variant me-1"></i> Update Webhook
+                                    </button>
+                                    ${setActiveBtn}
+                                </td>
+                            </tr>
+                        `);
+                    });
+                    
+                    $('#no-numbers').hide();
+                    $('#phone-numbers-container').show();
+                } else {
+                    // No numbers found
+                    $('#no-numbers').show();
+                    $('#phone-numbers-container').show();
+                }
+            },
+            error: function(xhr) {
+                $('#phone-numbers-loading').hide();
+                
+                // Show error message
+                let errorMessage = 'An error occurred while loading your phone numbers.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                
+                $('#phone-numbers-error-message').text(errorMessage);
+                $('#phone-numbers-error').show();
+            }
+        });
+    }
+    
+    function updateWebhook(phoneSid) {
+        // Close the modal
+        $('#webhook-modal').modal('hide');
+        
+        // Show loading indicator
+        Swal.fire({
+            title: 'Updating...',
+            text: 'Updating webhook URL...',
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+                
+                // Make API request
+                $.ajax({
+                    url: '{% url "update_twilio_webhook" %}',
+                    type: 'POST',
+                    data: JSON.stringify({ phone_sid: phoneSid }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: `Webhook URL for ${response.phone_number} has been updated successfully.`,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Reload phone numbers
+                            loadPhoneNumbers();
+                        });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred while updating the webhook URL.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    function setActiveNumber(phoneNumber) {
+        // Show loading indicator
+        Swal.fire({
+            title: 'Setting active number...',
+            text: 'Please wait...',
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+                
+                // Make API request
+                $.ajax({
+                    url: '{% url "set_active_number" %}',
+                    type: 'POST',
+                    data: JSON.stringify({ phone_number: phoneNumber }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: `${phoneNumber} has been set as your active SMS number.`,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Reload phone numbers
+                            loadPhoneNumbers();
+                        });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred while setting the active number.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,246 @@
+
+/* ShadCN Inspired Black & White Theme */
+body {
+    background-color: #ffffff; /* White background */
+    color: #1a1a1a; /* Dark gray text */
+}
+
+.container-fluid {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+/* Page Title */
+.page-title-box .page-title {
+    color: #111827; /* Tailwind gray-900 */
+    font-weight: 600;
+}
+
+.breadcrumb-item a {
+    color: #4b5563; /* Tailwind gray-600 */
+}
+.breadcrumb-item.active {
+    color: #111827; /* Tailwind gray-900 */
+}
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+
+/* Cards */
+.card {
+    background-color: #ffffff; /* White card background */
+    border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+    border-radius: 0.5rem; /* Rounded corners */
+    box-shadow: none; /* No shadow */
+    margin-bottom: 1.5rem;
+}
+
+.card .card-body {
+    padding: 1.5rem;
+}
+
+.card .header-title {
+    color: #111827; /* Tailwind gray-900 */
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.375rem; /* Slightly rounded corners */
+    border-width: 1px;
+    padding: 1rem;
+}
+
+.alert-warning {
+    background-color: #fef3c7; /* Tailwind yellow-100 */
+    border-color: #fde68a; /* Tailwind yellow-200 */
+    color: #92400e; /* Tailwind yellow-800 */
+}
+.alert-warning .alert-link {
+    color: #78350f; /* Tailwind yellow-900 */
+    font-weight: 500;
+}
+.alert-warning .mdi::before {
+    color: #92400e;
+}
+
+.alert-success {
+    background-color: #d1fae5; /* Tailwind green-100 */
+    border-color: #a7f3d0; /* Tailwind green-200 */
+    color: #065f46; /* Tailwind green-800 */
+}
+.alert-success .mdi::before {
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fee2e2; /* Tailwind red-100 */
+    border-color: #fecaca; /* Tailwind red-200 */
+    color: #991b1b; /* Tailwind red-800 */
+}
+.alert-danger .mdi::before {
+    color: #991b1b;
+}
+.alert-danger .btn-outline-primary {
+    color: #991b1b; 
+    border-color: #991b1b;
+}
+.alert-danger .btn-outline-primary:hover {
+    background-color: #991b1b;
+    color: #ffffff;
+}
+
+.alert-info {
+    background-color: #e0f2fe; /* Tailwind sky-100 */
+    border-color: #bae6fd; /* Tailwind sky-200 */
+    color: #075985; /* Tailwind sky-800 */
+}
+.alert-info .mdi::before {
+    color: #075985;
+}
+
+/* Forms */
+.form-label {
+    color: #374151; /* Tailwind gray-700 */
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db; /* Tailwind gray-300 */
+    border-radius: 0.375rem;
+    color: #111827; /* Tailwind gray-900 */
+    padding: 0.625rem 0.75rem; /* Adjusted padding */
+}
+.form-control:focus, .form-select:focus {
+    border-color: #2563eb; /* Tailwind blue-600 */
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25); /* Focus ring */
+    background-color: #ffffff;
+    color: #111827;
+}
+.form-control::placeholder {
+    color: #9ca3af; /* Tailwind gray-400 */
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    padding: 0.625rem 1rem; /* Adjusted padding */
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #1f2937; /* Tailwind gray-800 */
+    border-color: #1f2937;
+    color: #ffffff;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #111827; /* Tailwind gray-900 */
+    border-color: #111827;
+    color: #ffffff;
+}
+.btn-primary .mdi::before {
+    color: #ffffff;
+}
+
+.btn-secondary {
+    background-color: #e5e7eb; /* Tailwind gray-200 */
+    border-color: #e5e7eb;
+    color: #1f2937; /* Tailwind gray-800 */
+}
+.btn-secondary:hover, .btn-secondary:focus {
+    background-color: #d1d5db; /* Tailwind gray-300 */
+    border-color: #d1d5db;
+    color: #111827; /* Tailwind gray-900 */
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Tables */
+.table {
+    border-color: #e5e7eb; /* Tailwind gray-200 */
+}
+.table thead th {
+    background-color: #f9fafb; /* Tailwind gray-50 */
+    color: #374151; /* Tailwind gray-700 */
+    border-bottom-width: 1px;
+    border-color: #e5e7eb;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+.table tbody td {
+    border-color: #e5e7eb;
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+.table-hover tbody tr:hover {
+    background-color: #f3f4f6; /* Tailwind gray-100 */
+}
+.table-centered th, .table-centered td {
+    text-align: center;
+}
+
+/* Modals */
+.modal-content {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+}
+.modal-header {
+    background-color: #f9fafb; /* Tailwind gray-50 */
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+}
+.modal-header .modal-title {
+    color: #111827; /* Tailwind gray-900 */
+    font-weight: 600;
+}
+.btn-close {
+    filter: invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(80%);
+}
+.modal-body {
+    padding: 1.5rem;
+    color: #374151; /* Tailwind gray-700 */
+}
+.modal-body strong {
+    color: #111827;
+}
+.modal-footer {
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+}
+
+/* Spinners */
+.spinner-border {
+    color: #1f2937; /* Tailwind gray-800 */
+}
+
+/* Specific adjustments for Twilio page elements */
+#search-results h5 {
+    color: #111827;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+#auth-error-help ol {
+    padding-left: 1.25rem;
+}
+#auth-error-help p strong {
+    color: #991b1b;
+}
+
+/* Utility classes (if needed, or adjust existing ones) */
+.text-muted {
+    color: #6b7280 !important; /* Tailwind gray-500 */
+}

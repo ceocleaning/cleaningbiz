@@ -714,6 +714,7 @@
                                         <h6 class="mb-0">SMS Agent Number</h6>
                                         <span class="badge bg-primary ms-2 rounded-pill">SMS</span>
                                     </div>
+                                    {% if credentials.twilioSmsNumber %}
                                     <div class="input-group">
                                         <input type="text" 
                                                class="form-control api-key-input" 
@@ -730,6 +731,11 @@
                                             <i class="fas fa-clipboard"></i>
                                         </button>
                                     </div>
+                                    {% else %}
+                                    <a href="{% url 'twilio_phone_numbers' %}" class="btn btn-sm btn-outline-primary key-action-btn">
+                                        <i class="fas fa-plus"></i> Add SMS Agent Number
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </div>
 
