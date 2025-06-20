@@ -48,8 +48,7 @@ def LandingPage(request):
             
             # Count active business subscriptions
             business_subscriptions_count = BusinessSubscription.objects.filter(
-                business=business,
-                is_active=True
+                business=business
             ).count()
     
     return render(request, 'core/LandingPage.html', {
@@ -249,8 +248,7 @@ def home(request):
     # Count active business subscriptions
     from subscription.models import BusinessSubscription
     business_subscriptions_count = BusinessSubscription.objects.filter(
-        business=business,
-        is_active=True
+        business=business
     ).count()
     
     context = {

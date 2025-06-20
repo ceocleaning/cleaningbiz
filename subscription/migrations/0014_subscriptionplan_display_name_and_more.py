@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subscriptionplan',
             name='slug',
-            field=models.SlugField(default='Test', help_text='Unique identifier for the plan, used in URLs and code', max_length=100, unique=True),
+            field=models.SlugField(help_text='Unique identifier for the plan, used in URLs and code', max_length=100, null=True, blank=True),
             preserve_default=False,
         ),
         migrations.AddField(

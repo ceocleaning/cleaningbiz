@@ -35,7 +35,7 @@ class SubscriptionPlan(models.Model):
         ('custom', 'Custom'),
     ]
 
-    slug = models.SlugField(max_length=100, blank=True, null=True,help_text="Unique identifier for the plan, used in URLs and code")
+ 
     name = models.CharField(max_length=100, help_text="Internal name for the plan", default="")
     display_name = models.CharField(max_length=100, help_text="Name displayed to users")
     description = models.TextField(blank=True, null=True)
@@ -62,16 +62,11 @@ class SubscriptionPlan(models.Model):
     
     def __str__(self):
         return f"{self.display_name} ({self.get_billing_cycle_display()})"
-        
-    def save(self, *args, **kwargs):
-        """Auto-generate slug if not provided"""
-        if not self.slug:
-            self.slug = slugify(self.name) + "-" + str(self.billing_cycle)
-        super().save(*args, **kwargs)
+
     
 
     def get_invite_plan_url(self):
-        return f"{settings.BASE_URL}/subscription/select-plan/{self.slug}"
+        return f"{settings.BASE_URL}/subscription/select-plan/{self.id}"
     
     def get_monthly_display_price(self):
         """Get the monthly display price for yearly plans with 20% discount applied."""

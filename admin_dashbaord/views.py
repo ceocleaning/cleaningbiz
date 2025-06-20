@@ -76,7 +76,6 @@ def add_plan(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         display_name = request.POST.get('display_name')
-        slug = request.POST.get('slug')
         price = request.POST.get('price')
         billing_cycle = request.POST.get('billing_cycle')
         plan_tier = request.POST.get('plan_tier')
@@ -94,7 +93,6 @@ def add_plan(request):
         plan = SubscriptionPlan.objects.create(
             name=name,
             display_name=display_name,
-            slug=slug if slug else None,  # Allow auto-generation if empty
             price=price,
             billing_cycle=billing_cycle,
             plan_tier=plan_tier,
@@ -161,7 +159,6 @@ def edit_plan(request):
         
         plan.name = request.POST.get('name')
         plan.display_name = request.POST.get('display_name')
-        plan.slug = request.POST.get('slug') if request.POST.get('slug') else plan.slug
         plan.price = request.POST.get('price')
         plan.billing_cycle = request.POST.get('billing_cycle')
         plan.plan_tier = request.POST.get('plan_tier')
