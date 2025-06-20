@@ -5,7 +5,7 @@
 {% block extra_head %}
 <style>
     .success-animation {
-        animation: scale-in 0.5s ease-out;
+        animation: scale-in 0.3s ease-out;
     }
     
     @keyframes scale-in {
@@ -14,14 +14,27 @@
         100% { transform: scale(1); opacity: 1; }
     }
     
-    .pulse {
-        animation: pulse 2s infinite;
+    .checkmark-circle {
+        animation: checkmark-circle 2s infinite;
     }
     
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
+    @keyframes checkmark-circle {
+        0% { transform: scale(1) rotate(0deg); }
+        25% { transform: scale(1.1) rotate(5deg); }
+        50% { transform: scale(1.05) rotate(0deg); }
+        75% { transform: scale(1.1) rotate(-5deg); }
+        100% { transform: scale(1) rotate(0deg); }
+    }
+    
+    .checkmark {
+        animation: checkmark-bounce 1.5s ease-in-out infinite;
+        color: white;
+        text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+    
+    @keyframes checkmark-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
     }
     
     .feature-item {
@@ -34,11 +47,12 @@
     
     .confetti {
         position: absolute;
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         background-color: #fd7e14;
         top: -10px;
         z-index: 1;
+        will-change: transform; /* Performance optimization */
     }
     
     .demo-button {
@@ -76,12 +90,14 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-body p-0">
+                <div class="card-body p-0" style="visibility: visible;">
                     <!-- Success header with gradient -->
                     <div class="bg-gradient-primary text-white text-center p-5" style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
                         <div class="success-animation mb-4">
                             <div class="position-relative d-inline-block">
-                                <i class="fas fa-check-circle pulse" style="font-size: 6rem;"></i>
+                                <div class="checkmark-circle" style="background-color: #28a745; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 20px rgba(255,255,255,0.5);">
+                                    <i class="fas fa-check checkmark" style="font-size: 4rem;"></i>
+                                </div>
                                 <div class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
                                     <i class="fas fa-bolt"></i>
                                 </div>
@@ -321,20 +337,32 @@
         });
     });
     
-    // Create confetti effect
+    // Create confetti effect with improved performance
     document.addEventListener('DOMContentLoaded', function() {
+        // Show subscription content immediately
+        document.querySelector('.card-body').style.visibility = 'visible';
+        
         const confettiContainer = document.getElementById('confetti-container');
         const colors = ['#0d6efd', '#0dcaf0', '#198754', '#ffc107', '#fd7e14'];
         
-        for (let i = 0; i < 100; i++) {
-            createConfetti(confettiContainer, colors);
+        // Reduce number of confetti elements for better performance
+        const confettiCount = 50;
+        
+        // Pre-create all confetti elements at once
+        const fragment = document.createDocumentFragment();
+        
+        for (let i = 0; i < confettiCount; i++) {
+            createConfetti(fragment, colors);
         }
+        
+        // Add all confetti to DOM at once (more efficient)
+        confettiContainer.appendChild(fragment);
         
         function createConfetti(container, colors) {
             const confetti = document.createElement('div');
             confetti.classList.add('confetti');
             
-            const size = Math.random() * 10 + 5;
+            const size = Math.random() * 8 + 5;
             const color = colors[Math.floor(Math.random() * colors.length)];
             
             confetti.style.width = `${size}px`;
@@ -342,33 +370,34 @@
             confetti.style.backgroundColor = color;
             confetti.style.left = `${Math.random() * 100}%`;
             
-            // Animation
-            confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+            // Shorter animation duration (1-2s instead of 2-5s)
+            const duration = Math.random() * 1 + 1;
+            confetti.style.animation = `fall ${duration}s linear forwards`;
             confetti.style.opacity = Math.random();
             confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
             
-            // Add keyframes dynamically
-            const styleSheet = document.styleSheets[0];
-            const keyframes = `@keyframes fall {
-                0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-                100% { transform: translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg); opacity: 0; }
-            }`;
-            
-            try {
-                styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-            } catch (e) {
-                // Fallback for browsers that don't support insertRule
-                const style = document.createElement('style');
-                style.innerHTML = keyframes;
-                document.head.appendChild(style);
-            }
-            
             container.appendChild(confetti);
             
-            // Remove confetti after animation ends
+            // Remove confetti after animation ends - shorter timeout
             setTimeout(() => {
                 confetti.remove();
-            }, 5000);
+            }, duration * 1000 + 100); // Just slightly longer than the animation
+        }
+        
+        // Add keyframes once for all confetti
+        const styleSheet = document.styleSheets[0];
+        const keyframes = `@keyframes fall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(${Math.min(window.innerHeight, 600)}px) rotate(${Math.random() * 360}deg); opacity: 0; }
+        }`;
+        
+        try {
+            styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+        } catch (e) {
+            // Fallback for browsers that don't support insertRule
+            const style = document.createElement('style');
+            style.innerHTML = keyframes;
+            document.head.appendChild(style);
         }
     });
 </script>

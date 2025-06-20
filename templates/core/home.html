@@ -11,6 +11,7 @@
             <h1 class="mb-1"><i class="fas fa-robot text-primary me-2"></i>Welcome to CleaningBiz AI</h1>
             <p class="text-muted mb-0">Your automated cleaning business management platform</p>
         </div>
+        {% if business_subscriptions_count < 3 %}
         <div>
             <button class="btn btn-primary btn-lg shadow-sm" 
                 data-cal-link="kashif.m/cleaningbiz-demo" 
@@ -19,6 +20,7 @@
                 <i class="fas fa-calendar-check me-2"></i>Schedule Your Demo
             </button>
         </div>
+        {% endif %}
     </div>
 
     <!-- Key Metrics -->
