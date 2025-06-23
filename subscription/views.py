@@ -42,7 +42,7 @@ def subscription_management(request):
     # Get all available plans (exclude invite-only plans)
     plans = SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).order_by('price').exclude(name='Trial Plan')
 
-    trial_plan = SubscriptionPlan.objects.filter(is_active=True, name='Trial Plan').first()
+    trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial', is_invite_only=False).first()
     is_eligible_for_trial = False if BusinessSubscription.objects.filter(business=business, plan=trial_plan).exists() else True
     
     # Get usage summary for current month
