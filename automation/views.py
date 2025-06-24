@@ -1613,7 +1613,7 @@ def sitemap(request):
     """
     Render the sitemap page showing all available routes in the application.
     """
-    return render(request, 'sitemap.html')
+    return render(request, 'core/sitemap.html')
 
 
 @login_required
