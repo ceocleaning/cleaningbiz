@@ -16,7 +16,7 @@ db.sqlite3
 # Ignore Environment Variables
 .env
 .cursor
-coding-rules.mdc
+
 # Ignore logs and temp files
 *.log
 *.out
@@ -32,7 +32,7 @@ Thumbs.db
 # Ignore Static & Media Files (Optional)
 staticfiles/
 media/
-Doc.md
+
 
 cert.crt
 cert.key

@@ -767,6 +767,34 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if '/accounts/thumbtack/' in request.path %}active{% endif %}" 
+                            href="#" id="thumbtackDropdown" role="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-plug me-1"></i>
+                            Thumbtack
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="thumbtackDropdown">
+                            <li>
+                                <a class="dropdown-item {% if '/accounts/thumbtack/profile/' in request.path %}active{% endif %}" 
+                                    href="{% url 'accounts:thumbtack_profile' %}">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>Thumbtack Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if '/accounts/thumbtack/dashboard/' in request.path %}active{% endif %}" 
+                                    href="{% url 'accounts:thumbtack_dashboard' %}">
+                                    <i class="fas fa-tachometer-alt me-2 text-success"></i>Thumbtack Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if '/accounts/thumbtack/connect/' in request.path %}active{% endif %}" 
+                                    href="{% url 'accounts:thumbtack_connect' %}">
+                                    <i class="fas fa-link me-2 text-info"></i>Connect Account
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" 
                             href="#" id="aiDropdown" role="button" 
                             data-bs-toggle="dropdown" aria-expanded="false">
