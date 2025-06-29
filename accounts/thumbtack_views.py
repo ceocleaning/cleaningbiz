@@ -41,16 +41,6 @@ def thumbtack_connect(request):
     # Define the scopes needed for your application
     # Thumbtack-specific scopes for accessing business data and leads
     scopes = [
-        'demand::businesses/search.read',
-        'demand::businesses/reviews.read',
-        'demand::categories.read',
-        'demand::categories/request-form.read',
-        'demand::keywords.read',
-        'demand::orders.read',
-        'demand::orders.write',
-        'demand::orders/availability.read',
-        'demand::users.write',
-        'demand::requests.write'
     ]
     
     # Build the authorization URL
