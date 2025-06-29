@@ -20,7 +20,7 @@ THUMBTACK_AUDIENCE = 'urn:partner-api'
 # These should be stored in environment variables or settings
 THUMBTACK_CLIENT_ID = getattr(settings, 'THUMBTACK_CLIENT_ID', '')
 THUMBTACK_CLIENT_SECRET = getattr(settings, 'THUMBTACK_CLIENT_SECRET', '')
-THUMBTACK_REDIRECT_URI_PROD = getattr(settings, 'THUMBTACK_REDIRECT_URI_PROD', '')
+THUMBTACK_REDIRECT_URI_PROD = getattr(settings, 'THUMBTACK_REDIRECT_URI', '')
 
 # Store states temporarily to prevent CSRF attacks
 # In production, use a more persistent storage like database or cache
