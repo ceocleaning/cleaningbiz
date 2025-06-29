@@ -303,8 +303,8 @@ class CleanerProfile(models.Model):
 class ThumbtackProfile(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='thumbtack_profile')
     thumbtack_business_id = models.CharField(max_length=255, null=True, blank=True)
-    access_token = models.CharField(max_length=255, null=True, blank=True)
-    refresh_token = models.CharField(max_length=255, null=True, blank=True)
+    access_token = models.CharField(max_length=2000, null=True, blank=True)
+    refresh_token = models.CharField(max_length=2000, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(null=True, blank=True)

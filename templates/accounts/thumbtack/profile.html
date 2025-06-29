@@ -43,6 +43,24 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Thumbtack User Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>User ID:</strong> {{ user_id|default:"Not available" }}</p>
+                                        <p><strong>Email:</strong> {{ email|default:"Not available" }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Name:</strong> {{ first_name|default:"" }} {{ last_name|default:"" }}</p>
+                                        <p><strong>Phone:</strong> {{ phone_number|default:"Not available" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="card mb-4">
                             <div class="card-header bg-light">

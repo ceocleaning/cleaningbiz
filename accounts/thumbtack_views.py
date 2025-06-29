@@ -256,6 +256,66 @@ def get_thumbtack_client_credentials_token():
         }
         
         
+def get_thumbtack_user_info(access_token):
+    """
+    Fetch user information from Thumbtack API using the access token
+    """
+    # API endpoint for getting user information
+    user_info_url = 'https://api.thumbtack.com/api/v4/users/self'
+    
+    # Set up headers with the access token
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    try:
+        # Make the request to the Thumbtack API
+        response = requests.get(user_info_url, headers=headers)
+        print(response)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+
+            return response.json()
+        else:
+            print(f"Error fetching user info: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"Exception fetching user info: {str(e)}")
+        return None
+
+
+def get_thumbtack_business_info(access_token):
+    """
+    Fetch business information from Thumbtack API using the access token
+    """
+    # API endpoint for getting business information
+    business_info_url = 'https://api.thumbtack.com/api/v4/business'
+    
+    # Set up headers with the access token
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    try:
+        # Make the request to the Thumbtack API
+        response = requests.get(business_info_url, headers=headers)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error fetching business info: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"Exception fetching business info: {str(e)}")
+        return None
+
+
 @login_required
 def thumbtack_profile(request):
     """
@@ -266,6 +326,8 @@ def thumbtack_profile(request):
     # Get the user's business and Thumbtack profile
     business = request.user.business_set.first()
     thumbtack_profile = None
+    thumbtack_user_info = None
+    thumbtack_business_info = None
     thumbtack_business_name = None
     thumbtack_business_image = None
     thumbtack_stats = {
@@ -279,10 +341,30 @@ def thumbtack_profile(request):
         
         # If the user has a Thumbtack profile, fetch additional information
         if thumbtack_profile and thumbtack_profile.access_token:
-            # This would typically involve making API calls to Thumbtack
-            # For now, we'll just use placeholder data
+            # Fetch user information from Thumbtack API
+            thumbtack_user_info = get_thumbtack_user_info(thumbtack_profile.access_token)
+            
+            # Fetch business information from Thumbtack API
+            thumbtack_business_info = get_thumbtack_business_info(thumbtack_profile.access_token)
+            
+            # Use the fetched information or fallback to placeholder data
+            if thumbtack_user_info:
+                # Extract user information
+                user_id = thumbtack_user_info.get('userID')
+                email = thumbtack_user_info.get('email')
+                first_name = thumbtack_user_info.get('firstName')
+                last_name = thumbtack_user_info.get('lastName')
+                phone_number = thumbtack_user_info.get('phoneNumber')
+            else:
+                # Use placeholder data if API call failed
+                user_id = 'N/A'
+                email = request.user.email
+                first_name = request.user.first_name
+                last_name = request.user.last_name
+                phone_number = 'N/A'
+            
+            # Set business name from API or fallback to local data
             thumbtack_business_name = business.businessName
-            # thumbtack_business_image would come from Thumbtack API
             
             # Placeholder stats - in a real implementation, fetch from Thumbtack API
             thumbtack_stats = {
@@ -291,11 +373,25 @@ def thumbtack_profile(request):
                 'conversion_rate': '41.7%'  # placeholder
             }
     
+    # Initialize user information variables with default values
+    user_id = 'N/A'
+    email = request.user.email
+    first_name = request.user.first_name
+    last_name = request.user.last_name
+    phone_number = 'N/A'
+    
+    # Return the profile template with context data
     return render(request, 'accounts/thumbtack/profile.html', {
         'thumbtack_profile': thumbtack_profile,
         'thumbtack_business_name': thumbtack_business_name,
         'thumbtack_business_image': thumbtack_business_image,
-        'thumbtack_stats': thumbtack_stats
+        'thumbtack_stats': thumbtack_stats,
+        # Pass user information to the template
+        'user_id': user_id,
+        'email': email,
+        'first_name': first_name,
+        'last_name': last_name,
+        'phone_number': phone_number
     })
 
 
