@@ -40,7 +40,7 @@ def thumbtack_connect(request):
     
     # Define the scopes needed for your application
     # Adjust these based on your specific requirements
-    scopes = ['openid', 'profile', 'email']
+    scopes = ['profile', 'email']
     
     # Build the authorization URL
     auth_url = f"{THUMBTACK_AUTH_URL}?" + \
