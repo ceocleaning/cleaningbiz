@@ -121,6 +121,7 @@ MIDDLEWARE = [
     'accounts.middleware.TimezoneMiddleware',  # Add timezone middleware
     
     'subscription.middleware.SubscriptionRequiredMiddleware',  # Add subscription middleware
+    'saas.middleware.MaintenanceModeMiddleware',  # Add maintenance mode middleware
 ]
 
 ROOT_URLCONF = 'leadsAutomation.urls'
@@ -236,6 +237,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configure WhiteNoise for static file serving in production
 if not DEBUG:

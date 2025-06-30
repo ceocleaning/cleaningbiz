@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import saas_views
 
 app_name = 'admin_dashboard'
 
@@ -48,6 +49,13 @@ urlpatterns = [
     path('subscriptions/', views.subscriptions, name='subscriptions'),
     path('subscriptions/assign/', views.assign_subscription, name='assign_subscription'),
     path('subscriptions/admin-cancel-plan/', views.admin_cancel_plan, name='admin_cancel_plan'),
+    
+    # Platform Settings
+    path('platform-settings/', saas_views.platform_settings, name='platform_settings'),
+    
+    # Support Tickets
+    path('support-tickets/', saas_views.support_tickets, name='support_tickets'),
+    path('support-tickets/<int:ticket_id>/', saas_views.ticket_detail, name='ticket_detail'),
     path('subscriptions/admin-change-plan/', views.admin_change_plan, name='admin_change_plan'),
     
     # User Management

@@ -964,8 +964,25 @@
 
     <!-- Footer -->
     <footer>
-        <div class="container text-center">
-            <p class="mb-0">&copy; {% now "Y" %} CleaningBiz AI. All rights reserved.</p>
+        <div class="container">
+            <div class="row py-3">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; {% now "Y" %} CleaningBiz AI. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    {% if user.is_authenticated %}
+                    <p class="mb-0">
+                        <a href="{% url 'saas:submit_ticket' %}" class="text-decoration-none">
+                            <i class="fas fa-life-ring me-1"></i> Report an Issue
+                        </a>
+                        <span class="mx-2">|</span>
+                        <a href="{% url 'saas:my_tickets' %}" class="text-decoration-none">
+                            <i class="fas fa-ticket-alt me-1"></i> My Support Tickets
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </footer>
 

@@ -546,6 +546,18 @@
                         <span>Recent Activities</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'platform-settings' in request.path %}active{% endif %}" href="{% url 'admin_dashboard:platform_settings' %}">
+                        <i class="fas fa-fw fa-cogs"></i>
+                        <span>Platform Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'support-tickets' in request.path %}active{% endif %}" href="{% url 'admin_dashboard:support_tickets' %}">
+                        <i class="fas fa-fw fa-ticket-alt"></i>
+                        <span>Support Tickets</span>
+                    </a>
+                </li>
             </ul>
             
             <hr class="sidebar-divider d-none d-md-block">
