@@ -669,65 +669,41 @@
     
     <div class="container position-relative py-5">
         <div class="row align-items-center">
-            <div class="col-lg-7 mb-5 mb-lg-0" data-aos="fade-right">
+            <div class="col-lg-12 mb-5 mb-lg-0 col-md-12 col-sm-12 mx-auto" data-aos="fade-right">
                 <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your <span class="text-gradient-light">Cleaning Business?</span></h2>
                 <p class="lead text-white opacity-80 mb-4">Join hundreds of cleaning businesses already using our AI Voice Agent to handle calls, schedule appointments, and grow their revenue.</p>
                 
               
            
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="{% url 'accounts:signup' %}" class="btn btn-accent btn-lg shadow-glow px-4">
-                        <i class="fas fa-rocket me-2"></i>Get Started Now
+                    {% if request.user.is_authenticated %}
+                    <a href="{% url 'home' %}" class="btn btn-accent btn-lg shadow-glow px-4">
+                        <i class="fas fa-rocket me-2"></i>Dashboard
                     </a>
+                    {% else %}
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg shadow-glow px-4">
+                            <i class="fas fa-rocket me-2"></i>Get Started Now
+                        </a>
+                        <a class="btn btn-accent" data-cal-link="kashif.m/cleaningbiz-demo" data-cal-namespace="cleaningbiz-demo" data-cal-config='{"layout":"month_view","theme":"auto"}'>
+                            <i class="fas fa-calendar-check me-2"></i>Schedule Demo
+                        </a>
+                    </div>
+                        {% endif %}
                 </div>
              
-                
+                {% if is_eligible_for_trial %}
+                {% if trial_plan %}
                 <div class="mt-4 d-flex align-items-center">
                     <span class="badge bg-light text-dark rounded-pill px-3 py-2">
-                        <i class="fas fa-calendar-alt me-1"></i>30-Day Trial for $30
+                        <i class="fas fa-calendar-alt me-1"></i>{{ trial_plan.trial_days }}-Day Trial for ${{ trial_plan.trial_price }}
                     </span>
                 </div>
+                {% endif %}
+                {% endif %}
             </div>
             
-            <div class="col-lg-5" data-aos="fade-left">
-                <div class="card bg-dark-surface rounded-xxl p-4 border-gradient shadow-lg">
-                    <div class="card-body">
-                        <h3 class="h4 fw-bold text-white mb-4">Schedule a Free Demo</h3>
-                        <form id="demoForm" method="POST" action="{% url 'book_demo' %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="name" class="form-label text-dark-text-secondary">Full Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="name" name="name" placeholder="Your name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label text-dark-text-secondary">Email Address <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="email" name="email" placeholder="your@email.com" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="phone" class="form-label text-dark-text-secondary">Phone Number <span class="text-danger">*</span></label>
-                                <input type="tel" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="phone" name="phone" placeholder="(123) 456-7890" required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="company" class="form-label text-dark-text-secondary">Company Name</label>
-                                <input type="text" class="form-control form-control-lg bg-dark-surface-2 border-0 text-white" id="company" name="company" placeholder="Your company">
-                            </div>
-                            <button type="submit" id="demoSubmitBtn" class="btn btn-primary btn-lg w-100 shadow-glow">
-                                <i class="fas fa-calendar-check me-2"></i>Book Your Demo
-                            </button>
-                            
-                            <!-- Success Message -->
-                            <div id="demoSuccess" class="alert alert-success mt-3" style="display: none;">
-                                <i class="fas fa-check-circle me-2"></i> Your demo request has been sent successfully! We'll contact you shortly.
-                            </div>
-                            
-                            <!-- Error Message -->
-                            <div id="demoError" class="alert alert-danger mt-3" style="display: none;">
-                                <i class="fas fa-exclamation-circle me-2"></i> <span id="demoErrorMsg">There was an error. Please try again.</span>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+          
         </div>
     </div>
 </section>
