@@ -190,15 +190,16 @@ def edit_plan(request):
         # and synchronize features
         other_billing_cycle = 'yearly' if plan.billing_cycle == 'monthly' else 'monthly'
         try:
-            corresponding_plan = SubscriptionPlan.objects.get(
+            corresponding_plans = SubscriptionPlan.objects.filter(
                 plan_tier=plan.plan_tier,
                 billing_cycle=other_billing_cycle
             )
             
             # Synchronize features
-            corresponding_plan.features.clear()
-            for feature in plan.features.all():
-                corresponding_plan.features.add(feature)
+            for corresponding_plan in corresponding_plans:
+                corresponding_plan.features.clear()
+                for feature in plan.features.all():
+                    corresponding_plan.features.add(feature)
             
             messages.success(
                 request, 
