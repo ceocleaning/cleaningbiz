@@ -32,7 +32,7 @@ def LandingPage(request):
     from subscription.models import SubscriptionPlan, BusinessSubscription
     
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).exclude(plan_tier='trial').order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).exclude(plan_tier='trial').order_by('price')
 
     trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial').first()
     
@@ -63,7 +63,7 @@ def PricingPage(request):
     from subscription.models import SubscriptionPlan, Feature
    
     # Get all plans
-    plans = SubscriptionPlan.objects.filter(is_active=True).exclude(plan_tier='trial').order_by('price')
+    plans = SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).exclude(plan_tier='trial').order_by('price')
 
     trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial').first()
     
