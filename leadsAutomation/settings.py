@@ -118,6 +118,7 @@ MIDDLEWARE = [
     'leadsAutomation.middleware.CustomRollbarNotifierMiddleware',
     'accounts.middleware.CleanerAccessMiddleware',  # Add cleaner access middleware
     'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
+    'accounts.middleware.TimezoneMiddleware',  # Add timezone middleware
     
     'subscription.middleware.SubscriptionRequiredMiddleware',  # Add subscription middleware
 ]
@@ -135,6 +136,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.timezone_context',
             ],
         },
     },

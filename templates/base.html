@@ -19,6 +19,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Moment.js for timezone handling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <!-- Custom timezone utilities -->
+    <script src="{% static 'js/timezone.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
     <style>
@@ -665,7 +670,7 @@
     {% block styles %}
     {% endblock %}
 </head>
-<body>
+<body data-business-timezone="{% if user.is_authenticated and user.business_set.exists %}{{ user.business_set.first.timezone }}{% else %}UTC{% endif %}">
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
@@ -908,6 +913,28 @@
 
     <!-- Main Content -->
     <div class="container py-4">
+        {% if user.is_authenticated and user.business_set.exists %}
+        <div class="text-end mb-2">
+            <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>Current time: <span id="current-business-time">{{ current_time|date:"F j, Y, g:i a" }}</span>
+                <span class="ms-1">({{ user_timezone }})</span>
+            </small>
+        </div>
+        <script>
+            // Update current business time every minute
+            function updateBusinessTime() {
+                const timeElement = document.getElementById('current-business-time');
+                if (timeElement) {
+                    const businessTimezone = document.body.dataset.businessTimezone || 'UTC';
+                    timeElement.textContent = moment().tz(businessTimezone).format('MMMM D, YYYY, h:mm A');
+                }
+            }
+            
+            // Update immediately and then every minute
+            updateBusinessTime();
+            setInterval(updateBusinessTime, 60000);
+        </script>
+        {% endif %}
         <!-- Toast container for messages -->
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
             {% if messages %}

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load automation_filters %}
+{% load timezone_tags %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -296,7 +297,7 @@
                                 </div>
                                 <div>
                                     <h6 class="mb-1">{{ activity.title|default:"Activity" }}</h6>
-                                    <small class="text-muted">{{ activity.timestamp|format_timestamp }}</small>
+                                    <small class="text-muted" data-utc-datetime="{{ activity.timestamp|date:'c' }}">{{ activity.timestamp|to_business_timezone }}</small>
                                 </div>
                             </div>
                         </div>

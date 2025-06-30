@@ -217,8 +217,15 @@ def customer_detail(request, identifier):
 @transaction.atomic
 def create_booking(request):
     from datetime import datetime, timedelta
+    import pytz
+    from bookings.timezone_utils import convert_local_to_utc
+    
     business = Business.objects.get(user=request.user)
     business_settings = BusinessSettings.objects.get(business=business)
+    # Get business timezone from model or form submission
+    business_timezone = business.timezone
+    
+  
     customAddons = CustomAddons.objects.filter(business=business)
     if request.method == 'POST':
         try:
@@ -232,6 +239,25 @@ def create_booking(request):
             if not phone_number:
                 messages.error(request, 'Please enter a valid US phone number.')
                 return redirect('bookings:create_booking')
+            
+            cleaningDate = request.POST.get('cleaningDate')
+            start_time = request.POST.get('startTime')
+
+            print(f"cleaningDate: {cleaningDate}")
+            print(f"start_time: {start_time}")
+           
+
+            # Convert cleaning date and time from business timezone to UTC
+            start_time_utc = convert_local_to_utc(
+                cleaningDate,
+                start_time,
+                business_timezone
+            ).time()
+
+            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
+
+            print(f"start_time_utc: {start_time_utc}")
+            print(f"end_time_utc: {end_time_utc}")
             
             # Create the booking
             booking = Booking.objects.create(
@@ -252,9 +278,11 @@ def create_booking(request):
                 squareFeet=int(request.POST.get('squareFeet', 0)),
 
                 serviceType=request.POST.get('serviceType'),
-                cleaningDate=request.POST.get('cleaningDate'),
-                startTime=request.POST.get('startTime'),
-                endTime=(datetime.strptime(request.POST.get('startTime'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M'),
+                # Convert cleaning date and time from business timezone to UTC
+                cleaningDate=cleaningDate,
+                startTime=start_time_utc,
+                endTime=end_time_utc,
+              
                 recurring=request.POST.get('recurring'),
                 paymentMethod=request.POST.get('paymentMethod', 'creditcard'),
 
@@ -291,6 +319,10 @@ def create_booking(request):
                         qty=quantity
                     )
                     booking.customAddons.add(newCustomBookingAddon)
+            
+            from .utils import send_jobs_to_cleaners
+
+            send_jobs_to_cleaners(business, booking, assignment_check_null=True)
 
 
 
@@ -326,7 +358,8 @@ def create_booking(request):
 
     context = {
         'customAddons': customAddons,
-        'prices': json.dumps(prices)
+        'prices': json.dumps(prices),
+        'business_timezone': business_timezone
     }
 
     return render(request, 'bookings/create_booking.html', context)
@@ -462,15 +495,16 @@ def edit_booking(request, bookingId):
     }
 
     context = {
-        'booking': booking,
         'customAddons': customAddons,
         'prices': json.dumps(prices),
-        'existing_custom_addons': {addon.addon.id: addon.qty for addon in booking.customAddons.all()}
+        'standardAddons': standardAddons,
+        'today': timezone.now().date(),
+        'business_timezone': business_timezone
     }
 
-    return render(request, 'bookings/edit_booking.html', context)
+    return render(request, 'bookings/create_booking.html', context)
 
-
+# ... (rest of the code remains the same)
 def mark_completed(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
     booking.isCompleted = True

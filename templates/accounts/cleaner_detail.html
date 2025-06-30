@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load timezone_tags %}
 
 {% block title %}{{ cleaner.name }} | Details{% endblock %}
 
@@ -164,7 +165,7 @@
                                 {% for booking in bookings %}
                                 <tr>
                                     <td>{{ booking.bookingId }}</td>
-                                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                                    <td><span data-utc-datetime="{{ booking.date|date:'c' }}">{{ booking.date|to_business_timezone:business_timezone|date:"M d, Y" }}</span></td>
                                     <td>{{ booking.startTime|time:"g:i A" }}</td>
                                     <td>{{ booking.name }}</td>
                                     <td>

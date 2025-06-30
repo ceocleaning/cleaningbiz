@@ -195,6 +195,9 @@ def register_business(request):
         messages.warning(request, 'You already have a registered business.')
         return redirect('accounts:profile')
     
+    # Import timezone choices
+    from .timezone_utils import get_timezone_choices
+    timezone_choices = get_timezone_choices()
 
     if request.method == 'POST':
         businessName = request.POST.get('businessName')
@@ -202,6 +205,7 @@ def register_business(request):
         address = request.POST.get('address')
         cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         job_assignment = request.POST.get('job_assignment')
+        selected_timezone = request.POST.get('timezone', 'UTC')
         
         # Validate required fields
         if not all([businessName, phone, address]):
@@ -217,6 +221,7 @@ def register_business(request):
                 address=address,
                 cleaner_pay_percentage=cleaner_pay_percentage,
                 job_assignment=job_assignment,
+                timezone=selected_timezone,
                 isActive=False,  # Set to False by default
                 isApproved=False  # Set to False by default
             )
@@ -237,9 +242,11 @@ def register_business(request):
             raise Exception(str(e))
     
     from .models import JOB_ASSIGNMENT_OPTIONS
+    from .timezone_utils import get_timezone_choices
     
     context = {
-        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS
+        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS,
+        'timezone_choices': get_timezone_choices()
     }
     
     return render(request, 'accounts/register_business.html', context)
@@ -259,6 +266,7 @@ def edit_business(request):
         cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         job_assignment = request.POST.get('job_assignment')
         email = request.POST.get('email')
+        selected_timezone = request.POST.get('timezone', 'UTC')
         
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
@@ -270,6 +278,7 @@ def edit_business(request):
             business.address = address
             business.cleaner_pay_percentage = cleaner_pay_percentage
             business.job_assignment = job_assignment
+            business.timezone = selected_timezone
             business.user.email = email
             business.user.save()
             business.save()
@@ -282,10 +291,12 @@ def edit_business(request):
             raise Exception(str(e))
     
     from .models import JOB_ASSIGNMENT_OPTIONS
+    from .timezone_utils import get_timezone_choices
     
     context = {
         'business': business,
-        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS
+        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS,
+        'timezone_choices': get_timezone_choices()
     }
     
     return render(request, 'accounts/edit_business.html', context)
