@@ -14,9 +14,10 @@ class MaintenanceModeMiddleware:
     def __call__(self, request):
         # Check if we're in maintenance mode
         try:
-            settings = PlatformSettings.objects.first()
+            settings = PlatformSettings.objects.get(pk=1)
             maintenance_mode = settings.maintenance_mode
         except PlatformSettings.DoesNotExist:
+            PlatformSettings.objects.create(maintenance_mode=False)
             maintenance_mode = False
         
        
