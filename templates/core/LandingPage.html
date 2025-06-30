@@ -642,20 +642,7 @@
             {% endfor %}
            
         </div>
-        
-        <div class="bg-dark-surface-2 rounded-xl p-4 mt-5" data-aos="fade-up">
-            <div class="row align-items-center">
-                <div class="col-lg-8 mb-4 mb-lg-0">
-                    <h3 class="h4 fw-bold text-white mb-2">Need a custom solution?</h3>
-                    <p class="text-dark-text-secondary mb-0">Contact our team for a tailored plan that meets your specific business requirements.</p>
-                </div>
-                <div class="col-lg-4 text-lg-end">
-                    <a href="mailto:info@cleaningbizai.com" class="btn btn-primary shadow-glow px-4 py-2">
-                        <i class="fas fa-envelope me-2"></i>Contact Sales
-                    </a>
-                </div>
-            </div>
-        </div>
+     
     </div>
 </section>
 
@@ -668,14 +655,14 @@
     </div>
     
     <div class="container position-relative py-5">
-        <div class="row align-items-center">
-            <div class="col-lg-12 mb-5 mb-lg-0 col-md-12 col-sm-12 mx-auto" data-aos="fade-right">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-lg-8 mb-5 mb-lg-0 col-md-12 col-sm-12 mx-auto text-center">
                 <h2 class="display-4 fw-bold text-white mb-4">Ready to Transform Your <span class="text-gradient-light">Cleaning Business?</span></h2>
                 <p class="lead text-white opacity-80 mb-4">Join hundreds of cleaning businesses already using our AI Voice Agent to handle calls, schedule appointments, and grow their revenue.</p>
                 
               
            
-                <div class="d-flex flex-wrap gap-3">
+                <div class="d-flex flex-wrap gap-3 justify-content-center">
                     {% if request.user.is_authenticated %}
                     <a href="{% url 'home' %}" class="btn btn-accent btn-lg shadow-glow px-4">
                         <i class="fas fa-rocket me-2"></i>Dashboard
@@ -685,25 +672,25 @@
                         <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg shadow-glow px-4">
                             <i class="fas fa-rocket me-2"></i>Get Started Now
                         </a>
-                        <a class="btn btn-accent" data-cal-link="kashif.m/cleaningbiz-demo" data-cal-namespace="cleaningbiz-demo" data-cal-config='{"layout":"month_view","theme":"auto"}'>
+                        <a class="btn btn-primary btn-lg shadow-glow px-4" data-cal-link="kashif.m/cleaningbiz-demo" data-cal-namespace="cleaningbiz-demo" data-cal-config='{"layout":"month_view","theme":"auto"}'>
                             <i class="fas fa-calendar-check me-2"></i>Schedule Demo
                         </a>
                     </div>
                         {% endif %}
                 </div>
-             
+                
+               
                 {% if is_eligible_for_trial %}
                 {% if trial_plan %}
-                <div class="mt-4 d-flex align-items-center">
+                <div class="mt-4 d-flex align-items-center justify-content-center">
                     <span class="badge bg-light text-dark rounded-pill px-3 py-2">
-                        <i class="fas fa-calendar-alt me-1"></i>{{ trial_plan.trial_days }}-Day Trial for ${{ trial_plan.trial_price }}
+                        <i class="fas fa-calendar-alt me-1"></i>{{ trial_plan.get_billing_cycle_display }} Trial for ${{ trial_plan.price }}
                     </span>
                 </div>
                 {% endif %}
                 {% endif %}
             </div>
             
-          
         </div>
     </div>
 </section>

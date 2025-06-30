@@ -35,6 +35,7 @@ def LandingPage(request):
     plans = SubscriptionPlan.objects.filter(is_active=True, is_invite_only=False).exclude(plan_tier='trial').order_by('price')
 
     trial_plan = SubscriptionPlan.objects.filter(is_active=True, plan_tier='trial').first()
+
     
     # Initialize variables
     is_eligible_for_trial = True
