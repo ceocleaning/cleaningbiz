@@ -956,6 +956,31 @@
     </div>
 
     {% block chats %}{% endblock %}
+    
+    {% if user.is_authenticated and user.business_set.exists %}
+    {% load subscription_tags %}
+    {% get_setup_fee_status as setup_fee %}
+    {% if setup_fee %}
+    <!-- Floating Onboarding Call Button -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+        {% if setup_fee.call_status == 'pending' %}
+        <button 
+            class="btn btn-dark btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center"
+            data-cal-link="kashif.m/onboarding-call"
+            data-cal-namespace="onboarding-call-float"
+            data-cal-config='{"layout":"month_view"}'>
+            <i class="fas fa-phone-alt me-2"></i>
+            <span>Schedule Onboarding Call Now</span>
+        </button>
+        {% elif setup_fee.call_status == 'booked' %}
+        <div class="btn btn-success btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center">
+            <i class="fas fa-check-circle me-2"></i>
+            <span>Onboarding Call Booked</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
 
     <!-- Footer -->
     <footer>
@@ -1014,5 +1039,25 @@
     </script>
 
     {% block scripts %}{% endblock %}
+    
+    {% if user.is_authenticated and user.business_set.exists %}
+    {% load subscription_tags %}
+    {% get_setup_fee_status as setup_fee %}
+    {% if setup_fee and setup_fee.call_status == 'pending' %}
+    <!-- Cal element-click embed code for floating button -->
+    <script type="text/javascript">
+      (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+      Cal("init", "onboarding-call-float", {origin:"https://app.cal.com"});
+      Cal.ns["onboarding-call-float"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+      Cal.ns["onboarding-call-float"]("on", {
+        bookingSuccessful: function(payload) {
+          // Redirect to onboarding call success page
+          window.location.href = "{% url 'subscription:onboarding_call_success' %}";
+        }
+      });
+    </script>
+    <!-- Cal element-click embed code ends -->
+    {% endif %}
+    {% endif %}
 </body>
 </html>

@@ -458,13 +458,14 @@ def select_plan(request, plan_id=None):
     platform_settings = PlatformSettings.objects.first()
     
     has_paid_setup_fee = business.has_setup_fee()
+    total_with_setup = 0
 
     if plan_id:
         # Get the specific plan
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
+            total_with_setup = float(plan.get_display_price()) + float(platform_settings.setup_fee_amount)
             
-           
             if plan.plan_tier == "trial" and not plan.is_invite_only:
                 trial_already_availed = BusinessSubscription.objects.filter(business=business, plan__plan_tier="trial").exists()
                 if trial_already_availed:
@@ -527,7 +528,8 @@ def select_plan(request, plan_id=None):
         'active_page': 'subscription',
         'title': 'Select Plan',
         'platform_settings': platform_settings,
-        'has_paid_setup_fee': has_paid_setup_fee
+        'has_paid_setup_fee': has_paid_setup_fee,
+        'total_with_setup': total_with_setup,
     }
     
     return render(request, 'subscription/payment.html', context)
@@ -752,6 +754,11 @@ def process_payment(request, plan_id):
 @login_required
 def subscription_success(request, subscription_id, transaction_id):
     """Show subscription success page after successful payment."""
+    from .models import SetupFee
+
+    setup_fee = SetupFee.objects.filter(business=request.user.business_set.first()).first()
+
+    
     business = request.user.business_set.first()
     subscription = get_object_or_404(BusinessSubscription, id=subscription_id, business=business)
 
@@ -802,7 +809,9 @@ def subscription_success(request, subscription_id, transaction_id):
         'payment_details': payment_details,
         'active_page': 'subscription',
         'title': 'Subscription Successful',
-        'business_subscriptions_count': business_subscriptions_count
+        'business_subscriptions_count': business_subscriptions_count,
+        'setup_fee': setup_fee,
+
     }
     
     return render(request, 'subscription/success.html', context)
@@ -1182,3 +1191,21 @@ def delete_card(request):
     
     # Redirect back to the card management page
     return redirect('subscription:manage_card')
+
+@login_required
+def onboarding_call_success(request):
+    """Show success page after booking an onboarding call."""
+    business = request.user.business_set.first()
+    
+    # Update the call status to 'booked'
+    setup_fee = SetupFee.objects.filter(business=business).first()
+    if setup_fee:
+        setup_fee.call_status = 'booked'
+        setup_fee.save()
+    
+    context = {
+        'active_page': 'subscription',
+        'title': 'Onboarding Call Booked',
+    }
+    
+    return render(request, 'subscription/onboarding_call_success.html', context)

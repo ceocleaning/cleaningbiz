@@ -117,12 +117,7 @@
                                     <span>{{ plan.get_billing_cycle_display }}</span>
                                 </div>
                                 
-                                {% if platform_settings.setup_fee and not has_paid_setup_fee %}
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="fw-medium">Setup Fee (One-time):</span>
-                                    <span>${{ platform_settings.setup_fee_amount }}</span>
-                                </div>
-                                {% endif %}
+                             
                                 {% if plan.billing_cycle == 'yearly' %}
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="fw-medium">Monthly Price:</span>
@@ -140,13 +135,7 @@
                                     <span class="fw-bold">Base Price:</span>
                                     <span id="base-price" class="fw-bold">${{ plan.get_display_price|floatformat:2 }}</span>
                                 </div>
-                                {% if platform_settings.setup_fee and not has_paid_setup_fee %}
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span class="fw-bold">Setup Fee:</span>
-                                    <span id="setup-fee" class="fw-bold">${{ platform_settings.setup_fee_amount|floatformat:2 }}</span>
-                                </div>
-                                <input type="hidden" id="setup-fee-amount" value="{{ platform_settings.setup_fee_amount }}">
-                                {% endif %}
+                                
                                 {% else %}
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="fw-medium">Base Price:</span>
@@ -204,7 +193,7 @@
                                             {% endif %}
                                         {% endwith %}
                                     {% else %}
-                                        {% if plan.get_display_price == 0 %}
+                                        {% if total_with_setup == 0 %}
                                             <span id="total-price" class="display-8 badge bg-success">Free</span>
                                         {% else %}
                                             {% if platform_settings.setup_fee and not has_paid_setup_fee %}

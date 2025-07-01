@@ -509,10 +509,16 @@ class BillingHistory(models.Model):
         return f"Invoice #{self.id} - {self.business.businessName} (${self.amount})"
 
 
+CALL_STATUS_CHOICES = [
+    ('booked', 'Booked'),
+    ('completed', 'Completed'),
+    ('pending', 'Pending'),
+]
 
 class SetupFee(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='setup_fee')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    call_status = models.CharField(max_length=20, choices=CALL_STATUS_CHOICES, default='pending')
     pait_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

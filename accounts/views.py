@@ -203,7 +203,6 @@ def register_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-        cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         job_assignment = request.POST.get('job_assignment')
         selected_timezone = request.POST.get('timezone', 'UTC')
         
@@ -219,7 +218,6 @@ def register_business(request):
                 businessName=businessName,
                 phone=phone,
                 address=address,
-                cleaner_pay_percentage=cleaner_pay_percentage,
                 job_assignment=job_assignment,
                 timezone=selected_timezone,
                 isActive=False,  # Set to False by default
@@ -263,7 +261,6 @@ def edit_business(request):
         businessName = request.POST.get('businessName')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-        cleaner_pay_percentage = request.POST.get('cleaner_pay_percentage')
         job_assignment = request.POST.get('job_assignment')
         email = request.POST.get('email')
         selected_timezone = request.POST.get('timezone', 'UTC')
@@ -276,7 +273,6 @@ def edit_business(request):
             business.businessName = businessName
             business.phone = phone
             business.address = address
-            business.cleaner_pay_percentage = cleaner_pay_percentage
             business.job_assignment = job_assignment
             business.timezone = selected_timezone
             business.user.email = email

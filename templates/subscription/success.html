@@ -227,14 +227,27 @@
                             </div>
                         </div>
                         
-                        <div class="d-grid gap-3 d-md-flex justify-content-center mb-5">
-                            <a href="{% url 'subscription:subscription_management' %}" class="btn btn-primary btn-lg px-4 py-3">
-                                <i class="fas fa-cog me-2"></i>Manage Subscription
-                            </a>
-                            <a href="{% url 'usage_analytics:usage_overview' %}" class="btn btn-outline-primary btn-lg px-4 py-3">
-                                <i class="fas fa-chart-line me-2"></i>View Usage Dashboard
-                            </a>
+                        {% if setup_fee.call_status == 'pending' %}
+                        <div class="card bg-light border-0 shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="card-title text-primary mb-3">
+                                    <i class="fas fa-calendar-check me-2"></i>Schedule Your Mandatory Onboarding Call
+                                </h5>
+                                <p class="mb-3">
+                                    Book your 1 on 1 call with a platform expert where he or she will go through the whole platform with you, to ensure proper setup and answer any questions. During the setup, you will also be able to setup 1-2 integrations with existing tools.
+                                </p>
+                                <div class="d-grid gap-3 d-md-flex justify-content-center">
+                                    <button 
+                                        class="btn btn-dark btn-lg px-4 py-3"
+                                        data-cal-link="kashif.m/onboarding-call"
+                                        data-cal-namespace="onboarding-call"
+                                        data-cal-config='{"layout":"month_view"}'>
+                                        <i class="fas fa-phone me-2"></i>Book Onboarding Setup Call Now
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                        {% endif %}
                         
                         {% if is_first_purchase %}
                         <!-- Personalized Demo Button for First-time Subscribers -->
@@ -309,6 +322,16 @@
   (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
   Cal("init", "cleaningbiz-demo", {origin:"https://cal.com"});
   Cal.ns["cleaningbiz-demo"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+  
+  // Onboarding call initialization
+  Cal("init", "onboarding-call", {origin:"https://app.cal.com"});
+  Cal.ns["onboarding-call"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+  Cal.ns["onboarding-call"]("on", {
+    bookingSuccessful: function(payload) {
+      // Redirect to onboarding call success page
+      window.location.href = "{% url 'subscription:onboarding_call_success' %}";
+    }
+  });
 </script>
 <!-- Cal element-click embed code ends -->
 
