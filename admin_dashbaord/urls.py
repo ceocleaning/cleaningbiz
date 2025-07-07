@@ -47,6 +47,7 @@ urlpatterns = [
     
     # Subscription Management
     path('subscriptions/', views.subscriptions, name='subscriptions'),
+    path('subscriptions/<int:subscription_id>/', views.subscription_detail, name='subscription_detail'),
     path('subscriptions/assign/', views.assign_subscription, name='assign_subscription'),
     path('subscriptions/admin-cancel-plan/', views.admin_cancel_plan, name='admin_cancel_plan'),
     

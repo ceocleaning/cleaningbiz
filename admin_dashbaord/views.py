@@ -510,6 +510,26 @@ def business_detail(request, business_id):
         business=business,
         is_active=True
     ).exclude(status='ended').order_by('-start_date')
+    
+    # Get previous subscriptions (ended or cancelled)
+    business.previous_subscriptions = BusinessSubscription.objects.filter(
+        business=business,
+        status__in=['ended', 'cancelled'],
+    ).order_by('-end_date')
+    
+    # Get future subscription plan if one is scheduled
+    business.future_subscription = None
+    
+    
+    if business.active_subscription and business.active_subscription.next_plan_id:
+        try:
+            business.future_subscription = {
+                'current_subscription': business.active_subscription,
+                'next_plan': SubscriptionPlan.objects.get(id=business.active_subscription.next_plan_id),
+                'effective_date': business.active_subscription.next_billing_date
+            }
+        except SubscriptionPlan.DoesNotExist:
+            pass
 
     # Get subscription plans for the add subscription form
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
@@ -817,6 +837,62 @@ def subscriptions(request):
     }
     
     return render(request, 'admin_dashboard/subscriptions.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def subscription_detail(request, subscription_id):
+    """View to display detailed information about a specific subscription"""
+    from subscription.models import BusinessSubscription, BillingHistory, UsageTracker
+    from usage_analytics.services.usage_service import UsageService
+
+    
+    # Get the subscription
+    subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
+    business = subscription.business
+    
+    # Get subscription features
+    features = subscription.plan.features.filter(is_active=True)
+    feature_list = [feature.name for feature in features]
+    
+    # Get billing history
+    billing_history = BillingHistory.objects.filter(subscription=subscription).order_by('-billing_date')
+
+    subscription_data = {
+        'id': subscription.id,
+        'name': subscription.plan.name,
+        'price': subscription.plan.price,
+        'status': subscription.status,
+        'next_billing_date': subscription.next_billing_date or subscription.end_date,
+        'start_date': subscription.start_date,
+        'end_date': subscription.end_date,
+        'voice_minutes_limit': subscription.plan.voice_minutes,
+        'sms_messages_limit': subscription.plan.sms_messages,
+        'agents_limit': subscription.plan.agents,
+        'leads_limit': subscription.plan.leads,
+        'cleaners_limit': subscription.plan.cleaners,
+        'features': feature_list,
+        'billing_cycle': subscription.plan.billing_cycle,
+        'plan_tier': subscription.plan.plan_tier,
+        'plan_type': subscription.plan.plan_type,
+        'trial_end_date': subscription.end_date
+    }
+    
+    usage_service = UsageService()
+    usage_data = usage_service.get_business_usage(business, start_date=subscription.start_date, end_date=subscription.end_date)
+
+
+    
+    
+    
+    context = {
+        'subscription': subscription_data,
+        'business': business,
+        'billing_history': billing_history,
+        'usage': usage_data,
+      
+    }
+    
+    return render(request, 'admin_dashboard/subscription_detail.html', context)
 
 # User Management Views
 @login_required
