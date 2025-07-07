@@ -589,7 +589,7 @@ def process_payment(request, plan_id):
                 pass
         
         print(f"Final Price: {final_price}")
-        final_price = 0 #For Testing
+    
         # Check if the final price is zero (free subscription)
         is_free = final_price <= 0 or is_free_subscription
         
