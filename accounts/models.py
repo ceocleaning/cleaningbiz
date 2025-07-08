@@ -138,6 +138,9 @@ class ApiCredential(models.Model):
     
     def getTwilioWebhookUrl(self):
         return f"{URL}/ai_agent/api/twilio/webhook/{self.secretKey}/"
+    
+    def getLeadWebhookUrl(self):
+        return f"{URL}/lead/webhook/{self.secretKey}/"
 
 
 class SMTPConfig(models.Model):

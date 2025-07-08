@@ -378,6 +378,10 @@ def add_coupon(request):
         expiry_date = request.POST.get('expiry_date') or None
         is_active = 'is_active' in request.POST
         description = request.POST.get('description', '')
+
+        if Coupon.objects.filter(code=code).exists():
+            messages.error(request, 'Coupon code already exists.')
+            return redirect('admin_dashboard:coupons')
         
         # Create coupon
         coupon = Coupon.objects.create(

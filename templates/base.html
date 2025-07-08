@@ -763,34 +763,29 @@
                             </li>
                         </ul>
                     </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/integration/' %}active{% endif %}" 
-                            href="{% url 'integration_list' %}">
-                            <!-- <i class="fas fa-screwdriver me-1"></i> -->
-                            Bookings Integration
-                        </a>
-                    </li>
+     
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if '/accounts/thumbtack/' in request.path %}active{% endif %}" 
                             href="#" id="thumbtackDropdown" role="button" 
                             data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-plug me-1"></i>
-                            Thumbtack
+                            <!-- <i class="fas fa-plug me-1"></i> -->
+                            Integration
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="thumbtackDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/integration/' %}active{% endif %}" 
+                                href="{% url 'integration_list' %}">
+                                <i class="fas fa-screwdriver me-1"></i>
+                                Bookings Integration
+                            </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if '/accounts/thumbtack/profile/' in request.path %}active{% endif %}" 
                                     href="{% url 'accounts:thumbtack_profile' %}">
                                     <i class="fas fa-user-circle me-2 text-primary"></i>Thumbtack Profile
                                 </a>
                             </li>
-                            <li>
-                                <a class="dropdown-item {% if '/accounts/thumbtack/dashboard/' in request.path %}active{% endif %}" 
-                                    href="{% url 'accounts:thumbtack_dashboard' %}">
-                                    <i class="fas fa-tachometer-alt me-2 text-success"></i>Thumbtack Dashboard
-                                </a>
-                            </li>
+                           
                  
                         </ul>
                     </li>
@@ -799,7 +794,7 @@
                             href="#" id="aiDropdown" role="button" 
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <!-- <i class="fas fa-robot me-1"></i> -->
-                            SMS AI Agent
+                            AI Agent
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="aiDropdown">
                             <li>
@@ -813,6 +808,55 @@
                                 <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}" 
                                     href="{% url 'ai_agent:all_chats' %}">
                                     <i class="fas fa-sms me-2 text-success"></i>SMS Chat History
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/embed-agent/' in request.path %}active{% endif %}" 
+                                    href="{% url 'ai_agent:embed_agent' %}">
+                                    <i class="fas fa-code me-2 text-info"></i>Embed AI Agent
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                    href="{% url 'list_retell_agents' %}">
+                                    <i class="fas fa-cogs me-2 text-primary"></i>Voice AI Agent
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" 
+                            href="#" id="analyticsDropdown" role="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <!-- <i class="fas fa-robot me-1"></i> -->
+                            Analytics
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="analyticsDropdown">
+                            <li>
+                                <a class="dropdown-item {% if '/analytics/agent-config/' in request.path %}active{% endif %}" 
+                                    href="{% url 'analytics:analytics_dashboard' %}">
+                                    <i class="fas fa-cogs me-2 text-primary"></i>Business Analytics
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}" 
+                                    href="{% url 'usage_analytics:usage_overview' %}">
+                                    <i class="fas fa-sms me-2 text-success"></i>Usage Analytics
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                    href="{% url 'usage_analytics:sms_analytics' %}">
+                                    <i class="fas fa-cogs me-2 text-primary"></i>SMS Analytics
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                    href="{% url 'usage_analytics:voice_analytics' %}">
+                                    <i class="fas fa-cogs me-2 text-primary"></i>Voice Analytics
                                 </a>
                             </li>
                         </ul>
@@ -854,6 +898,12 @@
                                     <a class="dropdown-item" href="{% url 'accounts:payment_main' %}">
                                         <i class="fas fa-credit-card me-2 text-success"></i>
                                         Payments
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'subscription:subscription_management' %}">
+                                        <i class="fas fa-chart-bar me-2 text-primary"></i>Subscription
                                     </a>
                                 </li>
 

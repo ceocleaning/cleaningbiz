@@ -237,6 +237,24 @@ def agent_config_save(request):
         'message': f"Configuration for {business.businessName} updated successfully.",
         'system_prompt': system_prompt
     })
+
+
+@login_required
+def embed_agent(request):
+    """View for embedding AI Agent on external websites"""
+    business = Business.objects.filter(user=request.user).first()
+    
+    if not business:
+        messages.error(request, "You need to have a business registered before configuring the AI Agent.")
+        return redirect('home')
+    
+    # Get configuration for this business
+    config = AgentConfiguration.objects.filter(business=business).first()
+    
+    return render(request, 'ai_agent/embed_agent.html', {
+        'config': config,
+        'business': business
+    })
         
   
 

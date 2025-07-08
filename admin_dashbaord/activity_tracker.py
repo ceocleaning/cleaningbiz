@@ -170,10 +170,7 @@ def track_model_changes():
     # Dictionary to store original values for update tracking
     _original_values = {}
     
-    # Print tracked models for debugging
-    print(f"Activity Tracker: Tracking {len(TRACKED_MODELS)} models")
-    for model_path in TRACKED_MODELS:
-        print(f"  - {model_path}")
+
     
     @receiver(pre_save)
     def track_update_pre_save(sender, instance, **kwargs):
