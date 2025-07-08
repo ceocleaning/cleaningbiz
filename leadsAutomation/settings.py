@@ -122,6 +122,8 @@ MIDDLEWARE = [
     
     'subscription.middleware.SubscriptionRequiredMiddleware',  # Add subscription middleware
     'saas.middleware.MaintenanceModeMiddleware',  # Add maintenance mode middleware
+    'admin_dashbaord.middleware.UserActivityMiddleware',  # Track user page visits
+    'admin_dashbaord.activity_tracker.ActivityTrackingMiddleware',  # Track database operations
 ]
 
 ROOT_URLCONF = 'leadsAutomation.urls'

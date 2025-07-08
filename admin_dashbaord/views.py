@@ -14,6 +14,9 @@ from datetime import timedelta
 from accounts.models import ApiCredential, Business, User, BusinessSettings
 from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature, BillingHistory
 from saas.models import PlatformSettings, SupportTicket, TicketComment
+from bookings.models import Booking
+from invoice.models import Invoice
+from automation.models import Lead
 
 # Helper function to check if user is admin
 def is_admin(user):
@@ -41,6 +44,10 @@ def dashboard_index(request):
     # Get recent subscriptions
     recent_subscriptions = BusinessSubscription.objects.all().order_by('-start_date')[:5]
     
+    # Get recent activities
+    from admin_dashbaord.models import ActivityLog
+    recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:10]
+    
     context = {
         'total_businesses': total_businesses,
         'active_subscriptions': active_subscriptions,
@@ -48,6 +55,7 @@ def dashboard_index(request):
         'monthly_revenue': monthly_revenue,
         'recent_businesses': recent_businesses,
         'recent_subscriptions': recent_subscriptions,
+        'recent_activities': recent_activities,
         'today': timezone.now(),
     }
     
@@ -472,20 +480,19 @@ def businesses(request):
     # Add active subscription to each business
     for business in businesses:
         try:
-            business.active_subscription = BusinessSubscription.objects.filter(
-                business=business, 
-                status='active'
-            ).latest('start_date')
+            business.active_subscription = business.active_subscription()
         except BusinessSubscription.DoesNotExist:
             business.active_subscription = None
     
     # Pagination
-    paginator = Paginator(businesses, 20)
+    paginator = Paginator(businesses, 50)
     page_number = request.GET.get('page', 1)
     businesses = paginator.get_page(page_number)
     
-    # Get all users for the add business form
-    users = User.objects.all().order_by('username')
+    # Get all users for the add business form - Whose Business Profile is not created Yet
+    # Exclude users who already have a business profile
+    users_with_business = Business.objects.exclude(user__isnull=True).values_list('user_id', flat=True)
+    users = User.objects.exclude(id__in=users_with_business).order_by('username')
     
     context = {
         'businesses': businesses,
@@ -530,6 +537,49 @@ def business_detail(request, business_id):
             }
         except SubscriptionPlan.DoesNotExist:
             pass
+
+    # Get business statistics
+    # Bookings stats - matching the categories in bookings.html
+    business.bookings_stats = {
+        'total': Booking.objects.filter(business=business).count(),
+        'upcoming': Booking.objects.filter(business=business, cleaningDate__gte=timezone.now().date()).exclude(paymentMethod=None).count(),
+        'awaiting_payment': Booking.objects.filter(business=business, paymentMethod=None).count(),
+        'past': Booking.objects.filter(business=business, cleaningDate__lt=timezone.now().date()).count(),
+        'cancelled': Booking.objects.filter(business=business, cancelled_at__isnull=False).count(),
+        'revenue': Booking.objects.filter(business=business).aggregate(total=Sum('totalPrice'))['total'] or 0
+    }
+    
+    # Leads stats
+    business.leads_stats = {
+        'total': Lead.objects.filter(business=business).count(),
+       
+    }
+    
+    
+    
+    # Invoices stats - matching the categories in invoices.html
+    invoices = Invoice.objects.filter(booking__business=business)
+    
+    # Get payment statuses
+    payment_statuses = {}
+    for invoice in invoices:
+        try:
+            status = invoice.payment_details.status
+            if status in payment_statuses:
+                payment_statuses[status] += 1
+            else:
+                payment_statuses[status] = 1
+        except:
+            pass
+    
+    business.invoices_stats = {
+        'total': invoices.count(),
+        'paid': invoices.filter(isPaid=True).count(),
+        'pending': invoices.filter(isPaid=False).count(),
+        'authorized': payment_statuses.get('AUTHORIZED', 0),
+        'total_amount': invoices.aggregate(total=Sum('amount'))['total'] or 0,
+        'paid_amount': invoices.filter(isPaid=True).aggregate(total=Sum('amount'))['total'] or 0
+    }
 
     # Get subscription plans for the add subscription form
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')

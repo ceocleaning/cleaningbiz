@@ -24,7 +24,7 @@ def get_cleaners_for_business(business, exclude_ids=None, assignment_check_null=
     active_cleaners = all_cleaners.filter(isActive=True)
     
     # Apply available filter
-    available_cleaners = active_cleaners.filter(isAvailable=True)
+    available_cleaners = active_cleaners
     
     cleaners = available_cleaners
     
