@@ -503,7 +503,9 @@ def businesses(request):
         return render(request, 'admin_dashboard/businesses.html', context)
     except Exception as e:
         messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('admin_dashboard:businesses')
+        import traceback
+        traceback.print_exc()
+        return redirect('admin_dashboard:index')
 
 @login_required
 @user_passes_test(is_admin)
