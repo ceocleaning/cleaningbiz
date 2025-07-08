@@ -475,31 +475,35 @@ def delete_coupon(request):
 @login_required
 @user_passes_test(is_admin)
 def businesses(request):
-    businesses = Business.objects.all().order_by('-createdAt')
+    try:
+        businesses = Business.objects.all().order_by('-createdAt')
     
     # Add active subscription to each business
-    for business in businesses:
-        try:
-            business.active_subscription = business.active_subscription()
-        except BusinessSubscription.DoesNotExist:
-            business.active_subscription = None
-    
-    # Pagination
-    paginator = Paginator(businesses, 50)
-    page_number = request.GET.get('page', 1)
-    businesses = paginator.get_page(page_number)
-    
-    # Get all users for the add business form - Whose Business Profile is not created Yet
-    # Exclude users who already have a business profile
-    users_with_business = Business.objects.exclude(user__isnull=True).values_list('user_id', flat=True)
-    users = User.objects.exclude(id__in=users_with_business).order_by('username')
-    
-    context = {
-        'businesses': businesses,
-        'users': users,
-    }
-    
-    return render(request, 'admin_dashboard/businesses.html', context)
+        for business in businesses:
+            try:
+                business.active_subscription = business.active_subscription()
+            except BusinessSubscription.DoesNotExist:
+                business.active_subscription = None
+        
+        # Pagination
+        paginator = Paginator(businesses, 50)
+        page_number = request.GET.get('page', 1)
+        businesses = paginator.get_page(page_number)
+        
+        # Get all users for the add business form - Whose Business Profile is not created Yet
+        # Exclude users who already have a business profile
+        users_with_business = Business.objects.exclude(user__isnull=True).values_list('user_id', flat=True)
+        users = User.objects.exclude(id__in=users_with_business).order_by('username')
+        
+        context = {
+            'businesses': businesses,
+            'users': users,
+        }
+        
+        return render(request, 'admin_dashboard/businesses.html', context)
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('admin_dashboard:businesses')
 
 @login_required
 @user_passes_test(is_admin)
