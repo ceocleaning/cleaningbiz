@@ -1014,14 +1014,10 @@
     <!-- Floating Onboarding Call Button -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
         {% if setup_fee.call_status == 'pending' %}
-        <button 
-            class="btn btn-dark btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center"
-            data-cal-link="kashif.m/onboarding-call"
-            data-cal-namespace="onboarding-call-float"
-            data-cal-config='{"layout":"month_view"}'>
+        <a id="app-scheduling" href="#" class="btn btn-dark btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
             <i class="fas fa-phone-alt me-2"></i>
-            <span>Schedule Onboarding Call Now</span>
-        </button>
+            Schedule Onboarding Call Now</a>
+    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
         {% elif setup_fee.call_status == 'booked' %}
         <div class="btn btn-success btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center">
             <i class="fas fa-check-circle me-2"></i>

@@ -170,10 +170,25 @@
         
         <div class="steps-container text-start">
             <h2 class="mb-3">What happens next?</h2>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Schedule Demo Call (Optional)</div>
+                    <p>Please schedule your demo call if you have any questions related to CleaningBiz AI or if you want to know more about our platform. If not, you can skip this step.</p>
+                    
+           
+                    <a id="app-scheduling" href="#" class="btn btn-primary mt-2" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
+                        <i class="fas fa-phone-alt me-2"></i>
+                        Schedule Demo Call</a>
+                <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
+
+                   
+                </div>
+            </div>
             
 
             <div class="step">
-                <div class="step-number">1</div>
+                <div class="step-number">2</div>
                 <div class="step-content">
                     {% if trial_plan %}
                     <div class="step-title">Sign Up for the {{ trial_plan.get_billing_cycle_display }} Trial</div>
@@ -258,17 +273,38 @@
             </div>
             
             <div class="step">
-                <div class="step-number">2</div>
+                <div class="step-number">3</div>
                 <div class="step-content">
                     <div class="step-title">Sign up for your onboarding call</div>
                     <p>Schedule your mandatory one-on-one onboarding call with our platform experts to professionally set up your account alongside you. This will ensure a smoother and more successful experience without any headaches, as well as ensure that you are properly trained on the tool. This call also includes 1-2 custom integrations with your existing tools (if your tools support API integrations).</p>
                     <p><strong>Note that this is a one-time fee of $60 and it is non-refundable.<br>  The onboarding setup fee is collected when you start the trial plan or subscribe to any plan.</strong> </p>
                     
-                    <a href="https://tidycal.com/cleaningbiz/30-min-cleaning-biz-ai-demo" class="btn btn-secondary mt-2 disabled" style="opacity: 0.65; pointer-events: none;" target="_blank">
-                        <i class="fas fa-calendar-check me-2"></i>Book Your Mandatory Onboarding Call
-                    </a>
+           
+
+                    <a id="app-scheduling" href="#" class="btn btn-secondary mt-2 disabled" style="opacity: 0.65; pointer-events: none;" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
+                        <i class="fas fa-phone-alt me-2"></i>
+                        Book Your Mandatory Onboarding Call</a>
+                <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
+
                     <br> <br>
                     <a href="{% url 'subscription:select_plan' trial_plan.id %}" class="mt-2 text-primary">First, start your {{ trial_plan.get_billing_cycle_display }} {{ trial_plan.plan_tier }} plan to get started</a>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Watch the demo video</div>
+                    <p>Watch the demo video to get a better understanding of the platform and how it can help you.</p>
+                    <div class="video-container">
+                        <iframe 
+                            src="https://www.youtube.com/embed/8eGSZkqMLFo?si=BGntGDVBBeOdZ-wS" 
+                            title="CleaningBiz AI Platform Demo" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+           
                 </div>
             </div>
         </div>
