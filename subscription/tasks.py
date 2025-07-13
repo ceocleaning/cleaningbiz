@@ -288,14 +288,14 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
         )
         
         # Mark subscription as past_due
-        if subscription.end_date < timezone.now().date():
+        if subscription.end_date.date() < timezone.now().date():
             subscription.status = 'past_due'
             subscription.save()
         
 
         two_days_after = timezone.now().date() + timedelta(days=2)
         
-        if subscription.end_date < two_days_after:
+        if subscription.end_date.date() < two_days_after:
             subscription.is_active = False
             subscription.status = 'ended'
             subscription.save()
