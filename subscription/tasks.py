@@ -48,8 +48,11 @@ def process_subscription_renewals():
     # 3. End date is between 2 days ago
     subscriptions_to_renew = BusinessSubscription.objects.filter(
         is_active=True,
+        plan__plan_type='paid',
     ).filter(
         Q(status='past_due') | Q(status='active') & Q(end_date__lte=two_days_ago)
+    ).exclude(
+        plan__plan_tier='trial'
     )
     
     print(f"Found {subscriptions_to_renew.count()} subscriptions to renew")
