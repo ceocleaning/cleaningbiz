@@ -140,6 +140,24 @@ def _process_renewal_payment(business, subscription, plan, square_client):
         if plan.billing_cycle == 'yearly':
             final_price = original_price * 0.8
         
+        # Check if there's a coupon associated with the subscription
+        coupon = subscription.coupon_used
+        discount_applied = False
+        original_price = final_price  # Store original price before any coupon discount
+        coupon_code = None
+        discount_amount = 0
+        
+        # Apply coupon if it exists, is of type per_user, and is valid for the user
+        if coupon and coupon.limit_type == 'per_user' and business.user:
+            if coupon.is_valid_for_user(business.user):
+                # Apply the coupon discount
+                coupon_code = coupon.code
+                original_price = final_price
+                final_price = coupon.apply_discount(final_price)
+                discount_amount = float(original_price) - float(final_price)
+                discount_applied = True
+                print(f"Applied coupon {coupon.code} for user {business.user.username}, discount amount: {discount_amount}")
+        
         # Calculate amount in cents
         amount_money = {
             "amount": int(float(final_price) * 100),
@@ -151,7 +169,7 @@ def _process_renewal_payment(business, subscription, plan, square_client):
             "idempotency_key": idempotency_key,
             "amount_money": amount_money,
             "autocomplete": True,
-            "note": f"Automatic renewal: {plan.name} ({plan.billing_cycle})",
+            "note": f"Automatic renewal: {plan.name} ({plan.billing_cycle}){' with coupon discount' if discount_applied else ''}",
             "payment_method_types": ["CARD"],
             "source_id": business.square_card_id,
             "customer_id": business.square_customer_id
@@ -168,7 +186,12 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 'success': True,
                 'message': 'Payment processed successfully',
                 'payment_id': payment['id'],
-                'card_details': payment.get('card_details', {})
+                'card_details': payment.get('card_details', {}),
+                'coupon_applied': discount_applied,
+                'coupon_code': coupon_code,
+                'original_price': original_price,
+                'final_price': final_price,
+                'discount_amount': discount_amount
             }
         else:
             return {
@@ -229,10 +252,17 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
         card = card_details.get('card', {})
         last4 = card.get('last_4', '****')
         
+        # Get coupon details from payment result if available
+        coupon_applied = payment_result.get('coupon_applied', False)
+        coupon_code = payment_result.get('coupon_code', None)
+        discount_amount = payment_result.get('discount_amount', 0)
+        final_price = payment_result.get('final_price', plan.price)
+        
+        # Create billing history record with coupon details
         billing_record = BillingHistory.objects.create(
             business=business,
             subscription=new_subscription,
-            amount=plan.price,
+            amount=final_price,  # Use the final price after coupon discount
             status='paid',
             billing_date=timezone.now(),
             square_payment_id=payment_result['payment_id'],
@@ -240,7 +270,11 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
                 'renewal_type': 'automatic',
                 'card_last4': last4,
                 'plan_name': plan.name,
-                'billing_cycle': plan.billing_cycle
+                'billing_cycle': plan.billing_cycle,
+                'coupon_code': coupon_code if coupon_code else "No Coupon",
+                'discount_amount': discount_amount,
+                'coupon_applied': coupon_applied,
+                'original_price': payment_result.get('original_price', plan.price)
             }
         )
         
