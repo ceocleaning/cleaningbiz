@@ -428,7 +428,8 @@ def send_hour_before_reminder():
             startTime__gte=one_hour_from_now.time(),
             startTime__lt=two_hours_from_now.time(),
             cancelled_at__isnull=True,
-            isCompleted=False
+            isCompleted=False,
+            hourBeforeReminderSentAt__isnull=True
         )
 
         print(f"[INFO] Found {bookings.count()} bookings for hour-before reminder")
@@ -452,7 +453,8 @@ def send_hour_before_reminder():
                 html_body = get_email_template(booking, to=to, when='in one hour')
                 recipient_email = booking.email if to == 'client' else booking.cleaner.email
                 smtp_config = SMTPConfig.objects.filter(business=business).first()
-                from_email = smtp_config.username if smtp_config else (business.email if hasattr(business, 'email') and business.email else settings.DEFAULT_FROM_EMAIL)
+
+                from_email = smtp_config.username if smtp_config else (business.user.email if hasattr(business, 'user') and business.user.email else settings.DEFAULT_FROM_EMAIL)
 
                 # Send email using the new utility
                 send_email_util(
