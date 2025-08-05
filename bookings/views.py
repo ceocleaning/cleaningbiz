@@ -217,6 +217,7 @@ def customer_detail(request, identifier):
     return render(request, 'bookings/customer_detail.html', context)
 
 @require_http_methods(["GET", "POST"])
+@login_required
 @transaction.atomic
 def create_booking(request):
     from datetime import datetime, timedelta
@@ -331,9 +332,14 @@ def create_booking(request):
 
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:booking_detail', bookingId=booking.bookingId)
+        
+        except Business.DoesNotExist:
+            messages.error(request, 'Business not found')
+            return redirect('bookings:all_bookings')
             
         except Exception as e:
-            raise Exception(f'Error creating booking: {str(e)}')
+            messages.error(request, f'Error creating booking: {str(e)}')
+            return redirect('bookings:all_bookings')
     
     
     prices = {
@@ -370,6 +376,7 @@ def create_booking(request):
 
 
 @require_http_methods(["GET", "POST"])
+@login_required
 @transaction.atomic
 def edit_booking(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)

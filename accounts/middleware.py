@@ -158,6 +158,9 @@ class CleanerAccessMiddleware:
         if '/confirm-arrival/' in request.path or '/confirm-completed/' in request.path:
             return self.get_response(request)
         
+        if '/saas/' in request.path:
+            return self.get_response(request)
+        
         # Special check for login-related pages
         if '/accounts/' in request.path and any(x in request.path for x in ['/login/', '/logout/']):
             return self.get_response(request)
@@ -166,10 +169,10 @@ class CleanerAccessMiddleware:
         try:
             # Use the cleaner detail page URL as the default redirect
             cleaner_url = f'/cleaners/{cleaner_id}/'
+            messages.error(request, 'You do not have access to this page.')
             return redirect(cleaner_url)
         except Exception as e:
-            # Log the error
-            pass
+            print(str(e))
             
             # Use absolute hardcoded redirect as last resort
             cleaner_url = f'/cleaners/{cleaner_id}/'

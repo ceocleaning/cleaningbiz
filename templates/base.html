@@ -690,18 +690,18 @@
                     
                     {% if request.user|is_cleaner %}
                     <!-- Cleaner Navigation Links -->
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link {% if '/bookings/' in request.path %}active{% endif %}" 
-                            href="{% url 'bookings:all_bookings' %}">
-                            <i class="fas fa-calendar-check me-1"></i>Cleaner Page
+                            href="{% url 'cleaner_detail' request.user.cleaner_profile.cleaner.id %}">
+                            <i class="fas fa-calendar-check me-1"></i>Cleaner Profile
                         </a>
-                    </li>
-                    <li class="nav-item">
+                    </li> -->
+                    <!-- <li class="nav-item">
                         <a class="nav-link {% if '/payouts/' in request.path %}active{% endif %}" 
                             href="{% url 'bookings:payouts_dashboard' %}">
                             <i class="fas fa-money-bill-wave me-1"></i>My Payouts
                         </a>
-                    </li>
+                    </li> -->
                     {% elif request.user|is_business_owner %}
                     <!-- Business Owner Navigation Links -->
                     <li class="nav-item dropdown">
@@ -936,11 +936,42 @@
                             </ul>
                         </div>
                         {% else %}
-                        <div class="d-flex align-items-center gap-1">
-                            <div class="avatar-circle me-2">
-                                <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
-                            </div>
-                            <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
+      
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="avatar-circle me-2">
+                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
+                                </div>
+                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-inline d-md-none">Account</span>
+                            </a>
+                
+                            
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                                <li class="px-3 py-2 d-flex flex-column">
+                                    <span class="fw-bold">{{ request.user.get_full_name }}</span>
+                                    <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'cleaner_detail' request.user.cleaner_profile.cleaner.id %}">
+                                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="https://support.cleaningbizai.com/" rel="noopener noreferrer" target="_blank">
+                                        <i class="fas fa-robot me-2 text-primary"></i>
+                                        Help Center
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                         {% endif %}
                 {% else %}

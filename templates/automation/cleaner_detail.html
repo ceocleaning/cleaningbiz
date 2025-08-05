@@ -7,17 +7,21 @@
 <div class="container py-4">
     <!-- Back Button and Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
+        {% if not request.user.cleaner_profile %}
         <a href="{% url 'cleaners_list' %}" class="btn btn-outline-primary">
             <i class="fas fa-arrow-left me-2"></i>Back to Cleaners
         </a>
+        {% else%}
+        <div></div>
+        {% endif %}
         <div class="d-flex gap-2">
-            <form action="{% url 'toggle_cleaner_availability' cleaner.id %}" method="POST" class="d-inline">
+            <!-- <form action="{% url 'toggle_cleaner_availability' cleaner.id %}" method="POST" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn {% if cleaner.isAvailable %}btn-warning{% else %}btn-success{% endif %}">
                     <i class="fas {% if cleaner.isAvailable %}fa-pause-circle{% else %}fa-play-circle{% endif %} me-2"></i>
                     Mark as {% if cleaner.isAvailable %}Unavailable{% else %}Available{% endif %}
                 </button>
-            </form>
+            </form> -->
             <form action="{% url 'toggle_cleaner_active' cleaner.id %}" method="POST" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn {% if cleaner.isActive %}btn-danger{% else %}btn-success{% endif %}">

@@ -162,12 +162,19 @@ def invoice_preview(request, invoiceId):
 
 
         return render(request, 'invoices/invoice_preview.html', context)
+
     except Invoice.DoesNotExist:
         messages.error(request, 'Invoice not found.')
-        return redirect('invoice:all_invoices')
+        raise Http404('Invoice not found.')
+    
+    except Booking.DoesNotExist:
+        messages.error(request, 'Booking not found. Please contact service provider to give you correct invoice.')
+        raise Http404('Booking not found. Please contact service provider to give you correct invoice.')
     
     except Exception as e:
-        raise Exception(f"Error Generating Invoice Preview: {str(e)}")
+        messages.error(request, "Error Generating Invoice Preview")
+        print(str(e))
+        raise Http404('Error Generating Invoice Preview')
 
 @login_required
 def mark_invoice_paid(request, invoiceId):

@@ -17,6 +17,7 @@ from django.utils import timezone
 import json
 
 
+@receiver(post_save, sender=Invoice)
 def send_booking_confirmation_sms(sender, instance, created, **kwargs):
     """Send confirmation SMS when a new booking is created"""
     if created:  # Only send SMS for new bookings
@@ -62,7 +63,7 @@ def send_booking_confirmation_sms(sender, instance, created, **kwargs):
             return False
 
 
-
+@receiver(post_save, sender=Invoice)
 def send_booking_confirmation_email_with_invoice(sender, instance, created, **kwargs):
     """Send HTML email confirmation with invoice details when a new booking is created"""
     if created:  # Only send email for new bookings
@@ -176,6 +177,8 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
                     <p>Please note that this is a pending payment. Once the payment is confirmed, your appointment will be confirmed.</p>
                     <p>To view your invoice and make a payment, please click the button below:</p>
                     <a href="{invoice_link}" class="button">View Invoice</a>
+
+                    <a href="{invoice_link}">{invoice_link}</a>
                     
                     <p>If you have any questions or need to make changes to your appointment, please contact us.</p>
                     <p>We look forward to serving you!</p>
@@ -243,6 +246,3 @@ def format_time(time_value):
         return time_value.strftime('%I:%M %p')
     return str(time_value)
 
-# Connect the signals
-post_save.connect(send_booking_confirmation_sms, sender=Invoice)
-post_save.connect(send_booking_confirmation_email_with_invoice, sender=Invoice)
