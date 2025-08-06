@@ -26,8 +26,7 @@ urlpatterns = [
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-if settings.DEBUG == False:
-    handler400 = 'leadsAutomation.error_handlers.handler400'
-    handler403 = 'leadsAutomation.error_handlers.handler403'
-    handler404 = 'leadsAutomation.error_handlers.handler404'
-    handler500 = 'leadsAutomation.error_handlers.handler500'
+handler400 = 'leadsAutomation.error_handlers.handler400'
+handler403 = 'leadsAutomation.error_handlers.handler403'
+handler404 = 'leadsAutomation.error_handlers.handler404'
+handler500 = 'leadsAutomation.error_handlers.handler500'
