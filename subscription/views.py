@@ -649,7 +649,7 @@ def process_payment(request, plan_id):
             payment_result = square_client.payments.create_payment(
                 body=payment_body
             )
-            
+            print(payment_result)
             if not payment_result.is_success():
                 messages.error(request, "Failed to process payment. Please try again")
                 return redirect('subscription:select_plan', plan_id=plan_id)
