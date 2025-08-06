@@ -511,55 +511,82 @@
     const setupFeeAmount = setupFeeElement ? parseFloat(setupFeeElement.value) : 0;
 
     if (!appliedCoupon) {
-        resetToOriginalPrice(setupFeeAmount);
+        // Reset to original price
+        const originalPriceValue = parseFloat(originalPrice.value);
+        const totalWithSetupFee = originalPriceValue + setupFeeAmount;
+
+        if (originalPriceValue === 0) {
+            if (setupFeeAmount > 0) {
+                totalPrice.textContent = '$' + setupFeeAmount.toFixed(2);
+                totalPrice.classList.remove('badge', 'bg-success');
+                discountRow.classList.add('d-none');
+                if (payButton) {
+                    payButton.textContent = 'Complete Payment';
+                }
+            } else {
+                totalPrice.textContent = 'Free';
+                totalPrice.classList.add('badge', 'bg-success');
+                discountRow.classList.add('d-none');
+                if (payButton) {
+                    payButton.textContent = 'Subscribe for Free';
+                    let freeInput = document.getElementById('is-free-subscription');
+                    if (!freeInput) {
+                        freeInput = document.createElement('input');
+                        freeInput.type = 'hidden';
+                        freeInput.id = 'is-free-subscription';
+                        freeInput.name = 'is_free_subscription';
+                        freeInput.value = 'true';
+                        payButton.closest('form').appendChild(freeInput);
+                    }
+                }
+            }
+        } else {
+            totalPrice.textContent = '$' + totalWithSetupFee.toFixed(2);
+            totalPrice.classList.remove('badge', 'bg-success');
+            discountRow.classList.add('d-none');
+            if (payButton) {
+                payButton.textContent = 'Complete Payment';
+            }
+        }
         return;
     }
 
-    const originalPriceValue = parseFloat(originalPrice.value);
     const discountValue = parseFloat(appliedCoupon.discount_amount);
-    const discountedPlanPrice = parseFloat(appliedCoupon.discounted_price) || Math.max(0, originalPriceValue - discountValue);
+    const discountedPlanPrice = parseFloat(appliedCoupon.discounted_price) || 0;
     const newTotal = discountedPlanPrice + setupFeeAmount;
 
-    // Update Discount UI
-    const formattedDiscount = discountValue.toFixed(2);
-    discountAmount.textContent = '-$' + formattedDiscount;
+    discountAmount.textContent = '-$' + discountValue.toFixed(2);
     discountRow.classList.remove('d-none');
     document.getElementById('discount_amount').value = discountValue.toFixed(2);
 
-    // Clear existing "Free" flag input if exists
-    const existingFreeFlag = document.getElementById('is-free-subscription');
-    if (existingFreeFlag) {
-        existingFreeFlag.remove();
-    }
-
-    // Handle final display based on computed total
-    if (discountedPlanPrice === 0 && setupFeeAmount === 0) {
+    if (newTotal === 0) {
         totalPrice.textContent = 'Free';
         totalPrice.classList.add('badge', 'bg-success');
-
-        // Add hidden input to flag free plan
-        const freeInput = document.createElement('input');
-        freeInput.type = 'hidden';
-        freeInput.id = 'is-free-subscription';
-        freeInput.name = 'is_free_subscription';
-        freeInput.value = 'true';
-        payButton.closest('form').appendChild(freeInput);
-
-        payButton.textContent = 'Subscribe for Free';
-
-    } else if (discountedPlanPrice === 0 && setupFeeAmount > 0) {
-        totalPrice.textContent = '$' + newTotal.toFixed(2);
-        totalPrice.classList.remove('badge', 'bg-success');
-        couponFeedback.innerHTML = 'Coupon applied successfully! <span class="text-muted">(Plan is free, setup fee applies)</span>';
-
-        payButton.textContent = 'Pay Setup Fee $' + setupFeeAmount.toFixed(2);
-
+        if (payButton) {
+            payButton.textContent = 'Subscribe for Free';
+            let freeInput = document.getElementById('is-free-subscription');
+            if (!freeInput) {
+                freeInput = document.createElement('input');
+                freeInput.type = 'hidden';
+                freeInput.id = 'is-free-subscription';
+                freeInput.name = 'is_free_subscription';
+                freeInput.value = 'true';
+                payButton.closest('form').appendChild(freeInput);
+            }
+        }
     } else {
         totalPrice.textContent = '$' + newTotal.toFixed(2);
         totalPrice.classList.remove('badge', 'bg-success');
-        payButton.textContent = 'Pay $' + newTotal.toFixed(2);
+        if (payButton) {
+            payButton.textContent = `Pay $${newTotal.toFixed(2)}`;
+            const freeInput = document.getElementById('is-free-subscription');
+            if (freeInput) {
+                freeInput.remove();
+            }
+        }
     }
 }
+
 
         
         // Add event listener to the payment form to clear coupon on successful submission
