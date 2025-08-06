@@ -938,10 +938,13 @@ def validate_coupon(request):
         })
     
     except Coupon.DoesNotExist:
+        print("Coupon Not Exist")
         return JsonResponse({'valid': False, 'message': 'Invalid coupon code'})
     except SubscriptionPlan.DoesNotExist:
+        print("Plan does Not Exist")
         return JsonResponse({'valid': False, 'message': 'Invalid subscription plan'})
     except Exception as e:
+        print(f"Error: {str(e)}")
         return JsonResponse({'valid': False, 'message': f'An error occurred: {str(e)}'})
 
 @login_required
