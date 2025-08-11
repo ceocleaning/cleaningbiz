@@ -66,6 +66,7 @@ class Business(models.Model):
 
         if SetupFee.objects.filter(business=self).exists():
             return True
+            
         return False
 
     def has_availed_trial(self):

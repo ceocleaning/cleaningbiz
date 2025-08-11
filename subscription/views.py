@@ -570,7 +570,7 @@ def process_payment(request, plan_id):
         # Add setup fee to final price if applicable
         original_plan_price = final_price
         if apply_setup_fee:
-            final_price += Decimal(setup_fee_amount)
+            final_price += float(setup_fee_amount)
         
     
         if coupon_code:
@@ -691,7 +691,14 @@ def process_payment(request, plan_id):
                 square_customer_id=customer_id if customer_id else None,
                 coupon_used=coupon  # Store the coupon used for this subscription
             )
+
+            if apply_setup_fee:
+                discount_amount = float(float(original_plan_price) - float(final_price) + float(setup_fee_amount)) if coupon_code else 0.00
             
+            else:
+                discount_amount = float(float(original_plan_price) - float(final_price)) if coupon_code else 0.00
+
+
             # Create a billing record for this transaction
             billing_record = BillingHistory.objects.create(
                 business=business,
@@ -708,7 +715,7 @@ def process_payment(request, plan_id):
                     'card_id': card_id if card_id else None,
                     'payment_status': 'COMPLETED',
                     'coupon_code': coupon_code if coupon_code else "No Coupon",
-                    'discount_amount': float(original_plan_price - final_price + float(setup_fee_amount)) if coupon_code else 0.00,
+                    'discount_amount': discount_amount,
                     'is_free': is_free,
                     'setup_fee_applied': apply_setup_fee,
                     'setup_fee_amount': float(setup_fee_amount)
@@ -717,7 +724,7 @@ def process_payment(request, plan_id):
 
             print({
                     'coupon_code': coupon_code if coupon_code else "No Coupon",
-                    'discount_amount': float(original_plan_price - final_price) if coupon_code else 0.00,
+                    'discount_amount': discount_amount,
                     'is_free': is_free,
                     'setup_fee_applied': apply_setup_fee,
                     'setup_fee_amount': float(setup_fee_amount)
