@@ -53,7 +53,7 @@ class UserActivityMiddleware(MiddlewareMixin):
         
         # Create a description
         description = f"Visited {view_name} page"
-        print(description)
+        
         
         # Log the activity
         ActivityLog.objects.create(

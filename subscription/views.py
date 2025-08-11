@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from decimal import Decimal
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
@@ -569,7 +570,7 @@ def process_payment(request, plan_id):
         # Add setup fee to final price if applicable
         original_plan_price = final_price
         if apply_setup_fee:
-            final_price += float(setup_fee_amount)
+            final_price += Decimal(setup_fee_amount)
         
     
         if coupon_code:
@@ -623,6 +624,9 @@ def process_payment(request, plan_id):
             
             # If using existing card, get the customer and card IDs
             if use_existing_card:
+                if not business.square_card_id:
+                    messages.error(request, "You selected to use an existing card, but you don't have one on file. Please add a card.")
+                    return redirect('subscription:select_plan', plan_id=plan_id)
                 customer_id = business.square_customer_id
                 card_id = business.square_card_id
             
