@@ -1075,6 +1075,8 @@ def manage_card(request):
             card_result = square_client.cards.create_card(
                 body=card_request
             )
+
+            print(f"card_result: {card_result} for business: {business}")
             
             if card_result.is_success():
                 card_id = card_result.body['card']['id']
