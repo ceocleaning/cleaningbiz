@@ -196,7 +196,7 @@ AI Agent Behavior Guidelines:
 
 def convert_date_str_to_date(date_str, business=None):
     # Get the business timezone if provided, otherwise use Chicago timezone as default
-    timezone_str = 'UTC'
+    timezone_str = 'America/Chicago'
     if business:
         try:
             timezone_str = business.get_timezone()
