@@ -24,6 +24,9 @@ from subscription.models import UsageTracker
 from retell import Retell
 from django.conf import settings
 from openai import OpenAI
+from .utils import format_phone_number
+from ai_agent.utils import convert_date_str_to_date
+from bookings.timezone_utils import convert_to_utc
 
 @csrf_exempt
 def thumbtack_webhook(request, secretKey):
@@ -329,23 +332,25 @@ def chatgpt_analysis_webhook(request, secretKey):
             and extract structured information for a cleaning service lead. Extract the following fields 
             if available (leave blank if not found):
             
-            1. name: Full name of the customer
-            2. email: Customer's email address
-            3. phone_number: Customer's phone number
-            4. bedrooms: Number of bedrooms (numeric)
-            5. bathrooms: Number of bathrooms (numeric)
-            6. squareFeet: Size of the property in square feet (numeric)
-            7. type_of_cleaning: Type of cleaning service requested
-            8. address1: Street address
-            9. address2: Apartment/unit number or additional address info
-            10. city: City name
-            11. state: State name
-            12. zipCode: ZIP/Postal code
-            13. proposed_start_datetime: Proposed start date and time (ISO format if possible)
-            14. proposed_end_datetime: Proposed end date and time (ISO format if possible)
-            15. estimatedPrice: Estimated price for the service (numeric)
-            16. notes: Any additional notes or special requests
-            17. source: Source of the lead (if available, otherwise use "API")
+            1. name: Full name of the customer (String)
+            2. email: Customer's email address (String)
+            3. phone_number: Customer's phone number (String)
+            4. bedrooms: Number of bedrooms (Number)
+            5. bathrooms: Number of bathrooms (Number)
+            6. squareFeet: Size of the property in square feet (Number)
+            7. type_of_cleaning: Type of cleaning service requested (String)
+            8. address1: Street address (String)
+            9. address2: Apartment/unit number or additional address info (String)
+            10. city: City name (String)
+            11. state: State name (String)
+            12. zipCode: ZIP/Postal code (String)
+            13. proposed_start_datetime: Proposed/Preferred start date and time 
+                    Discription: This is the date and time when the customer wants the cleaning to start. It Could be in any format. Human readable format or ISO format.
+            14. proposed_end_datetime: Proposed/Preferred end date and time
+                    Discription: This is the date and time when the customer wants the cleaning to end. It Could be in any format. Human readable format or ISO format.
+            15. estimatedPrice: Estimated price for the service (Number)
+            16. notes: Any additional notes or special requests (String)
+            17. source: Source of the lead (if available, otherwise use "API") (String)
             
             Return ONLY a JSON object with these fields. Do not include any explanations or additional text.
             """
@@ -369,35 +374,43 @@ def chatgpt_analysis_webhook(request, secretKey):
                 'business': business,
                 'name': structured_data.get('name', ''),
                 'email': structured_data.get('email'),
-                'phone_number': structured_data.get('phone_number', ''),
-                'bedrooms': structured_data.get('bedrooms'),
-                'bathrooms': structured_data.get('bathrooms'),
-                'squareFeet': structured_data.get('squareFeet'),
+                'phone_number': format_phone_number(structured_data.get('phone_number', '')) if structured_data.get('phone_number') else None,
+                'bedrooms': int(structured_data.get('bedrooms')) if structured_data.get('bedrooms') else None,
+                'bathrooms': int(structured_data.get('bathrooms')) if structured_data.get('bathrooms') else None,
+                'squareFeet': int(structured_data.get('squareFeet')) if structured_data.get('squareFeet') else None,
                 'type_of_cleaning': structured_data.get('type_of_cleaning'),
                 'address1': structured_data.get('address1'),
                 'address2': structured_data.get('address2'),
                 'city': structured_data.get('city'),
                 'state': structured_data.get('state'),
                 'zipCode': structured_data.get('zipCode'),
-                'estimatedPrice': structured_data.get('estimatedPrice'),
+                'estimatedPrice': int(structured_data.get('estimatedPrice')) if structured_data.get('estimatedPrice') else None,
                 'notes': structured_data.get('notes'),
                 'content': json.dumps(data, indent=2),  # Store original JSON
                 'source': structured_data.get('source', 'API'),
-                'details': data  # Store full original data in details field
+                'details': data,  # Store full original data in details field
+
             }
+
+
             
             # Handle datetime fields if present
             proposed_start = structured_data.get('proposed_start_datetime')
             if proposed_start:
                 try:
-                    lead_data['proposed_start_datetime'] = datetime.fromisoformat(proposed_start.replace('Z', '+00:00'))
+                    proposed_start_datetime = convert_date_str_to_date(proposed_start, business)
+                    utc_proposed_start_datetime = convert_to_utc(proposed_start_datetime, business.get_timezone())
+                    lead_data['proposed_start_datetime'] = utc_proposed_start_datetime
                 except Exception as e:
                     print(f"Error parsing proposed start datetime: {e}")
             
             proposed_end = structured_data.get('proposed_end_datetime')
             if proposed_end:
                 try:
-                    lead_data['proposed_end_datetime'] = datetime.fromisoformat(proposed_end.replace('Z', '+00:00'))
+                    proposed_end_datetime = convert_date_str_to_date(proposed_end, business)
+                    utc_proposed_end_datetime = convert_to_utc(proposed_end_datetime, business.get_timezone())
+                    lead_data['proposed_end_datetime'] = utc_proposed_end_datetime
+
                 except Exception as e:
                     print(f"Error parsing proposed end datetime: {e}")
             
@@ -414,7 +427,7 @@ def chatgpt_analysis_webhook(request, secretKey):
             return JsonResponse({
                 'status': 'success', 
                 'lead_id': lead.leadId,
-                'structured_data': structured_data
+                'lead_data': structured_data
             }, status=200)
             
         except json.JSONDecodeError:

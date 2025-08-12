@@ -196,15 +196,18 @@ AI Agent Behavior Guidelines:
 
 def convert_date_str_to_date(date_str, business=None):
     # Get the business timezone if provided, otherwise use Chicago timezone as default
-    timezone_str = 'America/Chicago'
+    timezone_str = 'UTC'
     if business:
         try:
-            timezone_str = business.timezone
+            timezone_str = business.get_timezone()
         except:
             pass
     
     # Get current time in the business timezone
-    business_time = datetime.now().astimezone(pytz.timezone(timezone_str))
+    if not business:
+        business_time = datetime.now()   
+    else:
+        business_time = business.get_local_time()
     
     SYSTEM_PROMPT = f"""
     You are a helpful assistant that can convert any date and time format to a standardized datetime object.

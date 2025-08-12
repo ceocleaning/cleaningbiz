@@ -69,7 +69,10 @@ def convert_to_utc(dt, source_timezone):
     """
     if dt is None:
         return None
-        
+    
+    if isinstance(dt, str):
+        dt = datetime.fromisoformat(dt)
+    
     # If datetime is already timezone aware, convert it to UTC
     if dt.tzinfo is not None:
         return dt.astimezone(pytz.UTC)
