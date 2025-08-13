@@ -31,7 +31,7 @@ class Lead(models.Model):
     leadId = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     email = models.EmailField(null=True, blank=True)
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
 
     bedrooms = models.IntegerField(null=True, blank=True)
     bathrooms = models.IntegerField(null=True, blank=True)

@@ -1449,8 +1449,15 @@ def api_analytics(request):
     
     # Calculate conversion rate (completed/total)
     completed_bookings = bookings_in_range.filter(isCompleted=True).count()
-    
-    conversion_rate = round((total_bookings / (total_chats + total_retell_calls)) * 100)
+
+
+    total_interactions = total_chats + total_retell_calls
+
+    if total_interactions > 0:
+        conversion_rate = round((total_bookings / total_interactions) * 100, 2)
+    else:
+        conversion_rate = 0  # or None, depending on your business logic
+
   
     
     # Get distribution data for pie chart (by service type)
