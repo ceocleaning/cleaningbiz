@@ -672,9 +672,10 @@
                         <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg shadow-glow px-4">
                             <i class="fas fa-rocket me-2"></i>Get Started Now
                         </a>
-                        <a class="btn btn-primary btn-lg shadow-glow px-4" data-cal-link="kashif.m/cleaningbiz-demo" data-cal-namespace="cleaningbiz-demo" data-cal-config='{"layout":"month_view","theme":"auto"}'>
-                            <i class="fas fa-calendar-check me-2"></i>Schedule Demo
-                        </a>
+                        <a id="app-scheduling" href="#" class="btn btn-dark btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
+                            <i class="fas fa-phone-alt me-2"></i>
+                            Schedule Demo Now</a>
+                    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
                     </div>
                         {% endif %}
                 </div>
@@ -715,16 +716,7 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Conditionally load either Cal.com or chatbot widget -->
-{% if user.is_authenticated and business_subscriptions_count < 3 %}
-<!-- Cal element-click embed code begins -->
-<script type="text/javascript">
-  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-Cal("init", "cleaningbiz-demo", {origin:"https://cal.com"});
-  
-  Cal.ns["cleaningbiz-demo"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
-</script>
-{% endif %}
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         
