@@ -49,8 +49,9 @@ def process_subscription_renewals():
     subscriptions_to_renew = BusinessSubscription.objects.filter(
         is_active=True,
         plan__plan_type='paid',
+        end_date__lte=two_days_ago
     ).filter(
-        Q(status='past_due') | Q(status='active') & Q(end_date__lte=two_days_ago)
+        Q(status='past_due') | Q(status='active')
     ).exclude(
         plan__plan_tier='trial'
     )
@@ -157,6 +158,20 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 discount_amount = float(original_price) - float(final_price)
                 discount_applied = True
                 print(f"Applied coupon {coupon.code} for user {business.user.username}, discount amount: {discount_amount}")
+
+        if final_price <= 0:
+            print(f"Final price is zero for {business.businessName} after coupon {coupon.code}. Skipping payment.")
+            return {
+                'success': True,
+                'message': 'Coupon applied - no payment required',
+                'payment_id': str(uuid.uuid4()),  # mock id
+                'card_details': {'card': {'last_4': 'FREE'}},
+                'coupon_applied': True,
+                'coupon_code': coupon.code,
+                'original_price': original_price,
+                'final_price': 0,
+                'discount_amount': discount_amount
+            }
         
         # Calculate amount in cents
         amount_money = {
