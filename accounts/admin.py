@@ -29,13 +29,52 @@ class BusinessAdmin(admin.ModelAdmin):
     reject_businesses.short_description = "Reject selected businesses"
 
 
-admin.site.register(Business, BusinessAdmin)
-admin.site.register(BusinessSettings)
-admin.site.register(ApiCredential)
-admin.site.register(CustomAddons)
-admin.site.register(SMTPConfig)
-admin.site.register(PasswordResetOTP)
-admin.site.register(SquareCredentials)
-admin.site.register(StripeCredentials)
-admin.site.register(PayPalCredentials)
-admin.site.register(ThumbtackProfile)
+
+@admin.register(BusinessSettings)
+class BusinessSettingsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'bedroomPrice', 'bathroomPrice', 'depositFee', 'taxPercent', 'createdAt', 'updatedAt')
+    search_fields = ('business__businessName',)
+    readonly_fields = ('createdAt', 'updatedAt')
+
+@admin.register(ApiCredential)
+class ApiCredentialAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business')
+    search_fields = ('business__businessName',)
+
+@admin.register(CustomAddons)
+class CustomAddonsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'addonName', 'addonDataName', 'addonPrice')
+    search_fields = ('business__businessName', 'addonName', 'addonDataName')
+
+@admin.register(SMTPConfig)
+class SMTPConfigAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'host', 'port', 'username', 'from_name', 'reply_to')
+    search_fields = ('business__businessName', 'host', 'username', 'from_name', 'reply_to')
+
+@admin.register(PasswordResetOTP)
+class PasswordResetOTPAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'otp', 'is_used', 'failed_attempts', 'otp_sent_count', 'created_at', 'expires_at')
+    search_fields = ('user__username', 'otp', 'token')
+    readonly_fields = ('created_at', 'expires_at')
+
+@admin.register(SquareCredentials)
+class SquareCredentialsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'access_token', 'app_id', 'location_id', 'created_at', 'updated_at')
+    search_fields = ('business__businessName', 'access_token', 'app_id', 'location_id')
+    readonly_fields = ('created_at', 'updated_at')
+
+@admin.register(StripeCredentials)
+class StripeCredentialsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'stripe_secret_key', 'stripe_publishable_key')
+    search_fields = ('business__businessName', 'stripe_secret_key', 'stripe_publishable_key')
+
+@admin.register(PayPalCredentials)
+class PayPalCredentialsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'paypal_client_id', 'paypal_secret_key')
+    search_fields = ('business__businessName', 'paypal_client_id', 'paypal_secret_key')
+
+@admin.register(ThumbtackProfile)
+class ThumbtackProfileAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'thumbtack_business_id', 'access_token', 'refresh_token', 'created_at', 'updated_at')
+    search_fields = ('business__businessName', 'thumbtack_business_id', 'access_token', 'refresh_token')
+    readonly_fields = ('created_at', 'updated_at')
