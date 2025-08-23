@@ -45,6 +45,9 @@ urlpatterns = [
     path('payments/square/', views.payment_square_view, name='payment_square'),
     path('payments/square/manage/', views.manage_square_credentials, name='manage_square_credentials'),
     
+    # Bank Account URL
+    path('bank-account/', views.bank_account, name='bank_account'),
+    
     # Payment Main Page
     path('payments/', views.payment_main_view, name='payment_main'),
     

@@ -1,16 +1,15 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile, StripeCredentials, PayPalCredentials
 from automation.models import Cleaners
-from invoice.models import Invoice, Payment
+from invoice.models import Invoice, Payment, BankAccount
 from django.urls import reverse
 import random
-from django.http import JsonResponse
-from email.mime.multipart import MIMEMultipart
+import re
 from email.mime.text import MIMEText
 import smtplib
 from django.utils.html import strip_tags
@@ -1198,6 +1197,83 @@ def manage_square_credentials(request):
     
     return redirect('accounts:payment_square')
 
+
+@login_required
+def bank_account(request):
+    """
+    Handle bank account management (view, create, update, delete) with HTML forms
+    """
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'Business not found')
+        return redirect('accounts:profile')
+    
+    
+    account = BankAccount.objects.filter(business=business).first()
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+        
+        if form_type == 'create' or form_type == 'update':
+            # Get form data
+            account_name = request.POST.get('account_name', '').strip()
+            account_number = request.POST.get('account_number', '').strip()
+            bank_name = request.POST.get('bank_name', '').strip()
+            ifsc_code = request.POST.get('ifsc_code', '').strip().upper()
+            branch = request.POST.get('branch', '').strip()
+            
+            # Basic validation
+            errors = {}
+            if not account_name:
+                errors['account_name'] = 'Account name is required'
+            if not account_number or not account_number.isdigit():
+                errors['account_number'] = 'Valid account number is required (numbers only)'
+            if not bank_name:
+                errors['bank_name'] = 'Bank name is required'
+            if not ifsc_code or not re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', ifsc_code):
+                errors['ifsc_code'] = 'Valid IFSC code is required (format: ABCD0123456)'
+            
+            if not errors:
+                # Create new account
+                if account:
+                    account.account_name = account_name
+                    account.account_number = account_number
+                    account.bank_name = bank_name
+                    account.ifsc_code = ifsc_code
+                    account.branch = branch
+                    account.save()
+                    messages.success(request, 'Bank account updated successfully')
+                else:
+                    BankAccount.objects.create(
+                        business=business,
+                        account_name=account_name,
+                        account_number=account_number,
+                        bank_name=bank_name,
+                        ifsc_code=ifsc_code,
+                        branch=branch
+                    )
+                    messages.success(request, 'Bank account added successfully')
+                
+                return redirect('accounts:payment_main')
+            else:
+                # Show validation errors
+                for field, error in errors.items():
+                    messages.error(request, f"{field.replace('_', ' ').title()}: {error}")
+        
+        elif form_type == 'delete':
+            # Handle delete
+            
+            if account:
+                account.delete()
+                messages.success(request, 'Bank account deleted successfully')
+            return redirect('accounts:payment_main')
+        
+    
+    print("No form type specified")
+    return redirect('accounts:payment_main')
+    
+    
+    
+
 @login_required
 def payment_main_view(request):
     """
@@ -1211,6 +1287,8 @@ def payment_main_view(request):
     # Check if the business is approved
     if not business.isApproved:
         return redirect('accounts:approval_pending')
+    
+    bank_account = BankAccount.objects.filter(business=business).first()
     
     # Get all payment credentials
     try:
@@ -1233,6 +1311,7 @@ def payment_main_view(request):
         'square_credentials': square_credentials,
         'stripe_credentials': stripe_credentials,
         'paypal_credentials': paypal_credentials,
+        'bank_account': bank_account,
     }
     
     return render(request, 'accounts/payments/payment_main.html', context)

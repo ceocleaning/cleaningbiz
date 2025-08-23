@@ -1,127 +1,168 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="text-center mb-0">
-                        <i class="fas fa-building me-2"></i>Register Your Business
-                    </h3>
+<div class="main-container">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left Decorative Section -->
+            <div class="col-lg-6 left-section d-flex align-items-center justify-content-center">
+                <div class="decoration-content">
+                    <div class="floating-shapes">
+                        <div class="shape shape-1"></div>
+                        <div class="shape shape-2"></div>
+                        <div class="shape shape-3"></div>
+                        <div class="shape shape-4"></div>
+                        <div class="shape shape-5"></div>
+                    </div>
+                    
+                    <div class="welcome-content text-center">
+                        <div class="icon-wrapper mb-4">
+                            <i class="fas fa-broom main-icon"></i>
+                        </div>
+                        <h1 class="welcome-title">Automate Your Cleaning Business</h1>
+                        <p class="welcome-subtitle">Transform your cleaning operations with intelligent automation and seamless management</p>
+                        
+                        <div class="features-list mt-5">
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Automated Job Scheduling</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Smart Cleaner Assignment</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Real-time Progress Tracking</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Automated Client Billing</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-    
+            </div>
 
-                    <form method="post" action="{% url 'accounts:register_business' %}">
+            <!-- Right Form Section -->
+            <div class="col-lg-6 right-section d-flex align-items-center">
+                <div class="form-container w-100">
+                    <div class="form-header text-center mb-4">
+                        <h2 class="form-title">Register Your Cleaning Business</h2>
+                        <p class="form-subtitle">Start automating your operations today</p>
+                    </div>
+
+                    <form method="post" action="{% url 'accounts:register_business' %}" class="registration-form">
                         {% csrf_token %}
                         
-                        <div class="form-group mb-4">
-                            <label for="businessName" class="form-label">
-                                <i class="fas fa-store text-primary me-2"></i>Business Name
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-building text-muted"></i>
-                                </span>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="businessName" 
-                                       name="businessName" 
-                                       placeholder="Enter Business Name"
-                                       required>
+                        <div class="row">
+                            <!-- Business Name -->
+                            <div class="col-12 mb-2">
+                                <div class="form-group">
+                                    <label for="businessName" class="form-label">
+                                        <i class="fas fa-store"></i>Business Name
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-building input-icon"></i>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="businessName" 
+                                               name="businessName" 
+                                               placeholder="Enter your business name"
+                                               required>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group mb-4">
-                            <label for="phone" class="form-label">
-                                <i class="fas fa-phone text-primary me-2"></i>Phone Number
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-phone text-muted"></i>
-                                </span>
-                                <span class="input-group-text">+1</span>
-                                <input type="tel" 
-                                       class="form-control" 
-                                       id="phone" 
-                                       name="phone" 
-                                       placeholder="(555) 555-5555"
-                                       pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
-                                       title="Please enter a valid 10-digit phone number"
-                                       required>
+                            <!-- Phone Number -->
+                            <div class="col-md-12 mb-2">
+                                <div class="form-group">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone"></i>Phone Number
+                                    </label>
+                                    <div class="phone-group">
+                                        <div class="country-code">+1</div>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="phone" 
+                                               name="phone" 
+                                               placeholder="(555) 555-5555"
+                                               pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                                               title="Please enter a valid 10-digit phone number"
+                                               required>
+                                    </div>
+                                    <small class="form-text">
+                                        <i class="fas fa-info-circle"></i>10-digit phone number
+                                    </small>
+                                </div>
                             </div>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle me-1"></i>Enter your 10-digit phone number
-                            </small>
-                        </div>
 
-                        <div class="form-group mb-4">
-                            <label for="address" class="form-label">
-                                <i class="fas fa-map-marker-alt text-primary me-2"></i>Business Address
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-map-marked-alt text-muted"></i>
-                                </span>
-                                <textarea class="form-control" 
-                                          id="address" 
-                                          name="address" 
-                                          rows="3" 
-                                          placeholder="Enter Business Address"
-                                          required></textarea>
+                            <!-- Business Address -->
+                            <div class="col-md-12 mb-2">
+                                <div class="form-group">
+                                    <label for="address" class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i>Business Address
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-map-marked-alt input-icon"></i>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="address" 
+                                               name="address" 
+                                               placeholder="Enter business address"
+                                               required>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-
-
-                        <div class="form-group mb-4">
-                            <label for="job_assignment" class="form-label">
-                                <i class="fas fa-map-marker-alt text-primary me-2"></i>In What way should cleaners be assigned to jobs?
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-map-marked-alt text-muted"></i>
-                                </span>
-                                <select class="form-control" 
-                                          id="job_assignment" 
-                                          name="job_assignment" 
-                                          required>
-                                    <option value="">Select Job Assignment</option>
-                                    {% for value, label in job_assignment_options %}
-                                        <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
+                            <!-- Job Assignment -->
+                            <div class="col-md-6 mb-2">
+                                <div class="form-group">
+                                    <label for="job_assignment" class="form-label">
+                                        <i class="fas fa-users-cog"></i>Cleaner Assignment
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-clipboard-list input-icon"></i>
+                                        <select class="form-select" 
+                                                id="job_assignment" 
+                                                name="job_assignment" 
+                                                required>
+                                            <option value="">Select Assignment</option>
+                                            {% for value, label in job_assignment_options %}
+                                                <option value="{{ value }}">{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group mb-4">
-                            <label for="timezone" class="form-label">
-                                <i class="fas fa-clock text-primary me-2"></i>Business Timezone
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-globe text-muted"></i>
-                                </span>
-                                <select class="form-control" 
-                                          id="timezone" 
-                                          name="timezone" 
-                                          required>
-                                    {% for tz_value, tz_label in timezone_choices %}
-                                        <option value="{{ tz_value }}" {% if tz_value == 'America/New_York' %}selected{% endif %}>{{ tz_label }}</option>
-                                    {% endfor %}
-                                </select>
+                            <!-- Timezone -->
+                            <div class="col-md-6 mb-2">
+                                <div class="form-group">
+                                    <label for="timezone" class="form-label">
+                                        <i class="fas fa-clock"></i>Business Timezone
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-globe input-icon"></i>
+                                        <select class="form-select" 
+                                                id="timezone" 
+                                                name="timezone" 
+                                                required>
+                                            {% for tz_value, tz_label in timezone_choices %}
+                                                <option value="{{ tz_value }}" {% if tz_value == 'America/New_York' %}selected{% endif %}>{{ tz_label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <small class="form-text">
+                                        <i class="fas fa-info-circle"></i>Select your operating timezone
+                                    </small>
+                                </div>
                             </div>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle me-1"></i>Select the timezone where your business operates
-                            </small>
                         </div>
                         
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-check-circle me-2"></i>Register Business
-                            </button>
-                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-rocket me-2"></i>Start Automating Now
+                        </button>
                     </form>
                 </div>
             </div>
@@ -157,46 +198,430 @@ document.addEventListener('DOMContentLoaded', function() {
             // Keep the display input unchanged
             phoneInput.value = phoneValue;
         }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('.submit-btn');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        submitBtn.disabled = true;
+    });
+
+    // Add floating animation to shapes
+    const shapes = document.querySelectorAll('.shape');
+    shapes.forEach((shape, index) => {
+        shape.style.animationDelay = `${index * 0.5}s`;
+    });
+
+    // Add floating label effect
+    document.querySelectorAll('.form-control, .form-select').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentNode.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            if (!this.value) {
+                this.parentNode.classList.remove('focused');
+            }
+        });
+    });
+
+    // Animate feature items on load
+    const featureItems = document.querySelectorAll('.feature-item');
+    featureItems.forEach((item, index) => {
+        setTimeout(() => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, 500 + (index * 200));
     });
 });
 </script>
+{% endblock %}
 
+{% block styles %}
 <style>
-.input-group-text {
-    background-color: #f8f9fa;
-    border-right: none;
+:root {
+    --primary-color: #0d6efd;
+    --primary-dark: #0b5ed7;
+    --primary-light: #cfe2ff;
+    --success-color: #198754;
+    --text-dark: #212529;
+    --text-muted: #6c757d;
+    --bg-light: #f8f9fa;
 }
 
-.form-control {
-    border-left: none;
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ffffff;
+    overflow-x: hidden;
 }
 
-.form-control:focus {
-    border-left: none;
-    box-shadow: none;
+.main-container {
+    min-height: 100vh;
 }
 
-.input-group:focus-within .input-group-text {
-    border-color: #86b7fe;
+/* Left Decorative Section */
+.left-section {
+    background-image: 
+        linear-gradient(rgba(13, 110, 253, 0.85), rgba(11, 94, 215, 0.85)),
+        url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    color: white;
 }
 
-.card {
-    border: none;
-    border-radius: 15px;
+.decoration-content {
+    position: relative;
+    z-index: 10;
+    max-width: 500px;
+    padding: 2rem;
 }
 
-.card-header {
-    border-radius: 15px 15px 0 0 !important;
+/* Floating Shapes */
+.floating-shapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
 }
 
-.btn-primary {
-    padding: 12px;
+.shape {
+    position: absolute;
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+}
+
+.shape-1 {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    top: 20%;
+    left: 10%;
+    animation-duration: 8s;
+}
+
+.shape-2 {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    top: 60%;
+    right: 15%;
+    animation-duration: 10s;
+    animation-delay: -2s;
+}
+
+.shape-3 {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    top: 10%;
+    right: 30%;
+    animation-duration: 7s;
+    animation-delay: -4s;
+}
+
+.shape-4 {
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+    top: 80%;
+    left: 20%;
+    animation-duration: 9s;
+    animation-delay: -1s;
+}
+
+.shape-5 {
+    width: 90px;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    top: 40%;
+    left: 70%;
+    animation-duration: 11s;
+    animation-delay: -3s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(10deg); }
+    66% { transform: translateY(10px) rotate(-5deg); }
+}
+
+/* Welcome Content */
+.icon-wrapper {
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+.main-icon {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.welcome-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+}
+
+.welcome-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+.features-list {
+    text-align: left;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.3s ease;
+}
+
+.feature-item i {
+    color: var(--success-color);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px;
+    border-radius: 50%;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+.feature-item span {
+    font-size: 1.1rem;
     font-weight: 500;
-    border-radius: 8px;
+}
+
+/* Right Form Section */
+.right-section {
+    background: var(--bg-light);
+    padding: 2rem 1rem;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.form-header {
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    color: var(--text-dark);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 1.5rem;
 }
 
 .form-label {
-    font-weight: 500;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-label i {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.form-control, .form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    outline: none;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Phone Group Styling */
+.phone-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.country-code {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.875rem 1rem;
+    border-radius: 8px 0 0 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    min-width: 60px;
+    justify-content: center;
+}
+
+.phone-group .form-control {
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding-left: 0.875rem;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.form-text i {
+    margin-right: 0.25rem;
+}
+
+/* Submit Button */
+.submit-btn {
+    background: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.submit-btn:active {
+    transform: translateY(1px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .left-section {
+        min-height: 40vh;
+        order: 2;
+    }
+    
+    .right-section {
+        order: 1;
+    }
+    
+    .welcome-title {
+        font-size: 2rem;
+    }
+    
+    .decoration-content {
+        padding: 1rem;
+    }
+    
+    .form-container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .form-container {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .form-title {
+        font-size: 1.75rem;
+    }
+    
+    .welcome-title {
+        font-size: 1.75rem;
+    }
+    
+    .main-icon {
+        font-size: 3rem;
+    }
+    
+    .features-list {
+        margin-top: 2rem;
+    }
+}
+
+/* Animation for form elements */
+.registration-form {
+    opacity: 0;
+    animation: slideInRight 0.8s ease forwards;
+    animation-delay: 0.3s;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 </style>
 {% endblock %}

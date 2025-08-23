@@ -387,7 +387,7 @@
                                 <span class="service-item-value">{{ invoice.booking.bathrooms }}</span>
                             </div>
                             <div class="detail-row">
-                                <span class="mobile-label">Area:</span>
+                                <span class="mobile-label">Area (sq ft):</span>
                                 <span class="service-item-value">{{ invoice.booking.squareFeet }} sq ft</span>
                             </div>
                         </div>
@@ -451,10 +451,10 @@
                 </div>
                 <div class="card-body">
                     <strong>Bank Transfer:</strong><br>
-                    Bank: Example Bank<br>
-                    Account Name: CEO Cleaners LLC<br>
-                    Account Number: XXXX-XXXX-XXXX-1234<br>
-                    Routing Number: XXX-XXX-XXX
+                    Bank: {{ bank_account.bank_name }}<br>
+                    Account Name: {{ bank_account.account_name }}<br>
+                    Account Number: {{ bank_account.account_number }}<br>
+                    IFSC Code: {{ bank_account.ifsc_code }}
                 </div>
             </div>
         </div>
@@ -465,7 +465,7 @@
                 </div>
                 <div class="card-body">
                     For pre-authorized payment options, the payment will be deducted on the day of service.<br><br>
-                    Please note: Your cleaning appointment will not be fully confirmed until this link is completed.
+                    Please note: Your cleaning appointment will not be fully confirmed until payment is completed.
                 </div>
             </div>
         </div>

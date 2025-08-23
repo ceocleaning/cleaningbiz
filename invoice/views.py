@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse, Http404
-from .models import Invoice, Payment
+from .models import Invoice, Payment, BankAccount
 from bookings.models import Booking
 import datetime
 from reportlab.pdfgen import canvas
@@ -123,6 +123,7 @@ def invoice_preview(request, invoiceId):
         invoice = Invoice.objects.get(invoiceId=invoiceId)
         booking = invoice.booking
         business = booking.business
+        bank_account = BankAccount.objects.filter(business=business).first()
         
         
         
@@ -149,6 +150,7 @@ def invoice_preview(request, invoiceId):
             'booking': booking,
             'business': business,
             'addons': addons,
+            'bank_account': bank_account,
         }
 
         if business.defaultPaymentMethod == 'square':
