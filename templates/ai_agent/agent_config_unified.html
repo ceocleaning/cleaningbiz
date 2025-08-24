@@ -494,7 +494,8 @@
             body: JSON.stringify({
                 business_id: '{{ business.businessId }}',
                 client_phone_number: clientPhoneNumber,
-                message: message
+                message: message,
+                mode: 'test'  // Set mode to 'test' for testing purposes
             })
         })
         .then(response => {

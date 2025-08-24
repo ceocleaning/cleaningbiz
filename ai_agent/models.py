@@ -16,12 +16,18 @@ CHAT_STATUS_CHOICES = (
     ('follow_up_call_sent', 'Follow Up Call Sent')
 )
 
+MODE_CHOICES = (
+    ('live', 'Live'),
+    ('test', 'Test')
+)
 
 class Messages(models.Model):
     chat = models.ForeignKey('Chat', on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
     role = models.CharField(max_length=20, choices=CHAT_ROLE_CHOICES)
     message = models.TextField()
     is_first_message = models.BooleanField(default=False)
+
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='live')
 
     createdAt = models.DateTimeField(auto_now_add=True)
 

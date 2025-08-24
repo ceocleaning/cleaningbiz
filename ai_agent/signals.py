@@ -32,7 +32,7 @@ def save_chat_summary(sender, instance, **kwargs):
 @receiver(post_save, sender=Messages)
 def track_usage(sender, instance,created, **kwargs):
     if created:
-        if instance.role == 'assistant':
+        if instance.role == 'assistant' and instance.mode == 'live':
             UsageTracker.increment_sms(instance.chat.business, 1)
         
 

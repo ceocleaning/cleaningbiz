@@ -1411,6 +1411,7 @@ def chat_api(request):
         client_phone_number = data.get('client_phone_number')
         session_key = data.get('session_key')
         message_text = data.get('message')
+        mode = data.get('mode', 'live')  # Default to 'live' if not provided
 
         from usage_analytics.services.usage_service import UsageService
         check_limit = UsageService.check_sms_messages_limit(Business.objects.get(businessId=business_id))
@@ -1437,7 +1438,7 @@ def chat_api(request):
         message = Messages.objects.create(
             chat=chat,
             role='user',
-            message=message_text
+            message=message_text,
         )
         
         # Get the system prompt
@@ -1470,7 +1471,8 @@ def chat_api(request):
                 Messages.objects.create(
                     chat=chat,
                     role='assistant',
-                    message=ai_response['content']
+                    message=ai_response['content'],
+                    mode=mode
                 )
 
                 # Add the assistant message to formatted_messages for summary extraction
