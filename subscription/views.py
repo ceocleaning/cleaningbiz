@@ -453,21 +453,39 @@ def get_subscription_data(request):
 def select_plan(request, plan_id=None):
     """View for selecting a plan and proceeding to payment."""
     business = request.user.business_set.first()
+    if not business:
+        messages.error(request, "Business profile not found. Please Register a Business First.")
+        return redirect('accounts:register_business')
     
-   
-    from saas.models import PlatformSettings
-    platform_settings = PlatformSettings.objects.first()
+    try:
+        platform_settings = PlatformSettings.objects.first()
+        if not platform_settings:
+            messages.error(request, "System configuration error. Please contact support.")
+            return redirect('subscription:subscription_management')
+    except Exception as e:
+        messages.error(request, "System configuration error. Please contact support.")
+        return redirect('subscription:subscription_management')
     
-    has_paid_setup_fee = business.has_setup_fee()
+    try:
+        has_paid_setup_fee = business.has_setup_fee()
+    except Exception as e:
+        has_paid_setup_fee = False
+    
     total_with_setup = 0
 
     if plan_id:
         # Get the specific plan
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
-            total_with_setup = float(plan.get_display_price()) + float(platform_settings.setup_fee_amount)
             
-            if plan.plan_tier == "trial" and not plan.is_invite_only:
+            # Calculate total price based on setup fee status
+            plan_price = float(plan.get_display_price())
+            total_with_setup = plan_price
+            if not has_paid_setup_fee:
+                total_with_setup += float(platform_settings.setup_fee_amount)
+            
+            # Check trial plan eligibility
+            if getattr(plan, 'plan_tier', None) == "trial" and not getattr(plan, 'is_invite_only', False):
                 trial_already_availed = BusinessSubscription.objects.filter(business=business, plan__plan_tier="trial").exists()
                 if trial_already_availed:
                     messages.error(request, "You have already availed the trial plan.")
@@ -481,13 +499,18 @@ def select_plan(request, plan_id=None):
         return redirect('subscription:subscription_management')
     
     # Get current subscription
-   
-    subscription = business.active_subscription()
-    
-    # If user already has this plan, redirect to subscription management
-    if subscription:
-        messages.info(request, f"You already have an active subscription. with status {subscription.status} ending on {subscription.end_date}")
-        return redirect('subscription:subscription_management')
+    try:
+        subscription = business.active_subscription()
+        if subscription:
+            messages.info(request, 
+                f"You already have an active subscription with status {subscription.status}"
+                f"{' ending on ' + subscription.end_date.strftime('%Y-%m-%d') if subscription.end_date else ''}"
+            )
+            return redirect('subscription:subscription_management')
+    except Exception as e:
+        # Log the error but continue as if no subscription exists
+        print(f"Error checking active subscription: {str(e)}")
+        subscription = None
             
   
     
@@ -583,11 +606,14 @@ def process_payment(request, plan_id):
                     if coupon.applicable_plans.filter(id=plan.id).exists() or not coupon.applicable_plans.exists():
                         final_price = coupon.apply_discount(final_price)
                     else:
-                        coupon = None
+                        messages.error(request, "This coupon is not applicable to the selected plan.")
+                        return redirect('subscription:select_plan', plan_id=plan_id)
                 else:
-                    coupon = None
+                    messages.error(request, "This coupon is not valid or has expired.")
+                    return redirect('subscription:select_plan', plan_id=plan_id)
             except Coupon.DoesNotExist:
-                pass
+                messages.error(request, "Invalid coupon code.")
+                return redirect('subscription:select_plan', plan_id=plan_id)
         
         print(f"Final Price: {final_price}")
     
@@ -716,8 +742,8 @@ def process_payment(request, plan_id):
                     'payment_status': 'COMPLETED',
                     'coupon_code': coupon_code if coupon_code else "No Coupon",
                     'discount_amount': discount_amount,
-                    'is_free': is_free,
-                    'setup_fee_applied': apply_setup_fee,
+                    'is_free': "Yes" if is_free else "No",
+                    'setup_fee_applied': "Yes" if  apply_setup_fee else "No",
                     'setup_fee_amount': float(setup_fee_amount)
                 }
             )
