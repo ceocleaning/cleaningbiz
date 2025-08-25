@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate, logout, update_session_auth
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
 from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile, StripeCredentials, PayPalCredentials
 from automation.models import Cleaners
