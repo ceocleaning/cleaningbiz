@@ -117,8 +117,8 @@ def setup_retell_agent(request):
                 "backchannel_frequency": 0.8,
                 "backchannel_words": ["yeah", "uh-huh"],
                 "language": "en-US",
-                "enable_transcription_formatting": True,
-                "normalize_for_speech": True
+                "normalize_for_speech": True,
+                "webhook_url": api_credential.getRetellUrl()
             }
             
             # Add your Retell API key
@@ -128,7 +128,7 @@ def setup_retell_agent(request):
             }
             
             # Make the API request to create the agent
-            logger.info(f"Creating agent with payload: {json.dumps(payload)}")
+            print(f"Creating agent with payload: {json.dumps(payload)}")
             response = requests.post(
                 f'{BASE_URL}/create-agent',
                 json=payload,
@@ -140,11 +140,11 @@ def setup_retell_agent(request):
                 response_data = response.json()
                 
                 # Log successful response
-                logger.info(f"Agent created successfully: {response_data}")
+                print(f"Agent created successfully: {response_data}")
                 
                 # Verify we have an agent_id
                 if 'agent_id' not in response_data:
-                    logger.error(f"Missing agent_id in response: {response_data}")
+                    print(f"Missing agent_id in response: {response_data}")
                     messages.error(request, f"Error creating agent: Missing agent_id in response")
                     return render(request, 'retell_agent/setup_agent.html', {'llm_id': llm_id, 'existing_llm': existing_llm})
                 
@@ -200,6 +200,8 @@ def setup_retell_agent(request):
         'existing_llm': existing_llm
     })
 
+
+
 @login_required
 def create_retell_llm(request):
     """
@@ -221,16 +223,15 @@ def create_retell_llm(request):
         # Define default LLM configuration with custom tools included
         payload = {
             "model": "gpt-4o",
-            "model_temperature": 0.7,
+            "model_temperature": 0.5,
             "model_high_priority": False,
             "tool_call_strict_mode": True,
             "general_prompt": get_retell_prompt(business),
             "general_tools": get_retell_tools(business),
-            "begin_message": "Hello, this is your cleaning service virtual assistant. How can I help you today?",
+            "begin_message": "",
             "default_dynamic_variables": {
                 "business_name": business.name if hasattr(business, 'name') else "Cleaning Service",
             },
-            'webhook_url': apiCredential.getRetellUrl()
         }
         
         # Add your Retell API key
@@ -495,11 +496,7 @@ def update_retell_agent(request, agent_id):
                 # Voicemail settings
                 enable_voicemail_detection = 'enable_voicemail_detection' in request.POST
                 
-                voicemail_detection_timeout_raw = request.POST.get('voicemail_detection_timeout_ms', '')
-                try:
-                    voicemail_detection_timeout_ms = int(voicemail_detection_timeout_raw)
-                except (ValueError, TypeError):
-                    voicemail_detection_timeout_ms = 30000  # Default 30 seconds
+            
                 
                 # Begin message delay
                 begin_message_delay_raw = request.POST.get('begin_message_delay_ms', '')
@@ -529,8 +526,7 @@ def update_retell_agent(request, agent_id):
                     interruption_sensitivity = 1.0
                 
                 normalize_for_speech = 'normalize_for_speech' in request.POST
-                enable_transcription_formatting = 'enable_transcription_formatting' in request.POST
-                opt_out_sensitive_data_storage = 'opt_out_sensitive_data_storage' in request.POST
+     
                 
                 # Process keywords
                 boosted_keywords_raw = request.POST.get('boosted_keywords', '')
@@ -584,16 +580,13 @@ def update_retell_agent(request, agent_id):
                     'responsiveness': responsiveness,
                     'interruption_sensitivity': interruption_sensitivity,
                     'normalize_for_speech': normalize_for_speech,
-                    'enable_transcription_formatting': enable_transcription_formatting,
                     'max_call_duration_ms': max_call_duration_ms,
                     'end_call_after_silence_ms': end_call_after_silence_ms,
-                    'opt_out_sensitive_data_storage': opt_out_sensitive_data_storage,
                     'begin_message_delay_ms': begin_message_delay_ms,
                     'ring_duration_ms': ring_duration_ms,
                     'reminder_trigger_ms': reminder_trigger_ms,
                     'reminder_max_count': reminder_max_count,
                     'enable_voicemail_detection': enable_voicemail_detection,
-                    'voicemail_detection_timeout_ms': voicemail_detection_timeout_ms,
                     'voicemail_message': request.POST.get('voicemail_message', 'Hi, please give us a callback.').strip()
                 }
                 

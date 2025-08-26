@@ -161,7 +161,13 @@ class RetellAPIService:
             "dial_busy": 0,
             "dial_failed": 0,
             "dial_no_answer": 0,
-            "other": 0
+            "other": 0,
+            "invalid_destination": 0,
+            "telephony_provider_permission_denied": 0,
+            "telephony_provider_unavailable": 0,
+            "sip_routing_error": 0,
+            "marked_as_spam": 0,
+            "user_declined": 0
         }
         
         for call in calls:

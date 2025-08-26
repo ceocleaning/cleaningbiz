@@ -407,13 +407,7 @@
                                     </div>
                                     
                                     <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="voicemail_detection_timeout_ms" class="form-label">Voicemail Detection Timeout (seconds)</label>
-                                                <input type="number" class="form-control" id="voicemail_detection_timeout_ms" name="voicemail_detection_timeout_ms" value="{{ agent_data.voicemail_detection_timeout_ms }}">
-                                                <div class="form-text">Time to wait for voicemail detection</div>
-                                            </div>
-                                        </div>
+                           
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="voicemail_message" class="form-label">Voicemail Message</label>
@@ -434,24 +428,10 @@
                                                 <div class="form-text">Improves speech quality by formatting text</div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch mb-3">
-                                                <input class="form-check-input" type="checkbox" id="enable_transcription_formatting" name="enable_transcription_formatting" {% if agent_data.enable_transcription_formatting %}checked{% endif %}>
-                                                <label class="form-check-label" for="enable_transcription_formatting">Enable Transcription Formatting</label>
-                                                <div class="form-text">Format transcription for better readability</div>
-                                            </div>
-                                        </div>
+                                      
                                     </div>
                                     
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="form-check form-switch mb-3">
-                                                <input class="form-check-input" type="checkbox" id="opt_out_sensitive_data_storage" name="opt_out_sensitive_data_storage" {% if agent_data.opt_out_sensitive_data_storage %}checked{% endif %}>
-                                                <label class="form-check-label" for="opt_out_sensitive_data_storage">Opt Out of Sensitive Data Storage</label>
-                                                <div class="form-text">Prevent storing sensitive data from this agent's calls</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                  
                                     
                                     <div class="row">
                                         <div class="col-md-12">
@@ -488,7 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'end_call_after_silence_ms', 
         'ring_duration_ms', 
         'reminder_trigger_ms', 
-        'voicemail_detection_timeout_ms',
         'begin_message_delay_ms'
     ];
     
