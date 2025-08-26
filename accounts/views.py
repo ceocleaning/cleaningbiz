@@ -13,6 +13,7 @@ from django.urls import reverse
 import random
 import re
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import smtplib
 from django.utils.html import strip_tags
 from django.utils import timezone
