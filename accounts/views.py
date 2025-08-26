@@ -1,31 +1,58 @@
-from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
-from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
-from django.contrib import messages
-from django.views.decorators.http import require_http_methods
+# Django shortcuts & utilities
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
-from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.utils.html import strip_tags
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.conf import settings
+
+# Django authentication
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, CleanerProfile, StripeCredentials, PayPalCredentials
-from automation.models import Cleaners
-from invoice.models import Invoice, Payment, BankAccount
-from django.urls import reverse
-import random
-import re
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import login_required
+
+# Django views
+from django.views.decorators.http import require_http_methods
+
+# Django email utilities
+from django.core.mail import send_mail
+import smtplib
+import ssl
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import smtplib
-from django.utils.html import strip_tags
-from django.utils import timezone
-from django.contrib.auth.hashers import make_password
-from datetime import timedelta
+
+# Python utilities
+import random
+import re
 import string
-from django.conf import settings
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.core.mail import send_mail
+from datetime import timedelta
+
+# Local apps: models
+from accounts.models import (
+    Business,
+    BusinessSettings,
+    ApiCredential,
+    CustomAddons,
+    PasswordResetOTP,
+    SMTPConfig,
+    SquareCredentials,
+    CleanerProfile,
+    StripeCredentials,
+    PayPalCredentials,
+)
+from automation.models import Cleaners
+from invoice.models import Invoice, Payment, BankAccount
+
+# Local apps: utilities & decorators
 from automation.utils import format_phone_number
 from automation.views import verify_recaptcha_token
 from accounts.decorators import owner_required, cleaner_required, owner_or_cleaner
+
 
 
 def SignupPage(request):
@@ -484,18 +511,12 @@ def delete_custom_addon(request, addon_id):
 
 @login_required
 def test_email_settings(request):
-    """Test email settings for the business"""
-    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request'
-        }, status=400)
+    """Test SMTP email settings for the business."""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
 
     if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method'
-        }, status=400)
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
 
     try:
         business = request.user.business_set.first()
@@ -505,27 +526,28 @@ def test_email_settings(request):
                 'message': 'No business found. Please set up your business first.'
             })
 
-        smtpConfig = SMTPConfig.objects.get(business=business)
-        
+        try:
+            smtpConfig = SMTPConfig.objects.get(business=business)
+        except SMTPConfig.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email credentials not found. Please configure your email settings.'
+            })
+
         if not smtpConfig.host or not smtpConfig.port or not smtpConfig.username or not smtpConfig.password:
             return JsonResponse({
                 'success': False,
-                'message': 'Email credentials not configured. Please set up your email credentials first.'
+                'message': 'Email credentials not configured. Please set them up first.'
             })
 
         # Create test email
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f'Test Email - {business.businessName}'
-        
-        # Use from_name if available, otherwise use username
         from_email = smtpConfig.username
         if smtpConfig.from_name:
             from_email = f"{smtpConfig.from_name} <{smtpConfig.username}>"
         msg['From'] = from_email
-        
         msg['To'] = request.user.email
-        
-        # Add Reply-To header if configured
         if smtpConfig.reply_to:
             msg['Reply-To'] = smtpConfig.reply_to
 
@@ -535,55 +557,66 @@ def test_email_settings(request):
             <h2>Test Email</h2>
             <p>Dear {request.user.first_name or request.user.username},</p>
             <p>This is a test email from your cleaning business management system.</p>
-            
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h3>Email Configuration Details:</h3>
                 <p><strong>Business Name:</strong> {business.businessName}</p>
                 <p><strong>Email Address:</strong> {smtpConfig.username}</p>
                 <p><strong>From Name:</strong> {smtpConfig.from_name or 'Not set'}</p>
                 <p><strong>Reply-To:</strong> {smtpConfig.reply_to or 'Not set'}</p>
-                <p><strong>SMTP Server:</strong> {smtpConfig.host}</p>
+                <p><strong>SMTP Server:</strong> {smtpConfig.host}:{smtpConfig.port}</p>
             </div>
-            
             <p>If you received this email, your email settings are configured correctly!</p>
-            
-            <p>Best regards,<br>
-            Your Business Management System</p>
+            <p>Best regards,<br>Your Business Management System</p>
         </body>
         </html>
         """
-        
         text_content = strip_tags(html_content)
+        msg.attach(MIMEText(text_content, 'plain'))
+        msg.attach(MIMEText(html_content, 'html'))
 
-        part1 = MIMEText(text_content, 'plain')
-        part2 = MIMEText(html_content, 'html')
-        msg.attach(part1)
-        msg.attach(part2)
+        # --- Connect to SMTP ---
+        try:
+            if int(smtpConfig.port) == 465:
+                context = ssl.create_default_context()
+                smtp_server = smtplib.SMTP_SSL(smtpConfig.host, smtpConfig.port, context=context, timeout=20)
+            else:
+                smtp_server = smtplib.SMTP(smtpConfig.host, smtpConfig.port, timeout=20)
+                smtp_server.starttls()
 
-        # Send test email
-        smtp_server = smtplib.SMTP(smtpConfig.host, smtpConfig.port)
-        smtp_server.starttls()
-        smtp_server.login(smtpConfig.username, smtpConfig.password)
-        smtp_server.send_message(msg)
-        smtp_server.quit()
+            smtp_server.login(smtpConfig.username, smtpConfig.password)
+            smtp_server.send_message(msg)
+            smtp_server.quit()
 
-        return JsonResponse({
-            'success': True,
-            'message': f'Test email sent successfully to {request.user.email}'
-        })
+            return JsonResponse({
+                'success': True,
+                'message': f'Test email sent successfully to {request.user.email}'
+            })
 
-    except SMTPConfig.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Email credentials not found. Please configure your email settings.'
-        })
-    except smtplib.SMTPAuthenticationError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Gmail authentication failed. Please check your email and app password.'
-        })
+        except smtplib.SMTPAuthenticationError:
+            print("SMTP Authentication failed")
+            return JsonResponse({'success': False, 'message': 'Authentication failed. Please check your email and password.'})
+        except smtplib.SMTPConnectError:
+            print("SMTP connection failed")
+            return JsonResponse({'success': False, 'message': 'Could not connect to the SMTP server. Please check host and port.'})
+        except smtplib.SMTPRecipientsRefused:
+            print("Recipient address was refused")
+            return JsonResponse({'success': False, 'message': 'Recipient email address was refused by the server.'})
+        except smtplib.SMTPSenderRefused:
+            print("Sender address was refused")
+            return JsonResponse({'success': False, 'message': 'Sender email address was refused by the server.'})
+        except smtplib.SMTPDataError:
+            print("SMTP data error")
+            return JsonResponse({'success': False, 'message': 'The SMTP server refused the email content.'})
+        except (socket.timeout, TimeoutError):
+            print("SMTP connection timed out")
+            return JsonResponse({'success': False, 'message': 'Connection to SMTP server timed out. Please check your network and server details.'})
+        except Exception as e:
+            print(f"Unexpected SMTP error: {str(e)}")
+            return JsonResponse({'success': False, 'message': f'Failed to send email: {str(e)}'})
+
     except Exception as e:
-        raise Exception(str(e))
+        print(f"Unexpected error in test_email_settings: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An unexpected error occurred while testing email settings.'})
 
 
 def forgot_password(request):
