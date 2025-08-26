@@ -121,6 +121,8 @@
                                     <span class="badge bg-danger">{{invoice.payment_details.status}}</span>
                                     {% elif invoice.payment_details.status == 'PENDING' %}
                                     <span class="badge bg-secondary">{{invoice.payment_details.status}}</span>
+                                    {% else %}
+                                    <span class="badge bg-info">{{invoice.payment_details.status}}</span>
                                     {% endif %}
                                     {% if not invoice.payment_details %}
                                     <span class="badge bg-warning">Pending</span>

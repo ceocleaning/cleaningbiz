@@ -474,3 +474,80 @@ def bulk_delete_invoices(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+def manual_payment(request, invoice_id):
+    try:
+        invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        business = invoice.booking.business
+
+        if request.method == 'POST':
+            transaction_id = request.POST.get('transaction_id')
+            screen_shot = request.FILES.get('screen_shot')
+            from_account_number = request.POST.get('from_account_number')
+            from_bank_name = request.POST.get('from_bank_name')
+
+            payment = Payment.objects.create(
+                invoice=invoice,
+                amount=invoice.amount,
+                paymentMethod='bank_transfer',
+                transactionId=transaction_id,
+                fromAccountNumber=from_account_number,
+                fromBankName=from_bank_name,
+                screenshot=screen_shot,
+                status='SUBMITTED'
+            )
+            
+      
+            messages.success(request, f'Bank Transfer Payment Submitted Successfully! Please wait for approval.')
+            return redirect('invoice:invoice_preview', invoice.invoiceId)
+
+        return redirect('invoice:invoice_preview', invoice.invoiceId)
+
+    except Invoice.DoesNotExist:
+        raise Exception("Invoice Not Found")
+    
+    except Business.DoesNotExist:
+        raise Exception("Business Not Found")
+
+    except Exception as e:
+        print("Error in doing Mannual Payment: ", str(e))
+        raise Exception(f"Error processing payment: {str(e)}")
+
+
+
+def approve_payment(request, invoice_id):
+    try:
+        invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        payment = invoice.payment_details
+        payment.status = 'APPROVED'
+        invoice.isPaid = True
+        payment.save()
+        invoice.save()
+        messages.success(request, f'Payment approved successfully!')
+        return redirect('invoice:invoice_detail', invoice.invoiceId)
+    except Invoice.DoesNotExist:
+        raise Exception("Invoice Not Found")
+    except Payment.DoesNotExist:
+        raise Exception("Payment Not Found")
+    except Exception as e:
+        print("Error in approving payment: ", str(e))
+        raise Exception(f"Error approving payment: {str(e)}")
+
+
+def reject_payment(request, invoice_id):
+    try:
+        invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
+        payment = invoice.payment_details
+        payment.status = 'REJECTED'
+        payment.save()
+        messages.success(request, f'Payment rejected successfully!')
+        return redirect('invoice:invoice_detail', invoice.invoiceId)
+    except Invoice.DoesNotExist:
+        raise Exception("Invoice Not Found")
+    except Payment.DoesNotExist:
+        raise Exception("Payment Not Found")
+    except Exception as e:
+        print("Error in rejecting payment: ", str(e))
+        raise Exception(f"Error rejecting payment: {str(e)}")

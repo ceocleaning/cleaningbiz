@@ -587,7 +587,6 @@ def update_retell_agent(request, agent_id):
                     'reminder_trigger_ms': reminder_trigger_ms,
                     'reminder_max_count': reminder_max_count,
                     'enable_voicemail_detection': enable_voicemail_detection,
-                    'voicemail_message': request.POST.get('voicemail_message', 'Hi, please give us a callback.').strip()
                 }
                 
                 # Optional fields (only include if they have values)

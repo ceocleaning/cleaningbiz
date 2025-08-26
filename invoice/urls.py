@@ -18,4 +18,7 @@ urlpatterns = [
     path('invoices/capture-stripe-payment/', payment_views.capture_stripe_payment, name='capture_stripe_payment'),
     path('invoices/process-paypal-payment/', payment_views.process_paypal_payment, name='process_paypal_payment'),
     path('bulk-delete/', views.bulk_delete_invoices, name='bulk_delete_invoices'),
+    path('bank-transfer/<str:invoice_id>/', views.manual_payment, name='manual_payment'),
+    path('approve-payment/<str:invoice_id>/', views.approve_payment, name='approve_payment'),
+    path('reject-payment/<str:invoice_id>/', views.reject_payment, name='reject_payment'),
 ]

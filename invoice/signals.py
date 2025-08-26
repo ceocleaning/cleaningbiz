@@ -15,6 +15,7 @@ from .models import Invoice, Payment
 from automation.utils import sendEmailtoClientInvoice
 from django.utils import timezone
 import json
+from bookings.tasks import send_email_util
 
 
 @receiver(post_save, sender=Invoice)
@@ -246,3 +247,140 @@ def format_time(time_value):
         return time_value.strftime('%I:%M %p')
     return str(time_value)
 
+
+
+
+@receiver(post_save, sender=Payment)
+def send_payment_submitted_email(sender, instance, created, **kwargs):
+    """Send HTML email confirmation with invoice details when a new payment of bank transfer is created"""
+    # Only proceed for new bank transfer payments
+    if created and instance.paymentMethod == 'bank_transfer' and instance.status == 'SUBMITTED':
+        try:
+            # Get the business and invoice details
+            business = instance.invoice.booking.business
+            customer = instance.invoice.booking
+            smtp_config = SMTPConfig.objects.filter(business=business).first()
+            # Email subject and content
+            subject = f"New Bank Transfer Payment Received - {business.businessName}"
+            recipient_email = business.user.email
+          
+            # HTML email content
+            html_message = f"""
+            <html>
+                <body>
+                    <h2>New Bank Transfer Payment Received</h2>
+                    <p>Hello {business.user.first_name or business.businessName},</p>
+                    <p>You have received a new bank transfer payment from {customer.firstName} {customer.lastName} for booking #{instance.invoice.booking.bookingId}.</p>
+                    
+                    <h3>Payment Details:</h3>
+                    <ul>
+                        <li><strong>Amount:</strong> ${instance.amount:.2f}</li>
+                        <li><strong>Payment Method:</strong> Bank Transfer</li>
+                        <li><strong>Transaction ID:</strong> {instance.transactionId or 'N/A'}</li>
+                        <li><strong>Customer Name:</strong> {customer.firstName} {customer.lastName}</li>
+                        <li><strong>Customer Email:</strong> {customer.email}</li>
+                        <li><strong>Customer Phone:</strong> {customer.phoneNumber}</li>
+                    </ul>
+                    
+                    <p>Please log in to your dashboard to review and approve this payment.</p>
+               
+                </body>
+            </html>
+            """
+            
+            # Plain text version for email clients that don't support HTML
+            plain_message = f"""
+            New Bank Transfer Payment Received
+            
+            Hello {business.user.first_name or business.businessName},
+            
+            You have received a new bank transfer payment from {customer.firstName} {customer.lastName} for booking #{instance.invoice.booking.bookingId}.
+            
+            Payment Details:
+            - Amount: ${instance.amount:.2f}
+            - Payment Method: Bank Transfer
+            - Transaction ID: {instance.transactionId or 'N/A'}
+            - Customer Name: {customer.firstName} {customer.lastName}
+            - Customer Email: {customer.email}
+            - Customer Phone: {customer.phoneNumber}
+            
+            Please log in to your dashboard to review and approve this payment.
+      
+            """
+            
+            send_email_util(subject, recipient_email, html_message, plain_message, smtp_config=smtp_config)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error sending payment submitted email: {str(e)}")
+            return False
+    return True
+
+
+@receiver(post_save, sender=Payment)
+def send_payment_approved_email(sender, instance, created, **kwargs):
+    """Send HTML email confirmation with invoice details when a new payment of bank transfer is created"""
+    # Only proceed for new bank transfer payments
+    if instance.paymentMethod == 'bank_transfer' and (instance.status == 'APPROVED' or instance.status == 'REJECTED'):
+        try:
+            # Get the business and invoice details
+            business = instance.invoice.booking.business
+            customer = instance.invoice.booking
+            customer_name = f"{customer.firstName} {customer.lastName}"
+            smtp_config = SMTPConfig.objects.filter(business=business).first()
+            # Email subject and content
+            subject = f"Payment {instance.status} - {customer_name if instance.status == 'APPROVED' else business.businessName}"
+            recipient_email = customer.email if instance.status == 'APPROVED' else business.user.email
+          
+            # HTML email content
+            html_message = f"""
+            <html>
+                <body>
+                    <h2>Payment {instance.status}</h2>
+                    <p>Hello {customer_name if instance.status == 'APPROVED' else business.businessName},</p>
+                    <p>Payment has been {instance.status} for booking #{instance.invoice.booking.bookingId}.</p>
+                    
+                    <h3>Payment Details:</h3>
+                    <ul>
+                        <li><strong>Amount:</strong> ${instance.amount:.2f}</li>
+                        <li><strong>Payment Method:</strong> Bank Transfer</li>
+                        <li><strong>Transaction ID:</strong> {instance.transactionId or 'N/A'}</li>
+                        <li><strong>Customer Name:</strong> {customer.firstName} {customer.lastName}</li>
+                        <li><strong>Customer Email:</strong> {customer.email}</li>
+                        <li><strong>Customer Phone:</strong> {customer.phoneNumber}</li>
+                    </ul>
+                    
+       
+               
+                </body>
+            </html>
+            """
+            
+            # Plain text version for email clients that don't support HTML
+            plain_message = f"""
+            Payment {instance.status}
+            
+            Hello {customer_name if instance.status == 'APPROVED' else business.businessName},
+            
+            Payment has been {instance.status} for booking #{instance.invoice.booking.bookingId}.
+            
+            Payment Details:
+            - Amount: ${instance.amount:.2f}
+            - Payment Method: Bank Transfer
+            - Transaction ID: {instance.transactionId or 'N/A'}
+            - Customer Name: {customer.firstName} {customer.lastName}
+            - Customer Email: {customer.email}
+            - Customer Phone: {customer.phoneNumber}
+            
+      
+            """
+            
+            send_email_util(subject, recipient_email, html_message, plain_message, smtp_config=smtp_config)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error sending payment submitted email: {str(e)}")
+            return False
+    return True

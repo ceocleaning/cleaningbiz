@@ -755,12 +755,12 @@
                                     <i class="fas fa-user-friends me-2 text-primary"></i>All Cleaners
                                 </a>
                             </li>
-                            <li>
+                            <!-- <li>
                                 <a class="dropdown-item {% if '/payouts/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:payouts_dashboard' %}">
                                     <i class="fas fa-money-bill-wave me-2 text-success"></i>Payouts
                                 </a>
-                            </li>
+                            </li> -->
                         </ul>
                     </li>
      
@@ -794,13 +794,13 @@
                             href="#" id="aiDropdown" role="button" 
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <!-- <i class="fas fa-robot me-1"></i> -->
-                            AI Agent
+                            AI Agents
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="aiDropdown">
                             <li>
                                 <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
                                     href="{% url 'ai_agent:agent_config' %}">
-                                    <i class="fas fa-cogs me-2 text-primary"></i>SMS AI Agent Config
+                                    <i class="fas fa-cogs me-2 text-primary"></i>SMS AI Agent Configuration
                                 </a>
                             </li>
                             
@@ -871,9 +871,9 @@
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="avatar-circle me-2">
-                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
+                                    <span class="avatar-initials">{{ request.user.business_set.all.0.businessName|make_list|first|upper }}</span>
                                 </div>
-                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-md-inline d-none">{{ request.user.business_set.all.0.businessName }}</span>
                                 <span class="d-inline d-md-none">Account</span>
                             </a>
                 
@@ -924,7 +924,8 @@
                                 </li>
 
                                 <li class="nav-item">
-                                    <a href="{% url 'admin_dashboard:index' %}" class="dropdown-item">Admin Dashboard</a>
+                                    <a href="{% url 'admin_dashboard:index' %}" class="dropdown-item">
+                                        <i class="fas fa-cog me-2 text-primary"></i>Admin Dashboard</a>
                                 </li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
