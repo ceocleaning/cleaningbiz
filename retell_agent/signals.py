@@ -20,7 +20,7 @@ def create_retell_agent(sender, instance, created, **kwargs):
                 outbound_agent_id=instance.agent_id,
                 nickname=instance.agent_name
             )
-            instance.phone_number = phone_number_response.phone_number
+            instance.agent_number = phone_number_response.phone_number
             instance.save()
             print(f"Phone number created for agent {instance.agent_name}: {phone_number_response.phone_number}")
 
