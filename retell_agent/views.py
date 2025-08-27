@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from .models import RetellAgent, RetellLLM
+from accounts.models import ApiCredential, Business
 import requests
 import json
 import os
@@ -27,6 +28,10 @@ def setup_retell_agent(request):
     
     # Get the user's business
     business = request.user.business_set.first()
+    api_credential = ApiCredential.objects.filter(business=business).first()
+    if not api_credential or not api_credential.getRetellUrl():
+        messages.error(request, "Please configure your API credentials before setting up a Retell agent.")
+        return redirect('list_retell_agents')
 
     from usage_analytics.services.usage_service import UsageService
     check_limit = UsageService.check_active_agents_limit(business)
