@@ -28,6 +28,7 @@ class BusinessAdmin(admin.ModelAdmin):
         )
     reject_businesses.short_description = "Reject selected businesses"
 
+admin.site.register(Business, BusinessAdmin)
 
 
 @admin.register(BusinessSettings)
