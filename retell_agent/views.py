@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db import transaction
 from .models import RetellAgent, RetellLLM
 from accounts.models import ApiCredential, Business
+from .prompt_and_tools import get_retell_prompt, get_retell_tools
 import requests
 import json
 import os
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = settings.RETELL_BASE_URL
 API_KEY = settings.RETELL_API_KEY
+
+client = Retell(api_key=API_KEY)
 
 @login_required
 def setup_retell_agent(request):
@@ -223,7 +226,7 @@ def create_retell_llm(request):
         return redirect(f'{reverse("setup_retell_agent")}?llm_id={existing_llm.llm_id}')
     
     try:
-        from .prompt_and_tools import get_retell_prompt, get_retell_tools
+        
         
         # Define default LLM configuration with custom tools included
         payload = {
@@ -242,7 +245,7 @@ def create_retell_llm(request):
         # Add your Retell API key
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {settings.RETELL_API_KEY}'
+            'Authorization': f'Bearer {API_KEY}'
         }
         
         print(f"Creating auto-configured LLM with custom tools")
@@ -929,3 +932,37 @@ def voice_conversations(request):
     }
     
     return render(request, 'retell_agent/voice_conversations.html', context)
+
+
+
+def reset_agent_settings(request, agent_id):
+    """
+    View to reset a Retell agent's settings to defaults.
+    """
+    # Get the user's business
+    business = request.user.business_set.first()
+    
+    # Get the agent
+    try:
+        agent = RetellAgent.objects.get(agent_id=agent_id, business=business)
+    except RetellAgent.DoesNotExist:
+        messages.error(request, "Agent not found")
+        return redirect('list_retell_agents')
+    
+    update_retell_llm = client.llm.update(
+        llm_id="{agent.llm.llm_id}",
+        general_prompt=get_retell_prompt(business),
+        genera_tools=get_retell_tools(business)
+    )
+
+    agent.llm.general_prompt = get_retell_prompt(business)
+    agent.llm.save()
+
+    if update_retell_llm:
+        messages.success(request, "Agent settings were reset successfully")
+    else:
+        messages.error(request, "Failed to reset agent settings")
+
+    return redirect('list_retell_agents')
+                
+            

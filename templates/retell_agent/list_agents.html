@@ -99,6 +99,9 @@
                     <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
                         <i class="fas fa-edit me-1"></i>Edit Agent
                     </a>
+                    <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-circle me-1"></i>Reset
+                    </a>
                     <button type="button" class="btn btn-outline-success assign-number-btn" 
                             data-bs-toggle="modal" 
                             data-bs-target="#assignNumberModal"
@@ -202,7 +205,6 @@
 <style>
     .text-truncate-3 {
         display: -webkit-box;
-        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
