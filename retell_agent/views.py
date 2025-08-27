@@ -952,7 +952,7 @@ def reset_agent_settings(request, agent_id):
     update_retell_llm = client.llm.update(
         llm_id="{agent.llm.llm_id}",
         general_prompt=get_retell_prompt(business),
-        genera_tools=get_retell_tools(business)
+        general_tools=get_retell_tools(business)
     )
 
     agent.llm.general_prompt = get_retell_prompt(business)
