@@ -949,19 +949,19 @@ def reset_agent_settings(request, agent_id):
         messages.error(request, "Agent not found")
         return redirect('list_retell_agents')
     
-    update_retell_llm = client.llm.update(
-        llm_id="{agent.llm.llm_id}",
-        general_prompt=get_retell_prompt(business),
-        general_tools=get_retell_tools(business)
-    )
+    try:
+        update_retell_llm = client.llm.update(
+            llm_id=f"{agent.llm.llm_id}",
+            general_prompt=get_retell_prompt(business),
+            general_tools=get_retell_tools(business)
+        )
 
-    agent.llm.general_prompt = get_retell_prompt(business)
-    agent.llm.save()
+        agent.llm.general_prompt = get_retell_prompt(business)
+        agent.llm.save()
 
-    if update_retell_llm:
-        messages.success(request, "Agent settings were reset successfully")
-    else:
-        messages.error(request, "Failed to reset agent settings")
+    except Exception as e:
+        messages.error(request, f"Failed to reset agent settings: {e}")
+        return redirect('list_retell_agents')
 
     return redirect('list_retell_agents')
                 
