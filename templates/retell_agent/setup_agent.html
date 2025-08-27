@@ -14,17 +14,16 @@
                 <div class="card-body">
                     <form method="POST" action="{% url 'setup_retell_agent' %}">
                         {% csrf_token %}
-                        
-                        <!-- Basic Settings -->
+
                         <div class="mb-4">
                             <h5 class="border-bottom pb-2 mb-3">Agent Settings</h5>
-                            
+
                             <div class="mb-3">
                                 <label for="agent_name" class="form-label">Agent Name</label>
                                 <input type="text" class="form-control" id="agent_name" name="agent_name" required placeholder="e.g., Jarvis">
                                 <div class="form-text">Give your AI agent a name</div>
                             </div>
-                            
+
                             {% if llm_id %}
                             <div class="mb-3">
                                 <label for="llm_id" class="form-label">LLM ID</label>
@@ -72,16 +71,22 @@
                             </div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Voice Settings Row -->
+
                         <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="voice_model" class="form-label">Voice Model</label>
+                                    <select class="form-select" id="voice_model" name="voice_model">
+                                    </select>
+                                    <div class="form-text" id="voice_model_help">Choose a voice model to filter compatible voices</div>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="voice_id" class="form-label">Voice</label>
                                     <div class="input-group mb-2">
                                         <select class="form-select" id="voice_id" name="voice_id">
-                                            <option value="" disabled>Loading voices...</option>
-                                            <option value="11labs-Adrian" selected>Adrian (Male)</option>
+                                            <option value="" disabled selected>Select a voice model first...</option>
                                         </select>
                                         <button class="btn btn-outline-secondary" type="button" id="loadVoicesBtn" title="Refresh voices">
                                             <i class="fas fa-sync-alt"></i>
@@ -103,15 +108,6 @@
                                     <div class="form-text">Choose a voice for your agent</div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="voice_model" class="form-label">Voice Model</label>
-                                    <select class="form-select" id="voice_model" name="voice_model">
-                                        <!-- JavaScript will populate this based on voice selection -->
-                                    </select>
-                                    <div class="form-text" id="voice_model_help">Choose a compatible voice model</div>
-                                </div>
-                            </div>
                         </div>
 
                         {% if llm_id or existing_llm %}
@@ -126,271 +122,159 @@
     </div>
 </div>
 
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Voice model compatibility configuration
+    console.log('✅ DOM Loaded. Initializing script...');
+
+    // --- CONFIGURATION ---
     const voiceModelCompatibility = {
-        "11labs-": {
+        "elevenlabs": {
             displayName: "ElevenLabs",
             models: [
                 { value: "eleven_turbo_v2", displayName: "ElevenLabs Turbo v2" },
-                { value: "eleven_flash_v2", displayName: "ElevenLabs Flash v2" },
-                { value: "eleven_turbo_v2_5", displayName: "ElevenLabs Turbo v2.5" },
-                { value: "eleven_flash_v2_5", displayName: "ElevenLabs Flash v2.5" },
                 { value: "eleven_multilingual_v2", displayName: "ElevenLabs Multilingual v2" }
             ]
         },
-        "openai-": {
+        "openai": {
             displayName: "OpenAI",
             models: [
                 { value: "openai_tts", displayName: "OpenAI TTS" }
             ]
         },
-        "deepgram-": {
-            displayName: "Deepgram",
+      
+        "cartesia": {
+            displayName: "Cartesia",
             models: [
-                { value: "deepgram_aura", displayName: "Deepgram Aura" }
-            ]
-        },
-        "play-": {
-            displayName: "PlayHT",
-            models: [
-                { value: "Play3.0-mini", displayName: "PlayHT 3.0 Mini" },
-                { value: "PlayDialog", displayName: "PlayHT Dialog" }
+                { value: "cartesia", displayName: "Cartesia Sonic" }
             ]
         }
     };
 
-    // Function to update available voice models based on selected voice
-    function updateVoiceModelOptions() {
-        const voiceSelect = document.getElementById('voice_id');
-        const modelSelect = document.getElementById('voice_model');
-        const selectedVoice = voiceSelect.value;
-        
-        if (!modelSelect || !voiceSelect || !selectedVoice) return;
-        
-        // Save current selection if possible
-        const currentModel = modelSelect.value;
-        
-        // Clear existing options
-        modelSelect.innerHTML = '';
-        
-        // Determine which provider this voice belongs to
-        let matchedProvider = null;
-        for (const providerPrefix in voiceModelCompatibility) {
-            if (selectedVoice.startsWith(providerPrefix)) {
-                matchedProvider = providerPrefix;
-                break;
-            }
-        }
-        
-        if (matchedProvider) {
-            // Add compatible models
-            const providerConfig = voiceModelCompatibility[matchedProvider];
-            const compatibleModels = providerConfig.models;
-            
-            // Add a helpful option group
-            const optGroup = document.createElement('optgroup');
-            optGroup.label = `${providerConfig.displayName} Compatible Models`;
-            modelSelect.appendChild(optGroup);
-            
-            // Add each compatible model
-            compatibleModels.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.value;
-                option.textContent = model.displayName;
-                
-                // Re-select the current model if it's compatible
-                if (model.value === currentModel) {
-                    option.selected = true;
-                }
-                
-                optGroup.appendChild(option);
-            });
-            
-            // If the current model isn't in the list of compatible models, auto-select first compatible model
-            if (compatibleModels.length > 0 && !Array.from(modelSelect.options).some(opt => opt.selected)) {
-                modelSelect.value = compatibleModels[0].value;
-            }
-            
-            // Add a helpful message
-            const helpText = document.getElementById('voice_model_help');
-            if (helpText) {
-                helpText.textContent = `Only showing models compatible with ${providerConfig.displayName} voices`;
-            }
-        }
-    }
-    
-    // Listen for voice selection changes
+    // --- DOM ELEMENTS ---
+    const modelSelect = document.getElementById('voice_model');
     const voiceSelect = document.getElementById('voice_id');
-    if (voiceSelect) {
-        voiceSelect.addEventListener('change', updateVoiceModelOptions);
-        voiceSelect.addEventListener('change', updateVoicePreview);
-    }
-    
-    // Call initially to set up the correct options
-    updateVoiceModelOptions();
-    
-    // Voice loading and preview functionality
     const loadVoicesBtn = document.getElementById('loadVoicesBtn');
     const voicePreviewCard = document.getElementById('voicePreviewCard');
     const voicePreviewAudio = document.getElementById('voicePreview');
     const voiceNameElement = document.getElementById('selectedVoiceName');
     const voiceDetailsElement = document.getElementById('voiceDetails');
-    
-    let voicesData = [];
-    
-    // Load voices automatically on page load
+
+    if (!modelSelect || !voiceSelect) {
+        console.error('❌ Critical Error: Could not find model or voice select elements on the page.');
+        return;
+    }
+
+    // --- STATE ---
+    let allVoicesData = [];
+
+    // --- INITIALIZATION ---
+    populateInitialModels();
     loadVoices();
-    
-    // Add click event for manual reload
-    if (loadVoicesBtn) {
-        loadVoicesBtn.addEventListener('click', function() {
-            loadVoices();
-        });
+
+    // --- EVENT LISTENERS ---
+    console.log('Attaching event listener to voice model dropdown...');
+    modelSelect.addEventListener('change', loadVoices); // Changed from updateVoiceOptions to loadVoices
+    voiceSelect.addEventListener('change', updateVoicePreview);
+    loadVoicesBtn.addEventListener('click', loadVoices);
+
+    function populateInitialModels() {
+        modelSelect.innerHTML = '';
+        for (const providerPrefix in voiceModelCompatibility) {
+            const providerConfig = voiceModelCompatibility[providerPrefix];
+            const optGroup = document.createElement('optgroup');
+            optGroup.label = providerConfig.displayName;
+            providerConfig.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.value;
+                option.textContent = model.displayName;
+                option.dataset.providerPrefix = providerPrefix; // Store provider prefix here
+                optGroup.appendChild(option);
+            });
+            modelSelect.appendChild(optGroup);
+        }
+        console.log('🎙️ Voice models populated.');
     }
     
-    // Function to load voices from API
     function loadVoices() {
-        // Show loading indicator
-        const loadingSpinner = document.createElement('span');
-        loadingSpinner.className = 'spinner-border spinner-border-sm ms-2';
-        loadingSpinner.setAttribute('role', 'status');
+        console.log('⏳ Fetching voices from API...');
         loadVoicesBtn.disabled = true;
-        loadVoicesBtn.appendChild(loadingSpinner);
+        voiceSelect.innerHTML = '<option disabled selected>Loading voices...</option>';
+
+        const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+        const providerPrefix = selectedOption ? selectedOption.dataset.providerPrefix : null;
         
-        // Clear voiceSelect except first option
-        while (voiceSelect.options.length > 1) {
-            voiceSelect.remove(1);
+        let url = '/voice_agent/list-voices/';
+        if (providerPrefix) {
+            url += `?provider=${providerPrefix}`;
         }
         
-        // Add a loading option
-        const loadingOption = document.createElement('option');
-        loadingOption.textContent = 'Loading voices...';
-        loadingOption.disabled = true;
-        loadingOption.selected = true;
-        voiceSelect.add(loadingOption);
-        
-        // Fetch voices from the API
-        fetch('/voice_agent/list-voices/')
+        fetch(url)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error(`Network response was not ok (Status: ${response.status})`);
                 return response.json();
             })
             .then(data => {
-                // Store the voices data
-                voicesData = data;
+                allVoicesData = data;
+               
                 
-                // Get current selection
-                const currentValue = voiceSelect.value;
-                
-                // Clear existing options
-                while (voiceSelect.options.length > 0) {
-                    voiceSelect.remove(0);
-                }
-                
-                // Group voices by provider
-                const providers = {};
-                
-                data.forEach(voice => {
-                    const provider = voice.provider || 'other';
-                    if (!providers[provider]) {
-                        providers[provider] = [];
-                    }
-                    providers[provider].push(voice);
-                });
-                
-                // Add options grouped by provider
-                for (const provider in providers) {
-                    const optgroup = document.createElement('optgroup');
-                    const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
-                    optgroup.label = `${providerName} Voices`;
-                    
-                    // Sort voices alphabetically within the provider
-                    providers[provider].sort((a, b) => a.voice_name.localeCompare(b.voice_name));
-                    
-                    providers[provider].forEach(voice => {
-                        const option = document.createElement('option');
-                        option.value = voice.voice_id;
-                        
-                        // Create descriptive label
-                        let label = voice.voice_name;
-                        if (voice.gender) {
-                            label += ` (${voice.gender.charAt(0).toUpperCase() + voice.gender.slice(1)})`;
-                        }
-                        
-                        option.textContent = label;
-                        
-                        // Set additional data attributes
-                        option.dataset.previewUrl = voice.preview_audio_url;
-                        option.dataset.accent = voice.accent;
-                        option.dataset.gender = voice.gender;
-                        option.dataset.age = voice.age;
-                        
-                        // Select this option if it matches the previous selection
-                        if (voice.voice_id === currentValue) {
-                            option.selected = true;
-                        }
-                        
-                        optgroup.appendChild(option);
-                    });
-                    
-                    voiceSelect.appendChild(optgroup);
-                }
-                
-                // If no option is selected, select the first one
-                if (voiceSelect.selectedIndex === -1 && voiceSelect.options.length > 0) {
-                    voiceSelect.selectedIndex = 0;
-                }
-                
-                // Trigger change event to update preview
-                voiceSelect.dispatchEvent(new Event('change'));
+                console.log(`✅ API call successful. ${allVoicesData.length} voices loaded into cache.`);
+                updateVoiceOptions();
             })
             .catch(error => {
-                console.error('Error fetching voices:', error);
-                // Add an error message option
-                const errorOption = document.createElement('option');
-                errorOption.textContent = 'Error loading voices';
-                errorOption.disabled = true;
-                voiceSelect.add(errorOption);
+                console.error('❌ API call failed:', error);
+                voiceSelect.innerHTML = '<option disabled selected>Error loading voices</option>';
             })
             .finally(() => {
-                // Remove loading indicator
                 loadVoicesBtn.disabled = false;
-                if (loadingSpinner && loadingSpinner.parentNode === loadVoicesBtn) {
-                    loadVoicesBtn.removeChild(loadingSpinner);
-                }
             });
     }
-    
-    // Function to update voice preview
+
+    function updateVoiceOptions() {
+        const selectedModel = modelSelect.value;
+        console.log(`🔄 Model changed to: "${selectedModel}". Updating voice options...`);
+        
+        if (!selectedModel || allVoicesData.length === 0) {
+            voiceSelect.innerHTML = '<option disabled selected>Select a voice model</option>';
+            return;
+        }
+
+        const optionsHTML = allVoicesData
+            .sort((a, b) => a.voice_name.localeCompare(b.voice_name))
+            .map(voice => {
+                const voiceName = voice.voice_name || 'Unnamed';
+                const gender = voice.gender || 'N/A';
+                
+                return `<option value="${voice.voice_id}" 
+                            data-preview-url="${voice.preview_audio_url || ''}"
+                            data-accent="${voice.accent || ''}"
+                            data-gender="${voice.gender || ''}"
+                            data-age="${voice.age || ''}">
+                            ${voiceName} (${gender})
+                        </option>`;
+            })
+            .join('');
+
+        voiceSelect.innerHTML = optionsHTML;
+        console.log('✅ Dropdown updated using innerHTML method.');
+
+        voiceSelect.dispatchEvent(new Event('change'));
+    }
+
     function updateVoicePreview() {
         const selectedOption = voiceSelect.options[voiceSelect.selectedIndex];
-        
         if (selectedOption && selectedOption.dataset.previewUrl) {
-            // Show preview card
             voicePreviewCard.classList.remove('d-none');
-            
-            // Update preview audio source
             voicePreviewAudio.src = selectedOption.dataset.previewUrl;
-            
-            // Update voice name and details
-            voiceNameElement.textContent = selectedOption.textContent;
-            
-            // Build details string
-            let detailsText = [];
-            if (selectedOption.dataset.accent) detailsText.push(selectedOption.dataset.accent);
-            if (selectedOption.dataset.age) detailsText.push(selectedOption.dataset.age);
-            
-            voiceDetailsElement.textContent = detailsText.join(' • ');
+            voiceNameElement.textContent = selectedOption.text;
+            let detailsText = [selectedOption.dataset.accent, selectedOption.dataset.age].filter(Boolean).join(' • ');
+            voiceDetailsElement.textContent = detailsText;
         } else {
-            // Hide preview card if no preview URL
             voicePreviewCard.classList.add('d-none');
             voicePreviewAudio.src = '';
         }
     }
 });
 </script>
-{% endblock %} 
+
+{% endblock %}

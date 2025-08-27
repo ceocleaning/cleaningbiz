@@ -100,7 +100,7 @@ def setup_retell_agent(request):
                 compatible_models = voice_model_compatibility[voice_prefix]['compatible_models']
                 if voice_model not in compatible_models:
                     # Use the default model for this voice provider
-                    logger.warning(f"Voice model {voice_model} not compatible with voice {voice_id}. Using default model {voice_model_compatibility[voice_prefix]['default_model']} instead.")
+                    print(f"Voice model {voice_model} not compatible with voice {voice_id}. Using default model {voice_model_compatibility[voice_prefix]['default_model']} instead.")
                     voice_model = voice_model_compatibility[voice_prefix]['default_model']
             
             # Construct the payload directly
@@ -298,10 +298,13 @@ def create_retell_llm(request):
 @login_required
 def list_retell_voices(request):
     """
-    View to list available Retell voices.
+    View to list available Retell voices, optionally filtered by provider.
     """
     try:
-        # Add your Retell API key
+        # Get the 'provider' query parameter from the request
+        provider = request.GET.get('provider')
+        print(f"Listing Retell voices with provider filter: {provider}")
+        
         headers = {
             'Authorization': f'Bearer {API_KEY}'
         }
@@ -311,13 +314,29 @@ def list_retell_voices(request):
             f'{BASE_URL}/list-voices',
             headers=headers
         )
+
+        response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
         
-        # Return the response as JSON
-        return JsonResponse(response.json(), safe=False)
+        all_voices = response.json()
+
+        
+        # If a provider is specified, filter the voices
+        if provider:
+            filtered_voices = [
+                voice for voice in all_voices if voice.get('provider', '') == provider
+            ]
+            return JsonResponse(filtered_voices, safe=False)
+        
+        # If no provider is specified, return all voices
+        return JsonResponse(all_voices, safe=False)
             
+    except requests.exceptions.RequestException as e:
+        logger.exception("Error calling Retell API")
+        return JsonResponse({'error': f'API request failed: {e}'}, status=500)
     except Exception as e:
         logger.exception("Error listing Retell voices")
         return JsonResponse({'error': str(e)}, status=500)
+
 
 @login_required
 def list_retell_agents(request):
