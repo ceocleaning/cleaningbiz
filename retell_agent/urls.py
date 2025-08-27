@@ -10,4 +10,5 @@ urlpatterns = [
     path('agents/delete/<str:agent_id>/', views.delete_retell_agent, name='delete_retell_agent'),
     path('agents/assign-number/', views.assign_phone_number, name='assign_phone_number'),
     path('voice-conversations/', views.voice_conversations, name='voice_conversations'),
+    path('reset_retell_agents/<str:agent_id>/', views.reset_agent_settings, name='reset_retell_agent')
 ] 

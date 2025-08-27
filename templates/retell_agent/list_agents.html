@@ -99,19 +99,21 @@
                     <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
                         <i class="fas fa-edit me-1"></i>Edit Agent
                     </a>
-                    <a href="{% url 'update_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
+                    <a href="{% url 'reset_retell_agent' agent.agent_id %}" class="btn btn-outline-primary">
                         <i class="fas fa-circle me-1"></i>Reset
                     </a>
+                    {% if not agent.agent_number %}
                     <button type="button" class="btn btn-outline-success assign-number-btn" 
                             data-bs-toggle="modal" 
                             data-bs-target="#assignNumberModal"
                             data-agent-id="{{ agent.agent_id }}"
                             data-agent-name="{{ agent.agent_name }}"
                             data-agent-number="{{ agent.agent_number }}">
-                        {% if not agent.agent_number %}
+                        
                         <i class="fas fa-phone me-1"></i>Assign Number
-                        {% endif %}
+                        
                     </button>
+                    {% endif %}
                     <a href="{% url 'delete_retell_agent' agent.agent_id %}" class="btn btn-outline-danger">
                         <i class="fas fa-trash me-1"></i>Delete
                     </a>
