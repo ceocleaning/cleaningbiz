@@ -350,7 +350,10 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
             subscription.save()
         
         # Send failure notification
-        _send_failed_renewal_notification(business, subscription, plan, error_message)
+        try:
+            _send_failed_renewal_notification(business, subscription, plan, error_message)
+        except Exception as e:
+            print(f"Error sending failed renewal notification: {str(e)}")
         
         print(f"Recorded failed renewal for {business.businessName}")
         

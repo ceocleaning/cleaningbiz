@@ -26,6 +26,8 @@ from twilio.base.exceptions import TwilioRestException
 def set_status_and_send_email(sender, instance, created, **kwargs):
     from django_q.tasks import schedule
     from django_q.models import Schedule
+
+    print("Lead created: ", instance.id)
     
     # Check if the schedule already exists
     if not Schedule.objects.filter(func="ai_agent.tasks.check_chat_status").exists():
@@ -51,10 +53,12 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
 
             # Check if Twilio credentials are properly set
             if not apiCred.twilioAccountSid or not apiCred.twilioAuthToken or not apiCred.twilioSmsNumber:
+                print("Twilio credentials are not properly set")
                 return
                 
             # Check if phone number is valid
             if not instance.phone_number or len(instance.phone_number) < 10:
+                print("Phone number is invalid")
                 return
 
             client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
@@ -68,6 +72,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 )
 
             except TwilioRestException as e:
+                print("Error sending SMS: ", e)
                 pass
 
             chat = Chat.objects.filter(clientPhoneNumber=instance.phone_number).first()

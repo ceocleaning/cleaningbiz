@@ -8,6 +8,7 @@ from .models import Lead
 from django.utils import timezone
 from django.conf import settings
 
+
 def send_call_to_lead(lead_id):
     try:
         # Get the lead object from the database using the ID

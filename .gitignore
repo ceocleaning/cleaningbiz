@@ -26,9 +26,7 @@ env/
 .DS_Store
 
 
-# Ignore Static & Media Files (Optional)
-staticfiles/
-media/
+
 
 
 cert.crt

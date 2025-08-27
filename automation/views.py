@@ -1803,11 +1803,9 @@ def reject_open_job(request, job_id):
     from automation.models import OpenJob
     from bookings.utils import send_jobs_to_cleaners
     
-    print(f"Processing job rejection for job_id: {job_id}")
     
     # Get the open job
     job = get_object_or_404(OpenJob, id=job_id)
-    print(f"Found job: {job.id} for booking: {job.booking.bookingId} and cleaner: {job.cleaner.cleaner.id}")
     
     if job.cleaner.user != request.user:
         messages.error(request, 'You do not have permission to reject this job.')
@@ -1816,22 +1814,17 @@ def reject_open_job(request, job_id):
     # Update the job status
     job.status = 'rejected'
     job.save()
-    print(f"Job {job.id} marked as rejected")
 
     booking = job.booking
     if booking.business.job_assignment == 'high_rated':
         cleaner_id_to_exclude = job.cleaner.cleaner.id
-        print(f"Checking for other pending jobs for booking {booking.bookingId}")
 
         # Get all pending jobs for this booking (regardless of assignment type)
         other_job_objs = OpenJob.objects.filter(booking=booking, status='pending').exclude(id=job.id)
-        print(f"other_job_objs: {other_job_objs.count()}")
         
         # If no other pending jobs exist, send this job to all other available cleaners
         if other_job_objs.count() == 0:
-            print("Sending jobs to cleaners")
-            print(f"exclude_ids: {cleaner_id_to_exclude}")
-            print(f"No pending jobs found, sending to other cleaners excluding cleaner {cleaner_id_to_exclude}")
+          
             
             # Get all previously rejected cleaners for this booking to exclude them too
             rejected_cleaner_ids = list(OpenJob.objects.filter(
@@ -1843,13 +1836,11 @@ def reject_open_job(request, job_id):
             if cleaner_id_to_exclude not in rejected_cleaner_ids:
                 rejected_cleaner_ids.append(cleaner_id_to_exclude)
                 
-            print(f"Excluding these cleaner IDs: {rejected_cleaner_ids}")
             
             # Send jobs to all available cleaners except those who already rejected
-            result = send_jobs_to_cleaners(booking.business, booking, exclude_ids=rejected_cleaner_ids, assignment_check_null=True)
-            print(f"send_jobs_to_cleaners result: {result}")
+            send_jobs_to_cleaners(booking.business, booking, exclude_ids=rejected_cleaner_ids, assignment_check_null=True)
         else:
-            print("Other pending jobs exist, not sending to more cleaners")
+            pass
     
     # Add success message
     messages.success(request, f'Job {job.id} has been rejected successfully!')
@@ -1858,7 +1849,6 @@ def reject_open_job(request, job_id):
 
 
 def confirm_arrival(request, booking_id):
-    print(request.user)
     booking = Booking.objects.get(bookingId=booking_id)
     
     from .emails import send_arrival_confirmation_email
