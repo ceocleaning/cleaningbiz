@@ -756,6 +756,9 @@ def delete_retell_agent(request, agent_id):
                     # Delete agent using SDK
                     client.agent.delete(agent_id)
                     print(f"Agent {agent_id} successfully deleted from Retell API")
+                    client.phone_number.delete(
+                        agent.agent_number
+                    )
                     agent_deletion_success = True
                 except Exception as e:
                     agent_deletion_success = False
