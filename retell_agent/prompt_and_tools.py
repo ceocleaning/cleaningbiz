@@ -61,11 +61,11 @@ def get_retell_prompt(business):
     
     services_list = "\n".join([f"- {service}" for service in active_services])
 
-    commercial_cleaning_prompt = f"""
-    If user selects commercial cleaning 
-    - run {{send_commercial_link}} 
-    - After that {{end_call}}
-    """ if pricing_obj.sqftMultiplierCommercial > 0 else ""
+    # commercial_cleaning_prompt = f"""
+    # If user selects commercial cleaning 
+    # - run {{send_commercial_link}} 
+    # - After that {{end_call}}
+    # """ if pricing_obj.sqftMultiplierCommercial > 0 else ""
 
     default_prompt = f"""
     ###Persona of AI Voice Agent
@@ -128,7 +128,6 @@ def get_retell_prompt(business):
 
     Which service would you prefer? Based on your previous responses, I recommend [Service Type] for optimal results."
     
-    {commercial_cleaning_prompt}
     
     ##Ask for Addons
     - After getting service type ask the user he wants some addons
