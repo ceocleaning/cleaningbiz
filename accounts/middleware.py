@@ -28,7 +28,7 @@ class BusinessApprovalMiddleware:
             'approval_pending', 'profile', 'update_profile', 'change_password',
             'forgot_password', 'verify_otp', 'resend_otp', 'reset_password',
             'admin:index', 'admin:login', 'select_plan', 'subscription_management', 'manage_card',
-            'process_payment'
+            'process_payment', 'validate_coupon'
         ]
         
         # Also skip if URL is exempt or is admin URL
