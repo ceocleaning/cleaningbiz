@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from .models import RetellAgent
 from retell import Retell
 from accounts.models import ApiCredential
+from django.conf import settings
 
 
 
