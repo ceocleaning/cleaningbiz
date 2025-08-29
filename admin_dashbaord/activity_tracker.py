@@ -61,7 +61,6 @@ TRACKED_MODELS = [
     # Accounts models
     'accounts.models.Business',
     'accounts.models.ApiCredential',
-    'accounts.models.SMTPConfig',
     'accounts.models.BusinessSettings',
     'accounts.models.CustomAddons',
     'accounts.models.PasswordResetOTP',

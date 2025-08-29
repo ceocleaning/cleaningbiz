@@ -1,5 +1,5 @@
 from email.utils import parsedate
-from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business, SMTPConfig
+from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business
 from bookings.models import Booking, BookingCustomAddons
 from datetime import datetime, timedelta
 from django.http import JsonResponse
@@ -16,10 +16,7 @@ from .utils import convert_date_str_to_date
 from .models import Chat
 from django.conf import settings
 from django.utils.html import strip_tags
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
-from django.core.mail import EmailMultiAlternatives
+from leadsAutomation.utils import send_email
 
 
 
@@ -571,10 +568,9 @@ def send_reschedule_email(booking):
     try:
         # Get business and SMTP configuration
         business = booking.business
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
         
         # Set up email parameters
-        from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
+        from_name = f"{business.businessName} <{business.user.email}>"
         recipient_email = booking.email
         
         # Check if we have a recipient email
@@ -632,7 +628,7 @@ def send_reschedule_email(booking):
             
             <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
                 <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.businessEmail or from_email}</p>
+                <p>If you have any questions, please contact us at {business.user.email}</p>
             </div>
         </body>
         </html>
@@ -640,56 +636,21 @@ def send_reschedule_email(booking):
         
         # Create plain text version
         text_content = strip_tags(html_content)
-        
-        # Send email based on available configuration
-        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-            # Use business-specific SMTP configuration
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            
-            # Use from_name if available, otherwise use username
-            from_email_header = smtp_config.username
-            if smtp_config.from_name:
-                from_email_header = f'"{smtp_config.from_name}" <{smtp_config.username}>'
-            msg['From'] = from_email_header
-            
-            msg['To'] = recipient_email
-            
-            # Add Reply-To header if configured
-            if smtp_config.reply_to:
-                msg['Reply-To'] = smtp_config.reply_to
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            server.starttls()  # Always use TLS for security
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-            
-            print(f"[INFO] Rescheduling email sent to {recipient_email} using business SMTP")
-            return True
-            
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=from_email,
-                to=[recipient_email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
-            
-            print(f"[INFO] Rescheduling email sent to {recipient_email} using Django's email system")
-            return True
+
+      
+        send_email(
+            from_email=from_name,
+            to_email=recipient_email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_content,
+            text_content=text_content
+        )
+
+        return True
+    
+       
+
             
     except Exception as e:
         print(f"[ERROR] Failed to send rescheduling email: {str(e)}")
@@ -700,10 +661,10 @@ def send_cancel_email(booking):
     try:
         # Get business and SMTP configuration
         business = booking.business
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
+        
         
         # Set up email parameters
-        from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
+        from_name = f"{business.businessName} <{business.user.email}>"
         recipient_email = booking.email
         
         # Check if we have a recipient email
@@ -761,7 +722,7 @@ def send_cancel_email(booking):
             
             <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
                 <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.businessEmail or from_email}</p>
+                <p>If you have any questions, please contact us at {business.user.email}</p>
             </div>
         </body>
         </html>
@@ -770,56 +731,17 @@ def send_cancel_email(booking):
         # Create plain text version
         text_content = strip_tags(html_content)
         
-        # Send email based on available configuration
-        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-            # Use business-specific SMTP configuration
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            
-            # Use from_name if available, otherwise use username
-            from_email_header = smtp_config.username
-            if smtp_config.from_name:
-                from_email_header = f'"{smtp_config.from_name}" <{smtp_config.username}>'
-            msg['From'] = from_email_header
-            
-            msg['To'] = recipient_email
-            
-            # Add Reply-To header if configured
-            if smtp_config.reply_to:
-                msg['Reply-To'] = smtp_config.reply_to
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            server.starttls()  # Always use TLS for security
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-            
-            print(f"[INFO] Cancellation email sent to {recipient_email} using business SMTP")
-            return True
-            
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=from_email,
-                to=[recipient_email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
-            
-            print(f"[INFO] Cancellation email sent to {recipient_email} using Django's email system")
-            return True
-            
+        send_email(
+            from_email=from_name,
+            to_email=recipient_email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_content,
+            text_content=text_content
+        )
+
+        return True
+
     except Exception as e:
         print(f"[ERROR] Failed to send cancellation email: {str(e)}")
         return False

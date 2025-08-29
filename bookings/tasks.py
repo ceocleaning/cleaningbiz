@@ -1,63 +1,12 @@
 from .models import Booking
-from accounts.models import ApiCredential, SMTPConfig
-from django.core.mail import send_mail, EmailMultiAlternatives
+from accounts.models import ApiCredential
 from django.db.models import Q
 import datetime
 from django.conf import settings
 from django.utils import timezone
 from twilio.rest import Client
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from leadsAutomation.utils import send_email
 
-
-def send_email_util(subject, recipient_email, html_body, text_body=None, from_email=None, smtp_config=None):
-    from django.conf import settings
-    from django.core.mail import EmailMultiAlternatives
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-
-    if not text_body:
-        # Fallback: strip HTML tags for plain text
-        import re
-        text_body = re.sub('<[^<]+?>', '', html_body)
-
-    if isinstance(recipient_email, str):
-        recipient_list = [recipient_email]
-    else:
-        recipient_list = recipient_email
-
-    try:
-        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-            # Use custom SMTP
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = from_email or smtp_config.username
-            msg['To'] = ', '.join(recipient_list)
-            part1 = MIMEText(text_body, 'plain')
-            part2 = MIMEText(html_body, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            server.starttls()
-            server.login(smtp_config.username, smtp_config.password)
-            server.sendmail(msg['From'], recipient_list, msg.as_string())
-            server.quit()
-            return True
-        else:
-            # Use Django's email system
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=from_email or getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-                to=recipient_list
-            )
-            email_message.attach_alternative(html_body, "text/html")
-            email_message.send()
-            return True
-    except Exception as e:
-        return False
 
 from .email_template import get_email_template
 
@@ -76,7 +25,7 @@ def send_payment_reminder(booking_id):
         if not booking.is_paid():
             business = booking.business
             # Prepare message content
-            email_subject = f"URGENT: Complete Your Payment for {business.businessName} Booking"
+            email_subject = f"Urgent: Complete Your Payment for {business.businessName} Booking"
             # Create HTML email body
             html_body = f"""
             <!DOCTYPE html>
@@ -168,46 +117,22 @@ def send_payment_reminder(booking_id):
             """
             # Send email
             try:
-                # Get SMTP configuration for the business
-                smtp_config = SMTPConfig.objects.filter(business=business).first()
+              
                 # Set up email parameters
-                from_email = smtp_config.username
+                from_email = f"{business.businessName} <{business.user.email}>"
                 recipient_email = booking.email
                 
                 # Send email based on available configuration
-                if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-                    # Create message container
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = email_subject
-                    msg['From'] = from_email
-                    msg['To'] = recipient_email
+                send_email(
+                    from_email=from_email,
+                    to_email=recipient_email,
+                    reply_to=business.user.email,
+                    subject=email_subject,
+                    html_body=html_body,
+                    text_content=text_body
+                )
                     
-                    # Attach parts
-                    part1 = MIMEText(text_body, 'plain')
-                    part2 = MIMEText(html_body, 'html')
-                    msg.attach(part1)
-                    msg.attach(part2)
-                    
-                    # Send using custom SMTP
-                    server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-                    server.starttls()
-                    server.login(smtp_config.username, smtp_config.password)
-                    server.send_message(msg)
-                    server.quit()
-                    
-                    print(f"[INFO] Payment reminder email sent to {booking.email} using business SMTP config")
-                else:
-                    # Use Django's email system
-                    email_message = EmailMultiAlternatives(
-                        subject=email_subject,
-                        body=text_body,
-                        from_email=from_email,
-                        to=[recipient_email]
-                    )
-                    email_message.attach_alternative(html_body, "text/html")
-                    email_message.send()
-                    
-                    print(f"[INFO] Payment reminder email sent to {booking.email} using default SMTP settings")
+                print(f"[INFO] Payment reminder email sent to {booking.email} using default SMTP settings")
                 
             except Exception as e:
                 print(f"[ERROR] Failed to send payment reminder email: {str(e)}")
@@ -301,13 +226,15 @@ def delete_unpaid_bookings():
                     """
                     
                     # Send email
-                    from_email = f"{business.businessName} <{business.email}>" if business.email else settings.DEFAULT_FROM_EMAIL
-                    send_mail(
-                        subject,
-                        message,
-                        from_email,
-                        [booking.email],
-                        fail_silently=True,
+                    from_email = f"{business.businessName} <{business.user.email}>" 
+
+                    send_email(
+                        from_email=from_email,
+                        to_email=booking.email,
+                        reply_to=business.email,
+                        subject=subject,
+                        html_body=message,
+                        text_content=message
                     )
                 except Exception as e:
                     print(f"[ERROR] Failed to send cancellation email: {str(e)}")
@@ -360,16 +287,16 @@ def send_day_before_reminder():
             for to in to_whom:
                 html_body = get_email_template(booking, to=to, when='tomorrow')
                 recipient_email = booking.email if to == 'client' else booking.cleaner.email
-                smtp_config = SMTPConfig.objects.filter(business=business).first()
-                from_email = smtp_config.username if smtp_config else (business.email if hasattr(business, 'email') and business.email else settings.DEFAULT_FROM_EMAIL)
+
+                from_email = f"{business.businessName} <{business.user.email}>"
 
                 # Send email using the new utility
-                send_email_util(
-                    subject=email_subject,
-                    recipient_email=recipient_email,
-                    html_body=html_body,
+                send_email(
                     from_email=from_email,
-                    smtp_config=smtp_config
+                    to_email=recipient_email,
+                    reply_to=business.user.email,
+                    subject=email_subject,
+                    html_body=html_body,
                 )
 
             # Send SMS (unchanged)
@@ -400,9 +327,11 @@ def send_day_before_reminder():
                         )
             except Exception as e:
                 print(f"[ERROR] Failed to send day-before reminder SMS: {str(e)}")
+
             booking.dayBeforeReminderSentAt = timezone.now()
             booking.save()
             reminder_count += 1
+
         print(f"[INFO] Sent {reminder_count} day-before reminders (client & cleaner)")
         return reminder_count
     except Exception as e:
@@ -452,17 +381,17 @@ def send_hour_before_reminder():
                 email_subject = f"Your {business.businessName} Cleaning Service Is Coming Soon"
                 html_body = get_email_template(booking, to=to, when='in one hour')
                 recipient_email = booking.email if to == 'client' else booking.cleaner.email
-                smtp_config = SMTPConfig.objects.filter(business=business).first()
+             
 
-                from_email = smtp_config.username if smtp_config else (business.user.email if hasattr(business, 'user') and business.user.email else settings.DEFAULT_FROM_EMAIL)
+                from_email = f"{business.businessName} <{business.user.email}>"
 
                 # Send email using the new utility
-                send_email_util(
-                    subject=email_subject,
-                    recipient_email=recipient_email,
-                    html_body=html_body,
+                send_email(
                     from_email=from_email,
-                    smtp_config=smtp_config
+                    to_email=recipient_email,
+                    reply_to=business.user.email,
+                    subject=email_subject,
+                    html_body=html_body
                 )
 
             
@@ -628,46 +557,18 @@ def send_post_service_followup():
             
             # Send email
             try:
-                # Get SMTP configuration for the business
-                smtp_config = SMTPConfig.objects.filter(business=business).first()
-                
-                # Set up email parameters
-                from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
+                from_email = f"{business.businessName} <{business.user.email}>"
                 recipient_email = booking.email
-                
-                # Send email based on available configuration
-                if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-                    # Create message container
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = email_subject
-                    msg['From'] = from_email
-                    msg['To'] = recipient_email
-                    
-                    # Attach parts
-                    part1 = MIMEText(text_body, 'plain')
-                    part2 = MIMEText(html_body, 'html')
-                    msg.attach(part1)
-                    msg.attach(part2)
-                    
-                    # Send using custom SMTP
-                    server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-                    server.starttls()
-                    server.login(smtp_config.username, smtp_config.password)
-                    server.send_message(msg)
-                    server.quit()
-                   
-                else:
-                    # Use Django's email system
-                    email_message = EmailMultiAlternatives(
-                        subject=email_subject,
-                        body=text_body,
-                        from_email=from_email,
-                        to=[recipient_email]
-                    )
-                    email_message.attach_alternative(html_body, "text/html")
-                    email_message.send()
-                   
-                
+
+                send_email(
+                    from_email=from_email,
+                    to_email=recipient_email,
+                    reply_to=business.user.email,
+                    subject=email_subject,
+                    text_body=text_body,
+                    html_body=html_body
+                )
+
             except Exception as e:
                 print(f"[ERROR] Failed to send post-service followup email: {str(e)}")
             

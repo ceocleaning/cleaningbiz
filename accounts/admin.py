@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SMTPConfig, SquareCredentials, StripeCredentials, PayPalCredentials, ThumbtackProfile
+from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SquareCredentials, StripeCredentials, PayPalCredentials, ThumbtackProfile
 
 
 class BusinessAdmin(admin.ModelAdmin):
@@ -47,10 +47,7 @@ class CustomAddonsAdmin(admin.ModelAdmin):
     list_display = ('id', 'business', 'addonName', 'addonDataName', 'addonPrice')
     search_fields = ('business__businessName', 'addonName', 'addonDataName')
 
-@admin.register(SMTPConfig)
-class SMTPConfigAdmin(admin.ModelAdmin):
-    list_display = ('id', 'business', 'host', 'port', 'username', 'from_name', 'reply_to')
-    search_fields = ('business__businessName', 'host', 'username', 'from_name', 'reply_to')
+
 
 @admin.register(PasswordResetOTP)
 class PasswordResetOTPAdmin(admin.ModelAdmin):

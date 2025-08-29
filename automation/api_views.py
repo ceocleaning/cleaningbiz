@@ -5,11 +5,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons, SMTPConfig
+from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
 from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
 from django.conf import settings
+from leadsAutomation.utils import send_email
 
 from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
 import dateparser
@@ -709,9 +710,7 @@ def sendCommercialFormLink(request):
                 'message': 'Business not found'
             }, status=404)
         
-        # Check for SMTP configuration
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
-        use_business_smtp = smtp_config and smtp_config.host and smtp_config.username and smtp_config.password
+       
         
         # Generate the commercial form link
         form_link = f"{settings.BASE_URL}/commercial-form/{business.businessId}/"
@@ -775,43 +774,16 @@ def sendCommercialFormLink(request):
             The {business.businessName} Team
         """
         
-        # Send email based on available configuration
-        if use_business_smtp:
-            # Use business-specific SMTP configuration
-            import smtplib
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = smtp_config.username
-            msg['To'] = email
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            if smtp_config.useTLS:
-                server.starttls()
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            from django.core.mail import EmailMultiAlternatives
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
+        # Send the email
+
+        send_email(
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content,
+            from_email=f"{business.businessName} <{business.user.email}>",
+            to_email=email,
+            reply_to=business.user.email
+        )
         
         return JsonResponse({
             'success': True,

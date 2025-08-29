@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from bookings.models import Booking
-from accounts.models import ApiCredential, SMTPConfig, Business
+from accounts.models import ApiCredential, Business
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -15,7 +15,7 @@ from .models import Invoice, Payment
 from automation.utils import sendEmailtoClientInvoice
 from django.utils import timezone
 import json
-from bookings.tasks import send_email_util
+from leadsAutomation.utils import send_email
 
 
 @receiver(post_save, sender=Invoice)
@@ -73,23 +73,11 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
             from django.conf import settings
 
             
-            # Get SMTP configuration
-            smtpConfig = SMTPConfig.objects.filter(business=instance.booking.business)
-            
-            if not smtpConfig.exists() or not smtpConfig.first().username or not smtpConfig.first().password:
-                print("Email credentials not configured for business")
-                return False
-
-            config = smtpConfig.first()
+          
             
             # Generate invoice link
             invoice_link = f"{settings.BASE_URL}/invoice/invoices/{instance.invoiceId}/preview/"
-            
-            # Create the email
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = f'Appointment Confirmation - {instance.booking.business.businessName}'
-            msg['From'] = config.username
-            msg['To'] = instance.booking.email
+          
 
             # Create HTML email content with invoice details
             html_content = f"""
@@ -205,21 +193,17 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
             Thank you for choosing {instance.booking.business.businessName}!
             """
 
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
+            send_email(
+                from_email=f"{instance.booking.business.businessName} <{instance.booking.business.user.email}>",
+                to_email=instance.booking.email,
+                subject="Appointment Confirmation",
+                html_content=html_content,
+                text_content=text_content,
+                reply_to=instance.booking.email
+            )
 
-            # Set up SMTP connection
-            smtp_server = smtplib.SMTP(config.host, config.port)
-            if config.port == 587:
-                smtp_server.starttls()
-            smtp_server.login(config.username, config.password)
-            
-            # Send email
-            smtp_server.send_message(msg)
-            smtp_server.quit()
+       
+
             
             print(f"Email confirmation with invoice sent successfully to {instance.booking.email}")
             return True
@@ -259,7 +243,7 @@ def send_payment_submitted_email(sender, instance, created, **kwargs):
             # Get the business and invoice details
             business = instance.invoice.booking.business
             customer = instance.invoice.booking
-            smtp_config = SMTPConfig.objects.filter(business=business).first()
+  
             # Email subject and content
             subject = f"New Bank Transfer Payment Received - {business.businessName}"
             recipient_email = business.user.email
@@ -308,7 +292,14 @@ def send_payment_submitted_email(sender, instance, created, **kwargs):
       
             """
             
-            send_email_util(subject, recipient_email, html_message, plain_message, smtp_config=smtp_config)
+            send_email(
+                from_email=f"{business.businessName} <{business.user.email}>",
+                to_email=recipient_email,
+                subject=subject,
+                html_content=html_message,
+                text_content=plain_message,
+                reply_to=business.user.email
+            )
             
             return True
             
@@ -328,7 +319,6 @@ def send_payment_approved_email(sender, instance, created, **kwargs):
             business = instance.invoice.booking.business
             customer = instance.invoice.booking
             customer_name = f"{customer.firstName} {customer.lastName}"
-            smtp_config = SMTPConfig.objects.filter(business=business).first()
             # Email subject and content
             subject = f"Payment {instance.status} - {customer_name if instance.status == 'APPROVED' else business.businessName}"
             recipient_email = customer.email if instance.status == 'APPROVED' else business.user.email
@@ -376,11 +366,19 @@ def send_payment_approved_email(sender, instance, created, **kwargs):
       
             """
             
-            send_email_util(subject, recipient_email, html_message, plain_message, smtp_config=smtp_config)
+            send_email(
+                from_email=f"{business.businessName} <{business.user.email}>",
+                to_email=recipient_email,
+                subject=subject,
+                html_content=html_message,
+                text_content=plain_message,
+                reply_to=business.user.email
+            )
             
             return True
             
         except Exception as e:
             print(f"Error sending payment submitted email: {str(e)}")
             return False
+            
     return True

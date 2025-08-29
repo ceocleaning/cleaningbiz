@@ -29,9 +29,6 @@ urlpatterns = [
     path('resend-otp/<str:email>/', views.resend_otp, name='resend_otp'),
     path('reset-password/<str:email>/<str:token>/', views.reset_password, name='reset_password'),
     
-    # SMTP Configuration URLs
-    path('smtp-config/', views.smtp_config, name='smtp_config'),
-    path('smtp-config/delete/', views.delete_smtp_config, name='delete_smtp_config'),
     
     # Approval Pending URL
     path('approval-pending/', views.approval_pending, name='approval_pending'),

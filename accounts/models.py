@@ -144,18 +144,7 @@ class ApiCredential(models.Model):
         return f"{URL}/lead/webhook/{self.secretKey}/"
 
 
-class SMTPConfig(models.Model):
-    business = models.OneToOneField(Business, on_delete=models.CASCADE)
-    host = models.CharField(max_length=255, null=True, blank=True)
-    port = models.IntegerField(null=True, blank=True)
-    username = models.CharField(max_length=255, null=True, blank=True)
-    password = models.CharField(max_length=255, null=True, blank=True)
-    from_name = models.CharField(max_length=255, null=True, blank=True)
-    reply_to = models.CharField(max_length=255, null=True, blank=True)
-    
-    def __str__(self):
-        return self.business.businessName
-    
+
 
 
 
