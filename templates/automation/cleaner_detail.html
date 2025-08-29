@@ -247,15 +247,14 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="mb-1"><strong>Client:</strong> {{ current_booking.firstName }} {{ current_booking.lastName }}</p>
+                            <p class="mb-1"><strong>Client:</strong> {{ current_booking.customer.get_full_name }}</p>
                             <p class="mb-1"><strong>Service:</strong> {{ current_booking.get_serviceType_display }}</p>
                             <p class="mb-0"><strong>Time:</strong> {{ current_booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ current_booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</p>
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Address:</strong></p>
                             <p class="mb-0">
-                                {{ current_booking.address1 }}{% if current_booking.address2 %}, {{ current_booking.address2 }}{% endif %}<br>
-                                {{ current_booking.city }}, {{ current_booking.stateOrProvince }} {{ current_booking.zipCode }}
+                                {{ current_booking.customer.get_address }}<br>
                             </p>
                         </div>
                     </div>
@@ -310,7 +309,7 @@
                                         <tr>
                                             <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                             <td>{{ booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</td>
-                                            <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                            <td>{{ booking.customer.get_full_name }}</td>
                                             <td>{{ booking.get_serviceType_display }}</td>
                                             <td>
                                                 <span class="badge bg-info">Scheduled</span>
@@ -322,12 +321,12 @@
                                                        data-booking-id="{{ booking.bookingId }}"
                                                        data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
                                                        data-booking-time="{{ booking.startTime|to_business_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_business_timezone:user_timezone|date:'g:i A' }}"
-                                                       data-booking-client="{{ booking.firstName }} {{ booking.lastName }}"
-                                                       data-booking-phone="{{ booking.phoneNumber }}"
-                                                       data-booking-email="{{ booking.email }}"
+                                                       data-booking-client="{{ booking.customer.get_full_name }}"
+                                                       data-booking-phone="{{ booking.customer.phone_number }}"
+                                                       data-booking-email="{{ booking.customer.email }}"
                                                        data-booking-service="{{ booking.get_serviceType_display }}"
                                                        data-booking-status="Scheduled"
-                                                       data-booking-address="{{ booking.address1 }}{% if booking.address2 %}, {{ booking.address2 }}{% endif %}, {{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}"
+                                                       data-booking-address="{{ booking.customer.get_address }}"
                                                        data-booking-notes="{{ booking.notes|default:'' }}"
                                                        data-booking-bedrooms="{{ booking.bedrooms }}"
                                                        data-booking-bathrooms="{{ booking.bathrooms }}"
@@ -371,7 +370,7 @@
                                         <tr>
                                             <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                             <td>{{ booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</td>
-                                            <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                            <td>{{ booking.customer.get_full_name }}</td>
                                             <td>{{ booking.get_serviceType_display }}</td>
                                             <td>
                                                 <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning{% endif %}">
@@ -385,12 +384,12 @@
                                                        data-booking-id="{{ booking.bookingId }}"
                                                        data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
                                                        data-booking-time="{{ booking.startTime|to_business_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_business_timezone:user_timezone|date:'g:i A' }}"
-                                                       data-booking-client="{{ booking.firstName }} {{ booking.lastName }}"
-                                                       data-booking-phone="{{ booking.phoneNumber }}"
-                                                       data-booking-email="{{ booking.email }}"
+                                                       data-booking-client="{{ booking.customer.get_full_name }}"
+                                                       data-booking-phone="{{ booking.customer.phone_number }}"
+                                                       data-booking-email="{{ booking.customer.email }}"
                                                        data-booking-service="{{ booking.get_serviceType_display }}"
                                                        data-booking-status="{% if booking.isCompleted %}Completed{% else %}Pending{% endif %}"
-                                                       data-booking-address="{{ booking.address1 }}{% if booking.address2 %}, {{ booking.address2 }}{% endif %}, {{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}"
+                                                       data-booking-address="{{ booking.customer.get_address }}"
                                                        data-booking-notes="{{ booking.notes|default:'' }}"
                                                        data-booking-bedrooms="{{ booking.bedrooms }}"
                                                        data-booking-bathrooms="{{ booking.bathrooms }}"

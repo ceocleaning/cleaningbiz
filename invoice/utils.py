@@ -62,16 +62,16 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         - Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
         
         Customer Details:
-        - Name: {booking.firstName} {booking.lastName}
-        - Email: {booking.email}
-        - Phone: {booking.phoneNumber}
+        - Name: {booking.customer.get_full_name()}
+        - Email: {booking.customer.email}
+        - Phone: {booking.customer.phone_number}
         
         Booking Details:
         - Service: {booking.serviceType}
         - Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {booking.squareFeet}
         - Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
         - Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
-        - Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
+        - Address: {booking.customer.get_address() or 'N/A'}
         
         You can view the full booking details in your dashboard.
         
@@ -137,7 +137,7 @@ def send_email_payment_completed(instance):
                     <h1>Payment Confirmed!</h1>
                 </div>
                 <div class="content">
-                    <p>Hello {booking.firstName} {booking.lastName},</p>
+                    <p>Hello {booking.customer.get_full_name()},</p>
                     <p>We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}</p>
                     
                     <div class="details">
@@ -200,7 +200,7 @@ def send_email_payment_completed(instance):
             # Create plain text version
             text_body = f"""Payment Confirmation - {business.businessName}
             
-                Hello {booking.firstName} {booking.lastName},
+                Hello {booking.customer.get_full_name()},
 
                 We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}.
 
@@ -228,7 +228,7 @@ def send_email_payment_completed(instance):
             # Set up email parameters
             from_email = f"{business.businessName} <{business.user.email}>"
             reply_to_email = business.user.email
-            recipient_email = booking.email
+            recipient_email = booking.customer.email
             
             # Send email based on available configuration
             send_email(

@@ -321,15 +321,15 @@
                     <h5 class="card-title fs-6">Client Information</h5>
                     <div class="detail-row">
                         <span class="invoice-detail-label">Name:</span>
-                        <span class="fw-normal">{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</span>
+                        <span class="fw-normal">{{ invoice.booking.customer.get_full_name }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="invoice-detail-label">Email:</span>
-                        <span class="fw-normal">{{ invoice.booking.email }}</span>
+                        <span class="fw-normal">{{ invoice.booking.customer.email }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="invoice-detail-label">Phone:</span>
-                        <span class="fw-normal">{{ invoice.booking.phoneNumber }}</span>
+                        <span class="fw-normal">{{ invoice.booking.customer.phone_number }}</span>
                     </div>
                 </div>
             </div>

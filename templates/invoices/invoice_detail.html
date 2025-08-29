@@ -57,15 +57,15 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                 <span class="text-muted mb-1 mb-sm-0">Customer</span>
-                                <span class="fw-bold">{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</span>
+                                <span class="fw-bold">{{ invoice.booking.customer.get_full_name }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                 <span class="text-muted mb-1 mb-sm-0">Customer Email</span>
-                                <span class="text-break">{{ invoice.booking.email }}</span>
+                                <span class="text-break">{{ invoice.booking.customer.email }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
                                 <span class="text-muted mb-1 mb-sm-0">Customer Phone Number</span>
-                                <span id="customerPhoneNumber">{{ invoice.booking.phoneNumber }}</span>
+                                <span id="customerPhoneNumber">{{ invoice.booking.customer.phone_number }}</span>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-start flex-column flex-sm-row mb-3">
@@ -131,7 +131,7 @@
                                 <div class="col-12">
                                     <div class="p-2 p-md-3 bg-light rounded">
                                         <small class="text-muted d-block mb-1">Service Address</small>
-                                        <p class="mb-0 text-break">{{ invoice.booking.address1 }}</p>
+                                        <p class="mb-0 text-break">{{ invoice.booking.customer.get_address }}</p>
                                     </div>
                                 </div>
                             </div>

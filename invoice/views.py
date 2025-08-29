@@ -278,7 +278,7 @@ def generate_pdf(request, invoiceId):
         [Paragraph('<b>Invoice Date:</b>', styles['Normal']), 
          Paragraph(f"{invoice.createdAt.strftime('%B %d, %Y')}", styles['Normal']),
          Paragraph('<b>Bill To:</b>', styles['Normal']), 
-         Paragraph(f"{invoice.booking.firstName} {invoice.booking.lastName}<br/>{invoice.booking.email}<br/>{invoice.booking.phoneNumber}", styles['Normal'])],
+         Paragraph(f"{invoice.booking.customer.get_full_name()}<br/>{invoice.booking.customer.email}<br/>{invoice.booking.customer.phone_number}", styles['Normal'])],
         [Paragraph('<b>Due Date:</b>', styles['Normal']), 
          Paragraph(f"{(invoice.createdAt + timezone.timedelta(days=30)).strftime('%B %d, %Y')}", styles['Normal']),
          Paragraph('<b>Payment Date:</b>', styles['Normal']), 

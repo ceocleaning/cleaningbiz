@@ -39,7 +39,7 @@ def sendInvoicetoClient(recepientNumber, invoice, business):
         message = client.messages.create(
             to=recepientNumber,
             from_=apiCreds.twilioSmsNumber,
-            body=f"Hello {invoice.booking.firstName}, your appointment with {business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
+            body=f"Hello {invoice.booking.customer.first_name}, your appointment with {business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
         )
         
         print(f"SMS sent successfully to {recepientNumber}")
@@ -81,7 +81,7 @@ def sendEmailtoClientInvoice(invoice, business):
                 <h1>Appointment Confirmed!</h1>
             </div>
             <div class="content">
-                <p>Hello {booking.firstName} {booking.lastName},</p>
+                <p>Hello {booking.customer.first_name} {booking.customer.last_name},</p>
                 <p>Your appointment with {business.businessName} has been confirmed. Thank you for choosing our services!</p>
                 
                 <div class="details">
@@ -101,7 +101,7 @@ def sendEmailtoClientInvoice(invoice, business):
                         </tr>
                         <tr>
                             <td>Address:</td>
-                            <td>{booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</td>
+                            <td>{booking.customer.get_address()}</td>
                         </tr>
                         <tr>
                             <td>Total Amount:</td>
@@ -124,12 +124,12 @@ def sendEmailtoClientInvoice(invoice, business):
         """
         
         # Plain text alternative
-        text_body = f"""Hello {booking.firstName},
+        text_body = f"""Hello {booking.customer.first_name},
 
             Your appointment with {business.businessName} has been confirmed for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')}.
 
             Service: {booking.serviceType.title()} Cleaning
-            Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
+            Address: {booking.customer.get_address()}
             Total Amount: ${invoice.amount:.2f}
 
             To view your invoice and make a payment, please visit: {invoice_link}
@@ -139,7 +139,7 @@ def sendEmailtoClientInvoice(invoice, business):
         
         # Determine which email configuration to use
         from_email = f"{business.businessName} <{business.user.email}>"
-        recipient_email = booking.email
+        recipient_email = booking.customer.email
 
         send_email(
             from_email=from_email,

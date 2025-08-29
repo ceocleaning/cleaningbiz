@@ -14,7 +14,7 @@ def send_arrival_confirmation_email(booking):
   
     
     # Get customer's full name
-    customer_name = f"{booking.firstName} {booking.lastName}" if booking.lastName else booking.firstName
+    customer_name = f"{booking.customer.first_name} {booking.customer.last_name}" if booking.customer and booking.customer.last_name else (booking.customer.first_name if booking.customer else "Customer")
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
@@ -22,14 +22,13 @@ def send_arrival_confirmation_email(booking):
     
     # Format address
     address_parts = []
-    if booking.address1:
-        address_parts.append(booking.address1)
-    if booking.address2:
-        address_parts.append(booking.address2)
-    if booking.city and booking.stateOrProvince:
-        address_parts.append(f"{booking.city}, {booking.stateOrProvince}")
-    if booking.zipCode:
-        address_parts.append(booking.zipCode)
+    if booking.customer.address:
+        address_parts.append(booking.customer.address)
+   
+    if booking.customer.city and booking.customer.state_or_province:
+        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
+    if booking.customer.zip_code:
+        address_parts.append(booking.customer.zip_code)
     
     full_address = ", ".join(address_parts) if address_parts else "N/A"
     
@@ -163,7 +162,7 @@ def send_arrival_confirmation_email(booking):
     try:
         send_email(
             from_email=from_email,
-            to_email=booking.email,
+            to_email=booking.customer.email,
             reply_to=business.user.email,
             subject=subject,
             html_body=html_body,
@@ -180,10 +179,7 @@ def send_completion_notification_emails(booking):
     Send email notifications to the customer, cleaner, and business owner when a booking is completed
     """
     business = booking.business
-
-    
-    # Get customer's full name
-    customer_name = f"{booking.firstName} {booking.lastName}" if booking.lastName else booking.firstName
+    customer_name = booking.customer.get_full_name()
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
@@ -191,14 +187,14 @@ def send_completion_notification_emails(booking):
     
     # Format address
     address_parts = []
-    if booking.address1:
-        address_parts.append(booking.address1)
-    if booking.address2:
-        address_parts.append(booking.address2)
-    if booking.city and booking.stateOrProvince:
-        address_parts.append(f"{booking.city}, {booking.stateOrProvince}")
-    if booking.zipCode:
-        address_parts.append(booking.zipCode)
+    if booking.customer.address:
+        address_parts.append(booking.customer.address)
+    if booking.customer.address2:
+        address_parts.append(booking.customer.address2)
+    if booking.customer.city and booking.customer.state_or_province:
+        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
+    if booking.customer.zip_code:
+        address_parts.append(booking.customer.zip_code)
     
     full_address = ", ".join(address_parts) if address_parts else "N/A"
     
@@ -266,7 +262,7 @@ def send_completion_notification_emails(booking):
     """
     
     # 1. Send email to customer
-    if booking.email:
+    if booking.customer.email:
         customer_subject = f"Cleaning Service Completed - {business.businessName}"
         
         customer_html_body = f"""
@@ -335,7 +331,7 @@ def send_completion_notification_emails(booking):
         try:
             send_email(
                 subject=customer_subject,
-                to_email=booking.email,
+                to_email=booking.customer.email,
                 from_email=from_email,
                 reply_to=business.user.email,
                 html_body=customer_html_body,

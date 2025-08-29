@@ -17,9 +17,9 @@ class BookingCustomAddonsInline(admin.TabularInline):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ('bookingId', 'get_full_name', 'email', 'phoneNumber', 'cleaningDate', 'serviceType', 'recurring', 'totalPrice', 'paymentMethod', 'isCompleted', 'createdAt', 'updatedAt')
+    list_display = ('bookingId', 'get_full_name', 'cleaningDate', 'serviceType', 'recurring', 'totalPrice', 'paymentMethod', 'isCompleted', 'createdAt', 'updatedAt')
     list_filter = ('serviceType', 'recurring', 'paymentMethod', 'isCompleted', 'createdAt', 'cleaningDate')
-    search_fields = ('bookingId', 'firstName', 'lastName', 'email', 'phoneNumber', 'address1', 'city', 'stateOrProvince')
+    search_fields = ('bookingId', 'customer__first_name', 'customer__last_name', 'customer__email', 'customer__phone_number', 'customer__address', 'customer__city', 'customer__state_or_province')
     readonly_fields = ('createdAt', 'updatedAt', 'bookingId')
     date_hierarchy = 'cleaningDate'
     list_per_page = 50
@@ -29,7 +29,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('bookingId', 'business', 'cleaner', 'totalPrice')
         }),
         ('Customer Information', {
-            'fields': (('firstName', 'lastName'), 'email', 'phoneNumber', 'companyName')
+            'fields': ('customer',)
         }),
         ('Service Details', {
             'fields': ('serviceType', 'recurring', 'cleaningDate', 'startTime', 'endTime',
@@ -47,7 +47,7 @@ class BookingAdmin(admin.ModelAdmin):
     )
 
     def get_full_name(self, obj):
-        return f"{obj.firstName} {obj.lastName}"
+        return f"{obj.customer.first_name} {obj.customer.last_name}"
     get_full_name.short_description = 'Customer Name'
 
 @admin.register(CleanerPayout)

@@ -9,15 +9,15 @@ import json
 import dateparser
 from automation.api_views import get_cleaners_for_business, find_available_cleaner, is_slot_available, find_alternate_slots
 from automation.utils import calculateAmount, calculateAddonsAmount, sendInvoicetoClient, sendEmailtoClientInvoice 
-
+from django.utils import timezone
 import traceback
 import pytz
 from .utils import convert_date_str_to_date
 from .models import Chat
-from django.conf import settings
 from django.utils.html import strip_tags
 from leadsAutomation.utils import send_email
-
+from bookings.timezone_utils import convert_to_utc
+from bookings.utils import send_jobs_to_cleaners
 
 
 def calculate_total(business, client_phone_number=None, session_key=None):
@@ -365,7 +365,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
                 local_datetime = local_datetime.astimezone(business_timezone)
             
             # Convert to UTC for storage in the database
-            from bookings.timezone_utils import convert_to_utc
+            
             utc_datetime = convert_to_utc(local_datetime, business_timezone)
             
             # Calculate end time (1 hour after start time) in UTC
@@ -388,18 +388,36 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             error_msg = "No cleaners available for the requested time"
             return {"success": False, "error": error_msg}
         
-        # Create booking
+        # Create or get customer
+        from customer.models import Customer
+        
+        # Try to find existing customer by email
+        customer_email = data.get("email", "")
+        customer = None
+        
+        if customer_email:
+            try:
+                customer = Customer.objects.get(email=customer_email)
+            except Customer.DoesNotExist:
+                pass
+        
+        # If no customer found, create a new one
+        if not customer:
+            customer = Customer.objects.create(
+                first_name=data["firstName"],
+                last_name=data["lastName"],
+                email=customer_email,
+                phone_number=data["phoneNumber"],
+                address=data["address1"],
+                city=data["city"],
+                state_or_province=data["state"],
+                zip_code=data.get("zipCode", "")
+            )
+        
+        # Create booking with customer reference
         newBooking = Booking.objects.create(
             business=business,
-            firstName=data["firstName"],
-            lastName=data["lastName"],
-            email=data.get("email", ""),
-            phoneNumber=data["phoneNumber"],
-            address1=data["address1"],
-            address2=data.get("address2", ""),
-            city=data["city"],
-            stateOrProvince=data["state"],
-            zipCode=data.get("zipCode", ""),  # Make zipCode optional
+            customer=customer,
             cleaningDate=cleaningDate,
             startTime=startTime,
             endTime=endTime,
@@ -450,7 +468,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             
         # Send jobs to cleaners
         try:
-            from bookings.utils import send_jobs_to_cleaners
+            
             send_jobs_to_cleaners(business, newBooking)
             print(f"[INFO] Jobs sent to cleaners for booking {newBooking.bookingId}")
         except Exception as e:
@@ -534,7 +552,7 @@ def reschedule_appointment(business, booking_id, new_date_time):
 
 def cancel_appointment(business, booking_id):
     try:
-        from django.utils import timezone
+        
         booking = Booking.objects.get(bookingId=booking_id, business=business)
         
         # Store booking details before cancellation for email
@@ -559,19 +577,14 @@ def cancel_appointment(business, booking_id):
 
 
 
-
-
-
-
-
-def send_reschedule_email(booking):
+def reschedule_appointment(booking, new_date_time):
     try:
         # Get business and SMTP configuration
         business = booking.business
         
         # Set up email parameters
         from_name = f"{business.businessName} <{business.user.email}>"
-        recipient_email = booking.email
+        recipient_email = booking.customer.email
         
         # Check if we have a recipient email
         if not recipient_email:
@@ -605,7 +618,7 @@ def send_reschedule_email(booking):
             </div>
             
             <div style="padding: 20px;">
-                <p>Dear {booking.firstName},</p>
+                <p>Dear {booking.customer.first_name},</p>
                 
                 <p>Your appointment with <strong>{business.businessName}</strong> has been successfully rescheduled.</p>
                 
@@ -614,7 +627,7 @@ def send_reschedule_email(booking):
                     <p><strong>Service:</strong> {booking.serviceType}</p>
                     <p><strong>Date:</strong> {appointment_date}</p>
                     <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</p>
+                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
                     <p><strong>Booking ID:</strong> {booking.bookingId}</p>
                 </div>
                 
@@ -662,10 +675,9 @@ def send_cancel_email(booking):
         # Get business and SMTP configuration
         business = booking.business
         
-        
         # Set up email parameters
         from_name = f"{business.businessName} <{business.user.email}>"
-        recipient_email = booking.email
+        recipient_email = booking.customer.email
         
         # Check if we have a recipient email
         if not recipient_email:
@@ -699,7 +711,7 @@ def send_cancel_email(booking):
             </div>
             
             <div style="padding: 20px;">
-                <p>Dear {booking.firstName},</p>
+                <p>Dear {booking.customer.first_name},</p>
                 
                 <p>Your appointment with <strong>{business.businessName}</strong> has been canceled as requested.</p>
                 
@@ -708,7 +720,7 @@ def send_cancel_email(booking):
                     <p><strong>Service:</strong> {booking.serviceType}</p>
                     <p><strong>Date:</strong> {appointment_date}</p>
                     <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</p>
+                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
                     <p><strong>Booking ID:</strong> {booking.bookingId}</p>
                 </div>
                 

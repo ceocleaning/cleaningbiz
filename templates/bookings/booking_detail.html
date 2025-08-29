@@ -52,27 +52,26 @@
                         <div class="customer-info">
                             <p class="mb-2">
                                 <i class="fas fa-user-circle text-muted me-2"></i>
-                                {{ booking.firstName }} {{ booking.lastName }}
+                                {{ booking.customer.get_full_name }}
                             </p>
-                            {% if booking.companyName %}
+                            {% if booking.customer.company_name %}
                             <p class="mb-2">
                                 <i class="fas fa-building text-muted me-2"></i>
-                                {{ booking.companyName }}
+                                {{ booking.customer.company_name }}
                             </p>
                             {% endif %}
                             <p class="mb-2">
                                 <i class="fas fa-envelope text-muted me-2"></i>
-                                <span class="text-break">{{ booking.email }}</span>
+                                <span class="text-break">{{ booking.customer.email }}</span>
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-phone text-muted me-2"></i>
-                                {{ booking.phoneNumber }}
+                                {{ booking.customer.phone_number }}
                             </p>
                             <p class="mb-0">
                                 <i class="fas fa-map-marker-alt text-muted me-2"></i>
-                                <span class="text-break">{{ booking.address1 }}
-                                {% if booking.address2 %}<br><span class="ms-4">{{ booking.address2 }}</span>{% endif %}
-                                <br><span class="ms-4">{{ booking.city }}, {{ booking.stateOrProvince }} {{ booking.zipCode }}</span></span>
+                                <span class="text-break">{{ booking.customer.get_address }}
+                                </span>
                             </p>
                         </div>
                     </div>

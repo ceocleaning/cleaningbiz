@@ -110,7 +110,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
-                                <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
+                                <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
                                     {% if invoice.payment_details.status == 'COMPLETED' %}
@@ -187,7 +187,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
-                                <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
+                                <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
                                     <span class="badge bg-success">{{invoice.payment_details.status}}</span>
@@ -248,7 +248,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
-                                <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
+                                <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
                                     <span class="badge bg-info">{{invoice.payment_details.status}}</span>
@@ -309,7 +309,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.invoiceId }}</td>
-                                <td>{{ invoice.booking.firstName }} {{ invoice.booking.lastName }}</td>
+                                <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
                                     <span class="badge bg-warning">Pending</span>

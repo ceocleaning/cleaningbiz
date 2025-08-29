@@ -52,7 +52,7 @@ def send_payment_reminder(booking_id):
                         <h1>Payment Reminder</h1>
                     </div>
                     <div class="content">
-                        <p>Hello {booking.firstName} {booking.lastName},</p>
+                        <p>Hello {booking.customer.get_full_name()},</p>
                         <p>We noticed that you haven't completed the payment for your cleaning service with {business.businessName}.</p>
                         
                         <p class="warning">⚠️ Important: Your booking slot will be released if payment is not received within the next hour.</p>
@@ -96,7 +96,7 @@ def send_payment_reminder(booking_id):
             text_body = f"""
             PAYMENT REMINDER - {business.businessName}
             
-            Hello {booking.firstName} {booking.lastName},
+            Hello {booking.customer.get_full_name()},
                 
             We noticed that you haven't completed the payment for your cleaning service with {business.businessName}.
                 
@@ -120,7 +120,7 @@ def send_payment_reminder(booking_id):
               
                 # Set up email parameters
                 from_email = f"{business.businessName} <{business.user.email}>"
-                recipient_email = booking.email
+                recipient_email = booking.customer.email
                 
                 # Send email based on available configuration
                 send_email(
@@ -132,7 +132,7 @@ def send_payment_reminder(booking_id):
                     text_content=text_body
                 )
                     
-                print(f"[INFO] Payment reminder email sent to {booking.email} using default SMTP settings")
+                print(f"[INFO] Payment reminder email sent to {booking.customer.email} using default SMTP settings")
                 
             except Exception as e:
                 print(f"[ERROR] Failed to send payment reminder email: {str(e)}")
@@ -154,10 +154,10 @@ def send_payment_reminder(booking_id):
                         message = client.messages.create(
                             body=sms_message,
                             from_=api_cred.twilioSmsNumber,
-                            to=booking.phoneNumber
+                            to=booking.customer.phone_number
                         )
                         
-                        print(f"[INFO] Payment reminder SMS sent to {booking.phoneNumber}, SID: {message.sid}")
+                        print(f"[INFO] Payment reminder SMS sent to {booking.customer.phone_number}, SID: {message.sid}")
                     else:
                         print("[INFO] No Twilio credentials found for business, skipping SMS reminder")
             except Exception as e:
@@ -204,7 +204,7 @@ def delete_unpaid_bookings():
             if not booking.is_paid():
                 # Log the booking details before deletion
                 print(f"[INFO] Deleting unpaid booking: ID={booking.bookingId}, "
-                      f"Name={booking.firstName} {booking.lastName}, "
+                      f"Name={booking.customer.get_full_name()}, "
                       f"Date={booking.cleaningDate}, "
                       f"Created={booking.createdAt}, "
                       f"Reminder Sent={booking.paymentReminderSentAt}")
@@ -216,7 +216,7 @@ def delete_unpaid_bookings():
                     # Email notification
                     subject = f"Booking Cancelled - {business.businessName}"
                     message = f"""
-                    Hello {booking.firstName} {booking.lastName},
+                    Hello {booking.customer.get_full_name()},
                     
                     Your booking with {business.businessName} for {booking.cleaningDate.strftime('%A, %B %d, %Y')} 
                     at {booking.startTime.strftime('%I:%M %p')} has been cancelled due to non-payment.
@@ -230,7 +230,7 @@ def delete_unpaid_bookings():
 
                     send_email(
                         from_email=from_email,
-                        to_email=booking.email,
+                        to_email=booking.customer.email,
                         reply_to=business.email,
                         subject=subject,
                         html_body=message,
@@ -286,7 +286,7 @@ def send_day_before_reminder():
             email_subject = f"Reminder: Your Cleaning Service with {business.businessName} Tomorrow"
             for to in to_whom:
                 html_body = get_email_template(booking, to=to, when='tomorrow')
-                recipient_email = booking.email if to == 'client' else booking.cleaner.email
+                recipient_email = booking.customer.email if to == 'client' else booking.cleaner.email
 
                 from_email = f"{business.businessName} <{business.user.email}>"
 
@@ -323,7 +323,7 @@ def send_day_before_reminder():
                         client.messages.create(
                             body=sms_message,
                             from_=api_cred.twilioSmsNumber,
-                            to=booking.phoneNumber
+                            to=booking.customer.phone_number
                         )
             except Exception as e:
                 print(f"[ERROR] Failed to send day-before reminder SMS: {str(e)}")
@@ -380,7 +380,7 @@ def send_hour_before_reminder():
             for to in to_whom:
                 email_subject = f"Your {business.businessName} Cleaning Service Is Coming Soon"
                 html_body = get_email_template(booking, to=to, when='in one hour')
-                recipient_email = booking.email if to == 'client' else booking.cleaner.email
+                recipient_email = booking.customer.email if to == 'client' else booking.cleaner.email
              
 
                 from_email = f"{business.businessName} <{business.user.email}>"
@@ -425,7 +425,7 @@ def send_hour_before_reminder():
                         message = client.messages.create(
                             body=sms_message,
                             from_=api_cred.twilioSmsNumber,
-                            to=booking.phoneNumber
+                            to=booking.customer.phone_number
                         )
                         
                        
@@ -498,7 +498,7 @@ def send_post_service_followup():
                     <h1>Thank You for Your Business</h1>
                 </div>
                 <div class="content">
-                    <p>Hello {booking.firstName} {booking.lastName},</p>
+                    <p>Hello {booking.customer.get_full_name()},</p>
                     <p>Thank you for choosing {business.businessName} for your cleaning needs. We hope our service met your expectations.</p>
                     
                     <div class="details">
@@ -534,7 +534,7 @@ def send_post_service_followup():
             text_body = f"""
             THANK YOU FOR YOUR BUSINESS - {business.businessName}
             
-            Hello {booking.firstName} {booking.lastName},
+            Hello {booking.customer.get_full_name()},
             
             Thank you for choosing {business.businessName} for your cleaning needs. We hope our service met your expectations.
             
@@ -558,7 +558,7 @@ def send_post_service_followup():
             # Send email
             try:
                 from_email = f"{business.businessName} <{business.user.email}>"
-                recipient_email = booking.email
+                recipient_email = booking.customer.email
 
                 send_email(
                     from_email=from_email,
@@ -589,10 +589,10 @@ def send_post_service_followup():
                         message = client.messages.create(
                             body=sms_message,
                             from_=api_cred.twilioSmsNumber,
-                            to=booking.phoneNumber
+                            to=booking.customer.phone_number
                         )
                         
-                        print(f"[INFO] Post-service followup SMS sent to {booking.phoneNumber}, SID: {message.sid}")
+                        print(f"[INFO] Post-service followup SMS sent to {booking.customer.phone_number}, SID: {message.sid}")
                     else:
                         print("[INFO] No Twilio credentials found for business, skipping SMS followup")
                         

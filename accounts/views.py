@@ -837,11 +837,11 @@ def send_otp_email(user, otp):
         # Skip Django's email system and use direct SMTP since we know it works
         try:
             send_email(
-                email_from,
-                email_to,
-                'Password Reset OTP',
-                html_content,
-                text_content
+                from_email=email_from,
+                to_email=email_to,
+                subject='Password Reset OTP',
+                html_body=html_content,
+                text_content=text_content
             )
             print("Email sent successfully using direct SMTP")
             return True
@@ -1613,11 +1613,12 @@ def reset_cleaner_password(request):
         # Check for business configured email settings
         try:
             send_email(
-                email_from,
-                email_to,
-                subject,
-                html_message,
-                text_content
+                from_email=email_from,
+                to_email=email_to,
+                reply_to=business.user.email,
+                subject=subject,
+                html_body=html_message,
+                text_content=text_content
             )
             messages.success(request, f'Password for {cleaner.name} has been changed successfully. A notification has been sent to {user.email}.')
         except Exception as e:

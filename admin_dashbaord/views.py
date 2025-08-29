@@ -1692,7 +1692,7 @@ def business_analytics_api(request, business_id):
         
         recent_bookings.append({
             'id': booking.bookingId,
-            'customer_name': f"{booking.firstName} {booking.lastName}",
+            'customer_name': f"{booking.customer.first_name} {booking.customer.last_name}",
             'service_type': service_name,
             'date': booking.cleaningDate.strftime('%b %d, %Y'),
             'amount': float(booking.totalPrice),

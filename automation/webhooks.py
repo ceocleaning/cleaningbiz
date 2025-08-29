@@ -12,7 +12,6 @@ import os
 
 from rest_framework import status
 from .models import *
-from .api_views import get_cleaners_for_business, find_available_cleaner
 
 from accounts.models import ApiCredential, Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
@@ -469,15 +468,14 @@ def send_booking_data(booking):
                 if integration.platform_type == 'workflow':
                     # For workflow platforms, use the default payload structure
                     payload = {
-                        "firstName": booking.firstName,
-                        "lastName": booking.lastName,
-                        "email": booking.email,
-                        "phoneNumber": booking.phoneNumber,
-                        "address1": booking.address1,
-                        "address2": booking.address2,
-                        "city": booking.city,
-                        "stateOrProvince": booking.stateOrProvince,
-                        "zipCode": booking.zipCode,
+                        "firstName": booking.customer.first_name,
+                        "lastName": booking.customer.last_name,
+                        "email": booking.customer.email,
+                        "phoneNumber": booking.customer.phone_number,
+                        "address": booking.customer_address,
+                        "city": booking.customer.city,
+                        "stateOrProvince": booking.customer.state_or_province,
+                        "zipCode": booking.customer_zip_code,
                         "bedrooms": booking.bedrooms,
                         "bathrooms": booking.bathrooms,
                         "squareFeet": booking.squareFeet,

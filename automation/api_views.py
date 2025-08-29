@@ -11,9 +11,11 @@ from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
 from django.conf import settings
 from leadsAutomation.utils import send_email
+from customer.models import Customer
+import threading
 
-from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
-import dateparser
+
+from .utils import calculateAddonsAmount, calculateAmount
 import pytz
 import traceback
 
@@ -521,17 +523,27 @@ def create_booking(request):
             service_type = 'airbnb'
         
 
+        customer_email = data.get('email', 'Not Set')
+        customer = Customer.objects.filter(email=customer_email)
+        if not customer.exists():
+            customer = Customer.objects.create(
+                first_name=data.get('first_name', 'Not Set'),
+                last_name=data.get('last_name', 'Not Set'),
+                email=customer_email,
+                phone_number=data.get('phone_number', 'Not Set'),
+                address=data.get('address', 'Not Set'),
+                city=data.get('city', 'Not Set'),
+                state_or_province=data.get('state', 'Not Set'),
+                zip_code=data.get('zip_code', 'Not Set'),
+            )
+        
+        else:
+            customer = customer.first()
+
         # Create booking object with mapped fields
         booking = Booking(
             business=business,
-            firstName=data.get('first_name', 'Not Set'),
-            lastName=data.get('last_name', 'Not Set'),
-            email=data.get('email', 'Not Set'),
-            phoneNumber=data.get('phone_number', 'Not Set'),
-            address1=data.get('address', 'Not Set'),
-            city=data.get('city', 'Not Set'),
-            stateOrProvince=data.get('state', 'Not Set'),
-            zipCode=data.get('zip_code', 'Not Set'),
+            customer=customer,
             bedrooms=int(data.get('bedrooms', 0)) or 0,
             bathrooms=int(data.get('bathrooms', 0)) or 0,
             squareFeet=int(data.get('area', 0)) or 0,
@@ -641,11 +653,6 @@ def create_booking(request):
             booking.save()
         
         # Import threading for background execution
-        import threading
-        
-      
-        
-        # Send booking data to integration in background thread
         from .webhooks import send_booking_data
         webhook_thread = threading.Thread(target=send_booking_data, args=(booking,))
         webhook_thread.daemon = True
@@ -778,7 +785,7 @@ def sendCommercialFormLink(request):
 
         send_email(
             subject=subject,
-            html_content=html_content,
+            html_body=html_content,
             text_content=text_content,
             from_email=f"{business.businessName} <{business.user.email}>",
             to_email=email,
@@ -800,7 +807,7 @@ def sendCommercialFormLink(request):
         }, status=500)
 
 
-from ai_agent.api_views import reschedule_appointment, cancel_appointment
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -812,7 +819,8 @@ def reschedule_booking(request):
         new_date_time = data.get('next_date_time')
         
         booking = Booking.objects.get(bookingId=booking_id)
-        
+
+        from ai_agent.api_views import reschedule_appointment
         reschedule_response = reschedule_appointment(booking, new_date_time)
 
         if reschedule_response['success']:
@@ -839,6 +847,7 @@ def cancel_booking(request):
         
         booking = Booking.objects.filter(bookingId=booking_id).first()
         
+        from ai_agent.api_views import cancel_appointment
         cancel_response = cancel_appointment(booking)
 
         if cancel_response['success']:

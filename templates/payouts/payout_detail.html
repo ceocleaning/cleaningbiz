@@ -156,7 +156,7 @@
                                 {% for booking in bookings %}
                                 <tr>
                                     <td>{{ booking.bookingId }}</td>
-                                    <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                    <td>{{ booking.customer.get_full_name }}</td>
                                     <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                     <td>{{ booking.get_serviceType_display }}</td>
                                     <td>${{ booking.get_cleaner_payout }}</td>
