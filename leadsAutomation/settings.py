@@ -60,6 +60,7 @@ if not SQUARE_APP_ID:
         SQUARE_APP_ID = 'sandbox-sq0idp-your-sandbox-app-id'
         import warnings
         warnings.warn("SQUARE_APP_ID environment variable not set. Using default sandbox value.")
+        
 SQUARE_ACCESS_TOKEN = os.getenv('SQUARE_ACCESS_TOKEN')
 SQUARE_LOCATION_ID = os.getenv('SQUARE_LOCATION_ID')
 SQUARE_ENVIRONMENT = os.getenv('SQUARE_ENVIRONMENT', 'sandbox')
@@ -103,6 +104,7 @@ INSTALLED_APPS = [
     'retell_agent',
     'admin_dashbaord',
     'saas',
+    'customer',
 ]
 
 MIDDLEWARE = [
