@@ -151,16 +151,18 @@ class ApiCredential(models.Model):
 class BusinessSettings(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='settings')
     
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Base price for cleaning service")
+
     # Base Pricing
-    bedroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    bathroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    depositFee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    taxPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    bedroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Price per bedroom")
+    bathroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Price per bathroom")
+    depositFee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Deposit fee")
+    taxPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Tax percentage")
     
     # Square Feet Multipliers
-    sqftMultiplierStandard = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    sqftMultiplierDeep = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    sqftMultiplierMoveinout = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    sqftMultiplierStandard = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Square feet multiplier for standard cleaning")
+    sqftMultiplierDeep = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Square feet multiplier for deep cleaning")
+    sqftMultiplierMoveinout = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Square feet multiplier for move-in/out cleaning")
     sqftMultiplierAirbnb = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     
     # Add-on Prices

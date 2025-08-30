@@ -163,7 +163,7 @@ def DocsPage(request):
     return render(request, 'core/DocsPage.html')
 
 
-@login_required(login_url='accounts:login')
+@login_required()
 def home(request):
     # Get the user's business
     business = request.user.business_set.first()
@@ -224,7 +224,7 @@ def home(request):
     # Add recent bookings
     recent_bookings = bookings.order_by('-createdAt')[:5]
     for booking in recent_bookings:
-        client_name = booking.customer.get_full_name()
+        client_name = booking.customer.get_full_name() if booking.customer else 'Unknown Client'
         recent_activities.append({
             'type': 'success',
             'icon': 'calendar-check',

@@ -335,6 +335,7 @@ def edit_business_settings(request):
             settings.bathroomPrice = request.POST.get('bathroomPrice', 0)
             settings.depositFee = request.POST.get('depositFee', 0)
             settings.taxPercent = request.POST.get('taxPercent', 0)
+            settings.base_price = request.POST.get('base_price', 0)
             
             # Square Feet Multipliers
             settings.sqftMultiplierStandard = request.POST.get('sqftMultiplierStandard', 0)

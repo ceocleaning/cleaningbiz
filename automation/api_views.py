@@ -419,7 +419,16 @@ def check_availability_for_booking(request):
             print("Invalid timezone")
             datetime_to_check = local_datetime
         
-        current_business = request.user.business_set.first()
+        if request.user.customer:
+            print(request.GET.get("businessId"))
+            business_id = request.GET.get("businessId")
+            current_business = Business.objects.get(businessId=business_id)
+        else:
+            current_business = request.user.business_set.first()
+
+        if not current_business:
+            return JsonResponse({"error": "Business not found"}, status=404)
+
         cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
         
         # Check availability

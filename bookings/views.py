@@ -218,7 +218,6 @@ def customer_detail(request, identifier):
     return render(request, 'bookings/customer_detail.html', context)
 
 
-# TODO: Booking Page for Customer to book their own cleaning
 
 
 @require_http_methods(["GET", "POST"])
@@ -556,6 +555,7 @@ def booking_detail(request, bookingId):
     }
     return render(request, 'bookings/booking_detail.html', context)
 
+
 @require_http_methods(["POST"])
 @login_required
 def bulk_delete_bookings(request):
@@ -568,9 +568,13 @@ def bulk_delete_bookings(request):
         
         # Get bookings that belong to the user's business
         bookings = Booking.objects.filter(
-            bookingId__in=booking_ids,
-            business__user=request.user
+            bookingId__in=booking_ids
         )
+
+        if request.user.customer:
+            bookings = bookings.filter(customer=request.user.customer)
+        else:
+            bookings = bookings.filter(business__user=request.user)
         
         # Delete the bookings
         deleted_count = bookings.count()

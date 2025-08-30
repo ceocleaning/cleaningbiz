@@ -1,0 +1,196 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}Cleaning Businesses{% endblock %}
+{% block header_title %}Available Cleaning Businesses{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-building me-2"></i>Find a Cleaning Service</h2>
+                <div class="input-group w-auto">
+                    <input type="text" class="form-control" id="businessSearch" placeholder="Search businesses...">
+                    <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <p class="text-muted">Browse through our list of approved cleaning businesses and book your service today.</p>
+        </div>
+    </div>
+
+    {% if business_data %}
+    <div class="row" id="businessesContainer">
+        {% for data in business_data %}
+        <div class="col-md-6 mb-4 business-card">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5 class="card-title fw-bold">{{ data.business.businessName }}</h5>
+                        {% if data.business.isActive %}
+                        <span class="badge bg-success">Active</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="mb-2"><i class="fas fa-map-marker-alt text-primary me-2"></i>{{ data.business.address }}</p>
+                        <p class="mb-2"><i class="fas fa-phone text-primary me-2"></i>{{ data.business.phone }}</p>
+                    </div>
+                    
+                    <!-- Services Section -->
+                    <div class="mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-broom text-primary me-2"></i>Services Provided:</h6>
+                        <div class="d-flex flex-wrap">
+                            {% for service in data.services_provided %}
+                                <span class="badge bg-light text-dark me-1 mb-1">{{ service }}</span>
+                            {% empty %}
+                                <span class="text-muted small">No services specified</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Addons Section -->
+                    <div class="mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>Add-ons:</h6>
+                        <div class="d-flex flex-wrap">
+                            {% for addon in data.visible_addons %}
+                                <span class="badge bg-light text-dark me-1 mb-1">{{ addon }}</span>
+                            {% endfor %}
+                            {% if data.total_addons > data.visible_addons|length %}
+                                <span class="badge bg-info text-white">+{{ data.total_addons|add:'-3' }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <!-- Bookings Count -->
+                        <div class="col-6">
+                            <h6 class="fw-bold"><i class="fas fa-calendar-check text-primary me-2"></i>Bookings:</h6>
+                            <p class="mb-0">{{ data.booking_count }} completed</p>
+                        </div>
+                        
+                        <!-- Reviews Section -->
+                        <div class="col-6">
+                            <h6 class="fw-bold"><i class="fas fa-star text-primary me-2"></i>Reviews:</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    {% with ''|center:5 as range %}
+                                    {% for _ in range %}
+                                        {% if forloop.counter <= data.reviews.rating|floatformat:0|add:0 %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% elif forloop.counter <= data.reviews.rating|add:0.5 %}
+                                            <i class="fas fa-star-half-alt text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                <span class="small text-muted">({{ data.reviews.count }})</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small">Since {{ data.business.createdAt|date:"F Y" }}</span>
+                        </div>
+                        <a href="{% url 'customer:add_booking' data.business.businessId %}" class="btn btn-primary">
+                            <i class="fas fa-calendar-plus me-2"></i>Book Cleaning Service
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No cleaning businesses available at the moment. Please check back later.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('businessSearch');
+        const businessCards = document.querySelectorAll('.business-card');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            businessCards.forEach(card => {
+                const businessName = card.querySelector('.card-title').textContent.toLowerCase();
+                const businessAddress = card.querySelector('.fa-map-marker-alt').nextSibling.textContent.toLowerCase();
+                
+                // Also search in services and addons
+                const services = Array.from(card.querySelectorAll('.fa-broom').nextElementSibling.nextElementSibling.querySelectorAll('.badge'))
+                    .map(badge => badge.textContent.toLowerCase());
+                const addons = Array.from(card.querySelectorAll('.fa-plus-circle').nextElementSibling.nextElementSibling.querySelectorAll('.badge:not(.bg-info)'))
+                    .map(badge => badge.textContent.toLowerCase());
+                
+                // Check if search term is found in any of the fields
+                const serviceMatch = services.some(service => service.includes(searchTerm));
+                const addonMatch = addons.some(addon => addon.includes(searchTerm));
+                
+                if (businessName.includes(searchTerm) || 
+                    businessAddress.includes(searchTerm) || 
+                    serviceMatch || 
+                    addonMatch) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
