@@ -3,13 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
+from django.http import JsonResponse
 from decimal import Decimal
 import json
 
 from accounts.decorators import customer_required
 from accounts.models import Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
-from customer.models import Customer
+from customer.models import Customer, Review
 from bookings.timezone_utils import convert_local_to_utc
 from automation.utils import format_phone_number
 from invoice.models import Invoice
@@ -409,3 +410,157 @@ def booking_detail(request, bookingId):
 
 def edit_booking(request, bookingId):
     pass
+
+
+@login_required
+@customer_required
+@require_http_methods(["POST"])
+def submit_review(request, bookingId):
+    """
+    Handle submission of reviews for completed bookings
+    """
+    booking = get_object_or_404(Booking, bookingId=bookingId, customer=request.user.customer)
+    
+    # Check if booking is completed
+    if not booking.isCompleted:
+        messages.error(request, "You can only leave reviews for completed bookings.")
+        return redirect('customer:booking_detail', bookingId=bookingId)
+    
+    # Check if review already exists
+    if booking.reviews.exists():
+        messages.error(request, "You have already submitted a review for this booking.")
+        return redirect('customer:booking_detail', bookingId=bookingId)
+    
+    # Get review data from form
+    try:
+        rating = int(request.POST.get('rating'))
+        review_text = request.POST.get('review')
+        
+        # Validate rating (1-5)
+        if rating < 1 or rating > 5:
+            messages.error(request, "Rating must be between 1 and 5 stars.")
+            return redirect('customer:booking_detail', bookingId=bookingId)
+        
+        # Create the review
+        review = Review.objects.create(
+            user=request.user,
+            booking=booking,
+            review=review_text,
+            rating=rating
+        )
+        
+        messages.success(request, "Thank you for your review!")
+    except Exception as e:
+        messages.error(request, f"Error submitting review: {str(e)}")
+    
+    return redirect('customer:booking_detail', bookingId=bookingId)
+
+
+@login_required
+@customer_required
+@require_http_methods(["POST"])
+def edit_review(request, review_id):
+    """
+    Handle editing of existing reviews
+    """
+    review = get_object_or_404(Review, id=review_id, user=request.user)
+    booking = review.booking
+    
+    try:
+        rating = int(request.POST.get('rating'))
+        review_text = request.POST.get('review')
+        
+        # Validate rating (1-5)
+        if rating < 1 or rating > 5:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': "Rating must be between 1 and 5 stars."})
+            else:
+                messages.error(request, "Rating must be between 1 and 5 stars.")
+                return redirect('customer:booking_detail', bookingId=booking.bookingId)
+        
+        # Update the review
+        review.rating = rating
+        review.review = review_text
+        review.updated_at = timezone.now()
+        review.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': "Your review has been updated!",
+                'review': {
+                    'id': review.id,
+                    'rating': review.rating,
+                    'review': review.review,
+                    'updated_at': review.updated_at.strftime('%B %d, %Y')
+                }
+            })
+        else:
+            messages.success(request, "Your review has been updated!")
+            return redirect('customer:booking_detail', bookingId=booking.bookingId)
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f"Error updating review: {str(e)}")
+            return redirect('customer:booking_detail', bookingId=booking.bookingId)
+
+
+@login_required
+@customer_required
+@require_http_methods(["GET", "POST"])
+def delete_review(request, review_id):
+    """
+    Handle deletion of existing reviews
+    """
+    review = get_object_or_404(Review, id=review_id, user=request.user)
+    booking = review.booking
+    
+    try:
+        review.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': "Your review has been deleted."
+            })
+        else:
+            messages.success(request, "Your review has been deleted.")
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f"Error deleting review: {str(e)}")
+    
+    return redirect('customer:booking_detail', bookingId=booking.bookingId)
+
+@login_required
+@customer_required
+def customer_reviews(request):
+    """
+    Display all reviews submitted by the customer
+    """
+    try:
+        # Get all reviews by the current user
+        reviews = Review.objects.filter(user=request.user).order_by('-created_at')
+        
+        # Group reviews by business
+        businesses = {}
+        for review in reviews:
+            business = review.booking.business
+            if business.id not in businesses:
+                businesses[business.id] = {
+                    'business': business,
+                    'reviews': []
+                }
+            businesses[business.id]['reviews'].append(review)
+        
+        context = {
+            'reviews': reviews,
+            'businesses': businesses.values(),
+        }
+        
+        return render(request, 'customer/reviews.html', context)
+    except Exception as e:
+        messages.error(request, f"Error retrieving reviews: {str(e)}")
+        return redirect('customer:dashboard')

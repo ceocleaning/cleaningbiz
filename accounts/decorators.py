@@ -86,3 +86,24 @@ def owner_or_cleaner(view_func):
             
         return view_func(request, *args, **kwargs)
     return _wrapped_view 
+
+def owner_or_customer(view_func):
+    """
+    Decorator for views that can be accessed by both owners and customers
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return redirect('landing-page')
+        
+        # Check if user is in either Owner or Customer group
+        is_owner = request.user.groups.filter(name='Owner').exists() or request.user.is_superuser
+        is_customer = request.user.groups.filter(name='Customer').exists()
+        
+        if not (is_owner or is_customer):
+            messages.error(request, 'You do not have permission to access this page.')
+            return redirect('home')
+            
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view

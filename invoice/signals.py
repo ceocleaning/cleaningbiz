@@ -205,8 +205,6 @@ def send_booking_confirmation_email_with_invoice(sender, instance, created, **kw
                 print(f"Error in API: {str(e)}")
                 return False
 
-       
-
             
             print(f"Email confirmation with invoice sent successfully to {instance.booking.customer.email}")
             return True

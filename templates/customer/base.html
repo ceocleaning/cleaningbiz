@@ -257,6 +257,23 @@
             flex-direction: column;
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+
+        .toast {
+            margin-bottom: 10px;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+            border: none;
+            opacity: 1;
+            transition: all 0.3s ease;
+        }
+
         .main-content.expanded {
             margin-left: var(--sidebar-collapsed-width);
         }
@@ -528,17 +545,17 @@
                     
                     <!-- Invoices -->
                     <li class="sidebar-nav-item">
-                        <a href="{% url 'home' %}" class="sidebar-link">
+                        <a href="{% url 'invoice:all_invoices' %}" class="sidebar-link">
                             <i class="fas fa-file-invoice-dollar sidebar-icon"></i>
                             <span class="sidebar-text">Invoices</span>
                         </a>
                     </li>
                     
-                    <!-- Your Review -->
+                    <!-- Your Reviews -->
                     <li class="sidebar-nav-item">
-                        <a href="{% url 'home' %}" class="sidebar-link">
+                        <a href="{% url 'customer:reviews' %}" class="sidebar-link">
                             <i class="fas fa-star sidebar-icon"></i>
-                            <span class="sidebar-text">Your Review</span>
+                            <span class="sidebar-text">Your Reviews</span>
                         </a>
                     </li>
                     
@@ -639,7 +656,27 @@
     </div>
 
     <!-- Toast Container for Notifications -->
-    <div class="toast-container"></div>
+    <div class="toast-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast show bg-{{ message.tags|default:'info' }} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-body d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -732,9 +769,14 @@
                 toast.setAttribute('aria-live', 'assertive');
                 toast.setAttribute('aria-atomic', 'true');
                 
+                let icon = 'fa-info-circle';
+                if (type === 'success') icon = 'fa-check-circle';
+                else if (type === 'error' || type === 'danger') icon = 'fa-exclamation-circle';
+                else if (type === 'warning') icon = 'fa-exclamation-triangle';
+                
                 toast.innerHTML = `
                     <div class="toast-body d-flex align-items-center">
-                        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+                        <i class="fas ${icon} me-2"></i>
                         ${message}
                         <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
@@ -759,6 +801,36 @@
                     }, 300);
                 });
             }
+            
+            // Handle Django message toasts
+            document.addEventListener('DOMContentLoaded', function() {
+                // Auto-remove Django message toasts after 5 seconds
+                const djangoToasts = document.querySelectorAll('.toast-container .toast');
+                djangoToasts.forEach(toast => {
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 300);
+                    }, 5000);
+                    
+                    // Close button functionality
+                    const closeButton = toast.querySelector('.btn-close');
+                    if (closeButton) {
+                        closeButton.addEventListener('click', function() {
+                            toast.classList.remove('show');
+                            setTimeout(() => {
+                                if (toast.parentNode) {
+                                    toast.parentNode.removeChild(toast);
+                                }
+                            }, 300);
+                        });
+                    }
+                });
+            });
         });
     </script>
     {% block scripts %}

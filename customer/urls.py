@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import dashboard, businesses_list, add_booking, customer_bookings, booking_detail, edit_booking
+from .views import dashboard, businesses_list, add_booking, customer_bookings, booking_detail, edit_booking, submit_review, edit_review, delete_review, customer_reviews
 from .auth_views import customer_signup, customer_login, customer_logout, profile, change_password
 
 
@@ -17,4 +17,8 @@ urlpatterns = [
     path('bookings/', customer_bookings, name='bookings'),
     path('booking/<str:bookingId>/', booking_detail, name='booking_detail'),
     path('booking/edit/<str:bookingId>/', edit_booking, name='edit_booking'),
+    path('booking/review/<str:bookingId>/', submit_review, name='submit_review'),
+    path('review/edit/<int:review_id>/', edit_review, name='edit_review'),
+    path('review/delete/<int:review_id>/', delete_review, name='delete_review'),
+    path('reviews/', customer_reviews, name='reviews'),
 ]

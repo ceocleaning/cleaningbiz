@@ -29,18 +29,22 @@ from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 import random
+from accounts.decorators import owner_or_customer
 
 
 
 
-@login_required
+@owner_or_customer
 def all_invoices(request):
-    if not request.user.business_set.first():
-        return redirect('accounts:register_business')
-
-    invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
+    if hasattr(request.user, 'customer') and request.user.customer:
+        base_template = 'customer/base.html'
+        invoices = Invoice.objects.select_related('booking').filter(booking__customer=request.user.customer).order_by('createdAt')
+    else:
+        base_template = 'base.html'
+        invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
+    
     pending_invoices = invoices.filter(isPaid=False, payment_details__isnull=True)
-    paid_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='COMPLETED')
+    paid_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status__in=['COMPLETED', 'APPROVED'])
     authorized_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='AUTHORIZED')
    
     context = {
@@ -51,6 +55,8 @@ def all_invoices(request):
         'pending_invoices': pending_invoices,
         'paid_invoices': paid_invoices,
         'authorized_invoices': authorized_invoices,
+        'base_template': base_template
+
     }
     return render(request, 'invoices/invoices.html', context)
 
@@ -98,19 +104,19 @@ def delete_invoice(request, invoiceId):
         return redirect('invoice:all_invoices')
 
 
-@login_required
-def booking_detail(request, bookingId):
-    booking = get_object_or_404(Booking, bookingId=bookingId)
-    context = {
-        'booking': booking
-    }
-    return render(request, 'invoices/booking_detail.html', context)
 
-@login_required
+
+@owner_or_customer
 def invoice_detail(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
+    if hasattr(request.user, 'customer') and request.user.customer:
+        base_template = 'customer/base.html'
+    else:
+        base_template = 'base.html'
+        
     context = {
         'invoice': invoice,
+        'base_template': base_template,
         'SQUARE_APP_ID': settings.SQUARE_APP_ID,
         'SQUARE_LOCATION_ID': settings.SQUARE_LOCATION_ID,
         'SQUARE_ENVIRONMENT': 'sandbox' if settings.DEBUG else 'production'

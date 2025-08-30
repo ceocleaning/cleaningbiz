@@ -419,7 +419,7 @@ def check_availability_for_booking(request):
             print("Invalid timezone")
             datetime_to_check = local_datetime
         
-        if request.user.customer:
+        if hasattr(request.user, 'customer') and request.user.customer:
             print(request.GET.get("businessId"))
             business_id = request.GET.get("businessId")
             current_business = Business.objects.get(businessId=business_id)

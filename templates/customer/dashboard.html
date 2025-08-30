@@ -16,34 +16,6 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <a href="{% url 'home' %}" class="btn btn-primary w-100">
-                            <i class="fas fa-plus me-2"></i> Book New Cleaning
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{% url 'home' %}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-calendar-alt me-2"></i> View Schedule
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{% url 'home' %}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-file-invoice-dollar me-2"></i> Pay Invoice
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Upcoming Bookings -->
     <div class="col-lg-8 mb-4">
         <div class="card h-100">
@@ -131,77 +103,12 @@
         </div>
     </div>
 
-    <!-- Service History & Reviews -->
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Service History & Reviews</h5>
-                <a href="{% url 'home' %}" class="btn btn-sm btn-outline-primary">View All</a>
-            </div>
-            <div class="card-body">
-                {% if service_history %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Service</th>
-                                <th>Cleaner</th>
-                                <th>Your Rating</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for service in service_history %}
-                            <tr>
-                                <td>{{ service.date|date:"M d, Y" }}</td>
-                                <td>{{ service.service_type }}</td>
-                                <td>{{ service.cleaner_name }}</td>
-                                <td>
-                                    {% if service.rating %}
-                                    <div class="rating">
-                                        {% for i in "12345" %}
-                                        <i class="fas fa-star {% if forloop.counter <= service.rating %}text-warning{% else %}text-muted{% endif %}"></i>
-                                        {% endfor %}
-                                    </div>
-                                    {% else %}
-                                    <span class="badge bg-secondary">Not Rated</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if not service.rating %}
-                                    <a href="{% url 'home' %}" class="btn btn-sm btn-outline-primary">Leave Review</a>
-                                    {% else %}
-                                    <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary">View Details</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
-                    <h5>No Service History</h5>
-                    <p class="text-muted">You haven't had any cleaning services yet.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+   
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Example of showing a welcome toast
-        if (typeof showToast === 'function') {
-            showToast('Welcome to your customer dashboard!', 'success');
-        }
-        
-        // You can add more dashboard-specific JavaScript here
-    });
+
 </script>
 {% endblock %}

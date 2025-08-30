@@ -538,12 +538,21 @@ def mark_completed(request, bookingId):
 def delete_booking(request, bookingId):
     try:
         booking = get_object_or_404(Booking, bookingId=bookingId)
-        booking.delete()
-        messages.success(request, 'Booking deleted successfully!')
-        return redirect('bookings:all_bookings')
+        if request.user == booking.business.user or booking.customer.user == request.user:
+            booking.delete()
+            messages.success(request, 'Booking deleted successfully!')
+        else:
+            messages.error(request, 'You do not have permission to delete this booking')
+        
+        
+
     except Booking.DoesNotExist:
         messages.error(request, 'Booking not found')
-        return redirect('bookings:all_bookings')
+    
+    if hasattr(request.user, 'customer') and request.user.customer:
+        return redirect('customer:bookings')
+
+    return redirect('bookings:all_bookings')
 
 
 
@@ -571,7 +580,7 @@ def bulk_delete_bookings(request):
             bookingId__in=booking_ids
         )
 
-        if request.user.customer:
+        if hasattr(request.user, 'customer') and request.user.customer:
             bookings = bookings.filter(customer=request.user.customer)
         else:
             bookings = bookings.filter(business__user=request.user)
@@ -704,7 +713,7 @@ def booking_calendar(request):
             'hour': hour,  # For positioning in the correct hour row
             'minute': minute,  # For positioning within the hour
             'duration': duration_pixels,  # For determining height of booking
-            'client_name': booking.customer.get_full_name(),
+            'client_name': booking.customer.get_full_name() if booking.customer else "Unassigned",
             'service_type': booking.get_serviceType_display(),
             'status': status,
             'cleaner': booking.cleaner.name if booking.cleaner else "Unassigned"
