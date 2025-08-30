@@ -90,7 +90,7 @@ def SignupPage(request):
             return redirect('accounts:signup')
     
     context = {
-        'debug': settings.DEBUG
+        
     }
     return render(request, 'accounts/signup.html', context)
 

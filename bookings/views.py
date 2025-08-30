@@ -217,6 +217,10 @@ def customer_detail(request, identifier):
     
     return render(request, 'bookings/customer_detail.html', context)
 
+
+# TODO: Booking Page for Customer to book their own cleaning
+
+
 @require_http_methods(["GET", "POST"])
 @login_required
 @transaction.atomic

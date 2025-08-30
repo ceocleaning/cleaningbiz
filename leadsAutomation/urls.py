@@ -21,6 +21,7 @@ urlpatterns = [
     path('voice_agent/', include('retell_agent.urls')),
     path('admin-dashboard/', include('admin_dashbaord.urls')),
     path('saas/', include('saas.urls')),
+    path('customer/', include('customer.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

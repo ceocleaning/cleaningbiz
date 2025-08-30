@@ -47,6 +47,12 @@ def cleaner_required(view_func):
     """
     return group_required('Cleaner')(view_func)
 
+def customer_required(view_func):
+    """
+    Decorator for views that require the user to be a customer
+    """
+    return group_required('Customer')(view_func)
+
 def owner_or_cleaner(view_func):
     """
     Decorator for views that can be accessed by both owners and cleaners
