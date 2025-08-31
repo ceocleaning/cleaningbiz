@@ -11,10 +11,11 @@ from accounts.decorators import customer_required
 from accounts.models import Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
 from customer.models import Customer, Review
-from bookings.timezone_utils import convert_local_to_utc
 from automation.utils import format_phone_number
 from invoice.models import Invoice
 from datetime import datetime, timedelta
+from bookings.timezone_utils import convert_local_to_utc
+import pytz
 from django.utils import timezone
 
 @login_required
@@ -408,8 +409,164 @@ def booking_detail(request, bookingId):
 
 
 
+@login_required
+@customer_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
 def edit_booking(request, bookingId):
-    pass
+    """
+    View to handle booking editing for customers
+    """
+    # Get booking by ID, ensuring it belongs to the current customer
+    booking = get_object_or_404(Booking, bookingId=bookingId, customer=request.user.customer)
+    business = booking.business
+    
+    # Check if booking can be edited (not completed or cancelled)
+    if booking.isCompleted or booking.cancelled_at:
+        messages.info(request, 'Completed or cancelled bookings cannot be edited.')
+        return redirect('customer:booking_detail', bookingId=bookingId)
+    
+    # Get business settings for pricing
+    try:
+        business_settings = BusinessSettings.objects.get(business=business)
+    except BusinessSettings.DoesNotExist:
+        messages.info(request, 'Business settings not found')
+        return redirect('customer:booking_detail', bookingId=bookingId)
+    
+    # Get custom add-ons for this business
+    custom_addons = CustomAddons.objects.filter(business=business)
+    
+    # Get today's date for minimum date in form
+    today = datetime.now()
+    
+    if request.method == 'POST':
+        try:
+            # Get price details from form
+            total_price = float(request.POST.get('totalAmount', '0'))
+            tax = float(request.POST.get('tax', '0'))
+            
+            # Format phone number
+            phone_number = request.POST.get('phoneNumber')
+            if phone_number:
+                phone_number = format_phone_number(phone_number)
+            
+            if not phone_number:
+                messages.error(request, 'Please enter a valid phone number.')
+                return redirect('customer:edit_booking', bookingId=bookingId)
+            
+            # Get cleaning date and time
+            cleaning_date = request.POST.get('cleaningDate')
+            start_time = request.POST.get('startTime')
+            
+            # Convert cleaning date and time from business timezone to UTC
+            start_time_utc = convert_local_to_utc(
+                cleaning_date,
+                start_time,
+                business.timezone
+            ).time()
+            
+            # Set end time to 1 hour after start time
+            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
+            
+            # Update customer information if needed
+            customer = booking.customer
+            if not request.POST.get('useMyInfo') == 'on':
+                customer.first_name = request.POST.get('firstName')
+                customer.last_name = request.POST.get('lastName')
+                customer.email = request.POST.get('email')
+                customer.phone_number = phone_number
+                customer.address = request.POST.get('address1')
+                customer.city = request.POST.get('city')
+                customer.state_or_province = request.POST.get('stateOrProvince')
+                customer.zip_code = request.POST.get('zipCode')
+                customer.save()
+            
+            # Update the booking
+            booking.bedrooms = int(request.POST.get('bedrooms', 0))
+            booking.bathrooms = int(request.POST.get('bathrooms', 0))
+            booking.squareFeet = int(request.POST.get('squareFeet', 0))
+            booking.serviceType = request.POST.get('serviceType')
+            booking.cleaningDate = cleaning_date
+            booking.startTime = start_time_utc
+            booking.endTime = end_time_utc
+            booking.recurring = request.POST.get('recurring')
+            booking.otherRequests = request.POST.get('otherRequests', '')
+            booking.tax = tax
+            booking.totalPrice = total_price
+            booking.updatedAt = timezone.now()
+            
+            # Handle standard add-ons
+            addon_fields = [
+                'addonDishes', 'addonLaundryLoads', 'addonWindowCleaning',
+                'addonPetsCleaning', 'addonFridgeCleaning', 'addonOvenCleaning',
+                'addonBaseboard', 'addonBlinds'
+            ]
+            
+            for field in addon_fields:
+                value = int(request.POST.get(field, 0))
+                setattr(booking, field, value)
+            
+            booking.save()
+            
+            # Handle custom add-ons - first remove existing ones
+            booking.customAddons.all().delete()
+            
+            # Add new custom add-ons
+            for addon in custom_addons:
+                quantity_str = request.POST.get(f'custom_addon_qty_{addon.id}', '0').strip()
+                quantity = int(quantity_str) if quantity_str else 0
+                
+                if quantity > 0:
+                    new_custom_booking_addon = BookingCustomAddons.objects.create(
+                        addon=addon,
+                        qty=quantity
+                    )
+                    booking.customAddons.add(new_custom_booking_addon)
+            
+            messages.success(request, 'Booking updated successfully!')
+            return redirect('customer:booking_detail', bookingId=bookingId)
+            
+        except Exception as e:
+            messages.error(request, f'Error updating booking: {str(e)}')
+            return redirect('customer:booking_detail', bookingId=bookingId)
+    
+    # For GET requests, prepare pricing data for JavaScript
+    prices = {
+        'base_price': float(business_settings.base_price),
+        'bedrooms': float(business_settings.bedroomPrice),
+        'bathrooms': float(business_settings.bathroomPrice),
+        'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
+        'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
+        'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
+        'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+        'addonPriceDishes': float(business_settings.addonPriceDishes),
+        'addonPriceLaundry': float(business_settings.addonPriceLaundry),
+        'addonPriceWindow': float(business_settings.addonPriceWindow),
+        'addonPricePets': float(business_settings.addonPricePets),
+        'addonPriceFridge': float(business_settings.addonPriceFridge),
+        'addonPriceOven': float(business_settings.addonPriceOven),
+        'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
+        'addonPriceBlinds': float(business_settings.addonPriceBlinds),
+        'tax': float(business_settings.taxPercent)
+    }
+    
+    # Get booking's custom addons
+    booking_custom_addons = {}
+    for custom_addon in booking.customAddons.all():
+        booking_custom_addons[custom_addon.addon.id] = custom_addon.qty
+    
+    context = {
+        'booking': booking,
+        'business': business,
+        'customAddons': custom_addons,
+        'booking_custom_addons': booking_custom_addons,
+        'prices': json.dumps(prices),
+        'today': today,
+        'local_time': today.time().strftime('%H:%M'),
+        'is_edit': True
+    }
+    
+    return render(request, 'customer/edit_booking.html', context)
 
 
 @login_required

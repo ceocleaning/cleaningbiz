@@ -172,3 +172,6 @@ class Booking(models.Model):
         # TODO: Implement proper cleaner payment calculation
         # This is a placeholder until the proper payment system is implemented
         return 0.0
+
+
+        

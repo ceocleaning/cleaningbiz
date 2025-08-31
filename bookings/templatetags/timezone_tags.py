@@ -5,10 +5,10 @@ import pytz
 register = template.Library()
 
 @register.filter
-def to_business_timezone(value, business_timezone=None):
+def to_timezone(value, date=None,timezone=None):
     """
-    Convert a datetime to the business's timezone.
-    If business_timezone is not provided, the datetime is displayed as is.
+    Convert a datetime to the specified timezone.
+    If timezone is not provided, the datetime is displayed as is.
     Handles both datetime and time objects.
     """
     if not value:
@@ -18,21 +18,22 @@ def to_business_timezone(value, business_timezone=None):
     import datetime
     if isinstance(value, datetime.time):
         # Combine with today's date to create a datetime object
-        today = datetime.date.today()
-        combined_datetime = datetime.datetime.combine(today, value)
+        if not date:
+            date = datetime.date.today()
+        combined_datetime = datetime.datetime.combine(date, value)
         # Make it timezone aware (UTC)
         aware_datetime = timezone.make_aware(combined_datetime, pytz.UTC)
         
-        # Convert to business timezone if provided
-        if business_timezone:
-            if isinstance(business_timezone, str):
+        # Convert to specified timezone if provided
+        if timezone:
+            if isinstance(timezone, str):
                 try:
-                    business_timezone = pytz.timezone(business_timezone)
+                    timezone = pytz.timezone(timezone)
                 except pytz.exceptions.UnknownTimeZoneError:
-                    business_timezone = pytz.UTC
+                    timezone = pytz.UTC
             
-            # Convert to the business timezone
-            aware_datetime = aware_datetime.astimezone(business_timezone)
+            # Convert to the specified timezone
+            aware_datetime = aware_datetime.astimezone(timezone)
         
         # Return just the time component
         return aware_datetime.time()
@@ -42,15 +43,15 @@ def to_business_timezone(value, business_timezone=None):
     if value.tzinfo is None:
         value = timezone.make_aware(value, pytz.UTC)
     
-    # If business_timezone is provided, convert to that timezone
-    if business_timezone:
-        if isinstance(business_timezone, str):
+    # If timezone is provided, convert to that timezone
+    if timezone:
+        if isinstance(timezone, str):
             try:
-                business_timezone = pytz.timezone(business_timezone)
+                timezone = pytz.timezone(timezone)
             except pytz.exceptions.UnknownTimeZoneError:
-                business_timezone = pytz.UTC
+                timezone = pytz.UTC
         
-        value = value.astimezone(business_timezone)
+        value = value.astimezone(timezone)
     
     return value
 
@@ -70,15 +71,15 @@ def format_datetime(value, format_string=None):
         return value.strftime("%B %d, %Y, %I:%M %p")
 
 @register.simple_tag
-def convert_and_format(value, business_timezone=None, format_string=None):
+def convert_and_format(value, date=None, timezone=None, format_string=None):
     """
-    Convert a datetime to business timezone and format it.
+    Convert a datetime to specified timezone and format it.
     """
     if not value:
         return ""
     
-    # Convert to business timezone
-    value = to_business_timezone(value, business_timezone)
+    # Convert to specified timezone
+    value = to_timezone(value, date, timezone)
     
     # Format the datetime
     return format_datetime(value, format_string)

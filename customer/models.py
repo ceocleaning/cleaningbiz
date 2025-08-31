@@ -17,6 +17,8 @@ class Customer(models.Model):
     state_or_province = models.CharField(max_length=100, null=True, blank=True)
     zip_code = models.CharField(max_length=10, null=True, blank=True)
 
+    timezone = models.CharField(max_length=100, default='UTC')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

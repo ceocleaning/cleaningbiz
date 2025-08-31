@@ -500,7 +500,7 @@
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-4">
                     <a href="#" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                        <i class="fas fa-credit-card me-2"></i>Pay Now
+                        <i class="fas fa-credit-card me-2"></i>Pay {{ invoice.amount}}
                     </a>
                 </div>
                 {% if not invoice.payment_details.status == 'SUBMITTED' and not invoice.payment_details.status == 'APPROVED' %}

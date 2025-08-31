@@ -7,6 +7,7 @@ from django.db import transaction
 
 from accounts.decorators import customer_required
 from customer.models import Customer
+from accounts.timezone_utils import get_timezone_choices
 
 def customer_signup(request):
     """
@@ -153,6 +154,7 @@ def profile(request):
         customer.city = request.POST.get('city')
         customer.state_or_province = request.POST.get('state_or_province')
         customer.zip_code = request.POST.get('zip_code')
+        customer.timezone = request.POST.get('timezone', 'UTC')
         customer.save()
         
         # Update user model as well
@@ -171,6 +173,7 @@ def profile(request):
         'total_bookings': 0,  # Replace with actual query
         'completed_services': 0,  # Replace with actual query
         'pending_invoices': 0,  # Replace with actual query
+        'timezone_choices': get_timezone_choices(),
     }
     
     return render(request, 'customer/profile.html', context)
