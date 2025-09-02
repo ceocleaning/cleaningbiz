@@ -675,9 +675,15 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <div class="d-flex align-items-center">
+                {% if request.user.is_authenticated and request.user.customer %}
+                <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'customer:dashboard' %}">
+                   CleaningBiz Customer Dashboard
+                </a>
+                {% else %}
                 <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
                    CleaningBiz AI
                 </a>
+                {% endif %}
                 <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -702,7 +708,7 @@
                             <i class="fas fa-money-bill-wave me-1"></i>My Payouts
                         </a>
                     </li> -->
-                    {% elif request.user|is_business_owner %}
+                    {% elif request.user|is_business_owner and not request.user.customer %}
                     <!-- Business Owner Navigation Links -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" 
@@ -867,7 +873,7 @@
                     
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
-                    {% if not request.user|is_cleaner %}
+                        {% if not request.user|is_cleaner and not request.user.customer %}
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="avatar-circle me-2">
@@ -889,11 +895,7 @@
                                         <i class="fas fa-user-circle me-2 text-primary"></i>Profile Settings
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'accounts:smtp_config' %}">
-                                        <i class="fas fa-envelope me-2 text-warning"></i>SMTP Config
-                                    </a>
-                                </li>
+                              
                                 <li>
                                     <a class="dropdown-item" href="{% url 'accounts:payment_main' %}">
                                         <i class="fas fa-credit-card me-2 text-success"></i>
@@ -936,8 +938,44 @@
                                 </li>
                             </ul>
                         </div>
+                        {% elif request.user.customer %}
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="avatar-circle me-2">
+                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
+                                </div>
+                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
+                                <span class="d-inline d-md-none">Account</span>
+                            </a>
+                
+                            
+                            <ul class="dropdown-menu dropdown-menu-lg-end">
+                                <li class="px-3 py-2 d-flex flex-column">
+                                    <span class="fw-bold">{{ request.user.get_full_name }}</span>
+                                    <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'customer:profile' %}">
+                                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="https://support.cleaningbizai.com/" rel="noopener noreferrer" target="_blank">
+                                        <i class="fas fa-robot me-2 text-primary"></i>
+                                        Help Center
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         {% else %}
-      
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="avatar-circle me-2">
@@ -975,14 +1013,14 @@
                             </ul>
                         </div>
                         {% endif %}
-                {% else %}
-                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-sign-in-alt me-1"></i>Login
-                    </a>
-                    <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
-                        <i class="fas fa-user-plus me-1"></i>Get Started
-                    </a>
-                {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i>Get Started
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

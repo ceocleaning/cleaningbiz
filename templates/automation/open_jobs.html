@@ -90,7 +90,7 @@
                         <div class="list-group-item job-item" 
                              data-date="{{ job.booking.cleaningDate|date:'Y-m-d' }}"
                              data-customer="{{ job.booking.customerName }}"
-                             data-address="{{ job.booking.address1 }} {{ job.booking.city }}"
+                             data-address="{{ job.booking.customer.get_address }}"
                              data-service="{{ job.booking.get_serviceType_display }}">
                             <div class="card shadow-sm border-0">
                                 <div class="card-body p-0">
@@ -126,8 +126,8 @@
                                                         <i class="fas fa-map-marker-alt text-primary"></i>
                                                     </div>
                                                     <div>
-                                                        <div class="fw-medium">{{ job.booking.address1 }}</div>
-                                                        <div class="text-muted">{{ job.booking.city }}, {{ job.booking.stateOrProvince }} {{ job.booking.zipCode }}</div>
+                                                        <div class="fw-medium">{{ job.booking.customer.address }}</div>
+                                                        <div class="text-muted">{{ job.booking.customer.city }}, {{ job.booking.customer.state_or_province }} {{ job.booking.customer.zip_code }}</div>
                                                     </div>
                                                 </div>
                                                 

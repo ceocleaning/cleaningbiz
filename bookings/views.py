@@ -8,6 +8,7 @@ from .models import Booking, BookingCustomAddons
 from invoice.models import Invoice, Payment
 from accounts.models import Business, BusinessSettings, CustomAddons
 from automation.models import CleanerAvailability, Cleaners, OpenJob
+from customer.models import Customer
 from decimal import Decimal
 import json
 from django.db.models import Min, Count
@@ -112,19 +113,19 @@ def customers(request):
     # Process bookings to extract unique customers by email or phone
     for booking in bookings:
         # Skip if no email and no phone
-        if not booking.email and not booking.phoneNumber:
+        if not booking.customer.email and not booking.customer.phone_number:
             continue
             
         # Create a unique key based on email or phone
-        key = booking.email if booking.email else booking.phoneNumber
+        key = booking.customer.email if booking.customer.email else booking.customer.phone_number
         
         if key not in unique_customers:
             # First occurrence - create new customer entry
             unique_customers[key] = {
-                'firstName': booking.firstName,
-                'lastName': booking.lastName,
-                'email': booking.email,
-                'phoneNumber': booking.phoneNumber,
+                'firstName': booking.customer.first_name,
+                'lastName': booking.customer.last_name,
+                'email': booking.customer.email,
+                'phoneNumber': booking.customer.phone_number,
                 'joinedDate': booking.createdAt,
                 'bookingCount': 1,
                 'totalSpent': booking.totalPrice,
@@ -160,11 +161,11 @@ def customer_detail(request, identifier):
     # Determine if identifier is an email or phone
     if '@' in identifier:
         # It's an email
-        bookings = Booking.objects.filter(business__user=request.user, email=identifier).order_by('-createdAt')
+        bookings = Booking.objects.filter(business__user=request.user, customer__email=identifier).order_by('-createdAt')
         identifier_type = 'email'
     else:
         # It's a phone number
-        bookings = Booking.objects.filter(business__user=request.user, phoneNumber=identifier).order_by('-createdAt')
+        bookings = Booking.objects.filter(business__user=request.user, customer__phone_number=identifier).order_by('-createdAt')
         identifier_type = 'phone'
     
     if not bookings.exists():
@@ -194,10 +195,10 @@ def customer_detail(request, identifier):
     
     context = {
         'customer': {
-            'firstName': most_recent_booking.firstName,
-            'lastName': most_recent_booking.lastName,
-            'email': most_recent_booking.email,
-            'phoneNumber': most_recent_booking.phoneNumber,
+            'firstName': most_recent_booking.customer.first_name,
+            'lastName': most_recent_booking.customer.last_name,
+            'email': most_recent_booking.customer.email,
+            'phoneNumber': most_recent_booking.customer.phone_number,
             'companyName': most_recent_booking.companyName,
             'joinDate': join_date,
             'identifier': identifier,
@@ -215,6 +216,9 @@ def customer_detail(request, identifier):
     }
     
     return render(request, 'bookings/customer_detail.html', context)
+
+
+
 
 @require_http_methods(["GET", "POST"])
 @login_required
@@ -262,21 +266,30 @@ def create_booking(request):
 
             print(f"start_time_utc: {start_time_utc}")
             print(f"end_time_utc: {end_time_utc}")
+
+            customer_email = request.POST.get('email')
+            try:
+                customer = Customer.objects.get(email=customer_email)
+            except Customer.DoesNotExist:
+                customer = None
+
+      
+            if not customer:
+                customer = Customer.objects.create(
+                    first_name=request.POST.get('firstName'),
+                    last_name=request.POST.get('lastName'),
+                    email=customer_email,
+                    phone_number=request.POST.get('phoneNumber'),
+                    address=request.POST.get('address1'),
+                    city=request.POST.get('city'),
+                    state_or_province=request.POST.get('stateOrProvince'),
+                    zip_code=request.POST.get('zipCode'),
+                )
             
             # Create the booking
             booking = Booking.objects.create(
                 business=business,
-                firstName=request.POST.get('firstName'),
-                lastName=request.POST.get('lastName'),
-                email=request.POST.get('email'),
-                phoneNumber=phone_number,
-                companyName=request.POST.get('companyName', ''),
-
-                address1=request.POST.get('address1'),
-                city=request.POST.get('city'),
-                stateOrProvince=request.POST.get('stateOrProvince'),
-                zipCode=request.POST.get('zipCode'),
-
+                customer=customer,
                 bedrooms=int(request.POST.get('bedrooms', 0)),
                 bathrooms=int(request.POST.get('bathrooms', 0)),
                 squareFeet=int(request.POST.get('squareFeet', 0)),
@@ -396,9 +409,9 @@ def edit_booking(request, bookingId):
             tax = Decimal(request.POST.get('tax', '0'))
 
             # Update booking details
-            booking.firstName = request.POST.get('firstName')
-            booking.lastName = request.POST.get('lastName')
-            booking.email = request.POST.get('email')
+            booking.customer.first_name = request.POST.get('firstName')
+            booking.customer.last_name = request.POST.get('lastName')
+            booking.customer.email = request.POST.get('email')
             phone_number = request.POST.get('phoneNumber')
             if phone_number:
                 phone_number = format_phone_number(phone_number)
@@ -406,13 +419,12 @@ def edit_booking(request, bookingId):
             if not phone_number:
                 messages.error(request, 'Please enter a valid US phone number.')
                 return redirect('bookings:edit_booking', bookingId=bookingId)
-            booking.phoneNumber = phone_number
-            booking.companyName = request.POST.get('companyName', '')
+            booking.customer.phone_number = phone_number
 
-            booking.address1 = request.POST.get('address1')
-            booking.city = request.POST.get('city')
-            booking.stateOrProvince = request.POST.get('stateOrProvince')
-            booking.zipCode = request.POST.get('zipCode')
+            booking.customer.address = request.POST.get('address1')
+            booking.customer.city = request.POST.get('city')
+            booking.customer.state_or_province = request.POST.get('stateOrProvince')
+            booking.customer.zip_code = request.POST.get('zipCode')
 
             # Handle numeric fields with proper default values
             booking.bedrooms = int(request.POST.get('bedrooms', '0').strip() or '0')
@@ -526,12 +538,21 @@ def mark_completed(request, bookingId):
 def delete_booking(request, bookingId):
     try:
         booking = get_object_or_404(Booking, bookingId=bookingId)
-        booking.delete()
-        messages.success(request, 'Booking deleted successfully!')
-        return redirect('bookings:all_bookings')
+        if request.user == booking.business.user or booking.customer.user == request.user:
+            booking.delete()
+            messages.success(request, 'Booking deleted successfully!')
+        else:
+            messages.error(request, 'You do not have permission to delete this booking')
+        
+        
+
     except Booking.DoesNotExist:
         messages.error(request, 'Booking not found')
-        return redirect('bookings:all_bookings')
+    
+    if hasattr(request.user, 'customer') and request.user.customer:
+        return redirect('customer:bookings')
+
+    return redirect('bookings:all_bookings')
 
 
 
@@ -542,6 +563,7 @@ def booking_detail(request, bookingId):
         'booking': booking
     }
     return render(request, 'bookings/booking_detail.html', context)
+
 
 @require_http_methods(["POST"])
 @login_required
@@ -555,9 +577,13 @@ def bulk_delete_bookings(request):
         
         # Get bookings that belong to the user's business
         bookings = Booking.objects.filter(
-            bookingId__in=booking_ids,
-            business__user=request.user
+            bookingId__in=booking_ids
         )
+
+        if hasattr(request.user, 'customer') and request.user.customer:
+            bookings = bookings.filter(customer=request.user.customer)
+        else:
+            bookings = bookings.filter(business__user=request.user)
         
         # Delete the bookings
         deleted_count = bookings.count()
@@ -687,7 +713,7 @@ def booking_calendar(request):
             'hour': hour,  # For positioning in the correct hour row
             'minute': minute,  # For positioning within the hour
             'duration': duration_pixels,  # For determining height of booking
-            'client_name': f"{booking.firstName} {booking.lastName}",
+            'client_name': booking.customer.get_full_name() if booking.customer else "Unassigned",
             'service_type': booking.get_serviceType_display(),
             'status': status,
             'cleaner': booking.cleaner.name if booking.cleaner else "Unassigned"

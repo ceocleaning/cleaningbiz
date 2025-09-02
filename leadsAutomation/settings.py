@@ -60,6 +60,7 @@ if not SQUARE_APP_ID:
         SQUARE_APP_ID = 'sandbox-sq0idp-your-sandbox-app-id'
         import warnings
         warnings.warn("SQUARE_APP_ID environment variable not set. Using default sandbox value.")
+        
 SQUARE_ACCESS_TOKEN = os.getenv('SQUARE_ACCESS_TOKEN')
 SQUARE_LOCATION_ID = os.getenv('SQUARE_LOCATION_ID')
 SQUARE_ENVIRONMENT = os.getenv('SQUARE_ENVIRONMENT', 'sandbox')
@@ -103,6 +104,7 @@ INSTALLED_APPS = [
     'retell_agent',
     'admin_dashbaord',
     'saas',
+    'customer',
 ]
 
 MIDDLEWARE = [
@@ -281,13 +283,9 @@ CORS_ALLOW_HEADERS = [
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://cleaningbizai.up.railway.app', 'https://127.0.0.1:8000', 'http://127.0.0.1:8000', 'https://cleaningbizai.com']
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.zeptomail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
+
+EMAIL_HOST_USER = "info@cleaningbizai.com"
+
 
 # Retell Settings
 RETELL_API_KEY = os.getenv('RETELL_API_KEY', '')
@@ -364,3 +362,6 @@ ROLLBAR = {
 THUMBTACK_CLIENT_ID = os.getenv('THUMBTACK_CLIENT_ID')
 THUMBTACK_CLIENT_SECRET = os.getenv('THUMBTACK_CLIENT_SECRET')
 THUMBTACK_REDIRECT_URI = os.getenv('THUMBTACK_REDIRECT_URI')
+
+
+EMAILIT_API_KEY = os.getenv('EMAILIT_API_KEY')

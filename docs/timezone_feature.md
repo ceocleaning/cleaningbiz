@@ -46,7 +46,7 @@ The Business Timezone feature allows each business to specify their preferred ti
 6. **Template Tags**
    - Located in `bookings/templatetags/timezone_tags.py`
    - Custom template filters and tags:
-     - `to_business_timezone`: Converts a datetime to business timezone
+     - `to_timezone`: Converts a datetime to business timezone
      - `format_datetime`: Formats a datetime with a specified format
      - `convert_and_format`: Combines conversion and formatting in one step
 

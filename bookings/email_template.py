@@ -9,7 +9,7 @@ def get_email_template(booking, to, when):
         cleaner = booking.cleaner
 
     cleaner_or_business = cleaner.name if cleaner else business.businessName
-    name = cleaner.name if cleaner else booking.firstName + ' ' + booking.lastName
+    name = cleaner.name if cleaner else booking.customer.get_full_name()
     
     # Convert UTC date and time to business timezone for display
     business_timezone = business.get_timezone()
@@ -73,7 +73,7 @@ def get_email_template(booking, to, when):
                                 </tr>
                                 <tr>
                                     <td>Address:</td>
-                                    <td>{booking.address1}</td>
+                                    <td>{booking.customer.get_address()}</td>
                                 </tr>
                             </table>
                         </div>

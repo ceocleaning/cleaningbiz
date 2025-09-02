@@ -963,10 +963,10 @@ def customer_data_api(request):
     # Group bookings by customer email to find repeat customers
     customer_bookings = {}
     for booking in bookings:
-        if not booking.email:  # Skip bookings without email
+        if not booking.customer.email:  # Skip bookings without email
             continue
             
-        email = booking.email.lower()  # Normalize email to lowercase
+        email = booking.customer.email.lower()  # Normalize email to lowercase
         if email in customer_bookings:
             customer_bookings[email]['count'] += 1
             customer_bookings[email]['total_spent'] += float(booking.totalPrice or 0)
@@ -974,12 +974,12 @@ def customer_data_api(request):
         else:
             customer_bookings[email] = {
                 'email': email,
-                'name': f"{booking.firstName or ''} {booking.lastName or ''}".strip(),
+                'name': f"{booking.customer.first_name or ''} {booking.customer.last_name or ''}".strip(),
                 'count': 1,
                 'total_spent': float(booking.totalPrice or 0),
                 'first_booking': booking.createdAt,
                 'last_booking': booking.createdAt,
-                'phone': booking.phoneNumber
+                'phone': booking.customer.phone_number
             }
     
     # Calculate customer metrics

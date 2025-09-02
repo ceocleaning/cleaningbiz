@@ -1,0 +1,263 @@
+{% extends 'customer/base.html' %}
+{% load phone_filters %}
+
+{% block title %}Your Profile{% endblock %}
+
+{% block header_title %}Your Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Personal Information</h5>
+                <button class="btn btn-sm btn-primary" id="editProfileBtn">Edit Profile</button>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- View Profile Mode -->
+                <div id="viewProfileSection">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">First Name</p>
+                            <p class="fw-bold">{{ customer.first_name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Last Name</p>
+                            <p class="fw-bold">{{ customer.last_name }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Email Address</p>
+                            <p class="fw-bold">{{ customer.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Phone Number</p>
+                            <p class="fw-bold">{{ customer.phone_number }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <p class="text-muted mb-1">Address</p>
+                            <p class="fw-bold">{{ customer.address|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1">City</p>
+                            <p class="fw-bold">{{ customer.city|default:"Not provided" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1">State/Province</p>
+                            <p class="fw-bold">{{ customer.state_or_province|default:"Not provided" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1">ZIP Code</p>
+                            <p class="fw-bold">{{ customer.zip_code|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p class="text-muted mb-1">Timezone</p>
+                            <p class="fw-bold">{{ customer.timezone|default:"UTC" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Mode -->
+                <div id="editProfileSection" style="display: none;">
+                    <form method="post" action="{% url 'customer:profile' %}">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ customer.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ customer.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ customer.email }}" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <div class="d-flex">
+                                    <div class="input-group me-2" style="width: 200px;">
+                                        <span class="input-group-text">+</span>
+                                        <select class="form-select" id="country_code" name="country_code">
+                                            <option value="1" {% if customer.phone_number|extract_country_code == '1' %}selected{% endif %}>1 (US/CA)</option>
+                                            <option value="44" {% if customer.phone_number|extract_country_code == '44' %}selected{% endif %}>44 (UK)</option>
+                                            <option value="49" {% if customer.phone_number|extract_country_code == '49' %}selected{% endif %}>49 (DE)</option>
+                                            <option value="61" {% if customer.phone_number|extract_country_code == '61' %}selected{% endif %}>61 (AU)</option>
+                                            <option value="86" {% if customer.phone_number|extract_country_code == '86' %}selected{% endif %}>86 (CN)</option>
+                                            <option value="91" {% if customer.phone_number|extract_country_code == '91' %}selected{% endif %}>91 (IN)</option>
+                                            <option value="92" {% if customer.phone_number|extract_country_code == '92' %}selected{% endif %}>92 (PK)</option>
+                                        </select>
+                                    </div>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ customer.phone_number|extract_phone_without_code }}" 
+                                           pattern="^\d{3}[\s-]?\d{3}[\s-]?\d{4}$"
+                                           placeholder="555 123 4567" 
+                                           title="Format: Area code and phone number (e.g., 555 123 4567)" required>
+                                </div>
+                                <small class="form-text text-muted">Select country code and enter your phone number</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" value="{{ customer.address|default:'' }}">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ customer.city|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="state_or_province" class="form-label">State/Province</label>
+                                <input type="text" class="form-control" id="state_or_province" name="state_or_province" value="{{ customer.state_or_province|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="zip_code" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ customer.zip_code|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="timezone" class="form-label">Timezone</label>
+                            <select class="form-select" id="timezone" name="timezone" required>
+                                {% for tz in timezone_choices %}
+                                    <option value="{{ tz.0 }}" {% if business.timezone == tz.0 %}selected{% endif %}>
+                                        {{ tz.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Select your timezone for accurate booking times</small>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" id="cancelEditBtn">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Change Password</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'customer:change_password' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Account Summary</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Account Created:</strong> {{ customer.created_at|date:"F j, Y" }}</p>
+                <p><strong>Total Bookings:</strong> {{ total_bookings|default:"0" }}</p>
+                <p><strong>Completed Services:</strong> {{ completed_services|default:"0" }}</p>
+                <p><strong>Pending Invoices:</strong> {{ pending_invoices|default:"0" }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Need Help?</h5>
+            </div>
+            <div class="card-body">
+                <p>If you need assistance with your account or have any questions, our customer support team is here to help.</p>
+                <p><i class="fas fa-phone me-2"></i> (555) 123-4567</p>
+                <p><i class="fas fa-envelope me-2"></i> support@cleaningbiz.com</p>
+                <a href="#" class="btn btn-outline-primary w-100">Contact Support</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const viewProfileSection = document.getElementById('viewProfileSection');
+        const editProfileSection = document.getElementById('editProfileSection');
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const phoneInput = document.getElementById('phone');
+
+        // Toggle between view and edit modes
+        editProfileBtn.addEventListener('click', function() {
+            viewProfileSection.style.display = 'none';
+            editProfileSection.style.display = 'block';
+        });
+
+        cancelEditBtn.addEventListener('click', function() {
+            editProfileSection.style.display = 'none';
+            viewProfileSection.style.display = 'block';
+        });
+        
+        // Phone number formatting
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                // Remove all non-digit characters
+                let value = this.value.replace(/\D/g, '');
+                
+                // Format with spaces (North American format: XXX XXX XXXX)
+                if (value.length > 0) {
+                    // Area code (first 3 digits)
+                    let formattedNumber = value.substring(0, 3);
+                    
+                    // First part of local number (next 3 digits)
+                    if (value.length > 3) {
+                        formattedNumber += ' ' + value.substring(3, 6);
+                    }
+                    
+                    // Second part of local number (next 4 digits)
+                    if (value.length > 6) {
+                        formattedNumber += ' ' + value.substring(6, 10);
+                    }
+                    
+                    this.value = formattedNumber;
+                }
+            });
+            
+            // Initial formatting when the page loads
+            const initialEvent = new Event('input');
+            phoneInput.dispatchEvent(initialEvent);
+        }
+    });
+</script>
+{% endblock %}

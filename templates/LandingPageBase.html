@@ -345,12 +345,24 @@
                 </ul>
                 <div class="d-flex ms-lg-4">
                     {% if not user.is_authenticated %}
-                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-light me-2">
-                        <i class="fas fa-sign-in-alt me-2"></i>Log In
-                    </a>
-                    <a href="{% url 'accounts:signup' %}" class="btn btn-accent shadow-glow">
-                        <i class="fas fa-user-plus me-2"></i>Sign Up
-                    </a>
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="loginDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sign-in-alt me-2"></i>Log In
+                        </button>
+                        <ul class="dropdown-menu bg-dark-surface-2" aria-labelledby="loginDropdown">
+                            <li><a class="dropdown-item text-white" href="{% url 'customer:login' %}"><i class="fas fa-home me-2"></i>Login as Customer</a></li>
+                            <li><a class="dropdown-item text-white" href="{% url 'accounts:login' %}"><i class="fas fa-briefcase me-2"></i>Login as Business</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-accent shadow-glow dropdown-toggle" type="button" id="signupDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-plus me-2"></i>Sign Up
+                        </button>
+                        <ul class="dropdown-menu bg-dark-surface-2" aria-labelledby="signupDropdown">
+                            <li><a class="dropdown-item text-white" href="{% url 'customer:signup' %}"><i class="fas fa-home me-2"></i>Sign Up as Customer</a></li>
+                            <li><a class="dropdown-item text-white" href="{% url 'accounts:signup' %}"><i class="fas fa-briefcase me-2"></i>Sign Up as Business</a></li>
+                        </ul>
+                    </div>
                     {% else %}
                     <div class="dropdown">
                         <button class="btn btn-outline-light dropdown-toggle me-2" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -358,12 +370,12 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end bg-dark-surface-2" aria-labelledby="userDropdown">
                             <li>
-                                <a class="dropdown-item text-white" href="{% url 'home' %}">
+                                <a class="dropdown-item text-white" href="{% if request.user.customer %}{% url 'customer:dashboard' %}{% else %}{% url 'home' %}{% endif %}">
                                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item text-white" href="{% url 'accounts:profile' %}">
+                                <a class="dropdown-item text-white" href="{% if request.user.customer %}{% url 'customer:profile' %}{% else %}{% url 'accounts:profile' %}{% endif %}">
                                     <i class="fas fa-user-cog me-2"></i>Profile Settings
                                 </a>
                             </li>

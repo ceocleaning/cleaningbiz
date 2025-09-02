@@ -51,19 +51,7 @@ class Booking(models.Model):
     business = models.ForeignKey(Business, on_delete=models.SET_NULL, null=True, blank=True)
     cleaner = models.ForeignKey(Cleaners, on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Personal Information
-    firstName = models.CharField(max_length=255, blank=True, null=True)
-    lastName = models.CharField(max_length=255, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    phoneNumber = models.CharField(max_length=20, blank=True, null=True)
-    companyName = models.CharField(max_length=255, blank=True, null=True)
-    
-    # Address Information
-    address1 = models.CharField(max_length=255, blank=True, null=True)
-    address2 = models.CharField(max_length=255, blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    stateOrProvince = models.CharField(max_length=100, blank=True, null=True)
-    zipCode = models.CharField(max_length=10, blank=True, null=True)
+    customer = models.ForeignKey('customer.Customer', on_delete=models.SET_NULL, null=True, blank=True)
     
     # Property Details
     bedrooms = models.IntegerField(default=0)
@@ -115,7 +103,7 @@ class Booking(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
-        return f"{self.bookingId} for {self.firstName} {self.lastName}"
+        return f"{self.bookingId}"
     
     def is_paid(self):
         """Check if booking has an invoice and is paid"""
@@ -184,3 +172,6 @@ class Booking(models.Model):
         # TODO: Implement proper cleaner payment calculation
         # This is a placeholder until the proper payment system is implemented
         return 0.0
+
+
+        

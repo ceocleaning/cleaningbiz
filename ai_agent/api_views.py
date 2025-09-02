@@ -1,5 +1,5 @@
 from email.utils import parsedate
-from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business, SMTPConfig
+from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business
 from bookings.models import Booking, BookingCustomAddons
 from datetime import datetime, timedelta
 from django.http import JsonResponse
@@ -9,18 +9,15 @@ import json
 import dateparser
 from automation.api_views import get_cleaners_for_business, find_available_cleaner, is_slot_available, find_alternate_slots
 from automation.utils import calculateAmount, calculateAddonsAmount, sendInvoicetoClient, sendEmailtoClientInvoice 
-
+from django.utils import timezone
 import traceback
 import pytz
 from .utils import convert_date_str_to_date
 from .models import Chat
-from django.conf import settings
 from django.utils.html import strip_tags
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
-from django.core.mail import EmailMultiAlternatives
-
+from leadsAutomation.utils import send_email
+from bookings.timezone_utils import convert_to_utc
+from bookings.utils import send_jobs_to_cleaners
 
 
 def calculate_total(business, client_phone_number=None, session_key=None):
@@ -368,7 +365,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
                 local_datetime = local_datetime.astimezone(business_timezone)
             
             # Convert to UTC for storage in the database
-            from bookings.timezone_utils import convert_to_utc
+            
             utc_datetime = convert_to_utc(local_datetime, business_timezone)
             
             # Calculate end time (1 hour after start time) in UTC
@@ -391,18 +388,36 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             error_msg = "No cleaners available for the requested time"
             return {"success": False, "error": error_msg}
         
-        # Create booking
+        # Create or get customer
+        from customer.models import Customer
+        
+        # Try to find existing customer by email
+        customer_email = data.get("email", "")
+        customer = None
+        
+        if customer_email:
+            try:
+                customer = Customer.objects.get(email=customer_email)
+            except Customer.DoesNotExist:
+                pass
+        
+        # If no customer found, create a new one
+        if not customer:
+            customer = Customer.objects.create(
+                first_name=data["firstName"],
+                last_name=data["lastName"],
+                email=customer_email,
+                phone_number=data["phoneNumber"],
+                address=data["address1"],
+                city=data["city"],
+                state_or_province=data["state"],
+                zip_code=data.get("zipCode", "")
+            )
+        
+        # Create booking with customer reference
         newBooking = Booking.objects.create(
             business=business,
-            firstName=data["firstName"],
-            lastName=data["lastName"],
-            email=data.get("email", ""),
-            phoneNumber=data["phoneNumber"],
-            address1=data["address1"],
-            address2=data.get("address2", ""),
-            city=data["city"],
-            stateOrProvince=data["state"],
-            zipCode=data.get("zipCode", ""),  # Make zipCode optional
+            customer=customer,
             cleaningDate=cleaningDate,
             startTime=startTime,
             endTime=endTime,
@@ -453,7 +468,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             
         # Send jobs to cleaners
         try:
-            from bookings.utils import send_jobs_to_cleaners
+            
             send_jobs_to_cleaners(business, newBooking)
             print(f"[INFO] Jobs sent to cleaners for booking {newBooking.bookingId}")
         except Exception as e:
@@ -537,7 +552,7 @@ def reschedule_appointment(business, booking_id, new_date_time):
 
 def cancel_appointment(business, booking_id):
     try:
-        from django.utils import timezone
+        
         booking = Booking.objects.get(bookingId=booking_id, business=business)
         
         # Store booking details before cancellation for email
@@ -562,20 +577,14 @@ def cancel_appointment(business, booking_id):
 
 
 
-
-
-
-
-
-def send_reschedule_email(booking):
+def reschedule_appointment(booking, new_date_time):
     try:
         # Get business and SMTP configuration
         business = booking.business
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
         
         # Set up email parameters
-        from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
-        recipient_email = booking.email
+        from_name = f"{business.businessName} <{business.user.email}>"
+        recipient_email = booking.customer.email
         
         # Check if we have a recipient email
         if not recipient_email:
@@ -609,7 +618,7 @@ def send_reschedule_email(booking):
             </div>
             
             <div style="padding: 20px;">
-                <p>Dear {booking.firstName},</p>
+                <p>Dear {booking.customer.first_name},</p>
                 
                 <p>Your appointment with <strong>{business.businessName}</strong> has been successfully rescheduled.</p>
                 
@@ -618,7 +627,7 @@ def send_reschedule_email(booking):
                     <p><strong>Service:</strong> {booking.serviceType}</p>
                     <p><strong>Date:</strong> {appointment_date}</p>
                     <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</p>
+                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
                     <p><strong>Booking ID:</strong> {booking.bookingId}</p>
                 </div>
                 
@@ -632,7 +641,7 @@ def send_reschedule_email(booking):
             
             <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
                 <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.businessEmail or from_email}</p>
+                <p>If you have any questions, please contact us at {business.user.email}</p>
             </div>
         </body>
         </html>
@@ -640,56 +649,21 @@ def send_reschedule_email(booking):
         
         # Create plain text version
         text_content = strip_tags(html_content)
-        
-        # Send email based on available configuration
-        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-            # Use business-specific SMTP configuration
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            
-            # Use from_name if available, otherwise use username
-            from_email_header = smtp_config.username
-            if smtp_config.from_name:
-                from_email_header = f'"{smtp_config.from_name}" <{smtp_config.username}>'
-            msg['From'] = from_email_header
-            
-            msg['To'] = recipient_email
-            
-            # Add Reply-To header if configured
-            if smtp_config.reply_to:
-                msg['Reply-To'] = smtp_config.reply_to
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            server.starttls()  # Always use TLS for security
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-            
-            print(f"[INFO] Rescheduling email sent to {recipient_email} using business SMTP")
-            return True
-            
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=from_email,
-                to=[recipient_email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
-            
-            print(f"[INFO] Rescheduling email sent to {recipient_email} using Django's email system")
-            return True
+
+      
+        send_email(
+            from_email=from_name,
+            to_email=recipient_email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_content,
+            text_content=text_content
+        )
+
+        return True
+    
+       
+
             
     except Exception as e:
         print(f"[ERROR] Failed to send rescheduling email: {str(e)}")
@@ -700,11 +674,10 @@ def send_cancel_email(booking):
     try:
         # Get business and SMTP configuration
         business = booking.business
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
         
         # Set up email parameters
-        from_email = smtp_config.username if smtp_config else settings.DEFAULT_FROM_EMAIL
-        recipient_email = booking.email
+        from_name = f"{business.businessName} <{business.user.email}>"
+        recipient_email = booking.customer.email
         
         # Check if we have a recipient email
         if not recipient_email:
@@ -738,7 +711,7 @@ def send_cancel_email(booking):
             </div>
             
             <div style="padding: 20px;">
-                <p>Dear {booking.firstName},</p>
+                <p>Dear {booking.customer.first_name},</p>
                 
                 <p>Your appointment with <strong>{business.businessName}</strong> has been canceled as requested.</p>
                 
@@ -747,7 +720,7 @@ def send_cancel_email(booking):
                     <p><strong>Service:</strong> {booking.serviceType}</p>
                     <p><strong>Date:</strong> {appointment_date}</p>
                     <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</p>
+                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
                     <p><strong>Booking ID:</strong> {booking.bookingId}</p>
                 </div>
                 
@@ -761,7 +734,7 @@ def send_cancel_email(booking):
             
             <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
                 <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.businessEmail or from_email}</p>
+                <p>If you have any questions, please contact us at {business.user.email}</p>
             </div>
         </body>
         </html>
@@ -770,56 +743,17 @@ def send_cancel_email(booking):
         # Create plain text version
         text_content = strip_tags(html_content)
         
-        # Send email based on available configuration
-        if smtp_config and smtp_config.host and smtp_config.port and smtp_config.username and smtp_config.password:
-            # Use business-specific SMTP configuration
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            
-            # Use from_name if available, otherwise use username
-            from_email_header = smtp_config.username
-            if smtp_config.from_name:
-                from_email_header = f'"{smtp_config.from_name}" <{smtp_config.username}>'
-            msg['From'] = from_email_header
-            
-            msg['To'] = recipient_email
-            
-            # Add Reply-To header if configured
-            if smtp_config.reply_to:
-                msg['Reply-To'] = smtp_config.reply_to
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            server.starttls()  # Always use TLS for security
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-            
-            print(f"[INFO] Cancellation email sent to {recipient_email} using business SMTP")
-            return True
-            
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=from_email,
-                to=[recipient_email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
-            
-            print(f"[INFO] Cancellation email sent to {recipient_email} using Django's email system")
-            return True
-            
+        send_email(
+            from_email=from_name,
+            to_email=recipient_email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_content,
+            text_content=text_content
+        )
+
+        return True
+
     except Exception as e:
         print(f"[ERROR] Failed to send cancellation email: {str(e)}")
         return False

@@ -164,14 +164,14 @@ def preview_mapping(request, platform_id):
 
     # Prepare sample booking data
     sample_data = {
-        'firstName': sample_booking.firstName,
-        'lastName': sample_booking.lastName,
-        'email': sample_booking.email,
-        'phoneNumber': sample_booking.phoneNumber,
-        'address1': sample_booking.address1,
-        'city': sample_booking.city,
-        'stateOrProvince': sample_booking.stateOrProvince,
-        'zipCode': sample_booking.zipCode,
+        'firstName': sample_booking.customer.first_name,
+        'lastName': sample_booking.customer.last_name,
+        'email': sample_booking.customer.email,
+        'phoneNumber': sample_booking.customer.phone_number,
+        'address1': sample_booking.customer.address,
+        'city': sample_booking.customer.city,
+        'stateOrProvince': sample_booking.customer.state_or_province,
+        'zipCode': sample_booking.customer.zip_code,
         'bedrooms': sample_booking.bedrooms,
         'bathrooms': sample_booking.bathrooms,
         'serviceType': sample_booking.serviceType,

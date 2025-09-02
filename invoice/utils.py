@@ -1,17 +1,6 @@
 
-from django.core.mail import send_mail
-from django.conf import settings
-from bookings.models import Booking
-from accounts.models import ApiCredential, SMTPConfig, Business
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
-from twilio.rest import Client
-from .models import Invoice, Payment
-from automation.utils import sendEmailtoClientInvoice
 from django.utils import timezone
-import json
+from leadsAutomation.utils import send_email
 import threading
 
 
@@ -73,16 +62,16 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         - Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
         
         Customer Details:
-        - Name: {booking.firstName} {booking.lastName}
-        - Email: {booking.email}
-        - Phone: {booking.phoneNumber}
+        - Name: {booking.customer.get_full_name()}
+        - Email: {booking.customer.email}
+        - Phone: {booking.customer.phone_number}
         
         Booking Details:
         - Service: {booking.serviceType}
         - Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {booking.squareFeet}
         - Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
         - Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
-        - Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
+        - Address: {booking.customer.get_address() or 'N/A'}
         
         You can view the full booking details in your dashboard.
         
@@ -91,12 +80,12 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         """
         
         # Send email using Django's built-in email function
-        send_mail(
+        send_email(
             subject=subject,
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[owner_email],
-            fail_silently=False,
+            html_content=body,
+            from_email=f"{business.businessName} <{business.user.email}>",
+            to_email=owner_email,
+            reply_to=business.user.email
         )
         
         print(f"Payment notification email sent to business owner: {owner_email}")
@@ -119,9 +108,7 @@ def send_email_payment_completed(instance):
         
         # Send custom payment confirmation email
         try:
-            # Get SMTP configuration for the business
-            smtp_config = SMTPConfig.objects.filter(business=business).first()
-            
+           
             # Create email subject and content
             subject = f"Payment Confirmation - {business.businessName}"
             
@@ -150,7 +137,7 @@ def send_email_payment_completed(instance):
                     <h1>Payment Confirmed!</h1>
                 </div>
                 <div class="content">
-                    <p>Hello {booking.firstName} {booking.lastName},</p>
+                    <p>Hello {booking.customer.get_full_name()},</p>
                     <p>We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}</p>
                     
                     <div class="details">
@@ -213,7 +200,7 @@ def send_email_payment_completed(instance):
             # Create plain text version
             text_body = f"""Payment Confirmation - {business.businessName}
             
-                Hello {booking.firstName} {booking.lastName},
+                Hello {booking.customer.get_full_name()},
 
                 We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}.
 
@@ -239,43 +226,21 @@ def send_email_payment_completed(instance):
             """
             
             # Set up email parameters
-            from_email = f"{business.businessName} <{settings.DEFAULT_FROM_EMAIL}>"
-            reply_to_email = business.user.email if business.user.email else settings.DEFAULT_FROM_EMAIL
-            recipient_email = booking.email
+            from_email = f"{business.businessName} <{business.user.email}>"
+            reply_to_email = business.user.email
+            recipient_email = booking.customer.email
             
             # Send email based on available configuration
-            if smtp_config:
-                # Create message container
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = subject
-                msg['From'] = from_email
-                msg['To'] = recipient_email
-                msg['Reply-To'] = reply_to_email
-                
-                # Attach parts
-                part1 = MIMEText(text_body, 'plain')
-                part2 = MIMEText(html_body, 'html')
-                msg.attach(part1)
-                msg.attach(part2)
-                
-                # Send using custom SMTP
-                server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-                server.starttls()
-                server.login(smtp_config.username, smtp_config.password)
-                server.send_message(msg)
-                server.quit()
-            else:
-                # Use Django's email system
-                from django.core.mail import EmailMultiAlternatives
-                email_message = EmailMultiAlternatives(
-                    subject=subject,
-                    body=text_body,
-                    from_email=from_email,
-                    to=[recipient_email],
-                    reply_to=[reply_to_email]
-                )
-                email_message.attach_alternative(html_body, "text/html")
-                email_message.send()
+            send_email(
+                subject=subject,
+                html_body=html_body,
+                text_content=text_body,
+                from_email=from_email,
+                to_email=recipient_email,
+                reply_to=reply_to_email
+            )
+        
+   
             
             print(f"[DEBUG] Payment confirmation email sent successfully for invoice {invoice.invoiceId}")
             return True

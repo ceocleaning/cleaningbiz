@@ -18,13 +18,7 @@ from django.contrib.auth.decorators import login_required
 # Django views
 from django.views.decorators.http import require_http_methods
 
-# Django email utilities
-from django.core.mail import send_mail
-import smtplib
-import ssl
-import socket
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from leadsAutomation.utils import send_email
 
 # Python utilities
 import random
@@ -39,7 +33,6 @@ from accounts.models import (
     ApiCredential,
     CustomAddons,
     PasswordResetOTP,
-    SMTPConfig,
     SquareCredentials,
     CleanerProfile,
     StripeCredentials,
@@ -97,7 +90,7 @@ def SignupPage(request):
             return redirect('accounts:signup')
     
     context = {
-        'debug': settings.DEBUG
+        
     }
     return render(request, 'accounts/signup.html', context)
 
@@ -342,6 +335,7 @@ def edit_business_settings(request):
             settings.bathroomPrice = request.POST.get('bathroomPrice', 0)
             settings.depositFee = request.POST.get('depositFee', 0)
             settings.taxPercent = request.POST.get('taxPercent', 0)
+            settings.base_price = request.POST.get('base_price', 0)
             
             # Square Feet Multipliers
             settings.sqftMultiplierStandard = request.POST.get('sqftMultiplierStandard', 0)
@@ -385,9 +379,7 @@ def edit_credentials(request):
     
     if request.method == 'POST':
         try:
-            # credentials.retellAPIKey = request.POST.get('retellAPIKey', '')
-            # credentials.voiceAgentNumber = request.POST.get('voiceAgentNumber', '')
-
+     
             # Format phone numbers
             credentials.twilioSmsNumber = format_phone_number(request.POST.get('twilioSmsNumber', ''))
             credentials.twilioAccountSid = request.POST.get('twilioSid', '')
@@ -416,6 +408,7 @@ def generate_secret_key(request):
         credentials.secretKey = f"sk_{business.businessId}_{random.randint(100000, 999999)}"
         credentials.save()
         messages.success(request, 'Secret key generated successfully!')
+
     except Exception as e:
         messages.error(request, f'Error generating secret key: {str(e)}')
         raise Exception(str(e))
@@ -449,6 +442,7 @@ def add_custom_addon(request):
         if not business:
             messages.error(request, 'No business found.')
             return redirect('accounts:register_business')
+
         addon_name = request.POST.get('addonName')
         addon_data_name = request.POST.get('addonDataName')
         addon_price = request.POST.get('addonPrice', 0)
@@ -481,9 +475,10 @@ def edit_custom_addon(request, addon_id):
             addon.save()
             
             return JsonResponse({'status': 'success'})
+
         except CustomAddons.DoesNotExist:
-           
             return JsonResponse({'status': 'error', 'message': 'Addon not found'}, status=404)
+
         except Exception as e:
             raise Exception(str(e))
     
@@ -508,115 +503,6 @@ def delete_custom_addon(request, addon_id):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-
-@login_required
-def test_email_settings(request):
-    """Test SMTP email settings for the business."""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
-
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
-
-    try:
-        business = request.user.business_set.first()
-        if not business:
-            return JsonResponse({
-                'success': False,
-                'message': 'No business found. Please set up your business first.'
-            })
-
-        try:
-            smtpConfig = SMTPConfig.objects.get(business=business)
-        except SMTPConfig.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'Email credentials not found. Please configure your email settings.'
-            })
-
-        if not smtpConfig.host or not smtpConfig.port or not smtpConfig.username or not smtpConfig.password:
-            return JsonResponse({
-                'success': False,
-                'message': 'Email credentials not configured. Please set them up first.'
-            })
-
-        # Create test email
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f'Test Email - {business.businessName}'
-        from_email = smtpConfig.username
-        if smtpConfig.from_name:
-            from_email = f"{smtpConfig.from_name} <{smtpConfig.username}>"
-        msg['From'] = from_email
-        msg['To'] = request.user.email
-        if smtpConfig.reply_to:
-            msg['Reply-To'] = smtpConfig.reply_to
-
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Test Email</h2>
-            <p>Dear {request.user.first_name or request.user.username},</p>
-            <p>This is a test email from your cleaning business management system.</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3>Email Configuration Details:</h3>
-                <p><strong>Business Name:</strong> {business.businessName}</p>
-                <p><strong>Email Address:</strong> {smtpConfig.username}</p>
-                <p><strong>From Name:</strong> {smtpConfig.from_name or 'Not set'}</p>
-                <p><strong>Reply-To:</strong> {smtpConfig.reply_to or 'Not set'}</p>
-                <p><strong>SMTP Server:</strong> {smtpConfig.host}:{smtpConfig.port}</p>
-            </div>
-            <p>If you received this email, your email settings are configured correctly!</p>
-            <p>Best regards,<br>Your Business Management System</p>
-        </body>
-        </html>
-        """
-        text_content = strip_tags(html_content)
-        msg.attach(MIMEText(text_content, 'plain'))
-        msg.attach(MIMEText(html_content, 'html'))
-
-        # --- Connect to SMTP ---
-        try:
-            if int(smtpConfig.port) == 465:
-                context = ssl.create_default_context()
-                smtp_server = smtplib.SMTP_SSL(smtpConfig.host, smtpConfig.port, context=context, timeout=20)
-            else:
-                smtp_server = smtplib.SMTP(smtpConfig.host, smtpConfig.port, timeout=20)
-                smtp_server.starttls()
-
-            smtp_server.login(smtpConfig.username, smtpConfig.password)
-            smtp_server.send_message(msg)
-            smtp_server.quit()
-
-            return JsonResponse({
-                'success': True,
-                'message': f'Test email sent successfully to {request.user.email}'
-            })
-
-        except smtplib.SMTPAuthenticationError:
-            print("SMTP Authentication failed")
-            return JsonResponse({'success': False, 'message': 'Authentication failed. Please check your email and password.'})
-        except smtplib.SMTPConnectError:
-            print("SMTP connection failed")
-            return JsonResponse({'success': False, 'message': 'Could not connect to the SMTP server. Please check host and port.'})
-        except smtplib.SMTPRecipientsRefused:
-            print("Recipient address was refused")
-            return JsonResponse({'success': False, 'message': 'Recipient email address was refused by the server.'})
-        except smtplib.SMTPSenderRefused:
-            print("Sender address was refused")
-            return JsonResponse({'success': False, 'message': 'Sender email address was refused by the server.'})
-        except smtplib.SMTPDataError:
-            print("SMTP data error")
-            return JsonResponse({'success': False, 'message': 'The SMTP server refused the email content.'})
-        except (socket.timeout, TimeoutError):
-            print("SMTP connection timed out")
-            return JsonResponse({'success': False, 'message': 'Connection to SMTP server timed out. Please check your network and server details.'})
-        except Exception as e:
-            print(f"Unexpected SMTP error: {str(e)}")
-            return JsonResponse({'success': False, 'message': f'Failed to send email: {str(e)}'})
-
-    except Exception as e:
-        print(f"Unexpected error in test_email_settings: {str(e)}")
-        return JsonResponse({'success': False, 'message': 'An unexpected error occurred while testing email settings.'})
 
 
 def forgot_password(request):
@@ -657,6 +543,7 @@ def forgot_password(request):
                     lock_time_remaining = int((otp_obj.lock_expiry - timezone.now()).total_seconds() / 60)
                     messages.error(request, f'Your account is locked due to too many failed attempts. Please try again after {lock_time_remaining} minutes.')
                     return render(request, 'accounts/forgot_password.html')
+
                 elif otp_obj.lock_expiry and otp_obj.lock_expiry <= timezone.now():
                     # Reset lock if lock has expired
                     otp_obj.lock_expiry = None
@@ -665,6 +552,7 @@ def forgot_password(request):
                 
                 # Check if user has reached the daily OTP limit (3 per day)
                 today = timezone.now().date()
+
                 if otp_obj.created_at.date() == today and otp_obj.otp_sent_count >= 3:
                     messages.error(request, 'You have reached the maximum number of OTP requests for today. Please try again tomorrow.')
                     return render(request, 'accounts/forgot_password.html')
@@ -679,6 +567,7 @@ def forgot_password(request):
                 if otp_obj.created_at.date() != today:
                     otp_obj.otp_sent_count = 1
                     otp_obj.created_at = timezone.now()
+
                 else:
                     otp_obj.otp_sent_count += 1
                 
@@ -912,21 +801,11 @@ def reset_password(request, email, token):
 def send_otp_email(user, otp):
     """Helper function to send OTP via email"""
     try:
-        # Get email settings from Django settings
-        sender_email = "8bpcoins4u@gmail.com"  # Hardcoded for testing
-        sender_password = "xori gjys nikt qoyo"  # Hardcoded for testing
+
         
-        # Check if email credentials are configured
-        if not sender_email or not sender_password:
-            # Log the error
-            print("Email credentials not configured in settings")
-            return False
-        
-        # Create email
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Password Reset OTP'
-        msg['From'] = sender_email
-        msg['To'] = user.email
+   
+        email_from = settings.EMAIL_HOST_USER
+        email_to = user.email
         
         # Email content
         html_content = f"""
@@ -951,29 +830,25 @@ def send_otp_email(user, otp):
         
         text_content = strip_tags(html_content)
         
-        part1 = MIMEText(text_content, 'plain')
-        part2 = MIMEText(html_content, 'html')
-        msg.attach(part1)
-        msg.attach(part2)
+       
         
         # For debugging
         print(f"Attempting to send email from: {sender_email}")
         
         # Skip Django's email system and use direct SMTP since we know it works
         try:
-            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-            smtp_server.starttls()
-            smtp_server.login(sender_email, sender_password)
-            smtp_server.send_message(msg)
-            smtp_server.quit()
+            send_email(
+                from_email=email_from,
+                to_email=email_to,
+                subject='Password Reset OTP',
+                html_body=html_content,
+                text_content=text_content
+            )
             print("Email sent successfully using direct SMTP")
             return True
         except Exception as smtp_error:
             print(f"SMTP error: {smtp_error}")
-            print("Gmail authentication failed. Please check:")
-            print("1. Make sure you're using an App Password if 2-Step Verification is enabled")
-            print("2. Verify the email and password in your .env file are correct")
-            print("3. Check that 'Less secure app access' is enabled if not using 2-Step Verification")
+     
             return False
                 
     except Exception as e:
@@ -983,85 +858,6 @@ def send_otp_email(user, otp):
 
 
 
-# Views for Creating SMTPConfig, Updating, Deleting
-
-
-@login_required
-def smtp_config(request):
-    business = request.user.business_set.first()
-    if not business:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'No business found.'
-            }, status=400)
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
-    
-    smtp_config, created = SMTPConfig.objects.get_or_create(business=business)
-    
-    if request.method == 'POST':
-        smtp_config.host = request.POST.get('host', '')
-        smtp_config.port = request.POST.get('port', '')
-        smtp_config.username = request.POST.get('username', '')
-        smtp_config.password = request.POST.get('password', '')
-        smtp_config.from_name = request.POST.get('from_name', '')
-        smtp_config.reply_to = request.POST.get('reply_to', '')
-        smtp_config.save()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': 'SMTP configuration updated successfully!'
-            })
-        
-        messages.success(request, 'SMTP configuration updated successfully!')
-        return redirect('accounts:smtp_config')
-    
-    return render(request, 'accounts/smtp_config.html', {'smtp_config': smtp_config})
-
-
-@login_required
-def delete_smtp_config(request):
-    business = request.user.business_set.first()
-    if not business:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'No business found.'
-            }, status=400)
-        messages.error(request, 'No business found.')
-        return redirect('accounts:register_business')
-    
-    try:
-        smtp_config = SMTPConfig.objects.get(business=business)
-        
-        if request.method == 'POST':
-            smtp_config.delete()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': 'SMTP configuration deleted successfully!'
-                })
-            
-            messages.success(request, 'SMTP configuration deleted successfully!')
-            return redirect('accounts:smtp_config')
-    except SMTPConfig.DoesNotExist:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'SMTP configuration not found.'
-            }, status=404)
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method.'
-        }, status=400)
-        
-    return redirect('accounts:smtp_config')
-
 
 @login_required
 def approval_pending(request):
@@ -1070,7 +866,7 @@ def approval_pending(request):
     Shown after a business registers and before they are approved
     """
     # Check if user has a business
-    from django.conf import settings
+
 
 
     if not request.user.business_set.exists():
@@ -1813,21 +1609,24 @@ def reset_cleaner_password(request):
         <p>Please contact your administrator if you did not request this change.</p>
         <p>Thank you,<br>{business.businessName}</p>
         """
+
+        text_content = f"Hello {cleaner.name}, Your password has been changed by your business administrator. Please contact them if you did not request this change."
         # Check for business configured email settings
         try:
-            if hasattr(business, 'smtp_configuration'):
-                from django.core.mail import send_mail
-                send_mail(subject, html_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
-            else:
-                # Fallback to Django's default email
-                from django.core.mail import send_mail
-                plain_message = f"Hello {cleaner.name}, Your password has been changed by your business administrator. Please contact them if you did not request this change."
-                send_mail(subject, plain_message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html_message)
+            send_email(
+                from_email=email_from,
+                to_email=email_to,
+                reply_to=business.user.email,
+                subject=subject,
+                html_body=html_message,
+                text_content=text_content
+            )
+            messages.success(request, f'Password for {cleaner.name} has been changed successfully. A notification has been sent to {user.email}.')
         except Exception as e:
             messages.warning(request, f'Password was changed but we could not send the email notification: {str(e)}')
-            return redirect('accounts:manage_cleaners')
-            
-        messages.success(request, f'Password for {cleaner.name} has been changed successfully. A notification has been sent to {user.email}.')
+       
+        
+        return redirect('accounts:manage_cleaners')
     except Exception as e:
         messages.error(request, f'Error sending password reset email: {str(e)}')
     

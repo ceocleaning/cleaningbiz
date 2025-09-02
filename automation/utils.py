@@ -2,13 +2,16 @@ from twilio.rest import Client
 import uuid
 from dotenv import load_dotenv
 from django.core.mail import send_mail
-from accounts.models import Business, ApiCredential, SMTPConfig
+from accounts.models import Business, ApiCredential
 import os
 from django.core.mail import EmailMultiAlternatives
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from django.conf import settings
+from leadsAutomation.utils import send_email
+
+
 load_dotenv()
 
 
@@ -36,7 +39,7 @@ def sendInvoicetoClient(recepientNumber, invoice, business):
         message = client.messages.create(
             to=recepientNumber,
             from_=apiCreds.twilioSmsNumber,
-            body=f"Hello {invoice.booking.firstName}, your appointment with {business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
+            body=f"Hello {invoice.booking.customer.first_name}, your appointment with {business.businessName} is confirmed! Your total is ${invoice.amount:.2f}. View and pay your invoice here: {invoice_link}"
         )
         
         print(f"SMS sent successfully to {recepientNumber}")
@@ -48,10 +51,7 @@ def sendInvoicetoClient(recepientNumber, invoice, business):
 
 def sendEmailtoClientInvoice(invoice, business):
     try:
-        # Check if business has SMTP configuration
-        smtpConfig = SMTPConfig.objects.filter(business=business)
-        
-        # Get booking details
+     
         booking = invoice.booking
         invoice_link = f"{settings.BASE_URL}/invoice/invoices/{invoice.invoiceId}/preview/"
         
@@ -81,7 +81,7 @@ def sendEmailtoClientInvoice(invoice, business):
                 <h1>Appointment Confirmed!</h1>
             </div>
             <div class="content">
-                <p>Hello {booking.firstName} {booking.lastName},</p>
+                <p>Hello {booking.customer.first_name} {booking.customer.last_name},</p>
                 <p>Your appointment with {business.businessName} has been confirmed. Thank you for choosing our services!</p>
                 
                 <div class="details">
@@ -101,7 +101,7 @@ def sendEmailtoClientInvoice(invoice, business):
                         </tr>
                         <tr>
                             <td>Address:</td>
-                            <td>{booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}</td>
+                            <td>{booking.customer.get_address()}</td>
                         </tr>
                         <tr>
                             <td>Total Amount:</td>
@@ -124,12 +124,12 @@ def sendEmailtoClientInvoice(invoice, business):
         """
         
         # Plain text alternative
-        text_body = f"""Hello {booking.firstName},
+        text_body = f"""Hello {booking.customer.first_name},
 
             Your appointment with {business.businessName} has been confirmed for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')}.
 
             Service: {booking.serviceType.title()} Cleaning
-            Address: {booking.address1}, {booking.city}, {booking.stateOrProvince} {booking.zipCode}
+            Address: {booking.customer.get_address()}
             Total Amount: ${invoice.amount:.2f}
 
             To view your invoice and make a payment, please visit: {invoice_link}
@@ -138,55 +138,18 @@ def sendEmailtoClientInvoice(invoice, business):
             """
         
         # Determine which email configuration to use
-        from_email = settings.DEFAULT_FROM_EMAIL
-        recipient_email = booking.email
-        
-        if smtpConfig.exists() and smtpConfig.first().host and smtpConfig.first().username and smtpConfig.first().password:
-            # Use business-specific SMTP configuration
-            config = smtpConfig.first()
-            
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            
-            # Use from_name if available, otherwise use username
-            from_email_header = config.username or from_email
-            if config.from_name:
-                from_email_header = f'"{config.from_name}" <{config.username}>'
-            msg['From'] = from_email_header
-            
-            msg['To'] = recipient_email
-            
-            # Add Reply-To header if configured
-            if config.reply_to:
-                msg['Reply-To'] = config.reply_to
-            
-            # Attach parts
-            part1 = MIMEText(text_body, 'plain')
-            part2 = MIMEText(html_body, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=config.host, port=config.port)
-            # Always use TLS for security
-            server.starttls()
-            server.login(config.username, config.password)
-            server.send_message(msg)
-            server.quit()
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            from django.core.mail import EmailMultiAlternatives
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=from_email,
-                to=[recipient_email]
-            )
-            email_message.attach_alternative(html_body, "text/html")
-            email_message.send()
-        
+        from_email = f"{business.businessName} <{business.user.email}>"
+        recipient_email = booking.customer.email
+
+        send_email(
+            from_email=from_email,
+            to_email=recipient_email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_body,
+            text_content=text_body
+        )
+
         return True
     except Exception as e:
         print(f"Email sending error: {str(e)}")
@@ -227,7 +190,7 @@ def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj
     bedroomTotal = bedrooms * bedroomPrice
 
     # Calculate the total amount
-    total_amount = bedroomTotal + bathroomTotal + base_price
+    total_amount = bedroomTotal + bathroomTotal + base_price + depositFee
     
     
     return total_amount

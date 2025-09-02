@@ -1,0 +1,114 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block header_title %}Customer Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Welcome Card -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2>Welcome back, {{ user.get_full_name }}</h2>
+                <p>Here's an overview of your cleaning services and account information.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Bookings -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Upcoming Bookings</h5>
+                <a href="{% url 'customer:bookings' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_bookings %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in upcoming_bookings %}
+                            <tr>
+                                <td>{{ booking.cleaningDate|date:"M d, Y" }} at {{ booking.startTime }}</td>
+                                <td>{{ booking.serviceType }}</td>
+                                <td>
+                                    <span class="badge bg-{% if booking.isConfirmed %}success{% elif booking.isCompleted %}danger{% else %}info{% endif %}">
+                                        {{ booking.isCompleted|yesno:"Completed,Confirmed" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'home' %}" class="btn btn-sm btn-outline-primary">Details</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                    <h5>No Upcoming Bookings</h5>
+                    <p class="text-muted">You don't have any upcoming cleaning services scheduled.</p>
+                    <a href="{% url 'customer:businesses_list' %}" class="btn btn-primary">Book a Cleaning</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Invoices -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Invoices</h5>
+                <a href="{% url 'home' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_invoices %}
+                <ul class="list-group list-group-flush">
+                    {% for invoice in recent_invoices %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Invoice #{{ invoice.invoiceId }}</h6>
+                                <small class="text-muted">{{ invoice.paidDate|date:"M d, Y" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <h6 class="mb-1">${{ invoice.amount }}</h6>
+                                <span class="badge bg-info">
+                                    {{ invoice.payment_details.status|default:"Unpaid"|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                    <h5>No Recent Invoices</h5>
+                    <p class="text-muted">You don't have any recent invoices.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+   
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+</script>
+{% endblock %}

@@ -18,22 +18,22 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="firstName" class="form-label">First Name</label>
-                            <input type="text" class="form-control" id="firstName" name="firstName" value="{{ booking.firstName }}" required>
+                            <input type="text" class="form-control" id="firstName" name="firstName" value="{{ booking.customer.first_name }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="lastName" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" id="lastName" name="lastName" value="{{ booking.lastName }}" required>
+                            <input type="text" class="form-control" id="lastName" name="lastName" value="{{ booking.customer.last_name }}" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ booking.email }}" required>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ booking.customer.email }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="phoneNumber" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" value="{{ booking.phoneNumber }}" required>
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" value="{{ booking.customer.phone_number }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="companyName" class="form-label">Company Name (Optional)</label>
@@ -46,26 +46,26 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="address1" class="form-label">Address Line 1</label>
-                            <input type="text" class="form-control" id="address1" name="address1" value="{{ booking.address1 }}" required>
+                            <input type="text" class="form-control" id="address1" name="address1" value="{{ booking.customer.address }}" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="address2" class="form-label">Address Line 2 (Optional)</label>
-                            <input type="text" class="form-control" id="address2" name="address2" value="{{ booking.address2 }}">
-                        </div>
+                            <input type="text" class="form-control" id="address2" name="address2" value="{{ booking.address.address2 }}">
+                        </div> -->
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="city" class="form-label">City</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{ booking.city }}" required>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ booking.customer.city }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="stateOrProvince" class="form-label">State/Province</label>
-                            <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" value="{{ booking.stateOrProvince }}" required>
+                            <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" value="{{ booking.customer.state_or_province }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="zipCode" class="form-label">ZIP Code</label>
-                            <input type="text" class="form-control" id="zipCode" name="zipCode" value="{{ booking.zipCode }}" required>
+                            <input type="text" class="form-control" id="zipCode" name="zipCode" value="{{ booking.customer.zip_code }}" required>
                         </div>
                     </div>
 

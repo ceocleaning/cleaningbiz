@@ -1,8 +1,9 @@
-from accounts.models import SMTPConfig, CleanerProfile
+from accounts.models import CleanerProfile
 from django.utils import timezone
 import datetime
 from bookings.tasks import send_email_util
 from django.contrib.auth.models import User
+from leadsAutomation.utils import send_email
 
 
 def send_arrival_confirmation_email(booking):
@@ -10,14 +11,10 @@ def send_arrival_confirmation_email(booking):
     Send an email notification to the customer when the cleaner confirms arrival
     """
     business = booking.business
-    smtp_config = SMTPConfig.objects.filter(business=business).first()
-    
-    if not smtp_config:
-        # If no SMTP config is found, we can't send the email
-        return False
+  
     
     # Get customer's full name
-    customer_name = f"{booking.firstName} {booking.lastName}" if booking.lastName else booking.firstName
+    customer_name = f"{booking.customer.first_name} {booking.customer.last_name}" if booking.customer and booking.customer.last_name else (booking.customer.first_name if booking.customer else "Customer")
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
@@ -25,14 +22,13 @@ def send_arrival_confirmation_email(booking):
     
     # Format address
     address_parts = []
-    if booking.address1:
-        address_parts.append(booking.address1)
-    if booking.address2:
-        address_parts.append(booking.address2)
-    if booking.city and booking.stateOrProvince:
-        address_parts.append(f"{booking.city}, {booking.stateOrProvince}")
-    if booking.zipCode:
-        address_parts.append(booking.zipCode)
+    if booking.customer.address:
+        address_parts.append(booking.customer.address)
+   
+    if booking.customer.city and booking.customer.state_or_province:
+        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
+    if booking.customer.zip_code:
+        address_parts.append(booking.customer.zip_code)
     
     full_address = ", ".join(address_parts) if address_parts else "N/A"
     
@@ -160,17 +156,17 @@ def send_arrival_confirmation_email(booking):
     """
     
     # Set the from email address using the SMTP config
-    from_email = f"{smtp_config.from_name} <{smtp_config.username}>" if smtp_config.from_name else smtp_config.username
-    
+    from_email = f"{business.businessName} <{business.user.email}>"
+
     # Send the email
     try:
-        send_email_util(
-            subject=subject,
-            recipient_email=booking.email,
-            html_body=html_body,
-            text_body=text_body,
+        send_email(
             from_email=from_email,
-            smtp_config=smtp_config
+            to_email=booking.customer.email,
+            reply_to=business.user.email,
+            subject=subject,
+            html_body=html_body,
+            text_content=text_body
         )
         return True
     except Exception as e:
@@ -183,14 +179,7 @@ def send_completion_notification_emails(booking):
     Send email notifications to the customer, cleaner, and business owner when a booking is completed
     """
     business = booking.business
-    smtp_config = SMTPConfig.objects.filter(business=business).first()
-    
-    if not smtp_config:
-        # If no SMTP config is found, we can't send the email
-        return False
-    
-    # Get customer's full name
-    customer_name = f"{booking.firstName} {booking.lastName}" if booking.lastName else booking.firstName
+    customer_name = booking.customer.get_full_name()
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
@@ -198,14 +187,14 @@ def send_completion_notification_emails(booking):
     
     # Format address
     address_parts = []
-    if booking.address1:
-        address_parts.append(booking.address1)
-    if booking.address2:
-        address_parts.append(booking.address2)
-    if booking.city and booking.stateOrProvince:
-        address_parts.append(f"{booking.city}, {booking.stateOrProvince}")
-    if booking.zipCode:
-        address_parts.append(booking.zipCode)
+    if booking.customer.address:
+        address_parts.append(booking.customer.address)
+    if booking.customer.address2:
+        address_parts.append(booking.customer.address2)
+    if booking.customer.city and booking.customer.state_or_province:
+        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
+    if booking.customer.zip_code:
+        address_parts.append(booking.customer.zip_code)
     
     full_address = ", ".join(address_parts) if address_parts else "N/A"
     
@@ -218,7 +207,7 @@ def send_completion_notification_emails(booking):
     business_owner_email = business.user.email if business.user else None
     
     # Set the from email address using the SMTP config
-    from_email = f"{smtp_config.from_name} <{smtp_config.username}>" if smtp_config.from_name else smtp_config.username
+    from_email = f"{business.businessName} <{business.user.email}>"
     
     # Common email styles
     email_styles = """
@@ -273,7 +262,7 @@ def send_completion_notification_emails(booking):
     """
     
     # 1. Send email to customer
-    if booking.email:
+    if booking.customer.email:
         customer_subject = f"Cleaning Service Completed - {business.businessName}"
         
         customer_html_body = f"""
@@ -340,14 +329,15 @@ def send_completion_notification_emails(booking):
         """
         
         try:
-            send_email_util(
+            send_email(
                 subject=customer_subject,
-                recipient_email=booking.email,
-                html_body=customer_html_body,
-                text_body=customer_text_body,
+                to_email=booking.customer.email,
                 from_email=from_email,
-                smtp_config=smtp_config
+                reply_to=business.user.email,
+                html_body=customer_html_body,
+                text_content=customer_text_body
             )
+            print("Completion email sent to customer.")
         except Exception as e:
             print(f"Error sending completion email to customer: {str(e)}")
     
@@ -417,14 +407,15 @@ def send_completion_notification_emails(booking):
         """
         
         try:
-            send_email_util(
+            send_email(
                 subject=cleaner_subject,
-                recipient_email=cleaner_email,
+                to_email=cleaner_email,
+                reply_to=business.user.email,
                 html_body=cleaner_html_body,
-                text_body=cleaner_text_body,
-                from_email=from_email,
-                smtp_config=smtp_config
+                text_content=cleaner_text_body,
+                from_email=from_email
             )
+
         except Exception as e:
             print(f"Error sending completion email to cleaner: {str(e)}")
     
@@ -496,13 +487,13 @@ def send_completion_notification_emails(booking):
         """
         
         try:
-            send_email_util(
+            send_email(
                 subject=owner_subject,
-                recipient_email=business_owner_email,
+                to_email=business_owner_email,
+                reply_to=business.user.email,
                 html_body=owner_html_body,
-                text_body=owner_text_body,
-                from_email=from_email,
-                smtp_config=smtp_config
+                text_content=owner_text_body,
+                from_email=from_email
             )
         except Exception as e:
             print(f"Error sending completion email to business owner: {str(e)}")

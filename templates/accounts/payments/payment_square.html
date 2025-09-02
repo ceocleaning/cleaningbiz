@@ -151,7 +151,7 @@
                                                 {{ payment.updatedAt }}
                                                 {% endif %}
                                             </td>
-                                            <td>{{ payment.invoice.booking.firstName }} {{ payment.invoice.booking.lastName }}</td>
+                                            <td>{{ payment.invoice.booking.customer.get_full_name }}</td>
                                             <td>${{ payment.amount }}</td>
                                             <td>
                                                 {% if payment.status == 'COMPLETED' %}

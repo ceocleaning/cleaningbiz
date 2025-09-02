@@ -11,7 +11,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/update/', views.update_profile, name='update_profile'),
     path('profile/change-password/', views.change_password, name='change_password'),
-    path('profile/test-email/', views.test_email_settings, name='test_email_settings'),
+
     path('register-business/', views.register_business, name='register_business'),
     path('business/edit/', views.edit_business, name='edit_business'),
     path('business/settings/edit/', views.edit_business_settings, name='edit_business_settings'),
@@ -29,9 +29,6 @@ urlpatterns = [
     path('resend-otp/<str:email>/', views.resend_otp, name='resend_otp'),
     path('reset-password/<str:email>/<str:token>/', views.reset_password, name='reset_password'),
     
-    # SMTP Configuration URLs
-    path('smtp-config/', views.smtp_config, name='smtp_config'),
-    path('smtp-config/delete/', views.delete_smtp_config, name='delete_smtp_config'),
     
     # Approval Pending URL
     path('approval-pending/', views.approval_pending, name='approval_pending'),

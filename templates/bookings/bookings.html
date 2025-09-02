@@ -148,7 +148,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.customer.get_full_name }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     {% if booking.cancelled_at %}
@@ -249,7 +249,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.customer.get_full_name }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     <span class="badge bg-info">
@@ -342,7 +342,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.customer.get_full_name }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     <span class="badge bg-warning text-dark">
@@ -433,7 +433,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.customer.get_full_name }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     <span class="badge bg-secondary">
@@ -516,7 +516,7 @@
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ booking.bookingId }}</td>
-                                <td>{{ booking.firstName }} {{ booking.lastName }}</td>
+                                <td>{{ booking.customer.get_full_name }}</td>
                                 <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
                                 <td>
                                     <span class="badge bg-danger">

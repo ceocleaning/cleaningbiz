@@ -5,14 +5,17 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
 from retell import Retell
-from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons, SMTPConfig
+from accounts.models import Business, ApiCredential, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
 from invoice.models import Invoice
 from .models import Cleaners, CleanerAvailability
 from django.conf import settings
+from leadsAutomation.utils import send_email
+from customer.models import Customer
+import threading
 
-from .utils import calculateAddonsAmount, calculateAmount, sendInvoicetoClient, sendEmailtoClientInvoice
-import dateparser
+
+from .utils import calculateAddonsAmount, calculateAmount
 import pytz
 import traceback
 
@@ -416,7 +419,16 @@ def check_availability_for_booking(request):
             print("Invalid timezone")
             datetime_to_check = local_datetime
         
-        current_business = request.user.business_set.first()
+        if hasattr(request.user, 'customer') and request.user.customer:
+            print(request.GET.get("businessId"))
+            business_id = request.GET.get("businessId")
+            current_business = Business.objects.get(businessId=business_id)
+        else:
+            current_business = request.user.business_set.first()
+
+        if not current_business:
+            return JsonResponse({"error": "Business not found"}, status=404)
+
         cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
         
         # Check availability
@@ -520,17 +532,27 @@ def create_booking(request):
             service_type = 'airbnb'
         
 
+        customer_email = data.get('email', 'Not Set')
+        customer = Customer.objects.filter(email=customer_email)
+        if not customer.exists():
+            customer = Customer.objects.create(
+                first_name=data.get('first_name', 'Not Set'),
+                last_name=data.get('last_name', 'Not Set'),
+                email=customer_email,
+                phone_number=data.get('phone_number', 'Not Set'),
+                address=data.get('address', 'Not Set'),
+                city=data.get('city', 'Not Set'),
+                state_or_province=data.get('state', 'Not Set'),
+                zip_code=data.get('zip_code', 'Not Set'),
+            )
+        
+        else:
+            customer = customer.first()
+
         # Create booking object with mapped fields
         booking = Booking(
             business=business,
-            firstName=data.get('first_name', 'Not Set'),
-            lastName=data.get('last_name', 'Not Set'),
-            email=data.get('email', 'Not Set'),
-            phoneNumber=data.get('phone_number', 'Not Set'),
-            address1=data.get('address', 'Not Set'),
-            city=data.get('city', 'Not Set'),
-            stateOrProvince=data.get('state', 'Not Set'),
-            zipCode=data.get('zip_code', 'Not Set'),
+            customer=customer,
             bedrooms=int(data.get('bedrooms', 0)) or 0,
             bathrooms=int(data.get('bathrooms', 0)) or 0,
             squareFeet=int(data.get('area', 0)) or 0,
@@ -640,11 +662,6 @@ def create_booking(request):
             booking.save()
         
         # Import threading for background execution
-        import threading
-        
-      
-        
-        # Send booking data to integration in background thread
         from .webhooks import send_booking_data
         webhook_thread = threading.Thread(target=send_booking_data, args=(booking,))
         webhook_thread.daemon = True
@@ -709,9 +726,7 @@ def sendCommercialFormLink(request):
                 'message': 'Business not found'
             }, status=404)
         
-        # Check for SMTP configuration
-        smtp_config = SMTPConfig.objects.filter(business=business).first()
-        use_business_smtp = smtp_config and smtp_config.host and smtp_config.username and smtp_config.password
+       
         
         # Generate the commercial form link
         form_link = f"{settings.BASE_URL}/commercial-form/{business.businessId}/"
@@ -775,43 +790,16 @@ def sendCommercialFormLink(request):
             The {business.businessName} Team
         """
         
-        # Send email based on available configuration
-        if use_business_smtp:
-            # Use business-specific SMTP configuration
-            import smtplib
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
-            
-            # Create message container
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = smtp_config.username
-            msg['To'] = email
-            
-            # Attach parts
-            part1 = MIMEText(text_content, 'plain')
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            # Send the message via custom SMTP server
-            server = smtplib.SMTP(host=smtp_config.host, port=smtp_config.port)
-            if smtp_config.useTLS:
-                server.starttls()
-            server.login(smtp_config.username, smtp_config.password)
-            server.send_message(msg)
-            server.quit()
-        else:
-            # Use platform SMTP settings (Django's send_mail)
-            from django.core.mail import EmailMultiAlternatives
-            email_message = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
+        # Send the email
+
+        send_email(
+            subject=subject,
+            html_body=html_content,
+            text_content=text_content,
+            from_email=f"{business.businessName} <{business.user.email}>",
+            to_email=email,
+            reply_to=business.user.email
+        )
         
         return JsonResponse({
             'success': True,
@@ -828,7 +816,7 @@ def sendCommercialFormLink(request):
         }, status=500)
 
 
-from ai_agent.api_views import reschedule_appointment, cancel_appointment
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -840,7 +828,8 @@ def reschedule_booking(request):
         new_date_time = data.get('next_date_time')
         
         booking = Booking.objects.get(bookingId=booking_id)
-        
+
+        from ai_agent.api_views import reschedule_appointment
         reschedule_response = reschedule_appointment(booking, new_date_time)
 
         if reschedule_response['success']:
@@ -867,6 +856,7 @@ def cancel_booking(request):
         
         booking = Booking.objects.filter(bookingId=booking_id).first()
         
+        from ai_agent.api_views import cancel_appointment
         cancel_response = cancel_appointment(booking)
 
         if cancel_response['success']:
