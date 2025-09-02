@@ -47,7 +47,8 @@ class BookingAdmin(admin.ModelAdmin):
     )
 
     def get_full_name(self, obj):
-        return f"{obj.customer.first_name} {obj.customer.last_name}"
+        return f"{obj.customer.first_name} {obj.customer.last_name}" if obj.customer else 'N/A'
+
     get_full_name.short_description = 'Customer Name'
 
 @admin.register(CleanerPayout)

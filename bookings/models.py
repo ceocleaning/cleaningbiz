@@ -52,6 +52,7 @@ class Booking(models.Model):
     cleaner = models.ForeignKey(Cleaners, on_delete=models.SET_NULL, null=True, blank=True)
     
     customer = models.ForeignKey('customer.Customer', on_delete=models.SET_NULL, null=True, blank=True)
+
     
     # Property Details
     bedrooms = models.IntegerField(default=0)
