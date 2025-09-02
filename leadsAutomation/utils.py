@@ -30,8 +30,13 @@ def send_email(from_email, to_email, subject, reply_to=None, html_body='', text_
     }
 
     response = requests.post(url, json=data, headers=headers)
-   
-
-    return response.json()
-
-
+    
+    try:
+        return response.json()
+    except ValueError:
+        # Handle the case where the response is not valid JSON
+        return {
+            'success': False,
+            'error': f'Invalid JSON response. Status code: {response.status_code}',
+            'response_text': response.text
+        }
