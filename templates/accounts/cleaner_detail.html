@@ -165,7 +165,7 @@
                                 {% for booking in bookings %}
                                 <tr>
                                     <td>{{ booking.bookingId }}</td>
-                                    <td><span data-utc-datetime="{{ booking.date|date:'c' }}">{{ booking.date|to_business_timezone:business_timezone|date:"M d, Y" }}</span></td>
+                                    <td><span data-utc-datetime="{{ booking.date|date:'c' }}">{{ booking.date|to_timezone:business_timezone|date:"M d, Y" }}</span></td>
                                     <td>{{ booking.startTime|time:"g:i A" }}</td>
                                     <td>{{ booking.name }}</td>
                                     <td>

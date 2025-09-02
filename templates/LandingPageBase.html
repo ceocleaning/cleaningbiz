@@ -370,12 +370,12 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end bg-dark-surface-2" aria-labelledby="userDropdown">
                             <li>
-                                <a class="dropdown-item text-white" href="{% url 'home' %}">
+                                <a class="dropdown-item text-white" href="{% if request.user.customer %}{% url 'customer:dashboard' %}{% else %}{% url 'home' %}{% endif %}">
                                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item text-white" href="{% url 'accounts:profile' %}">
+                                <a class="dropdown-item text-white" href="{% if request.user.customer %}{% url 'customer:profile' %}{% else %}{% url 'accounts:profile' %}{% endif %}">
                                     <i class="fas fa-user-cog me-2"></i>Profile Settings
                                 </a>
                             </li>

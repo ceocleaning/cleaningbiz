@@ -857,7 +857,7 @@
                         </div>
                     
                     <div class="conversation-meta">
-                        <div class="conversation-time">{{ chat.updatedAt|to_business_timezone:user_timezone|date:"M d" }}</div>
+                        <div class="conversation-time">{{ chat.updatedAt|to_timezone:user_timezone|date:"M d" }}</div>
                             {% if chat.status == 'pending' %}
                         <span class="status-badge badge-pending">
                             <span class="status-dot pending"></span>Pending
