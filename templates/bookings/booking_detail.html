@@ -99,8 +99,8 @@
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-clock text-muted me-2"></i>
-                                <span>{{ booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }}</span> to 
-                                <span>{{ booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</span>
+                                <span>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }}</span> to 
+                                <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-credit-card text-muted me-2"></i>

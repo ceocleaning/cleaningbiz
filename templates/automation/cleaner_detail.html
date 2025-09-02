@@ -155,9 +155,9 @@
                         </div>
                         {% elif availability.startTime and availability.endTime %}
                         <div class="text-muted">
-                            {% with time_start=availability.startTime|to_business_timezone:business_timezone %}
+                            {% with time_start=availability.startTime|to_timezone:business_timezone %}
                             
-                            {% with time_end=availability.endTime|to_business_timezone:business_timezone %}
+                            {% with time_end=availability.endTime|to_timezone:business_timezone %}
                             {{ time_start|time:"g:i A" }} - {{ time_end|time:"g:i A" }}
                             <small class="ms-1 text-muted">({{ business_timezone }})</small>
                             {% endwith %}
@@ -249,7 +249,7 @@
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Client:</strong> {{ current_booking.customer.get_full_name }}</p>
                             <p class="mb-1"><strong>Service:</strong> {{ current_booking.get_serviceType_display }}</p>
-                            <p class="mb-0"><strong>Time:</strong> {{ current_booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ current_booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</p>
+                            <p class="mb-0"><strong>Time:</strong> {{ current_booking.startTime|to_timezone:user_timezone|date:"h:i A" }} - {{ current_booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</p>
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Address:</strong></p>
@@ -308,7 +308,7 @@
                                         {% for booking in upcoming_bookings %}
                                         <tr>
                                             <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
-                                            <td>{{ booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</td>
+                                            <td>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</td>
                                             <td>{{ booking.customer.get_full_name }}</td>
                                             <td>{{ booking.get_serviceType_display }}</td>
                                             <td>
@@ -320,7 +320,7 @@
                                                        data-bs-target="#viewBookingModal" 
                                                        data-booking-id="{{ booking.bookingId }}"
                                                        data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
-                                                       data-booking-time="{{ booking.startTime|to_business_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_business_timezone:user_timezone|date:'g:i A' }}"
+                                                       data-booking-time="{{ booking.startTime|to_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_timezone:user_timezone|date:'g:i A' }}"
                                                        data-booking-client="{{ booking.customer.get_full_name }}"
                                                        data-booking-phone="{{ booking.customer.phone_number }}"
                                                        data-booking-email="{{ booking.customer.email }}"
@@ -369,7 +369,7 @@
                                         {% for booking in past_bookings %}
                                         <tr>
                                             <td>{{ booking.cleaningDate|date:"M d, Y" }}</td>
-                                            <td>{{ booking.startTime|to_business_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_business_timezone:user_timezone|date:"h:i A" }}</td>
+                                            <td>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</td>
                                             <td>{{ booking.customer.get_full_name }}</td>
                                             <td>{{ booking.get_serviceType_display }}</td>
                                             <td>
@@ -383,7 +383,7 @@
                                                        data-bs-target="#viewBookingModal" 
                                                        data-booking-id="{{ booking.bookingId }}"
                                                        data-booking-date="{{ booking.cleaningDate|date:'M d, Y' }}"
-                                                       data-booking-time="{{ booking.startTime|to_business_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_business_timezone:user_timezone|date:'g:i A' }}"
+                                                       data-booking-time="{{ booking.startTime|to_timezone:user_timezone|date:'g:i A' }} - {{ booking.endTime|to_timezone:user_timezone|date:'g:i A' }}"
                                                        data-booking-client="{{ booking.customer.get_full_name }}"
                                                        data-booking-phone="{{ booking.customer.phone_number }}"
                                                        data-booking-email="{{ booking.customer.email }}"
@@ -519,7 +519,7 @@
                                             <input type="hidden" name="dayOfWeek[]" value="{{ availability.dayOfWeek }}">
                                             <div class="d-flex align-items-center gap-2">
                                                 <label class="form-label mb-0 text-muted small">From</label>
-                                                {% with start_time=availability.startTime|to_business_timezone:business_timezone %}
+                                                {% with start_time=availability.startTime|to_timezone:business_timezone %}
                                                 <input type="time" class="form-control form-control-sm" 
                                                        name="startTime[]" 
                                                        value="{{ start_time|time:'H:i' }}" 
@@ -528,7 +528,7 @@
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
                                                 <label class="form-label mb-0 text-muted small">To</label>
-                                                {% with end_time=availability.endTime|to_business_timezone:business_timezone %}
+                                                {% with end_time=availability.endTime|to_timezone:business_timezone %}
                                                 <input type="time" class="form-control form-control-sm" 
                                                        name="endTime[]" 
                                                        value="{{ end_time|time:'H:i' }}" 
@@ -548,8 +548,8 @@
                                                     {% if exception.offDay %}
                                                     <span>OFF DAY</span>
                                                     {% else %}
-                                                    {% with ex_start=exception.startTime|to_business_timezone:business_timezone %}
-                                                    {% with ex_end=exception.endTime|to_business_timezone:business_timezone %}
+                                                    {% with ex_start=exception.startTime|to_timezone:business_timezone %}
+                                                    {% with ex_end=exception.endTime|to_timezone:business_timezone %}
                                                     <span>{{ ex_start|time:"g:i A" }} - {{ ex_end|time:"g:i A" }}</span>
                                                     {% endwith %}
                                                     {% endwith %}

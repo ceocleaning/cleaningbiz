@@ -297,7 +297,7 @@
                                 </div>
                                 <div>
                                     <h6 class="mb-1">{{ activity.title|default:"Activity" }}</h6>
-                                    <small class="text-muted" data-utc-datetime="{{ activity.timestamp|date:'c' }}">{{ activity.timestamp|to_business_timezone }}</small>
+                                    <small class="text-muted" data-utc-datetime="{{ activity.timestamp|date:'c' }}">{{ activity.timestamp|to_timezone:user_timezone }}</small>
                                 </div>
                             </div>
                         </div>

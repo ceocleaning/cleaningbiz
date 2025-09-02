@@ -99,8 +99,9 @@
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-clock text-muted me-2"></i>
-                                <span>{{ booking.startTime|to_timezone:booking.cleaningDate booking.customer.timezone|time:"h:i A" }}</span> to 
-                                <span>{{ booking.endTime|to_timezone:booking.cleaningDate booking.customer.timezone|time:"h:i A" }}</span>
+                      
+                                <span>{% convert_and_format booking.startTime booking.cleaningDate booking.customer.timezone "%I:%M %p" %}</span> to 
+                                <span>{% convert_and_format booking.endTime booking.cleaningDate booking.customer.timezone "%I:%M %p" %}</span>
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-credit-card text-muted me-2"></i>
