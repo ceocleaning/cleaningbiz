@@ -34,6 +34,8 @@ def send_email(from_email, to_email, subject, reply_to=None, html_body='', text_
     try:
         return response.json()
     except ValueError:
+        print(response.text)
+        print(response.status_code)
         # Handle the case where the response is not valid JSON
         return {
             'success': False,
