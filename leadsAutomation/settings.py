@@ -284,7 +284,7 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https
 
 
 
-EMAIL_HOST_USER = "info@cleaningbizai.com"
+EMAIL_HOST_USER = "CleaningBiz AI <noreply@cleaningbizai.com>"
 
 
 # Retell Settings

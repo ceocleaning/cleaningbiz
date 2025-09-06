@@ -738,7 +738,7 @@ def approve_business(request):
             Best regards,
             The CleaningBiz AI Team
             """
-            from_email = settings.DEFAULT_FROM_EMAIL
+            from_email = settings.EMAIL_HOST_USER
             recipient_list = [business.user.email]
             send_mail(subject, message, from_email, recipient_list)
         except Exception as e:

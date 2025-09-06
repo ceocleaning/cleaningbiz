@@ -505,10 +505,12 @@
 </head>
 <body data-customer-timezone="{% if user.is_authenticated %}{{ user.customer.timezone|default:'UTC' }}{% else %}UTC{% endif %}">
     <div class="customer-layout">
+
+        {% if user.is_authenticated %}
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="{% url 'home' %}" class="sidebar-brand">
+                <a href="{% url 'customer:dashboard' %}" class="sidebar-brand">
                     <i class="fas fa-broom me-2"></i>
                     <span class="sidebar-brand-text">CleaningBiz</span>
                 </a>
@@ -588,17 +590,12 @@
                             <span class="sidebar-text">Sign Up</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="{% url 'home' %}" class="sidebar-link">
-                            <i class="fas fa-home sidebar-icon"></i>
-                            <span class="sidebar-text">Back to Home</span>
-                        </a>
-                    </li>
+                  
                     {% endif %}
                 </ul>
             </div>
         </aside>
-
+        {% endif %}
         <!-- Mobile Overlay -->
         <div class="mobile-overlay" id="mobileOverlay"></div>
 

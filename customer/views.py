@@ -236,8 +236,7 @@ def businesses_list(request):
     return render(request, 'customer/businesses_list.html', context)
 
 
-@login_required
-@customer_required
+
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def add_booking(request, business_id):
@@ -272,8 +271,10 @@ def add_booking(request, business_id):
             
             # Format phone number
             phone_number = request.POST.get('phoneNumber')
+            print(phone_number)
             if phone_number:
                 phone_number = format_phone_number(phone_number)
+                print(phone_number)
             
             if not phone_number:
                 messages.error(request, 'Please enter a valid phone number.')
@@ -363,7 +364,12 @@ def add_booking(request, business_id):
                     booking.customAddons.add(new_custom_booking_addon)
             
             messages.success(request, 'Booking created successfully!')
-            return redirect('customer:dashboard')
+            invoice = Invoice.objects.create(
+                    booking=booking,
+                    amount=booking.totalPrice,
+            )
+
+            return redirect('customer:dashboard') if request.user.is_authenticated else redirect('invoice:preview_invoice', invoice.invoiceId)
             
         except Exception as e:
             messages.error(request, f'Error creating booking: {str(e)}')

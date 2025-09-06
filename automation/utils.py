@@ -57,71 +57,7 @@ def sendEmailtoClientInvoice(invoice, business):
         
         # Create email subject and HTML body
         subject = f"Appointment Confirmation - {business.businessName}"
-        html_body = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Appointment Confirmation</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
-                .content {{ padding: 20px; background-color: #f9f9f9; }}
-                .details {{ margin: 20px 0; }}
-                .details table {{ width: 100%; border-collapse: collapse; }}
-                .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                .details table td:first-child {{ font-weight: bold; width: 40%; }}
-                .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
-                .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Appointment Confirmed!</h1>
-            </div>
-            <div class="content">
-                <p>Hello {booking.customer.first_name} {booking.customer.last_name},</p>
-                <p>Your appointment with {business.businessName} has been confirmed. Thank you for choosing our services!</p>
-                
-                <div class="details">
-                    <h3>Appointment Details:</h3>
-                    <table>
-                        <tr>
-                            <td>Date:</td>
-                            <td>{booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
-                        </tr>
-                        <tr>
-                            <td>Time:</td>
-                            <td>{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}</td>
-                        </tr>
-                        <tr>
-                            <td>Service Type:</td>
-                            <td>{booking.serviceType.title()} Cleaning</td>
-                        </tr>
-                        <tr>
-                            <td>Address:</td>
-                            <td>{booking.customer.get_address()}</td>
-                        </tr>
-                        <tr>
-                            <td>Total Amount:</td>
-                            <td>${invoice.amount:.2f}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <p>To view your invoice and make a payment, please click the button below:</p>
-                <a href="{invoice_link}" class="button">View Invoice</a>
-                
-                <p>If you have any questions or need to make changes to your appointment, please contact us.</p>
-                <p>We look forward to serving you!</p>
-            </div>
-            <div class="footer">
-                <p>&copy; {business.businessName}  | {business.user.email}</p>
-            </div>
-        </body>
-        </html>
-        """
+
         
         # Plain text alternative
         text_body = f"""Hello {booking.customer.first_name},
@@ -146,7 +82,6 @@ def sendEmailtoClientInvoice(invoice, business):
             to_email=recipient_email,
             reply_to=business.user.email,
             subject=subject,
-            html_body=html_body,
             text_content=text_body
         )
 

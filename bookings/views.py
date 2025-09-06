@@ -104,43 +104,47 @@ def customers(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
-    # Get all bookings for the user's business
-    bookings = Booking.objects.filter(business__user=request.user)
+    # Get the business for the current user
+    business = request.user.business_set.first()
     
-    # Dictionary to store unique customers
-    unique_customers = {}
+    # Get all unique customers who have bookings with this business
+    customers_with_bookings = Customer.objects.filter(
+        booking__business=business
+    ).distinct()
     
-    # Process bookings to extract unique customers by email or phone
-    for booking in bookings:
-        # Skip if no email and no phone
-        if not booking.customer.email and not booking.customer.phone_number:
-            continue
-            
-        # Create a unique key based on email or phone
-        key = booking.customer.email if booking.customer.email else booking.customer.phone_number
+    # Create a list to store customer data with booking statistics
+    customers_list = []
+    
+    for customer in customers_with_bookings:
+        # Get all bookings for this customer with this business
+        customer_bookings = Booking.objects.filter(
+            business=business,
+            customer=customer
+        )
         
-        if key not in unique_customers:
-            # First occurrence - create new customer entry
-            unique_customers[key] = {
-                'firstName': booking.customer.first_name,
-                'lastName': booking.customer.last_name,
-                'email': booking.customer.email,
-                'phoneNumber': booking.customer.phone_number,
-                'joinedDate': booking.createdAt,
-                'bookingCount': 1,
-                'totalSpent': booking.totalPrice,
-                'identifier': key  # Store identifier for linking to detail page
-            }
-        else:
-            # Update existing customer with additional booking info
-            unique_customers[key]['bookingCount'] += 1
-            unique_customers[key]['totalSpent'] += booking.totalPrice
-            # Keep the earliest created date as joined date
-            if booking.createdAt < unique_customers[key]['joinedDate']:
-                unique_customers[key]['joinedDate'] = booking.createdAt
-    
-    # Convert dictionary to list for template
-    customers_list = list(unique_customers.values())
+        # Calculate statistics
+        booking_count = customer_bookings.count()
+        total_spent = sum(booking.totalPrice for booking in customer_bookings)
+        
+        # Get the earliest booking date as joined date
+        first_booking = customer_bookings.order_by('createdAt').first()
+        joined_date = first_booking.createdAt if first_booking else customer.created_at
+        
+        # Create identifier for customer detail page
+        identifier = customer.email if customer.email else customer.phone_number
+        
+        # Add customer to the list
+        customers_list.append({
+            'firstName': customer.first_name,
+            'lastName': customer.last_name,
+            'email': customer.email,
+            'phoneNumber': customer.phone_number,
+            'joinedDate': joined_date,
+            'bookingCount': booking_count,
+            'totalSpent': total_spent,
+            'identifier': identifier,
+            'customer_id': customer.id  # Include customer ID for direct reference
+        })
     
     # Sort customers by joined date (newest first)
     customers_list.sort(key=lambda x: x['joinedDate'], reverse=True)
@@ -158,22 +162,35 @@ def customer_detail(request, identifier):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
+    business = request.user.business_set.first()
+    
     # Determine if identifier is an email or phone
     if '@' in identifier:
         # It's an email
-        bookings = Booking.objects.filter(business__user=request.user, customer__email=identifier).order_by('-createdAt')
-        identifier_type = 'email'
+        try:
+            customer = Customer.objects.get(email=identifier)
+            identifier_type = 'email'
+        except Customer.DoesNotExist:
+            messages.error(request, 'Customer not found.')
+            return redirect('bookings:customers')
     else:
         # It's a phone number
-        bookings = Booking.objects.filter(business__user=request.user, customer__phone_number=identifier).order_by('-createdAt')
-        identifier_type = 'phone'
+        try:
+            customer = Customer.objects.get(phone_number=identifier)
+            identifier_type = 'phone'
+        except Customer.DoesNotExist:
+            messages.error(request, 'Customer not found.')
+            return redirect('bookings:customers')
+    
+    # Get all bookings for this customer with this business
+    bookings = Booking.objects.filter(
+        business=business,
+        customer=customer
+    ).order_by('-createdAt')
     
     if not bookings.exists():
-        messages.error(request, 'Customer not found.')
+        messages.error(request, 'No bookings found for this customer with your business.')
         return redirect('bookings:customers')
-    
-    # Get customer details from the most recent booking
-    most_recent_booking = bookings.first()
     
     # Calculate statistics
     total_spent = sum(booking.totalPrice for booking in bookings)
@@ -182,7 +199,7 @@ def customer_detail(request, identifier):
     
     # Find the first booking to determine join date
     first_booking = bookings.order_by('createdAt').first()
-    join_date = first_booking.createdAt if first_booking else None
+    join_date = first_booking.createdAt if first_booking else customer.created_at
     
     # Service type distribution
     service_stats = {}
@@ -193,16 +210,24 @@ def customer_detail(request, identifier):
         else:
             service_stats[service_type] = 1
     
+    # Get company name from most recent booking if available
+    most_recent_booking = bookings.first()
+    company_name = most_recent_booking.companyName if most_recent_booking and hasattr(most_recent_booking, 'companyName') else ''
+    
     context = {
         'customer': {
-            'firstName': most_recent_booking.customer.first_name,
-            'lastName': most_recent_booking.customer.last_name,
-            'email': most_recent_booking.customer.email,
-            'phoneNumber': most_recent_booking.customer.phone_number,
-            'companyName': most_recent_booking.companyName,
+            'firstName': customer.first_name,
+            'lastName': customer.last_name,
+            'email': customer.email,
+            'phoneNumber': customer.phone_number,
+            'companyName': company_name,
             'joinDate': join_date,
             'identifier': identifier,
-            'identifier_type': identifier_type
+            'identifier_type': identifier_type,
+            'address': customer.address,
+            'city': customer.city,
+            'state': customer.state_or_province,
+            'zipCode': customer.zip_code
         },
         'bookings': bookings,
         'stats': {
@@ -337,10 +362,7 @@ def create_booking(request):
                     )
                     booking.customAddons.add(newCustomBookingAddon)
             
-            from .utils import send_jobs_to_cleaners
-
-            send_jobs_to_cleaners(business, booking)
-
+          
 
 
             messages.success(request, 'Booking created successfully!')

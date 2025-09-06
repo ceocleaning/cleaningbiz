@@ -26,94 +26,28 @@ def send_payment_reminder(booking_id):
             business = booking.business
             # Prepare message content
             email_subject = f"Urgent: Complete Your Payment for {business.businessName} Booking"
-            # Create HTML email body
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Payment Reminder</title>
-                <style>
-                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .header {{ background-color: #e74c3c; color: white; padding: 20px; text-align: center; }}
-                        .content {{ padding: 20px; background-color: #f9f9f9; }}
-                        .warning {{ color: #e74c3c; font-weight: bold; }}
-                        .details {{ margin: 20px 0; }}
-                        .details table {{ width: 100%; border-collapse: collapse; }}
-                        .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                        .details table td:first-child {{ font-weight: bold; width: 40%; }}
-                        .button {{ display: inline-block; background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
-                        .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Payment Reminder</h1>
-                    </div>
-                    <div class="content">
-                        <p>Hello {booking.customer.get_full_name()},</p>
-                        <p>We noticed that you haven't completed the payment for your cleaning service with {business.businessName}.</p>
-                        
-                        <p class="warning">⚠️ Important: Your booking slot will be released if payment is not received within the next hour.</p>
-                        
-                        <div class="details">
-                            <h3>Booking Details:</h3>
-                            <table>
-                                <tr>
-                                    <td>Service:</td>
-                                    <td>{booking.get_serviceType_display()}</td>
-                                </tr>
-                                <tr>
-                                    <td>Date:</td>
-                                    <td>{booking.cleaningDate if isinstance(booking.cleaningDate, str) else booking.cleaningDate.strftime('%A, %B %d, %Y')}</td>
-                                </tr>
-                                <tr>
-                                    <td>Time:</td>
-                                    <td>{booking.startTime if isinstance(booking.startTime, str) else booking.startTime.strftime('%I:%M %p')} - {booking.endTime if isinstance(booking.endTime, str) else booking.endTime.strftime('%I:%M %p')}</td>
-                                </tr>
-                                <tr>
-                                    <td>Amount Due:</td>
-                                    <td>${booking.totalPrice:.2f}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        <p>To secure your booking, please complete your payment by clicking the button below:</p>
-                        
-                        <a href="{settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/" class="button">Complete Payment Now</a>
-                        
-                        <p>If you have any questions or need assistance, please contact us at {business.user.email or business.phone}.</p>
-                    </div>
-                    <div class="footer">
-                        <p>This is an automated message from {business.businessName}.</p>
-                    </div>
-                </body>
-                </html> 
-                """                      
-                 
-            # Plain text version
+            # Create plain text email body
             text_body = f"""
-            PAYMENT REMINDER - {business.businessName}
-            
-            Hello {booking.customer.get_full_name()},
-                
-            We noticed that you haven't completed the payment for your cleaning service with {business.businessName}.
-                
-            IMPORTANT: Your booking slot will be released if payment is not received within the next hour.
-                
-            Booking Details:
-            - Service: {booking.get_serviceType_display()}
-            - Date: {booking.cleaningDate if isinstance(booking.cleaningDate, str) else booking.cleaningDate.strftime('%A, %B %d, %Y')}
-            - Time: {booking.startTime if isinstance(booking.startTime, str) else booking.startTime.strftime('%I:%M %p')} - {booking.endTime if isinstance(booking.endTime, str) else booking.endTime.strftime('%I:%M %p')}
-            - Amount Due: ${booking.totalPrice:.2f}
-                
-            To secure your booking, please complete your payment here:
-            {settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/
-                
-            If you have any questions, please contact us at {business.user.email or business.phone}.
-                
-            This is an automated message from {business.businessName}.
+PAYMENT REMINDER - {business.businessName}
+
+Hello {booking.customer.get_full_name()},
+
+We noticed that you haven't completed the payment for your cleaning service with {business.businessName}.
+
+IMPORTANT: Your booking slot will be released if payment is not received within the next hour.
+
+Booking Details:
+- Service: {booking.get_serviceType_display()}
+- Date: {booking.cleaningDate if isinstance(booking.cleaningDate, str) else booking.cleaningDate.strftime('%A, %B %d, %Y')}
+- Time: {booking.startTime if isinstance(booking.startTime, str) else booking.startTime.strftime('%I:%M %p')} - {booking.endTime if isinstance(booking.endTime, str) else booking.endTime.strftime('%I:%M %p')}
+- Amount Due: ${booking.totalPrice:.2f}
+
+To secure your booking, please complete your payment here:
+{settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/
+
+If you have any questions, please contact us at {business.user.email or business.phone}.
+
+This is an automated message from {business.businessName}.
             """
             # Send email
             try:
@@ -128,7 +62,6 @@ def send_payment_reminder(booking_id):
                     to_email=recipient_email,
                     reply_to=business.user.email,
                     subject=email_subject,
-                    html_body=html_body,
                     text_content=text_body
                 )
                     
@@ -216,13 +149,14 @@ def delete_unpaid_bookings():
                     # Email notification
                     subject = f"Booking Cancelled - {business.businessName}"
                     message = f"""
-                    Hello {booking.customer.get_full_name()},
-                    
-                    Your booking with {business.businessName} for {booking.cleaningDate.strftime('%A, %B %d, %Y')} 
-                    at {booking.startTime.strftime('%I:%M %p')} has been cancelled due to non-payment.
-                    
-                    Thank you,
-                    {business.businessName}
+BOOKING CANCELLED
+
+Hello {booking.customer.get_full_name()},
+
+Your booking with {business.businessName} for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')} has been cancelled due to non-payment.
+
+Thank you,
+{business.businessName}
                     """
                     
                     # Send email
@@ -233,7 +167,6 @@ def delete_unpaid_bookings():
                         to_email=booking.customer.email,
                         reply_to=business.email,
                         subject=subject,
-                        html_body=message,
                         text_content=message
                     )
                 except Exception as e:
@@ -285,7 +218,7 @@ def send_day_before_reminder():
             # Prepare email content
             email_subject = f"Reminder: Your Cleaning Service with {business.businessName} Tomorrow"
             for to in to_whom:
-                html_body = get_email_template(booking, to=to, when='tomorrow')
+                email_text = get_email_template(booking, to=to, when='tomorrow')
                 recipient_email = booking.customer.email if to == 'client' else booking.cleaner.email
 
                 from_email = f"{business.businessName} <{business.user.email}>"
@@ -296,7 +229,7 @@ def send_day_before_reminder():
                     to_email=recipient_email,
                     reply_to=business.user.email,
                     subject=email_subject,
-                    html_body=html_body,
+                    text_content=email_text,
                 )
 
             # Send SMS (unchanged)
@@ -379,7 +312,7 @@ def send_hour_before_reminder():
             to_whom = ['client', 'cleaner'] 
             for to in to_whom:
                 email_subject = f"Your {business.businessName} Cleaning Service Is Coming Soon"
-                html_body = get_email_template(booking, to=to, when='in one hour')
+                email_text = get_email_template(booking, to=to, when='in one hour')
                 recipient_email = booking.customer.email if to == 'client' else booking.cleaner.email
              
 
@@ -391,7 +324,7 @@ def send_hour_before_reminder():
                     to_email=recipient_email,
                     reply_to=business.user.email,
                     subject=email_subject,
-                    html_body=html_body
+                    email_text=email_text
                 )
 
             
@@ -474,85 +407,29 @@ def send_post_service_followup():
             # Prepare email content
             email_subject = f"How was your experience with {business.businessName}?"
             
-            # Create HTML email body
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Service Follow-up</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background-color: #9b59b6; color: white; padding: 20px; text-align: center; }}
-                    .content {{ padding: 20px; background-color: #f9f9f9; }}
-                    .details {{ margin: 20px 0; }}
-                    .feedback {{ background-color: #f0e6f6; padding: 15px; border-radius: 5px; margin: 20px 0; }}
-                    .button {{ display: inline-block; background-color: #9b59b6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 10px; }}
-                    .future {{ background-color: #e8f4fb; padding: 15px; border-radius: 5px; margin-top: 20px; }}
-                    .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Thank You for Your Business</h1>
-                </div>
-                <div class="content">
-                    <p>Hello {booking.customer.get_full_name()},</p>
-                    <p>Thank you for choosing {business.businessName} for your cleaning needs. We hope our service met your expectations.</p>
-                    
-                    <div class="details">
-                        <h3>Your Recent Service:</h3>
-                        <p>
-                            <strong>Date:</strong> {booking.cleaningDate.strftime('%A, %B %d, %Y')}<br>
-                            <strong>Service:</strong> {booking.get_serviceType_display()}
-                        </p>
-                    </div>
-                    
-                    <div class="feedback">
-                        <h3>We'd Love Your Feedback</h3>
-                        <p>Your feedback is important to us and helps us improve our service. Could you take a moment to let us know how we did?</p>
-                        <a href="{settings.BASE_URL}/feedback/{booking.bookingId}/" class="button">Share Your Feedback</a>
-                    </div>
-                    
-                    <div class="future">
-                        <h3>Schedule Your Next Cleaning</h3>
-                        <p>Would you like to schedule your next cleaning service? Simply click below to book your preferred date and time.</p>
-                        <a href="{settings.BASE_URL}/book/{business.businessId}/" class="button" style="background-color: #2ecc71;">Book Again</a>
-                    </div>
-                    
-                    <p>If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message from {business.businessName}.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text version
+            # Create plain text email body
             text_body = f"""
-            THANK YOU FOR YOUR BUSINESS - {business.businessName}
-            
-            Hello {booking.customer.get_full_name()},
-            
-            Thank you for choosing {business.businessName} for your cleaning needs. We hope our service met your expectations.
-            
-            Your Recent Service:
-            - Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-            - Service: {booking.get_serviceType_display()}
-            
-            We'd Love Your Feedback
-            Your feedback is important to us and helps us improve our service. Could you take a moment to let us know how we did?
-            {settings.BASE_URL}/feedback/{booking.bookingId}/
-            
-            Schedule Your Next Cleaning
-            Would you like to schedule your next cleaning service? Visit the link below to book your preferred date and time.
-            {settings.BASE_URL}/book/{business.businessId}/
-            
-            If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.
-            
-            This is an automated message from {business.businessName}.
+THANK YOU FOR YOUR BUSINESS - {business.businessName}
+
+Hello {booking.customer.get_full_name()},
+
+Thank you for choosing {business.businessName} for your cleaning needs. We hope our service met your expectations.
+
+YOUR RECENT SERVICE:
+- Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
+- Service: {booking.get_serviceType_display()}
+
+WE'D LOVE YOUR FEEDBACK
+Your feedback is important to us and helps us improve our service. Could you take a moment to let us know how we did?
+{settings.BASE_URL}/feedback/{booking.bookingId}/
+
+SCHEDULE YOUR NEXT CLEANING
+Would you like to schedule your next cleaning service? Visit the link below to book your preferred date and time.
+{settings.BASE_URL}/book/{business.businessId}/
+
+If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.
+
+This is an automated message from {business.businessName}.
             """
             
             # Send email
@@ -565,8 +442,7 @@ def send_post_service_followup():
                     to_email=recipient_email,
                     reply_to=business.user.email,
                     subject=email_subject,
-                    text_body=text_body,
-                    html_body=html_body
+                    text_content=text_body
                 )
 
             except Exception as e:

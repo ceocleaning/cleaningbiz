@@ -419,7 +419,7 @@ def check_availability_for_booking(request):
             print("Invalid timezone")
             datetime_to_check = local_datetime
         
-        if hasattr(request.user, 'customer') and request.user.customer:
+        if hasattr(request.user, 'customer') and request.user.customer or not request.user.is_authenticated:
             print(request.GET.get("businessId"))
             business_id = request.GET.get("businessId")
             current_business = Business.objects.get(businessId=business_id)
@@ -734,43 +734,7 @@ def sendCommercialFormLink(request):
         # Email content
         subject = f"Commercial Cleaning Quote Request - {business.businessName}"
         
-        # HTML content
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Commercial Cleaning Quote</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
-                .content {{ padding: 20px; background-color: #f9f9f9; }}
-                .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
-                .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Commercial Cleaning Quote</h1>
-            </div>
-            <div class="content">
-                <p>Hello, {name}</p>
-                <p>Thank you for your interest in commercial cleaning services from {business.businessName}.</p>
-                <p>To provide you with an accurate quote for your commercial space, we need some additional information about your requirements.</p>
-                <p>Please click the button below to fill out our commercial cleaning questionnaire:</p>
-                <a href="{form_link}" class="button">Complete Commercial Form</a>
-                <p>Once we receive your information, our team will review your requirements and provide you with a customized quote.</p>
-                <p>If you have any questions, please don't hesitate to contact us.</p>
-                <p>Best regards,</p>
-                <p>The {business.businessName} Team</p>
-            </div>
-            <div class="footer">
-                <p>&copy; {business.businessName} | {business.user.email}</p>
-            </div>
-        </body>
-        </html>
-        """
+    
         
         # Plain text content
         text_content = f"""Hello {name},
@@ -794,7 +758,6 @@ def sendCommercialFormLink(request):
 
         send_email(
             subject=subject,
-            html_body=html_content,
             text_content=text_content,
             from_email=f"{business.businessName} <{business.user.email}>",
             to_email=email,

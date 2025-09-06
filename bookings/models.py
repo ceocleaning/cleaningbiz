@@ -88,6 +88,11 @@ class Booking(models.Model):
     totalPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
+    tip = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+
+    
+
     # cancelled
     cancelled_at = models.DateTimeField(null=True, blank=True)
     
@@ -170,9 +175,9 @@ class Booking(models.Model):
     
 
     def get_cleaner_payout(self):
-        # TODO: Implement proper cleaner payment calculation
-        # This is a placeholder until the proper payment system is implemented
-        return 0.0
+        payout = float(self.totalPrice * self.business.cleaner_payout_percentage / 100)
+
+        return payout
 
 
         

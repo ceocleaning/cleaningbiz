@@ -52,6 +52,13 @@ class Payment(models.Model):
      
     ]
 
+    PAYMENT_TYPE_CHOICES = [
+        ('partial', 'Partial Payment'),
+        ('full', 'Full Payment'),
+        ('authorized', 'Authorized Payment')
+    ]
+
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, null=True, blank=True)
     paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)  # Our Own ID
     invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name='payment_details')
     amount = models.IntegerField(default=0)
@@ -75,6 +82,7 @@ class Payment(models.Model):
         prefix = "pay"
         id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
+    
     
     def compress_image(self, image_field):
         if image_field:

@@ -26,20 +26,20 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
                     amount=total_amount,
                 )
 
-                # Schedule to Django-Q scheduler
-                schedule(
-                    'bookings.tasks.send_payment_reminder',  
-                    instance.bookingId,  
-                    schedule_type='O',
-                    next_run=timezone.now() + timedelta(hours=2),
-                )
+            # Schedule to Django-Q scheduler
+            schedule(
+                'bookings.tasks.send_payment_reminder',  
+                instance.bookingId,  
+                schedule_type='O',
+                next_run=timezone.now() + timedelta(hours=2),
+            )
 
-                
-                # Schedule recurring tasks if not already scheduled
-                schedule_delete_unpaid_bookings()
-                schedule_day_before_reminder()
-                schedule_hour_before_reminder()
-                schedule_post_service_followup()
+            
+            # Schedule recurring tasks if not already scheduled
+            schedule_delete_unpaid_bookings()
+            schedule_day_before_reminder()
+            schedule_hour_before_reminder()
+            schedule_post_service_followup()
                 
         except Exception as e:
             logger.error(f"Error creating invoice for booking {instance.bookingId}: {str(e)}")

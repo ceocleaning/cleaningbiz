@@ -132,7 +132,8 @@
                                 <td class="text-end text-md-start">
                                     <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
                                         <!-- View button always visible -->
-                                        <a href="{% url 'invoice:invoice_detail' invoice.invoiceId %}" 
+                                        <a 
+                                        href="{% if request.user.customer %}{% url 'invoice:invoice_preview' invoice.invoiceId %}{% else %}{% url 'invoice:invoice_detail' invoice.invoiceId %}{% endif %}" 
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip" 
                                            data-bs-title="View invoice details">

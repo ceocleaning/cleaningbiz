@@ -41,6 +41,8 @@ class Business(models.Model):
 
     job_assignment = models.CharField(max_length=255, null=True, blank=True, help_text="Job assignment method", choices=JOB_ASSIGNMENT_OPTIONS, default='all_available')
 
+    cleaner_payout_percentage = models.IntegerField(default=0, null=True, blank=True)
+
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
 

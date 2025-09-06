@@ -466,14 +466,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         except Exception as e:
             print(f"[ERROR] Failed to update chat summary with booking ID: {str(e)}")
             
-        # Send jobs to cleaners
-        try:
-            
-            send_jobs_to_cleaners(business, newBooking)
-            print(f"[INFO] Jobs sent to cleaners for booking {newBooking.bookingId}")
-        except Exception as e:
-            print(f"[ERROR] Failed to send jobs to cleaners: {str(e)}")
-            traceback.print_exc()
+      
         
         # Return success response
         return {
@@ -609,46 +602,25 @@ def reschedule_appointment(booking, new_date_time):
         appointment_date = local_datetime.strftime("%A, %B %d, %Y")
         appointment_time = local_datetime.strftime("%I:%M %p")
         
-        # Create HTML email
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 3px solid #007bff;">
-                <h2 style="color: #007bff; margin: 0;">Appointment Rescheduled</h2>
-            </div>
-            
-            <div style="padding: 20px;">
-                <p>Dear {booking.customer.first_name},</p>
-                
-                <p>Your appointment with <strong>{business.businessName}</strong> has been successfully rescheduled.</p>
-                
-                <div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #007bff;">New Appointment Details</h3>
-                    <p><strong>Service:</strong> {booking.serviceType}</p>
-                    <p><strong>Date:</strong> {appointment_date}</p>
-                    <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
-                    <p><strong>Booking ID:</strong> {booking.bookingId}</p>
-                </div>
-                
-                <p>If you need to make any changes to your appointment, please contact us as soon as possible.</p>
-                
-                <p>Thank you for choosing {business.businessName}!</p>
-                
-                <p>Best regards,<br>
-                The {business.businessName} Team</p>
-            </div>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
-                <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.user.email}</p>
-            </div>
-        </body>
-        </html>
-        """
+
         
         # Create plain text version
-        text_content = strip_tags(html_content)
+        text_content = f"""
+        Dear {booking.customer.first_name},
+        Your appointment with {business.businessName} has been successfully rescheduled.
+
+        Service Details:
+        Service Type: {booking.serviceType}
+        Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
+        Time: {booking.startTime.strftime('%I:%M %p')}
+        Location: {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}
+
+        New Date and Time: {new_date_time.strftime('%A, %B %d, %Y %I:%M %p')}
+
+        If you need to make any changes to your appointment, please contact us at {business.user.email}.
+
+        Thank you for choosing {business.businessName}!
+        """
 
       
         send_email(
@@ -656,7 +628,6 @@ def reschedule_appointment(booking, new_date_time):
             to_email=recipient_email,
             reply_to=business.user.email,
             subject=subject,
-            html_body=html_content,
             text_content=text_content
         )
 
@@ -702,53 +673,27 @@ def send_cancel_email(booking):
         appointment_date = local_datetime.strftime("%A, %B %d, %Y")
         appointment_time = local_datetime.strftime("%I:%M %p")
         
-        # Create HTML email
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 3px solid #dc3545;">
-                <h2 style="color: #dc3545; margin: 0;">Appointment Canceled</h2>
-            </div>
-            
-            <div style="padding: 20px;">
-                <p>Dear {booking.customer.first_name},</p>
-                
-                <p>Your appointment with <strong>{business.businessName}</strong> has been canceled as requested.</p>
-                
-                <div style="background-color: #f8f9fa; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #dc3545;">Canceled Appointment Details</h3>
-                    <p><strong>Service:</strong> {booking.serviceType}</p>
-                    <p><strong>Date:</strong> {appointment_date}</p>
-                    <p><strong>Time:</strong> {appointment_time}</p>
-                    <p><strong>Location:</strong> {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}</p>
-                    <p><strong>Booking ID:</strong> {booking.bookingId}</p>
-                </div>
-                
-                <p>If you would like to schedule a new appointment, please contact us at your convenience.</p>
-                
-                <p>Thank you for considering {business.businessName}. We hope to serve you in the future!</p>
-                
-                <p>Best regards,<br>
-                The {business.businessName} Team</p>
-            </div>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #dee2e6;">
-                <p>This is an automated message. Please do not reply to this email.</p>
-                <p>If you have any questions, please contact us at {business.user.email}</p>
-            </div>
-        </body>
-        </html>
-        """
+
         
         # Create plain text version
-        text_content = strip_tags(html_content)
+        text_content = f"""
+        Dear {booking.customer.first_name},
+        Your appointment with {business.businessName} has been canceled.
+        
+        Service Details:
+        Service Type: {booking.serviceType}
+        Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
+        Time: {booking.startTime.strftime('%I:%M %p')}
+        Location: {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}
+        
+        Thank you for choosing {business.businessName}!
+        """
         
         send_email(
             from_email=from_name,
             to_email=recipient_email,
             reply_to=business.user.email,
             subject=subject,
-            html_body=html_content,
             text_content=text_content
         )
 
