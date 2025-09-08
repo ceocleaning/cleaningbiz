@@ -506,13 +506,14 @@
 <body data-customer-timezone="{% if user.is_authenticated %}{{ user.customer.timezone|default:'UTC' }}{% else %}UTC{% endif %}">
     <div class="customer-layout">
 
-        {% if user.is_authenticated %}
-        <!-- Sidebar -->
+       
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="{% url 'customer:dashboard' %}" class="sidebar-brand">
                     <i class="fas fa-broom me-2"></i>
-                    <span class="sidebar-brand-text">CleaningBiz</span>
+                    <span class="sidebar-brand-text">
+                        CleaningBiz AI
+                    </span>
                 </a>
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
@@ -595,7 +596,7 @@
                 </ul>
             </div>
         </aside>
-        {% endif %}
+
         <!-- Mobile Overlay -->
         <div class="mobile-overlay" id="mobileOverlay"></div>
 
@@ -656,7 +657,7 @@
     <div class="toast-container">
         {% if messages %}
             {% for message in messages %}
-                <div class="toast show bg-{{ message.tags|default:'info' }} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast show bg-{{ message.tags|default:'info' }} {% if message.tags == 'error' %}bg-danger{% endif %} text-white" role="alert" aria-live="assertive" aria-atomic="true">
                     <div class="toast-body d-flex align-items-center">
                         {% if message.tags == 'success' %}
                             <i class="fas fa-check-circle me-2"></i>

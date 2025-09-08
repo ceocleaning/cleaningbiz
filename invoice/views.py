@@ -43,9 +43,9 @@ def all_invoices(request):
         base_template = 'base.html'
         invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
     
-    pending_invoices = invoices.filter(isPaid=False, payment_details__isnull=True)
-    paid_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status__in=['COMPLETED', 'APPROVED'])
-    authorized_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='AUTHORIZED')
+    pending_invoices = invoices.filter(isPaid=False, payments__isnull=True)
+    paid_invoices = invoices.filter(isPaid=True, payments__status__in=['COMPLETED', 'APPROVED'])
+    authorized_invoices = invoices.filter(isPaid=True, payments__status='AUTHORIZED')
    
     context = {
         'invoices': invoices,
@@ -199,8 +199,8 @@ def mark_invoice_paid(request, invoiceId):
         )
         
         invoice.isPaid = True
-        invoice.payment_details = payment
         invoice.save()
+        # The payment will update the invoice status through its save method
         
         messages.success(request, f'Invoice {invoice.invoiceId} marked as paid successfully!')
         return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
@@ -288,7 +288,7 @@ def generate_pdf(request, invoiceId):
         [Paragraph('<b>Due Date:</b>', styles['Normal']), 
          Paragraph(f"{(invoice.createdAt + timezone.timedelta(days=30)).strftime('%B %d, %Y')}", styles['Normal']),
          Paragraph('<b>Payment Date:</b>', styles['Normal']), 
-         Paragraph(f"{invoice.payment_details.paidAt.strftime('%B %d, %Y') if invoice.isPaid and hasattr(invoice.payment_details, 'paidAt') and invoice.payment_details.paidAt else 'Not Paid Yet'}", styles['Normal'])]
+         Paragraph(f"{invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).first().paidAt.strftime('%B %d, %Y') if invoice.isPaid and invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).exists() and invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).first().paidAt else 'Not Paid Yet'}", styles['Normal'])]
     ]
     
     details_table = Table(details_data, colWidths=[doc.width/8.0, doc.width*3/8.0, doc.width/8.0, doc.width*3/8.0])
@@ -493,10 +493,32 @@ def manual_payment(request, invoice_id):
             screen_shot = request.FILES.get('screen_shot')
             from_account_number = request.POST.get('from_account_number')
             from_bank_name = request.POST.get('from_bank_name')
-
+            payment_type = request.POST.get('payment_type', 'full')
+            
+            # Determine payment amount based on payment type
+            if payment_type == 'partial':
+                # Get the amount from the form for partial payment
+                try:
+                    amount = float(request.POST.get('amount', 0))
+                    if amount <= 0:
+                        messages.error(request, 'Payment amount must be greater than zero.')
+                        return redirect('invoice:invoice_preview', invoice.invoiceId)
+                    
+                    # Make sure partial payment doesn't exceed the remaining amount
+                    remaining = invoice.get_remaining_amount()
+                    if amount > remaining:
+                        amount = remaining
+                except (ValueError, TypeError):
+                    messages.error(request, 'Invalid payment amount.')
+                    return redirect('invoice:invoice_preview', invoice.invoiceId)
+            else:
+                # For full payment, use the remaining amount
+                amount = invoice.get_remaining_amount()
+            
             payment = Payment.objects.create(
                 invoice=invoice,
-                amount=invoice.amount,
+                amount=amount,
+                payment_type=payment_type,
                 paymentMethod='bank_transfer',
                 transactionId=transaction_id,
                 fromAccountNumber=from_account_number,
@@ -505,8 +527,10 @@ def manual_payment(request, invoice_id):
                 status='SUBMITTED'
             )
             
-      
-            messages.success(request, f'Bank Transfer Payment Submitted Successfully! Please wait for approval.')
+            # Update the invoice payment status
+            invoice.update_payment_status()
+            
+            messages.success(request, f'Bank Transfer Payment of ${amount:.2f} Submitted Successfully! Please wait for approval.')
             return redirect('invoice:invoice_preview', invoice.invoiceId)
 
         return redirect('invoice:invoice_preview', invoice.invoiceId)
@@ -523,13 +547,14 @@ def manual_payment(request, invoice_id):
 
 
 
-def approve_payment(request, invoice_id):
+def approve_payment(request, invoice_id, payment_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
-        payment = invoice.payment_details
-        payment.status = 'APPROVED'
-        invoice.isPaid = True
-        payment.save()
+        payment = invoice.payments.get(paymentId=payment_id)
+        if payment:
+            payment.status = 'APPROVED'
+            payment.save()
+            # The payment save method will update the invoice status
         invoice.save()
         messages.success(request, f'Payment approved successfully!')
         return redirect('invoice:invoice_detail', invoice.invoiceId)
@@ -542,12 +567,13 @@ def approve_payment(request, invoice_id):
         raise Exception(f"Error approving payment: {str(e)}")
 
 
-def reject_payment(request, invoice_id):
+def reject_payment(request, invoice_id, payment_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
-        payment = invoice.payment_details
-        payment.status = 'REJECTED'
-        payment.save()
+        payment = invoice.payments.get(paymentId=payment_id)
+        if payment:
+            payment.status = 'REJECTED'
+            payment.save()
         messages.success(request, f'Payment rejected successfully!')
         return redirect('invoice:invoice_detail', invoice.invoiceId)
     except Invoice.DoesNotExist:

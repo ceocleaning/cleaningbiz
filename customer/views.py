@@ -244,18 +244,26 @@ def add_booking(request, business_id):
     View to handle booking creation for customers
     """
     # Get business ID from URL parameter
+    if request.user.is_authenticated and not hasattr(request.user, 'customer'):
+        redirect_url = request.GET.get('next', '')
+    else:
+        redirect_url = ''
+
     business = get_object_or_404(Business, businessId=business_id, isApproved=True, isActive=True)
+    if request.user.is_authenticated and not hasattr(request.user, 'customer'):
+        messages.error(request, 'You must be a customer to book a cleaning service.')
+        return redirect(redirect_url if redirect_url else 'home')
     
     if not business:
         messages.error(request, 'Business not found')
-        return redirect('customer:businesses_list')
+        return redirect(redirect_url if redirect_url else 'customer:businesses_list')
     
     # Get business settings for pricing
     try:
         business_settings = BusinessSettings.objects.get(business=business)
     except BusinessSettings.DoesNotExist:
         messages.error(request, 'Business settings not found')
-        return redirect('customer:businesses_list')
+        return redirect(redirect_url if redirect_url else 'customer:businesses_list')
     
     # Get custom add-ons for this business
     custom_addons = CustomAddons.objects.filter(business=business)

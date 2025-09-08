@@ -252,6 +252,8 @@ def create_booking(request):
     from datetime import datetime, timedelta
     import pytz
     from bookings.timezone_utils import convert_local_to_utc
+
+    redirect_url = request.GET.get('next')
     
     business = Business.objects.get(user=request.user)
     business_settings = BusinessSettings.objects.get(business=business)
@@ -276,9 +278,7 @@ def create_booking(request):
             cleaningDate = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
 
-            print(f"cleaningDate: {cleaningDate}")
-            print(f"start_time: {start_time}")
-           
+
 
             # Convert cleaning date and time from business timezone to UTC
             start_time_utc = convert_local_to_utc(
@@ -289,8 +289,7 @@ def create_booking(request):
 
             end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
 
-            print(f"start_time_utc: {start_time_utc}")
-            print(f"end_time_utc: {end_time_utc}")
+
 
             customer_email = request.POST.get('email')
             try:
@@ -366,15 +365,15 @@ def create_booking(request):
 
 
             messages.success(request, 'Booking created successfully!')
-            return redirect('bookings:booking_detail', bookingId=booking.bookingId)
+            return redirect(redirect_url if redirect_url else 'bookings:booking_detail', bookingId=booking.bookingId)
         
         except Business.DoesNotExist:
             messages.error(request, 'Business not found')
-            return redirect('bookings:all_bookings')
+            return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
             
         except Exception as e:
             messages.error(request, f'Error creating booking: {str(e)}')
-            return redirect('bookings:all_bookings')
+            return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
     
     
     prices = {

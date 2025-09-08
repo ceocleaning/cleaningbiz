@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import pytz
+from django.urls import reverse
 
 
 User = get_user_model()
@@ -117,6 +118,13 @@ class Business(models.Model):
     def get_local_time(self):
         """Get current time in business's timezone"""
         return timezone.now().astimezone(self.get_timezone())
+    
+
+    def get_booking_page_url(self):
+        """Returns the URL for the customer booking page."""
+        return reverse('customer:add_booking', kwargs={'business_id': self.businessId})
+
+
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
