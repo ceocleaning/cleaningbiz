@@ -25,6 +25,7 @@ def process_payment(request):
         auto_complete = data.get('autoComplete', True)
         payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
         amount = float(data.get('amount', 0))  # Amount for partial payment
+        tip_amount = float(data.get('tipAmount', 0))  # Tip amount
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
@@ -72,15 +73,23 @@ def process_payment(request):
         # Create unique idempotency key
         idempotency_key = f"INVOICE_{invoice.invoiceId}_{timezone.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
 
+        # For partial payments, we need to handle tips differently
+        # Tips should be paid in full with the first payment
+        total_charge_amount = payment_amount
+        
+        # Only add tip if this is not a subsequent partial payment
+        if not (payment_type == 'partial' and invoice.is_partially_paid()):
+            total_charge_amount += tip_amount
+        
         # Prepare payment body
         payment_body = {
             "source_id": source_id,
             "amount_money": {
-                "amount": int(payment_amount * 100),  # Convert to cents
+                "amount": int(total_charge_amount * 100),  # Convert to cents
                 "currency": "USD"
             },
             "idempotency_key": idempotency_key,
-            "note": f"{payment_type.capitalize()} payment for invoice {invoice.invoiceId}",
+            "note": f"{payment_type.capitalize()} payment for invoice {invoice.invoiceId}{' with tip' if tip_amount > 0 else ''}",
             "autocomplete": auto_complete  # This controls whether payment is completed immediately
         }
 
@@ -91,10 +100,32 @@ def process_payment(request):
         if result.is_success():
             payment_data = result.body['payment']
 
-            # Save payment details without timezone conversion
+            # If tip amount is provided, update the booking using TipService
+            booking = invoice.booking
+            if tip_amount > 0:
+                from decimal import Decimal
+                from .services import TipService
+                
+                # Convert to Decimal for precision
+                tip_decimal = Decimal(str(tip_amount))
+                
+                # Validate tip amount
+                invoice_amount = Decimal(str(invoice.amount / 100))  # Convert from cents to dollars
+                is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+                
+                if not is_valid:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Invalid tip amount: {error_message}'
+                    }, status=400)
+                
+                # Add tip to booking using service
+                booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
+            
+            # Create payment record without timezone conversion
             payment = Payment.objects.create(
                 invoice=invoice,
-                amount=payment_amount,
+                amount=total_charge_amount,  # Use total_charge_amount which includes tip
                 paymentMethod='Square',
                 squarePaymentId=payment_data['id'],
                 status='COMPLETED' if auto_complete else 'AUTHORIZED',
@@ -260,7 +291,9 @@ def process_stripe_payment(request):
         auto_complete = data.get('auto_complete', True)
         payment_type = data.get('payment_type', 'full')  # 'full' or 'partial'
         amount = float(data.get('amount', 0))  # Amount for partial payment
+        tip_amount = float(data.get('tip_amount', 0))  # Tip amount
 
+        print("Tip amount:", tip_amount)
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
@@ -315,7 +348,21 @@ def process_stripe_payment(request):
         idempotency_key = f"invoice_{invoice.invoiceId}_{timezone.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
 
         try:
-            amount_in_cents = int(payment_amount * 100)
+            # For partial payments, we need to handle tips differently
+            # Tips should be paid in full with the first payment
+            total_charge_amount = payment_amount
+            
+            # Only add tip if this is not a subsequent partial payment
+            if not (payment_type == 'partial' and invoice.is_partially_paid()):
+                total_charge_amount += tip_amount
+            
+            print("Payment type:", payment_type)
+            print("Invoice is partially paid:", invoice.is_partially_paid())
+            print("Total charge amount:", total_charge_amount)
+            print("Tip amount:", tip_amount)
+            print("Payment amount:", payment_amount)
+
+            amount_in_cents = int(total_charge_amount * 100)
 
             if auto_complete:
                 payment_intent = stripe.PaymentIntent.create(
@@ -337,9 +384,31 @@ def process_stripe_payment(request):
                 )
 
                 if payment_intent.status == 'succeeded':
+                    # If tip amount is provided, update the booking using TipService
+                    booking = invoice.booking
+                    if tip_amount > 0:
+                        from decimal import Decimal
+                        from .services import TipService
+                        
+                        # Convert to Decimal for precision
+                        tip_decimal = Decimal(tip_amount)
+                        
+                        # Validate tip amount
+                        invoice_amount = Decimal(invoice.amount)
+                        is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+                        
+                        if not is_valid:
+                            return JsonResponse({
+                                'success': False,
+                                'error': f'Invalid tip amount: {error_message}'
+                            }, status=400)
+                        
+                        # Add tip to booking using service
+                        booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
+                    
                     payment = Payment.objects.create(
                         invoice=invoice,
-                        amount=payment_amount,
+                        amount=total_charge_amount,
                         paymentMethod='Stripe',
                         transactionId=payment_intent.id,
                         status='COMPLETED',
@@ -370,10 +439,18 @@ def process_stripe_payment(request):
                 # For authorization, we always use the full remaining amount
                 if invoice.is_partially_paid():
                     auth_amount = invoice.get_remaining_amount()
+                    # For subsequent partial payments, don't include tip
+                    auth_amount_with_tip = auth_amount
                 else:
                     auth_amount = invoice.amount
+                    # Include tip in the authorization amount
+                    auth_amount_with_tip = auth_amount + tip_amount
                 
-                auth_amount_in_cents = int(auth_amount * 100)
+                print("Authorization amount:", auth_amount)
+                print("Tip amount for authorization:", tip_amount)
+                print("Total authorization amount with tip:", auth_amount_with_tip)
+                
+                auth_amount_in_cents = int(auth_amount_with_tip * 100)
                 
                 payment_intent = stripe.PaymentIntent.create(
                     amount=auth_amount_in_cents,
@@ -392,9 +469,31 @@ def process_stripe_payment(request):
                 )
 
                 if payment_intent.status in ['requires_capture', 'succeeded']:
+                    # If tip amount is provided, update the booking using TipService
+                    booking = invoice.booking
+                    if tip_amount > 0 and not invoice.is_partially_paid():
+                        from decimal import Decimal
+                        from .services import TipService
+                        
+                        # Convert to Decimal for precision
+                        tip_decimal = Decimal(tip_amount)
+                        
+                        # Validate tip amount
+                        invoice_amount = Decimal(invoice.amount)
+                        is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+                        
+                        if not is_valid:
+                            return JsonResponse({
+                                'success': False,
+                                'error': f'Invalid tip amount: {error_message}'
+                            }, status=400)
+                        
+                        # Add tip to booking using service
+                        booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
+                    
                     payment = Payment.objects.create(
                         invoice=invoice,
-                        amount=auth_amount,
+                        amount=auth_amount_with_tip,  # Use amount with tip
                         paymentMethod='Stripe',
                         transactionId=payment_intent.id,
                         status='AUTHORIZED',
@@ -510,6 +609,7 @@ def process_paypal_payment(request):
         invoice_id = data.get('invoiceId')
         manual_verification = data.get('manualVerification', False)
         payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
+        tip_amount = float(data.get('tipAmount', 0))  # Tip amount
         print(f"PayPal payment request received - Order ID: {order_id}, Invoice ID: {invoice_id}, Manual: {manual_verification}, Type: {payment_type}")
 
         # Get the invoice
@@ -642,12 +742,21 @@ def process_paypal_payment(request):
                 else:
                     expected_amount = invoice.amount
                 
+                # For partial payments, we need to handle tips differently
+                # Tips should be paid in full with the first payment
+                if payment_type == 'partial' and invoice.is_partially_paid():
+                    # For subsequent partial payments, don't expect tip
+                    expected_amount_with_tip = expected_amount
+                else:
+                    # For first payment or full payment, include tip
+                    expected_amount_with_tip = expected_amount + tip_amount
+                
                 # Allow for small rounding differences (within 1 cent)
-                if abs(payment_amount - expected_amount) > 0.01:
-                    print(f"Payment amount mismatch - Expected: ${expected_amount}, Received: ${payment_amount}")
+                if abs(payment_amount - expected_amount_with_tip) > 0.01:
+                    print(f"Payment amount mismatch - Expected: ${expected_amount_with_tip} (including ${tip_amount} tip), Received: ${payment_amount}")
                     return JsonResponse({
                         'success': False,
-                        'error': f'Payment amount mismatch. Expected: ${expected_amount}, Received: ${payment_amount}'
+                        'error': f'Payment amount mismatch. Expected: ${expected_amount_with_tip} (including ${tip_amount} tip), Received: ${payment_amount}'
                     }, status=400)
             
             print(f"Payment amount verification successful - Amount: ${payment_amount}")
@@ -659,6 +768,31 @@ def process_paypal_payment(request):
                 'error': 'Could not verify payment amount'
             }, status=400)
 
+        # If tip amount is provided, update the booking using TipService
+        booking = invoice.booking
+        if tip_amount > 0:
+            print(f"Adding tip amount of ${tip_amount} to booking using TipService")
+            from decimal import Decimal
+            from .services import TipService
+            
+            # Convert to Decimal for precision
+            tip_decimal = Decimal(str(tip_amount))
+            
+            # Validate tip amount
+            invoice_amount = Decimal(str(invoice.amount / 100))  # Convert from cents to dollars
+            is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+            
+            if not is_valid:
+                print(f"Invalid tip amount: {error_message}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Invalid tip amount: {error_message}'
+                }, status=400)
+            
+            # Add tip to booking using service
+            booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
+            print(f"Updated invoice amount to include tip: ${invoice.amount/100:.2f}")
+        
         # Create payment record
         print("Creating payment record in database...")
         payment = Payment.objects.create(

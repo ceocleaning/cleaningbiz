@@ -44,6 +44,9 @@
                             {% endif %}
                         </div>
                         <h3 class="mb-0 text-success fw-bold">${{ invoice.amount }}</h3>
+                        {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                        <span class="text-info"><i class="fas fa-hand-holding-usd me-1"></i>Includes ${{ invoice.booking.tip }} tip</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -185,6 +188,9 @@
                                 <h5 class="mb-1">Payment Summary</h5>
                                 <p class="mb-0">Total Invoice Amount: <strong>${{ invoice.amount }}</strong></p>
                                 <p class="mb-0">Total Paid: <strong>${{ invoice.total_paid_amount }}</strong></p>
+                                {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                                <p class="mb-0">Tip Amount: <strong>${{ invoice.booking.tip }}</strong></p>
+                                {% endif %}
                                 {% if invoice.is_partially_paid %}
                                 <p class="mb-0">Remaining: <strong>${{ invoice.get_remaining_amount }}</strong></p>
                                 {% endif %}
@@ -313,6 +319,14 @@
                                 <span class="text-muted">Amount</span>
                                 <span class="text-success fw-bold">${{ invoice.payments.first.amount }}</span>
                             </div>
+                            
+                            {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                            <!-- Tip Amount -->
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Tip Amount</span>
+                                <span class="text-info fw-bold">${{ invoice.booking.tip }}</span>
+                            </div>
+                            {% endif %}
 
                             <!-- Payment Date -->
                             <div class="d-flex justify-content-between">

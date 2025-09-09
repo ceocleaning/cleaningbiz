@@ -542,9 +542,15 @@
                     <td data-label="" class="text-end"><strong id="sub_total_display">{{ invoice.booking.totalPrice|format_currency }}</strong></td>
                 </tr>
                 <tr class="invoice-summary-row">
-                    <td colspan="3" data-label="Tax:" class="text-end"><strong>Tax (0%):</strong></td>
+                    <td colspan="3" data-label="Tax:" class="text-end"><strong>Tax ({{ invoice.booking.business.settings.taxPercent }}%):</strong></td>
                     <td data-label="" class="text-end"><strong id="tax_display">{{ invoice.booking.tax|format_currency }}</strong></td>
                 </tr>
+                {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                <tr class="invoice-summary-row">
+                    <td colspan="3" data-label="Tip:" class="text-end"><strong>Tip:</strong></td>
+                    <td data-label="" class="text-end"><strong id="tip_display">{{ invoice.booking.tip|format_currency }}</strong></td>
+                </tr>
+                {% endif %}
                 <tr class="invoice-summary-row">
                     <td colspan="3" data-label="Total:" class="text-end border-bottom"><strong>Total:</strong></td>
                     <td data-label="" class="text-end border-bottom"><strong id="total_display">{{ invoice.amount|format_currency }}</strong></td>
@@ -640,6 +646,8 @@
                 </div>
                 <form id="manualPaymentForm" method="post" enctype="multipart/form-data" action="{% url 'invoice:manual_payment' invoice.invoiceId %}">
                     {% csrf_token %}
+                    <!-- Hidden tip amount field that will be populated by JavaScript -->
+                    <input type="hidden" id="manual-hidden-tip-amount" name="tip_amount" value="0">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Payment Type:</label>
@@ -647,9 +655,9 @@
                                 <input class="form-check-input" type="radio" name="payment_type" id="manualFullPayment" value="full" checked>
                                 <label class="form-check-label" for="manualFullPayment">
                                     {% if invoice.is_partially_paid %}
-                                    Full Payment (Remaining: ${{ invoice.get_remaining_amount }})
+                                    Full Payment (Remaining: <span id="manual-payment-amount-display">${{ invoice.get_remaining_amount }}</span>)
                                     {% else %}
-                                    Full Payment ({{ invoice.amount|format_currency }})
+                                    Full Payment (<span id="manual-payment-amount-display">{{ invoice.amount|format_currency }}</span>)
                                     {% endif %}
                                 </label>
                             </div>
@@ -685,6 +693,26 @@
                             </div>
                             <div class="form-text">Enter the amount you've paid via bank transfer.</div>
                         </div>
+                        
+                        <script>
+                            // Update manual partial payment amount when tip changes
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const manualPartialAmountInput = document.getElementById('manual_partial_amount');
+                                if (manualPartialAmountInput) {
+                                    // Store original max and value
+                                    const originalMax = manualPartialAmountInput.getAttribute('max');
+                                    const originalValue = manualPartialAmountInput.value;
+                                    
+                                    // Function to update manual partial payment input
+                                    window.updateManualPartialPaymentAmount = function(newAmount) {
+                                        if (manualPartialAmountInput) {
+                                            manualPartialAmountInput.setAttribute('max', newAmount);
+                                            manualPartialAmountInput.value = newAmount;
+                                        }
+                                    };
+                                }
+                            });
+                        </script>
                         
                         <div class="mb-3">
                             <label for="transaction_id" class="form-label">Transaction ID <span class="text-danger">*</span></label>
@@ -757,7 +785,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-4">
-                        <h6 class="mb-3">Total Invoice Amount: <strong>{{ invoice.amount|format_currency }}</strong></h6>
+                        <h6 class="mb-3">Total Invoice Amount: <strong id="base-invoice-amount">{{ invoice.amount|format_currency }}</strong></h6>
                         
                         {% if invoice.is_partially_paid %}
                         <div class="alert alert-info">
@@ -766,15 +794,65 @@
                         </div>
                         {% endif %}
                         
+                        <!-- Tipping Section -->
+                        <div class="card mb-3 border-success">
+                            <div class="card-header bg-success bg-opacity-10">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Add a Tip</h6>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enableTipToggle">
+                                        <label class="form-check-label" for="enableTipToggle">Include Tip</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body" id="tipOptionsContainer" style="display: none;">
+                                <!-- Percentage-based tip options -->
+                                <div class="mb-3">
+                                    <label class="form-label">Suggested Tip:</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="10">10%</button>
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="15">15%</button>
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="20">20%</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="5">$5</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="10">$10</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="20">$20</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Custom tip amount -->
+                                <div class="mb-3">
+                                    <label for="customTipAmount" class="form-label">Custom Tip Amount:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="customTipAmount" min="0" step="0.01" value="0.00">
+                                    </div>
+                                </div>
+                                
+                                <!-- Tip summary -->
+                                <div class="d-flex justify-content-between align-items-center mt-3 fw-bold">
+                                    <span>Tip Amount:</span>
+                                    <span id="tipAmountDisplay">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Updated Total with Tip -->
+                        <div class="alert alert-success" id="totalWithTipContainer" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>New Total (with tip):</strong>
+                                <strong id="totalWithTipDisplay">{{ invoice.amount|format_currency }}</strong>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label class="form-label">Payment Type:</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="payment_type" id="fullPayment" value="full" checked>
                                 <label class="form-check-label" for="fullPayment">
                                     {% if invoice.is_partially_paid %}
-                                    Full Payment (Remaining: ${{ invoice.get_remaining_amount }})
+                                    Full Payment (Remaining: <span id="payment-amount-display">${{ invoice.get_remaining_amount }}</span>)
                                     {% else %}
-                                    Full Payment ({{ invoice.amount|format_currency }})
+                                    Full Payment (<span id="payment-amount-display">{{ invoice.amount|format_currency }}</span>)
                                     {% endif %}
                                 </label>
                             </div>
@@ -802,6 +880,26 @@
                             </div>
                             <div class="form-text">Enter an amount less than the total invoice amount.</div>
                         </div>
+                        
+                        <script>
+                            // Update partial payment amount when tip changes
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const partialAmountInput = document.getElementById('partialAmount');
+                                if (partialAmountInput) {
+                                    // Store original max and value
+                                    const originalMax = partialAmountInput.getAttribute('max');
+                                    const originalValue = partialAmountInput.value;
+                                    
+                                    // Function to update partial payment input
+                                    window.updatePartialPaymentAmount = function(newAmount) {
+                                        if (partialAmountInput) {
+                                            partialAmountInput.setAttribute('max', newAmount);
+                                            partialAmountInput.value = newAmount;
+                                        }
+                                    };
+                                }
+                            });
+                        </script>
                         
                         {% if invoice.is_partially_paid %}
                         <div class="alert alert-info">
@@ -883,6 +981,231 @@
 {% endblock %}
 
 {% block scripts %}
+
+<!-- Tip Calculation JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tip-related elements
+        const enableTipToggle = document.getElementById('enableTipToggle');
+        const tipOptionsContainer = document.getElementById('tipOptionsContainer');
+        const tipPercentButtons = document.querySelectorAll('.tip-percent-btn');
+        const tipAmountButtons = document.querySelectorAll('.tip-amount-btn');
+        const customTipAmount = document.getElementById('customTipAmount');
+        const tipAmountDisplay = document.getElementById('tipAmountDisplay');
+        const totalWithTipContainer = document.getElementById('totalWithTipContainer');
+        const totalWithTipDisplay = document.getElementById('totalWithTipDisplay');
+        const baseInvoiceAmountElement = document.getElementById('base-invoice-amount');
+        
+        // Get base invoice amount
+        let baseInvoiceAmount = parseFloat(baseInvoiceAmountElement.innerText.replace(/[^0-9.-]+/g, '')) || 0;
+        let tipAmount = 0;
+        
+        // Toggle tip options visibility
+        if (enableTipToggle) {
+            enableTipToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    tipOptionsContainer.style.display = 'block';
+                    updateTipDisplay();
+                } else {
+                    tipOptionsContainer.style.display = 'none';
+                    totalWithTipContainer.style.display = 'none';
+                    customTipAmount.value = '0.00';
+                    tipAmount = 0;
+                    clearSelectedTipButtons();
+                }
+            });
+        }
+        
+        // Handle percentage-based tip buttons
+        tipPercentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const percent = parseFloat(this.getAttribute('data-percent'));
+                tipAmount = (baseInvoiceAmount * percent / 100).toFixed(2);
+                customTipAmount.value = tipAmount;
+                updateTipDisplay();
+                highlightSelectedButton(this);
+            });
+        });
+        
+        // Handle fixed amount tip buttons
+        tipAmountButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                tipAmount = parseFloat(this.getAttribute('data-amount')).toFixed(2);
+                customTipAmount.value = tipAmount;
+                updateTipDisplay();
+                highlightSelectedButton(this);
+            });
+        });
+        
+        // Handle custom tip amount input
+        if (customTipAmount) {
+            customTipAmount.addEventListener('input', function() {
+                tipAmount = parseFloat(this.value) || 0;
+                updateTipDisplay();
+                clearSelectedTipButtons();
+            });
+        }
+        
+        // Update tip display and total
+        function updateTipDisplay() {
+            if (tipAmount > 0) {
+                tipAmountDisplay.textContent = '$' + parseFloat(tipAmount).toFixed(2);
+                const totalWithTip = baseInvoiceAmount + parseFloat(tipAmount);
+                totalWithTipDisplay.textContent = '$' + totalWithTip.toFixed(2);
+                totalWithTipContainer.style.display = 'block';
+                
+                // Update payment amount display in payment type section
+                updatePaymentAmountDisplay(totalWithTip);
+                
+                // Update pay button text
+                updatePayButtonText(totalWithTip);
+                
+                // Update partial payment amount inputs if they exist
+                if (window.updatePartialPaymentAmount) {
+                    window.updatePartialPaymentAmount(totalWithTip.toFixed(2));
+                }
+                
+                if (window.updateManualPartialPaymentAmount) {
+                    window.updateManualPartialPaymentAmount(totalWithTip.toFixed(2));
+                }
+                
+                // Add hidden input for form submission
+                addOrUpdateHiddenTipInput();
+            } else {
+                tipAmountDisplay.textContent = '$0.00';
+                totalWithTipContainer.style.display = 'none';
+                
+                // Reset payment amount display to original amount
+                updatePaymentAmountDisplay(baseInvoiceAmount);
+                
+                // Reset pay button text
+                updatePayButtonText(baseInvoiceAmount);
+                
+                // Reset partial payment amount inputs if they exist
+                if (window.updatePartialPaymentAmount) {
+                    window.updatePartialPaymentAmount(baseInvoiceAmount.toFixed(2));
+                }
+                
+                if (window.updateManualPartialPaymentAmount) {
+                    window.updateManualPartialPaymentAmount(baseInvoiceAmount.toFixed(2));
+                }
+                
+                removeHiddenTipInput();
+            }
+        }
+        
+        // Update payment amount display in payment type section
+        function updatePaymentAmountDisplay(amount) {
+            // Update main payment modal amount display
+            const paymentAmountDisplay = document.getElementById('payment-amount-display');
+            if (paymentAmountDisplay) {
+                paymentAmountDisplay.textContent = '$' + parseFloat(amount).toFixed(2);
+            }
+            
+            // Update manual payment modal amount display
+            const manualPaymentAmountDisplay = document.getElementById('manual-payment-amount-display');
+            if (manualPaymentAmountDisplay) {
+                manualPaymentAmountDisplay.textContent = '$' + parseFloat(amount).toFixed(2);
+            }
+        }
+        
+        // Update pay button text
+        function updatePayButtonText(amount) {
+            // Update all payment buttons including regular pay and bank transfer buttons
+            const payButtons = document.querySelectorAll('[data-bs-target="#paymentModal"], [data-bs-target="#manualPaymentModal"]');
+            payButtons.forEach(button => {
+                // Extract the button text and update only the amount part
+                const buttonText = button.innerHTML;
+                const newText = buttonText.replace(/\$[\d,\.]+/g, '$' + parseFloat(amount).toFixed(2));
+                button.innerHTML = newText;
+            });
+            
+            // Also update mobile pay button if it exists
+            const mobilePayBtn = document.getElementById('mobilePayBtn');
+            if (mobilePayBtn) {
+                const buttonText = mobilePayBtn.innerHTML;
+                const newText = buttonText.replace(/\$[\d,\.]+/g, '$' + parseFloat(amount).toFixed(2));
+                mobilePayBtn.innerHTML = newText;
+            }
+        }
+        
+        // Highlight selected button and clear others
+        function highlightSelectedButton(selectedButton) {
+            tipPercentButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            tipAmountButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            
+            selectedButton.classList.remove('btn-outline-success');
+            selectedButton.classList.add('btn-success');
+        }
+        
+        // Clear button selection
+        function clearSelectedTipButtons() {
+            tipPercentButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            tipAmountButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+        }
+        
+        // Add or update hidden tip input for form submission
+        function addOrUpdateHiddenTipInput() {
+            // Update the manual payment form hidden tip field
+            const manualTipInput = document.getElementById('manual-hidden-tip-amount');
+            if (manualTipInput) {
+                manualTipInput.value = tipAmount;
+            }
+            
+            // Handle other payment forms
+            let tipInput = document.getElementById('hidden-tip-amount');
+            if (!tipInput) {
+                tipInput = document.createElement('input');
+                tipInput.type = 'hidden';
+                tipInput.id = 'hidden-tip-amount';
+                tipInput.name = 'tip_amount';
+                
+                // Add to all payment forms except the manual payment form
+                const paymentForms = document.querySelectorAll('form:not(#manualPaymentForm)');
+                paymentForms.forEach(form => {
+                    const clonedInput = tipInput.cloneNode();
+                    form.appendChild(clonedInput);
+                });
+            }
+            
+            // Update all tip inputs
+            document.querySelectorAll('#hidden-tip-amount').forEach(input => {
+                input.value = tipAmount;
+            });
+            
+            // Log for debugging
+            console.log('Tip amount set to:', tipAmount);
+        }
+        
+        // Remove hidden tip input
+        function removeHiddenTipInput() {
+            // Set manual payment form tip to 0
+            const manualTipInput = document.getElementById('manual-hidden-tip-amount');
+            if (manualTipInput) {
+                manualTipInput.value = 0;
+            }
+            
+            // Remove other hidden tip inputs
+            document.querySelectorAll('#hidden-tip-amount').forEach(input => {
+                input.parentNode.removeChild(input);
+            });
+            
+            console.log('Tip inputs reset to 0');
+        }
+    });
+</script>
 
 <!-- Payment History Panel JavaScript -->
 <script>
@@ -1112,15 +1435,24 @@
         }
 
         async function createPayment(token, autoComplete = true) {
+            // Get payment amount and type
             const paymentAmount = window.getPaymentAmount();
             const paymentType = window.getPaymentType();
             
+            // Get tip amount if available
+            let tipAmount = 0;
+            const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+            if (tipInput && tipInput.value) {
+                tipAmount = parseFloat(tipInput.value) || 0;
+            }
+            
+            // Prepare payment data
             const bodyData = {
                 sourceId: token,
-                amount: paymentAmount,
                 invoiceId: '{{ invoice.invoiceId }}',
-                autoComplete: autoComplete,
-                paymentType: paymentType
+                amount: paymentAmount,
+                paymentType: paymentType,
+                tipAmount: tipAmount
             };
 
             const paymentResponse = await fetch('{% url "invoice:process_payment" %}', {
@@ -1229,7 +1561,7 @@
             // Initialize Stripe
             const stripePublishableKey = '{{ booking.business.stripe_credentials.stripe_publishable_key }}';
 
-            console.log(stripePublishableKey);
+        
             if (!stripePublishableKey) {
                 console.error('Stripe publishable key not found');
                 return;
@@ -1307,18 +1639,25 @@
                 statusContainer.innerHTML = `<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>`;
 
                 try {
+                    // Get tip amount if available
+                    let tipAmount = 0;
+                    const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+                    if (tipInput && tipInput.value) {
+                        tipAmount = parseFloat(tipInput.value) || 0;
+                    }
+                    
+                    // Create a payment method with card element
                     const { paymentMethod, error } = await stripe.createPaymentMethod({
                         type: 'card',
-                        card: card,
+                        card: card
                     });
-
+                    
                     if (error) {
-                        // Show error
                         displayStripePaymentResult({ error: error.message });
                         return;
                     }
-
-                    // Send payment method ID to server
+                    
+                    // Now send the payment method ID to the server
                     const response = await fetch('{% url "invoice:process_stripe_payment" %}', {
                         method: 'POST',
                         headers: {
@@ -1330,10 +1669,11 @@
                             invoice_id: '{{ invoice.invoiceId }}',
                             amount: window.getPaymentAmount(),
                             auto_complete: autoComplete,
-                            payment_type: window.getPaymentType()
+                            payment_type: window.getPaymentType(),
+                            tip_amount: tipAmount
                         })
                     });
-
+                    
                     const result = await response.json();
 
                     if (result.success) {
@@ -1390,6 +1730,13 @@
             console.log('Manually processing PayPal payment for order:', orderID);
             const paypalContainer = document.getElementById('paypal-button-container');
             
+            // Get tip amount if available
+            let tipAmount = 0;
+            const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+            if (tipInput && tipInput.value) {
+                tipAmount = parseFloat(tipInput.value) || 0;
+            }
+            
             // Send the payment details directly to our server
             return fetch('{% url "invoice:process_paypal_payment" %}', {
                 method: 'POST',
@@ -1400,7 +1747,9 @@
                 body: JSON.stringify({
                     orderID: orderID,
                     invoiceId: '{{ invoice.invoiceId }}',
-                    manualVerification: true
+                    amount: window.getPaymentAmount(),
+                    paymentType: window.getPaymentType(),
+                    tipAmount: tipAmount
                 })
             })
             .then(response => {
@@ -1489,11 +1838,19 @@
                         clearTimeout(captureTimeout);
                         console.log('PayPal order captured successfully', orderData);
                         // Send the payment details to our server
+                        // Get tip amount if available
+                        let tipAmount = 0;
+                        const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+                        if (tipInput && tipInput.value) {
+                            tipAmount = parseFloat(tipInput.value) || 0;
+                        }
+                        
                         console.log('Sending payment details to server...', {
                             orderID: orderData.id,
                             invoiceId: '{{ invoice.invoiceId }}',
                             paymentAmount: window.getPaymentAmount(),
-                            paymentType: window.getPaymentType()
+                            paymentType: window.getPaymentType(),
+                            tipAmount: tipAmount
                         });
                         return fetch('{% url "invoice:process_paypal_payment" %}', {
                             method: 'POST',
@@ -1504,8 +1861,9 @@
                             body: JSON.stringify({
                                 orderID: orderData.id,
                                 invoiceId: '{{ invoice.invoiceId }}',
-                                paymentAmount: window.getPaymentAmount(),
-                                paymentType: window.getPaymentType()
+                                amount: window.getPaymentAmount(),
+                                paymentType: window.getPaymentType(),
+                                tipAmount: tipAmount
                             })
                         })
                     .then(response => {

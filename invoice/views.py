@@ -375,11 +375,23 @@ def generate_pdf(request, invoiceId):
     ]
     
     # Add totals rows
-    service_data.extend([
+    totals_rows = [
         ['', '', Paragraph('<b>Subtotal:</b>', styles['RightAlign']), Paragraph(f"<b>${subtotal:.2f}</b>", styles['RightAlign'])],
         ['', '', Paragraph('<b>Tax:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.booking.tax:.2f}</b>", styles['RightAlign'])],
-        ['', '', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount:.2f}</b>", styles['RightAlign'])],
-    ])
+    ]
+    
+    # Add tip row if applicable
+    if invoice.booking.tip and float(invoice.booking.tip) > 0:
+        totals_rows.append(
+            ['', '', Paragraph('<b>Tip:</b>', styles['RightAlign']), Paragraph(f"<b>${float(invoice.booking.tip):.2f}</b>", styles['RightAlign'])]
+        )
+    
+    # Add total row
+    totals_rows.append(
+        ['', '', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount:.2f}</b>", styles['RightAlign'])]
+    )
+    
+    service_data.extend(totals_rows)
     
     # Create service table with styling to match the preview
     service_table = Table(service_data, colWidths=[doc.width/4.0]*4)
@@ -487,6 +499,7 @@ def manual_payment(request, invoice_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
+        booking = invoice.booking
 
         if request.method == 'POST':
             transaction_id = request.POST.get('transaction_id')
@@ -494,6 +507,33 @@ def manual_payment(request, invoice_id):
             from_account_number = request.POST.get('from_account_number')
             from_bank_name = request.POST.get('from_bank_name')
             payment_type = request.POST.get('payment_type', 'full')
+            
+            # Get tip amount if provided
+            tip_amount = 0
+            try:
+                tip_amount = float(request.POST.get('tip_amount', 0))
+            except (ValueError, TypeError):
+                # If tip amount is invalid, set to 0
+                tip_amount = 0
+            
+            # Process tip if provided
+            if tip_amount > 0:
+                from decimal import Decimal
+                from .services import TipService
+                
+                # Convert to Decimal for precision
+                tip_decimal = Decimal(str(tip_amount))
+                
+                # Validate tip amount
+                invoice_amount = Decimal(str(invoice.amount))
+                is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+                
+                if not is_valid:
+                    messages.error(request, f'Invalid tip amount: {error_message}')
+                    return redirect('invoice:invoice_preview', invoice.invoiceId)
+                
+                # Add tip to booking
+                booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
             
             # Determine payment amount based on payment type
             if payment_type == 'partial':
@@ -530,7 +570,13 @@ def manual_payment(request, invoice_id):
             # Update the invoice payment status
             invoice.update_payment_status()
             
-            messages.success(request, f'Bank Transfer Payment of ${amount:.2f} Submitted Successfully! Please wait for approval.')
+            # Include tip in success message if applicable
+            success_message = f'Bank Transfer Payment of ${amount:.2f}'
+            if tip_amount > 0:
+                success_message += f' (including ${tip_amount:.2f} tip)'
+            success_message += ' Submitted Successfully! Please wait for approval.'
+            
+            messages.success(request, success_message)
             return redirect('invoice:invoice_preview', invoice.invoiceId)
 
         return redirect('invoice:invoice_preview', invoice.invoiceId)

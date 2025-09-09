@@ -113,6 +113,12 @@
                                 <small class="text-muted">(+${{ booking.tax }} tax)</small>
                                 {% endif %}
                             </p>
+                            {% if booking.tip and booking.tip > 0 %}
+                            <p class="mb-2">
+                                <i class="fas fa-hand-holding-usd text-muted me-2"></i>
+                                <span class="h6 text-info mb-0">Tip: ${{ booking.tip }}</span>
+                            </p>
+                            {% endif %}
                             {% if booking.cleaner %}
                             <p class="mb-0">
                                 <i class="fas fa-hand-holding-usd text-muted me-2"></i>
