@@ -813,6 +813,13 @@
                         <!-- Square Payment Form -->
                         <div id="card-container"></div>
                         <div id="payment-status-container" class="payment-status-container"></div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. For authorized payments, the full amount will be charged after service completion.
+                        </div>
+                        {% endif %}
 
                         <div class="d-grid gap-3 mt-4">
                             <button id="pay-now-button" class="btn btn-success">
@@ -828,6 +835,13 @@
                             <div id="stripe-card-element"></div>
                             <div id="stripe-payment-status" class="payment-status-container mt-3"></div>
                         </div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. For authorized payments, the full amount will be charged after service completion.
+                        </div>
+                        {% endif %}
 
                         <div class="d-grid gap-3 mt-4">
                             <button id="stripe-pay-button" class="btn btn-success">
@@ -841,6 +855,13 @@
                         <div id="paypal-button-container">
 
                         </div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. Select the payment type above before proceeding with PayPal checkout.
+                        </div>
+                        {% endif %}
                         {% else %}
                         <!-- Default payment options if none set -->
                         <div class="alert alert-info">
@@ -1439,7 +1460,9 @@
                             value: formattedPaymentAmount,
                             currency_code: 'USD'
                         },
-                        description: 'Payment for Invoice #{{ invoice.invoiceId }}'
+                        description: 'Payment for Invoice #{{ invoice.invoiceId }}',
+                        payment_amount: paymentAmount,
+                        payment_type: window.getPaymentType()
                     }]
                 });
             },
@@ -1468,7 +1491,9 @@
                         // Send the payment details to our server
                         console.log('Sending payment details to server...', {
                             orderID: orderData.id,
-                            invoiceId: '{{ invoice.invoiceId }}'
+                            invoiceId: '{{ invoice.invoiceId }}',
+                            paymentAmount: window.getPaymentAmount(),
+                            paymentType: window.getPaymentType()
                         });
                         return fetch('{% url "invoice:process_paypal_payment" %}', {
                             method: 'POST',
@@ -1479,6 +1504,7 @@
                             body: JSON.stringify({
                                 orderID: orderData.id,
                                 invoiceId: '{{ invoice.invoiceId }}',
+                                paymentAmount: window.getPaymentAmount(),
                                 paymentType: window.getPaymentType()
                             })
                         })

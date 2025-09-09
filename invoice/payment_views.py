@@ -16,13 +16,15 @@ import threading
 # SQUARE PAYMENT VIEWS
 @require_http_methods(["POST"])
 def process_payment(request):
-    """Process a Square payment for an invoice with option to authorize only"""
+    """Process a Square payment for an invoice with option to authorize only or make partial payment"""
     try:
         # Parse the request body
         data = json.loads(request.body)
         source_id = data.get('sourceId')
         invoice_id = data.get('invoiceId')
         auto_complete = data.get('autoComplete', True)
+        payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
+        amount = float(data.get('amount', 0))  # Amount for partial payment
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
@@ -31,6 +33,35 @@ def process_payment(request):
 
         if not source_id:
             return JsonResponse({'success': False, 'error': 'No payment source provided'}, status=400)
+
+        # Determine payment amount based on payment type
+        if payment_type == 'partial':
+            if amount <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid payment amount'
+                }, status=400)
+            
+            # Check if amount is greater than remaining amount
+            if invoice.is_partially_paid():
+                remaining_amount = invoice.get_remaining_amount()
+                if amount > remaining_amount:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Payment amount exceeds remaining balance of ${remaining_amount}'
+                    }, status=400)
+            elif amount > invoice.amount:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payment amount exceeds invoice total of ${invoice.amount}'
+                }, status=400)
+            
+            payment_amount = amount
+        else:  # full payment
+            if invoice.is_partially_paid():
+                payment_amount = invoice.get_remaining_amount()
+            else:
+                payment_amount = invoice.amount
 
         # Initialize Square client
         client = Client(
@@ -45,11 +76,11 @@ def process_payment(request):
         payment_body = {
             "source_id": source_id,
             "amount_money": {
-                "amount": int(invoice.amount * 100),  # Convert to cents
+                "amount": int(payment_amount * 100),  # Convert to cents
                 "currency": "USD"
             },
             "idempotency_key": idempotency_key,
-            "note": f"Payment for invoice {invoice.invoiceId}",
+            "note": f"{payment_type.capitalize()} payment for invoice {invoice.invoiceId}",
             "autocomplete": auto_complete  # This controls whether payment is completed immediately
         }
 
@@ -63,27 +94,28 @@ def process_payment(request):
             # Save payment details without timezone conversion
             payment = Payment.objects.create(
                 invoice=invoice,
-                amount=invoice.amount,
+                amount=payment_amount,
                 paymentMethod='Square',
                 squarePaymentId=payment_data['id'],
-                status='COMPLETED' if auto_complete else 'AUTHORIZED'
+                status='COMPLETED' if auto_complete else 'AUTHORIZED',
+                payment_type=payment_type
             )
 
             # Only mark invoice as paid if payment is completed
             if auto_complete:
                 payment.paidAt = timezone.now()
-                invoice.isPaid = True
-                invoice.save()
+                # Update invoice payment status
+                invoice.update_payment_status()
             
             payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
             payment_thread.daemon = True
             payment_thread.start()
             
-
             return JsonResponse({
                 'success': True,
                 'payment_id': payment.paymentId,
-                'status': payment_data['status']
+                'status': payment_data['status'],
+                'payment_type': payment_type
             })
         else:
             # Get error message from Square response
@@ -219,13 +251,15 @@ def process_manual_payment(request):
 # STRIPE PAYMENT VIEWS
 @require_http_methods(["POST"])
 def process_stripe_payment(request):
-    """Process a Stripe payment for an invoice with option to authorize only"""
+    """Process a Stripe payment for an invoice with option to authorize only or make partial payment"""
     try:
         # Parse the request body
         data = json.loads(request.body)
         payment_method_id = data.get('payment_method_id')
         invoice_id = data.get('invoice_id')
         auto_complete = data.get('auto_complete', True)
+        payment_type = data.get('payment_type', 'full')  # 'full' or 'partial'
+        amount = float(data.get('amount', 0))  # Amount for partial payment
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
@@ -246,15 +280,42 @@ def process_stripe_payment(request):
                 'error': 'No payment method provided'
             }, status=400)
 
+        # Determine payment amount based on payment type
+        if payment_type == 'partial':
+            if amount <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid payment amount'
+                }, status=400)
+            
+            # Check if amount is greater than remaining amount
+            if invoice.is_partially_paid():
+                remaining_amount = invoice.get_remaining_amount()
+                if amount > remaining_amount:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Payment amount exceeds remaining balance of ${remaining_amount}'
+                    }, status=400)
+            elif amount > invoice.amount:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payment amount exceeds invoice total of ${invoice.amount}'
+                }, status=400)
+            
+            payment_amount = amount
+        else:  # full payment
+            if invoice.is_partially_paid():
+                payment_amount = invoice.get_remaining_amount()
+            else:
+                payment_amount = invoice.amount
+
         import stripe
-
         stripe.api_key = stripe_credentials.stripe_secret_key
-
 
         idempotency_key = f"invoice_{invoice.invoiceId}_{timezone.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
 
         try:
-            amount_in_cents = int(invoice.amount * 100)
+            amount_in_cents = int(payment_amount * 100)
 
             if auto_complete:
                 payment_intent = stripe.PaymentIntent.create(
@@ -262,10 +323,11 @@ def process_stripe_payment(request):
                     currency='usd',
                     payment_method=payment_method_id,
                     confirm=True,
-                    description=f"Payment for invoice {invoice.invoiceId}",
+                    description=f"{payment_type.capitalize()} payment for invoice {invoice.invoiceId}",
                     metadata={
                         'invoice_id': invoice.invoiceId,
-                        'business_id': business.businessId
+                        'business_id': business.businessId,
+                        'payment_type': payment_type
                     },
                     idempotency_key=idempotency_key,
                     automatic_payment_methods={
@@ -277,15 +339,16 @@ def process_stripe_payment(request):
                 if payment_intent.status == 'succeeded':
                     payment = Payment.objects.create(
                         invoice=invoice,
-                        amount=invoice.amount,
+                        amount=payment_amount,
                         paymentMethod='Stripe',
                         transactionId=payment_intent.id,
                         status='COMPLETED',
-                        paidAt=timezone.now()
+                        paidAt=timezone.now(),
+                        payment_type=payment_type
                     )
 
-                    invoice.isPaid = True
-                    invoice.save()
+                    # Update invoice payment status
+                    invoice.update_payment_status()
 
                     payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
                     payment_thread.daemon = True
@@ -294,7 +357,8 @@ def process_stripe_payment(request):
                     return JsonResponse({
                         'success': True,
                         'payment_id': payment.paymentId,
-                        'status': 'COMPLETED'
+                        'status': 'COMPLETED',
+                        'payment_type': payment_type
                     })
                 else:
                     return JsonResponse({
@@ -302,9 +366,17 @@ def process_stripe_payment(request):
                         'error': f'Payment failed. Status: {payment_intent.status}'
                     }, status=400)
 
-            else:
+            else:  # Authorize only
+                # For authorization, we always use the full remaining amount
+                if invoice.is_partially_paid():
+                    auth_amount = invoice.get_remaining_amount()
+                else:
+                    auth_amount = invoice.amount
+                
+                auth_amount_in_cents = int(auth_amount * 100)
+                
                 payment_intent = stripe.PaymentIntent.create(
-                    amount=amount_in_cents,
+                    amount=auth_amount_in_cents,
                     currency='usd',
                     payment_method=payment_method_id,
                     confirmation_method='manual',
@@ -322,10 +394,11 @@ def process_stripe_payment(request):
                 if payment_intent.status in ['requires_capture', 'succeeded']:
                     payment = Payment.objects.create(
                         invoice=invoice,
-                        amount=invoice.amount,
+                        amount=auth_amount,
                         paymentMethod='Stripe',
                         transactionId=payment_intent.id,
-                        status='AUTHORIZED'
+                        status='AUTHORIZED',
+                        payment_type='authorized'
                     )
 
                     payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
@@ -428,7 +501,7 @@ def capture_stripe_payment(request):
 # PAYPAL PAYMENT VIEWS
 @require_http_methods(["POST"])
 def process_paypal_payment(request):
-    """Process a PayPal payment for an invoice"""
+    """Process a PayPal payment for an invoice with support for partial payments"""
     print("\n\n===== PAYPAL PAYMENT PROCESSING STARTED =====")
     try:
         # Parse the request body
@@ -436,7 +509,8 @@ def process_paypal_payment(request):
         order_id = data.get('orderID')
         invoice_id = data.get('invoiceId')
         manual_verification = data.get('manualVerification', False)
-        print(f"PayPal payment request received - Order ID: {order_id}, Invoice ID: {invoice_id}, Manual: {manual_verification}")
+        payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
+        print(f"PayPal payment request received - Order ID: {order_id}, Invoice ID: {invoice_id}, Manual: {manual_verification}, Type: {payment_type}")
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
@@ -537,22 +611,46 @@ def process_paypal_payment(request):
                     'error': f'Payment not completed. Current status: {order_status}'
                 }, status=400)
             
-        # Verify payment amount matches invoice amount
+        # Verify payment amount
         try:
             payment_units = order_data['purchase_units'][0]
             payment_amount = float(payment_units['amount']['value'])
             payment_currency = payment_units['amount']['currency_code']
             
-            print(f"Verifying payment amount - Expected: ${invoice.amount}, Received: ${payment_amount} {payment_currency}")
+            # Determine expected amount based on payment type
+            if payment_type == 'partial':
+                # For partial payments, we just verify the amount is not more than the invoice total
+                # or remaining amount if partially paid
+                if invoice.is_partially_paid():
+                    remaining_amount = invoice.get_remaining_amount()
+                    if payment_amount > remaining_amount:
+                        print(f"Payment amount exceeds remaining balance - Received: ${payment_amount}, Remaining: ${remaining_amount}")
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'Payment amount exceeds remaining balance of ${remaining_amount}'
+                        }, status=400)
+                elif payment_amount > invoice.amount:
+                    print(f"Payment amount exceeds invoice total - Received: ${payment_amount}, Total: ${invoice.amount}")
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Payment amount exceeds invoice total of ${invoice.amount}'
+                    }, status=400)
+                expected_amount = payment_amount  # The amount sent is what we expect
+            else:  # full payment
+                if invoice.is_partially_paid():
+                    expected_amount = invoice.get_remaining_amount()
+                else:
+                    expected_amount = invoice.amount
+                
+                # Allow for small rounding differences (within 1 cent)
+                if abs(payment_amount - expected_amount) > 0.01:
+                    print(f"Payment amount mismatch - Expected: ${expected_amount}, Received: ${payment_amount}")
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Payment amount mismatch. Expected: ${expected_amount}, Received: ${payment_amount}'
+                    }, status=400)
             
-            # Allow for small rounding differences (within 1 cent)
-            if abs(payment_amount - invoice.amount) > 0.01:
-                print(f"Payment amount mismatch - Expected: ${invoice.amount}, Received: ${payment_amount}")
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Payment amount mismatch. Expected: ${invoice.amount}, Received: ${payment_amount}'
-                }, status=400)
-            print("Payment amount verification successful")
+            print(f"Payment amount verification successful - Amount: ${payment_amount}")
         except (KeyError, IndexError) as e:
             print(f"Could not verify payment amount: {str(e)}")
             print(f"Order data structure: {order_data}")
@@ -565,18 +663,18 @@ def process_paypal_payment(request):
         print("Creating payment record in database...")
         payment = Payment.objects.create(
             invoice=invoice,
-            amount=invoice.amount,
+            amount=payment_amount,
             paymentMethod='PayPal',
             transactionId=order_id,
             status='COMPLETED',
-            paidAt=timezone.now()
+            paidAt=timezone.now(),
+            payment_type=payment_type
         )
         print(f"Payment record created - ID: {payment.paymentId}")
 
-        # Mark invoice as paid
-        print(f"Marking invoice {invoice.invoiceId} as paid")
-        invoice.isPaid = True
-        invoice.save()
+        # Update invoice payment status
+        print(f"Updating invoice {invoice.invoiceId} payment status")
+        invoice.update_payment_status()
         print("Invoice updated successfully")
         
         payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
@@ -588,7 +686,8 @@ def process_paypal_payment(request):
         return JsonResponse({
             'success': True,
             'payment_id': payment.paymentId,
-            'status': 'COMPLETED'
+            'status': 'COMPLETED',
+            'payment_type': payment_type
         })
 
     except Exception as e:

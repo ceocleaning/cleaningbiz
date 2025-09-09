@@ -24,7 +24,7 @@ class Invoice(models.Model):
 
     def generateInvoiceId(self):
         prefix = "inv"
-        id = random.choices(string.digits, k=5)
+        id = random.choices(string.digits, k=8)
         return prefix + ''.join(id)
     
     def get_remaining_amount(self):
@@ -147,6 +147,8 @@ class Payment(models.Model):
                 self.screenshot = compressed_image
         
         if self.status in ['COMPLETED', 'APPROVED'] and not self.paidAt:
+            if self.status == 'APPROVED':
+                self.status = "COMPLETED"
             self.paidAt = timezone.now()
             
         if not self.paymentId:

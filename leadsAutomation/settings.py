@@ -116,8 +116,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
-    'leadsAutomation.middleware.CustomRollbarNotifierMiddleware',
+
     'accounts.middleware.CleanerAccessMiddleware',  # Add cleaner access middleware
     'accounts.middleware.BusinessApprovalMiddleware',  # Add business approval middleware
     'accounts.middleware.TimezoneMiddleware',  # Add timezone middleware
@@ -127,6 +126,10 @@ MIDDLEWARE = [
     'admin_dashbaord.middleware.UserActivityMiddleware',  # Track user page visits
     'admin_dashbaord.activity_tracker.ActivityTrackingMiddleware',  # Track database operations
 ]
+
+if not DEBUG:
+    MIDDLEWARE.append('rollbar.middleware.RollbarMiddleware')
+    MIDDLEWARE.append('leadsAutomation.middleware.CustomRollbarNotifierMiddleware')
 
 ROOT_URLCONF = 'leadsAutomation.urls'
 
@@ -184,43 +187,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Rollbar Configuration
-ROLLBAR = {
-    'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
-    'environment': 'production',
-    'root': os.path.dirname(os.path.realpath(__file__)),
-    'patch_debugview': False,  # Explicitly disable patch_debugview
-}
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'rollbar': {
-            'class': 'rollbar.handler.RollbarHandler',
-            'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
-            'environment': 'production',
-            'level': 'ERROR',
-        },
-        'fallback': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['rollbar'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'fallback': {
-            'handlers': ['fallback'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
 
 
 # Internationalization
@@ -353,8 +319,6 @@ ROLLBAR = {
     'code_version': '1.0',
     'root': BASE_DIR,
 }
-
-
 
 
 # Thumbtack 

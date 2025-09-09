@@ -1,16 +1,12 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
+
 from django.conf import settings
 from bookings.models import Booking
 from accounts.models import ApiCredential, Business
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from twilio.rest import Client
+from django.conf import settings
 from .models import Invoice, Payment
 from automation.utils import sendEmailtoClientInvoice
 from django.utils import timezone
@@ -35,29 +31,33 @@ def send_booking_confirmation_sms(sender, instance, created, **kwargs):
                 print("Twilio credentials not configured for business")
                 return False
             
-            # Initialize Twilio client
-            client = Client(apiCreds.twilioAccountSid, apiCreds.twilioAuthToken)
+            if settings.DEBUG == False:
+                # Initialize Twilio client
+                client = Client(apiCreds.twilioAccountSid, apiCreds.twilioAuthToken)
+                
+                # Get the invoice associated with this booking
+                # We need to query for it directly since the signal might fire before the reverse relation is established
+                try:
+                    
+                    # Generate invoice link
+                    invoice_link = f"{settings.BASE_URL}/invoice/invoices/{instance.invoiceId}/preview/"
+                    
+                    # Create and send SMS
+                    message = client.messages.create(
+                        to=instance.booking.customer.phone_number,  # Use the booking's phone number
+                        from_=apiCreds.twilioSmsNumber,
+                        body=f"Hello {instance.booking.customer.get_full_name()}, your appointment with {instance.booking.business.businessName} is pending!\n\nAppointment Details:\nDate: {instance.booking.cleaningDate}\nTime: {instance.booking.startTime}\nService: {instance.booking.serviceType}\nLocation: {instance.booking.customer.get_address() or 'N/A'}\n\nTotal Amount: ${instance.amount:.2f}\n\nPlease pay to confirm your appointment. View and pay your invoice here: {invoice_link}"
+                    )
+                    
+                    print(f"SMS sent successfully to {instance.booking.customer.phone_number}")
+                    return True
+                    
+                except Exception as e:
+                    print(f"Error accessing invoice or sending SMS: {str(e)}")
+                    return False
             
-            # Get the invoice associated with this booking
-            # We need to query for it directly since the signal might fire before the reverse relation is established
-            try:
-                
-                # Generate invoice link
-                invoice_link = f"{settings.BASE_URL}/invoice/invoices/{instance.invoiceId}/preview/"
-                
-                # Create and send SMS
-                message = client.messages.create(
-                    to=instance.booking.customer.phone_number,  # Use the booking's phone number
-                    from_=apiCreds.twilioSmsNumber,
-                    body=f"Hello {instance.booking.customer.get_full_name()}, your appointment with {instance.booking.business.businessName} is pending!\n\nAppointment Details:\nDate: {instance.booking.cleaningDate}\nTime: {instance.booking.startTime}\nService: {instance.booking.serviceType}\nLocation: {instance.booking.customer.get_address() or 'N/A'}\n\nTotal Amount: ${instance.amount:.2f}\n\nPlease pay to confirm your appointment. View and pay your invoice here: {invoice_link}"
-                )
-                
-                print(f"SMS sent successfully to {instance.booking.customer.phone_number}")
-                return True
-                
-            except Exception as e:
-                print(f"Error accessing invoice or sending SMS: {str(e)}")
-                return False
+            else:
+                print("Debug Mode - Skipping SMS")
                 
         except Exception as e:
             print(f"Error in SMS notification: {str(e)}")

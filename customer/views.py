@@ -71,17 +71,11 @@ def customer_bookings(request):
     upcoming_bookings = all_bookings.filter(
         isCompleted=False,
         cleaningDate__gte=today,
-        invoice__isnull=True,
-        invoice__isPaid=False
-    ).order_by('cleaningDate', 'startTime')
-    
-    # Upcoming paid bookings (not completed, future date, with paid invoice)
-    upcoming_paid_bookings = all_bookings.filter(
-        isCompleted=False,
-        cleaningDate__gte=today,
         invoice__isnull=False,
         invoice__isPaid=True
     ).order_by('cleaningDate', 'startTime')
+    
+   
     
     # Completed bookings (isCompleted=True and past date)
     completed_bookings = all_bookings.filter(
@@ -106,8 +100,8 @@ def customer_bookings(request):
     total_bookings = all_bookings.count()
     pending_count = pending_bookings.count()
     completed_count = completed_bookings.count()
-    upcoming_paid_count = upcoming_paid_bookings.count()
-    
+    upcoming_count = upcoming_bookings.count()
+ 
     # Count for past bookings
     past_bookings_count = past_bookings.count()
     
@@ -117,14 +111,13 @@ def customer_bookings(request):
     context = {
         'all_bookings': all_bookings,
         'upcoming_bookings': upcoming_bookings,
-        'upcoming_paid_bookings': upcoming_paid_bookings,
         'completed_bookings': completed_bookings,
         'pending_bookings': pending_bookings,
         'past_bookings': past_bookings,
         'total_bookings': total_bookings,
         'pending_count': pending_count,
         'completed_count': completed_count,
-        'upcoming_paid_count': upcoming_paid_count,
+        'upcoming_count': upcoming_count,
         'past_bookings_count': past_bookings_count,
         'cancelled_bookings_count': cancelled_bookings_count,
         'cancelled_bookings': cancelled_bookings,
@@ -372,12 +365,11 @@ def add_booking(request, business_id):
                     booking.customAddons.add(new_custom_booking_addon)
             
             messages.success(request, 'Booking created successfully!')
-            invoice = Invoice.objects.create(
-                    booking=booking,
-                    amount=booking.totalPrice,
-            )
+            # The invoice will be created automatically by the signal handler
+            # Get the invoice that was created by the signal
+            invoice = Invoice.objects.get(booking=booking)
 
-            return redirect('customer:dashboard') if request.user.is_authenticated else redirect('invoice:preview_invoice', invoice.invoiceId)
+            return redirect('customer:dashboard') if not request.user.is_authenticated else redirect('invoice:invoice_preview', invoice.invoiceId)
             
         except Exception as e:
             messages.error(request, f'Error creating booking: {str(e)}')
