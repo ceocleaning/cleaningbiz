@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleaningBiz Booking Form Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --text-color: #333;
+            --light-text: #f8f9fa;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f7fa;
+            padding-top: 60px; /* For fixed navbar */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .navbar {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .navbar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--light-text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 20px;
+        }
+        
+        .nav-links a {
+            color: var(--light-text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 5px 10px;
+            border-radius: var(--border-radius);
+        }
+        
+        .nav-links a:hover,
+        .nav-links a.active {
+            background-color: var(--primary-color);
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: var(--border-radius);
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #1a252f;
+        }
+        
+        .section {
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .section-title h2 {
+            font-size: 2rem;
+            color: var(--secondary-color);
+            display: inline-block;
+        }
+        
+        .section-title h2:after {
+            content: '';
+            display: block;
+            width: 50%;
+            height: 3px;
+            background-color: var(--primary-color);
+            margin: 10px auto 0;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .instructions {
+            background-color: #e9f7fe;
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .code-block {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #abb2bf;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+        }
+        
+        .copy-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            margin-right: 5px;
+            transition: var(--transition);
+        }
+        
+        .tab.active {
+            background-color: white;
+            border-color: #ddd;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .feature i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .feature h3 {
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+        
+        .demo-controls {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+        }
+        
+        footer {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            padding: 40px 0;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .social-links {
+            margin-top: 20px;
+        }
+        
+        .social-links a {
+            color: var(--light-text);
+            font-size: 1.5rem;
+            margin: 0 10px;
+            transition: var(--transition);
+        }
+        
+        .social-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .nav-links {
+                margin-top: 15px;
+            }
+            
+            .nav-links li {
+                margin: 0 10px;
+            }
+            
+            .hero {
+                padding: 60px 0;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 40px 0;
+            }
+        }
+        
+        /* Custom styles for the API documentation */
+        .api-endpoint {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .api-endpoint h3 {
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .api-endpoint .method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .api-endpoint .get {
+            background-color: #61affe;
+            color: white;
+        }
+        
+        .api-endpoint .post {
+            background-color: #49cc90;
+            color: white;
+        }
+        
+        .api-endpoint .url {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .response-example {
+            margin-top: 15px;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="logo"><i class="fas fa-broom"></i> CleaningBiz</a>
+            <ul class="nav-links">
+                <li><a href="#demo" class="active">Demo</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#integration">Integration</a></li>
+                <li><a href="#api">API</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container">
+        <div class="hero">
+            <h1>CleaningBiz Booking Form Demo</h1>
+            <p>A powerful, customizable booking form for cleaning businesses that can be embedded on any website.</p>
+            <a href="#demo" class="btn">Try the Demo</a>
+            <a href="#integration" class="btn btn-secondary">Integration Guide</a>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container">
+        <section id="features" class="section">
+            <div class="section-title">
+                <h2>Key Features</h2>
+            </div>
+            <div class="grid">
+                <div class="feature card">
+                    <i class="fas fa-code"></i>
+                    <h3>Easy Integration</h3>
+                    <p>Add the booking form to any website with just a few lines of code. No complex setup required.</p>
+                </div>
+                <div class="feature card">
+                    <i class="fas fa-paint-brush"></i>
+                    <h3>Customizable</h3>
+                    <p>Customize the appearance and behavior of the form to match your brand and requirements.</p>
+                </div>
+                <div class="feature card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>Responsive Design</h3>
+                    <p>Works perfectly on all devices, from desktop computers to mobile phones.</p>
+                </div>
+                <div class="feature card">
+                    <i class="fas fa-calculator"></i>
+                    <h3>Real-time Pricing</h3>
+                    <p>Calculate cleaning prices in real-time based on customer selections.</p>
+                </div>
+                <div class="feature card">
+                    <i class="fas fa-globe"></i>
+                    <h3>Cross-Origin Support</h3>
+                    <p>Works across different domains with built-in CORS support.</p>
+                </div>
+                <div class="feature card">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Secure</h3>
+                    <p>All data is transmitted securely using HTTPS encryption.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Demo Section -->
+    <div class="container">
+        <section id="demo" class="section">
+            <div class="section-title">
+                <h2>Interactive Demo</h2>
+            </div>
+            
+            <div class="demo-controls card">
+                <h3>Configure the Demo</h3>
+                <p>Select a business to test the booking form with real data.</p>
+                
+                <div class="form-group">
+                    <label for="business-selector">Select Business</label>
+                    <select id="business-selector">
+                        <option value="">Loading businesses...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="api-url">API Base URL</label>
+                    <input type="text" id="api-url" value="http://localhost:8000" placeholder="https://cleaningbizai.com">
+                </div>
+                
+                <button id="load-form" class="btn">Load Booking Form</button>
+            </div>
+            
+            <div id="booking-form-container" class="card">
+                <div class="loading-message" style="text-align: center; padding: 50px;">
+                    <p>Select a business above and click "Load Booking Form" to see the demo.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Integration Guide Section -->
+    <div class="container">
+        <section id="integration" class="section">
+            <div class="section-title">
+                <h2>Integration Guide</h2>
+            </div>
+            
+            <div class="card">
+                <div class="instructions">
+                    <h3>How to Use the Embeddable Form</h3>
+                    <p>Follow these steps to add the booking form to your website:</p>
+                    <ol>
+                        <li>Add the script tag to your HTML page</li>
+                        <li>Create a container element where you want the form to appear</li>
+                        <li>Initialize the form with your business ID</li>
+                    </ol>
+                </div>
+                
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode('integration-code')">Copy</button>
+                    <pre id="integration-code">&lt;!-- 1. Add the script tag --&gt;
+&lt;script src="https://cleaningbizai.com/static/js/embeddable-booking-form.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2. Create a container element --&gt;
+&lt;div id="booking-form-container"&gt;&lt;/div&gt;
+
+&lt;!-- 3. Initialize the form --&gt;
+&lt;script&gt;
+    document.addEventListener('DOMContentLoaded', function() {
+        new CleaningBizBookingForm({
+            businessId: 'your-business-id-here',
+            targetElement: '#booking-form-container',
+            apiBaseUrl: 'https://cleaningbizai.com',
+            onSuccess: function(result) {
+                console.log('Booking created successfully:', result);
+            },
+            onError: function(error) {
+                console.error('Error creating booking:', error);
+            }
+        });
+    });
+&lt;/script&gt;</pre>
+                </div>
+                
+                <h3>Configuration Options</h3>
+                <p>The CleaningBizBookingForm constructor accepts the following options:</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: var(--light-bg);">
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Option</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Type</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Description</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">businessId</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">String</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">The ID of the business to create bookings for</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">targetElement</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">String</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">CSS selector for the container element</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">apiBaseUrl</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">String</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Base URL for the API</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">No (default: https://cleaningbizai.com)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">onSuccess</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Function</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Callback function when booking is successful</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">onError</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Function</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Callback function when booking fails</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">No</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- API Documentation Section -->
+    <div class="container">
+        <section id="api" class="section">
+            <div class="section-title">
+                <h2>API Documentation</h2>
+            </div>
+            
+            <div class="card">
+                <p>The booking form uses the following API endpoints:</p>
+                
+                <div class="api-endpoint">
+                    <h3>
+                        <span class="method get">GET</span>
+                        <span class="url">/customer/api/booking/{business_id}/</span>
+                    </h3>
+                    <p>Retrieves business information and pricing data.</p>
+                    
+                    <h4>Response Example:</h4>
+                    <div class="code-block response-example">
+                        <pre>{
+  "business": {
+    "businessId": "BUS-3486",
+    "businessName": "Good Business",
+    "address": "123 Main St",
+    "city": "Anytown",
+    "state": "CA",
+    "zipCode": "12345",
+    "timezone": "America/Los_Angeles"
+  },
+  "prices": {
+    "base_price": 50.0,
+    "bedrooms": 15.0,
+    "bathrooms": 20.0,
+    "sqftMultiplierStandard": 0.1,
+    "sqftMultiplierDeep": 0.15,
+    "sqftMultiplierMoveinout": 0.2,
+    "sqftMultiplierAirbnb": 0.12,
+    "addonPriceDishes": 10.0,
+    "addonPriceLaundry": 15.0,
+    "addonPriceWindow": 5.0,
+    "addonPricePets": 10.0,
+    "addonPriceFridge": 20.0,
+    "addonPriceOven": 25.0,
+    "addonPriceBaseboard": 15.0,
+    "addonPriceBlinds": 10.0,
+    "tax": 8.5
+  },
+  "customAddons": [
+    {
+      "id": 1,
+      "addonName": "Carpet Cleaning",
+      "addonPrice": 30.0
+    },
+    {
+      "id": 2,
+      "addonName": "Ceiling Fans",
+      "addonPrice": 5.0
+    }
+  ]
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h3>
+                        <span class="method post">POST</span>
+                        <span class="url">/customer/api/booking/{business_id}/</span>
+                    </h3>
+                    <p>Creates a new booking.</p>
+                    
+                    <h4>Request Example:</h4>
+                    <div class="code-block response-example">
+                        <pre>{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phoneNumber": "555-123-4567",
+  "address": "123 Main St",
+  "city": "Anytown",
+  "stateOrProvince": "CA",
+  "zipCode": "12345",
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "squareFeet": 1500,
+  "serviceType": "standard",
+  "cleaningDate": "2025-10-15",
+  "startTime": "14:00",
+  "recurring": "onetime",
+  "otherRequests": "Please clean the windows thoroughly",
+  "totalAmount": 150.00,
+  "tax": 12.50,
+  "addonDishes": 1,
+  "addonLaundryLoads": 0,
+  "addonWindowCleaning": 1,
+  "addonPetsCleaning": 0,
+  "addonFridgeCleaning": 0,
+  "addonOvenCleaning": 0,
+  "addonBaseboard": 0,
+  "addonBlinds": 0,
+  "custom_addon_qty_1": 2
+}</pre>
+                    </div>
+                    
+                    <h4>Response Example:</h4>
+                    <div class="code-block response-example">
+                        <pre>{
+  "success": true,
+  "message": "Booking created successfully!",
+  "bookingId": "bk_123456",
+  "invoiceId": "inv_123456"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Documentation Section -->
+    <div class="container">
+        <section id="documentation" class="section">
+            <div class="section-title">
+                <h2>Documentation</h2>
+            </div>
+            
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" data-tab="overview">Overview</div>
+                    <div class="tab" data-tab="customization">Customization</div>
+                    <div class="tab" data-tab="events">Events</div>
+                    <div class="tab" data-tab="troubleshooting">Troubleshooting</div>
+                </div>
+                
+                <div class="tab-content active" id="overview">
+                    <h3>Overview</h3>
+                    <p>The CleaningBiz Booking Form is a JavaScript library that allows you to embed a booking form on your website. The form connects to the CleaningBiz API to retrieve business information, calculate prices, and create bookings.</p>
+                    
+                    <h4>Requirements</h4>
+                    <ul>
+                        <li>A modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                        <li>A valid business ID from the CleaningBiz platform</li>
+                        <li>Internet connection to access the API</li>
+                    </ul>
+                </div>
+                
+                <div class="tab-content" id="customization">
+                    <h3>Customization</h3>
+                    <p>You can customize the appearance of the form by adding your own CSS styles. The form uses the following CSS classes:</p>
+                    
+                    <ul>
+                        <li><code>cleaningbiz-booking-form</code> - The main container for the form</li>
+                        <li><code>cleaningbiz-form-section</code> - Each section of the form</li>
+                        <li><code>cleaningbiz-form-row</code> - A row of form fields</li>
+                        <li><code>cleaningbiz-form-group</code> - A form field group</li>
+                        <li><code>cleaningbiz-addon-item</code> - An add-on item</li>
+                        <li><code>cleaningbiz-price-summary</code> - The price summary section</li>
+                        <li><code>cleaningbiz-submit-btn</code> - The submit button</li>
+                    </ul>
+                </div>
+                
+                <div class="tab-content" id="events">
+                    <h3>Events</h3>
+                    <p>The booking form emits the following events:</p>
+                    
+                    <ul>
+                        <li><code>booking:success</code> - Fired when a booking is successfully created</li>
+                        <li><code>booking:error</code> - Fired when there is an error creating a booking</li>
+                        <li><code>form:loaded</code> - Fired when the form is loaded and ready</li>
+                        <li><code>price:updated</code> - Fired when the price is updated</li>
+                    </ul>
+                    
+                    <p>You can listen for these events using the following code:</p>
+                    
+                    <div class="code-block">
+                        <pre>document.addEventListener('booking:success', function(event) {
+  console.log('Booking created:', event.detail);
+});</pre>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="troubleshooting">
+                    <h3>Troubleshooting</h3>
+                    <p>Common issues and solutions:</p>
+                    
+                    <h4>Form doesn't load</h4>
+                    <ul>
+                        <li>Check that the business ID is correct</li>
+                        <li>Verify that the API base URL is accessible</li>
+                        <li>Check the browser console for errors</li>
+                    </ul>
+                    
+                    <h4>Booking creation fails</h4>
+                    <ul>
+                        <li>Ensure all required fields are filled out</li>
+                        <li>Check that the API base URL is correct</li>
+                        <li>Verify that the business is active and approved</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2025 CleaningBiz AI. All rights reserved.</p>
+            <p>A powerful booking solution for cleaning businesses.</p>
+            
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load the script with proper path and error handling -->
+    <script>
+        // Function to load script with error handling
+        function loadScript(url, callback) {
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = url;
+            script.onload = function() {
+                console.log('Script loaded successfully:', url);
+                if (callback) callback(null);
+            };
+            script.onerror = function() {
+                console.error('Error loading script:', url);
+                if (callback) callback(new Error(`Failed to load script: ${url}`));
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Try different possible paths for the script
+        const possiblePaths = [
+            './js/embeddable-booking-form.js',           // Relative path
+            '/static/js/embeddable-booking-form.js',     // Absolute path from root
+            '../js/embeddable-booking-form.js',          // One directory up
+            'https://cleaningbizai.com/static/js/embeddable-booking-form.js' // Full URL (fallback)
+        ];
+        
+        // Function to try loading from multiple paths
+        function tryLoadingScript(paths, index) {
+            if (index >= paths.length) {
+                // All paths failed
+                const formContainer = document.getElementById('booking-form-container');
+                if (formContainer) {
+                    formContainer.innerHTML = `<div style="text-align: center; padding: 50px; color: red;">
+                        <p>Error: Could not load the booking form script from any of the known paths.</p>
+                        <p>Please check that the file exists and is accessible.</p>
+                    </div>`;
+                }
+                return;
+            }
+            
+            // Try current path
+            loadScript(paths[index], function(error) {
+                if (error) {
+                    console.warn(`Failed to load script from ${paths[index]}, trying next path...`);
+                    // Try next path
+                    tryLoadingScript(paths, index + 1);
+                } else {
+                    console.log(`Successfully loaded script from ${paths[index]}`);
+                    // Script loaded successfully
+                }
+            });
+        }
+        
+        // Start trying paths
+        tryLoadingScript(possiblePaths, 0);
+    </script>
+    
+    <!-- JavaScript for the demo page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab content
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Show the selected tab content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Copy code functionality
+            window.copyCode = function(elementId) {
+                const codeElement = document.getElementById(elementId);
+                const textToCopy = codeElement.textContent;
+                
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    const copyBtn = codeElement.parentElement.querySelector('.copy-btn');
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    
+                    setTimeout(function() {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                });
+            };
+            
+            // Load businesses for the demo
+            const businessSelector = document.getElementById('business-selector');
+            const apiUrlInput = document.getElementById('api-url');
+            const loadFormBtn = document.getElementById('load-form');
+            
+            // Sample businesses for the demo
+            const sampleBusinesses = [
+                { id: 'BUS-3486', name: 'Good Business' },
+                { id: 'business-2', name: 'Sparkle Home Cleaning' },
+                { id: 'business-3', name: 'Fresh Start Cleaners' },
+                { id: 'business-4', name: 'Elite Cleaning Solutions' }
+            ];
+            
+            // Populate business selector
+            businessSelector.innerHTML = '';
+            sampleBusinesses.forEach(business => {
+                const option = document.createElement('option');
+                option.value = business.id;
+                option.textContent = business.name;
+                businessSelector.appendChild(option);
+            });
+            
+            // Load form button click handler
+            loadFormBtn.addEventListener('click', function() {
+                const businessId = businessSelector.value;
+                const apiUrl = apiUrlInput.value;
+                
+                if (!businessId) {
+                    alert('Please select a business');
+                    return;
+                }
+                
+                const formContainer = document.getElementById('booking-form-container');
+                formContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner"></div><p>Loading booking form...</p></div>';
+                
+                // Check if CleaningBizBookingForm is defined
+                if (typeof CleaningBizBookingForm === 'undefined') {
+                    // If not defined, try to load the script again using the same function
+                    formContainer.innerHTML = `<div style="text-align: center; padding: 50px;">
+                        <div class="spinner"></div>
+                        <p>Loading booking form script...</p>
+                    </div>`;
+                    
+                    // Try all possible paths again
+                    tryLoadingScript(possiblePaths, 0);
+                    
+                    // Check periodically if the script has loaded
+                    let checkAttempts = 0;
+                    const maxAttempts = 10;
+                    const checkInterval = setInterval(() => {
+                        checkAttempts++;
+                        if (typeof CleaningBizBookingForm !== 'undefined') {
+                            clearInterval(checkInterval);
+                            initializeBookingForm(businessId, apiUrl);
+                        } else if (checkAttempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                            formContainer.innerHTML = `<div style="text-align: center; padding: 50px; color: red;">
+                                <p>Error: Could not load the booking form script after multiple attempts.</p>
+                                <p>Please check your network connection and try again.</p>
+                            </div>`;
+                        }
+                    }, 1000);
+                } else {
+                    // If already defined, initialize directly
+                    initializeBookingForm(businessId, apiUrl);
+                }
+            });
+            
+            // Function to initialize the booking form
+            function initializeBookingForm(businessId, apiUrl) {
+                const formContainer = document.getElementById('booking-form-container');
+                try {
+                    if (typeof CleaningBizBookingForm === 'undefined') {
+                        throw new Error('CleaningBizBookingForm is not defined. Script may not be loaded correctly.');
+                    }
+                    
+                    new CleaningBizBookingForm({
+                        businessId: businessId,
+                        targetElement: '#booking-form-container',
+                        apiBaseUrl: apiUrl,
+                        redirectToInvoice: true, // Enable redirect to invoice page
+                        onSuccess: function(result) {
+                            console.log('Booking created successfully:', result);
+                            // Alert is not needed when redirecting
+                            // The redirect will happen automatically
+                        },
+                        onError: function(error) {
+                            console.error('Error creating booking:', error);
+                            alert('Error creating booking: ' + JSON.stringify(error));
+                        }
+                    });
+                } catch (error) {
+                    formContainer.innerHTML = '<div style="text-align: center; padding: 50px; color: red;"><p>Error initializing booking form: ' + error.message + '</p></div>';
+                    console.error('Error initializing booking form:', error);
+                }
+            }
+            
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 70, // Adjust for fixed navbar
+                            behavior: 'smooth'
+                        });
+                        
+                        // Update active nav link
+                        document.querySelectorAll('.nav-links a').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                });
+            }); 
+        });
+  
+    </script>
+</body>
+</html>

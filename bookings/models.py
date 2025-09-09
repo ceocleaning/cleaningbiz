@@ -120,7 +120,7 @@ class Booking(models.Model):
             # Check payment details if they exist
             if hasattr(self.invoice, 'payment_details'):
                 notPaidStatus = ['PENDING', 'FAILED']
-                return self.invoice.payment_details.status not in notPaidStatus
+                return self.invoice.payment_details.status not in notPaidStatus if self.invoice.payment_details else False
             return False
         return False
     
@@ -128,7 +128,7 @@ class Booking(models.Model):
         """Get the payment status of the booking."""
         if hasattr(self, 'invoice') and self.invoice:
             if hasattr(self.invoice, 'payment_details'):
-                return self.invoice.payment_details.status
+                return self.invoice.payment_details.status if self.invoice.payment_details else 'Unpaid'
             return 'Unpaid'
         return 'No Invoice'
     
