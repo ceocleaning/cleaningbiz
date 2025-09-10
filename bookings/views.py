@@ -254,6 +254,8 @@ def create_booking(request):
     from bookings.timezone_utils import convert_local_to_utc
 
     redirect_url = request.GET.get('next')
+
+  
     
     business = Business.objects.get(user=request.user)
     business_settings = BusinessSettings.objects.get(business=business)
@@ -267,13 +269,7 @@ def create_booking(request):
             # Get price details from form
             totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
-            phone_number = request.POST.get('phoneNumber')
-            if phone_number:
-                phone_number = format_phone_number(phone_number)
-
-            if not phone_number:
-                messages.error(request, 'Please enter a valid US phone number.')
-                return redirect('bookings:create_booking')
+            
             
             cleaningDate = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
@@ -291,24 +287,44 @@ def create_booking(request):
 
 
 
-            customer_email = request.POST.get('email')
-            try:
-                customer = Customer.objects.get(email=customer_email)
-            except Customer.DoesNotExist:
-                customer = None
+            # Check customer type selection
+            customer_type = request.POST.get('customerType')
+            
+            if customer_type == 'regular':
+                # Get existing customer by ID
+                customer_id = request.POST.get('customerId')
+                try:
+                    customer = Customer.objects.get(id=customer_id)
+                except Customer.DoesNotExist:
+                    messages.error(request, 'Selected customer not found.')
+                    return redirect('bookings:create_booking')
+            else:
+                # Create new customer
+                customer_email = request.POST.get('email')
+                phone_number = request.POST.get('phoneNumber')
+                if phone_number:
+                    phone_number = format_phone_number(phone_number)
 
-      
-            if not customer:
-                customer = Customer.objects.create(
-                    first_name=request.POST.get('firstName'),
-                    last_name=request.POST.get('lastName'),
-                    email=customer_email,
-                    phone_number=request.POST.get('phoneNumber'),
-                    address=request.POST.get('address1'),
-                    city=request.POST.get('city'),
-                    state_or_province=request.POST.get('stateOrProvince'),
-                    zip_code=request.POST.get('zipCode'),
-                )
+                if not phone_number:
+                    messages.error(request, 'Please enter a valid US phone number.')
+                    return redirect('bookings:create_booking')
+                
+                try:
+                    customer = Customer.objects.get(email=customer_email)
+                except Customer.DoesNotExist:
+                    customer = None
+                
+                if not customer:
+                    customer = Customer.objects.create(
+                        first_name=request.POST.get('firstName'),
+                        last_name=request.POST.get('lastName'),
+                        email=customer_email,
+                        phone_number=request.POST.get('phoneNumber'),
+                        address=request.POST.get('address1'),
+                        city=request.POST.get('city'),
+                        state_or_province=request.POST.get('stateOrProvince'),
+                        zip_code=request.POST.get('zipCode'),
+                    )
             
             # Create the booking
             booking = Booking.objects.create(
@@ -383,6 +399,7 @@ def create_booking(request):
         'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
         'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
         'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+        'base_price': float(business_settings.base_price),
 
         'addonPriceDishes': float(business_settings.addonPriceDishes),
         'addonPriceLaundry': float(business_settings.addonPriceLaundry),
@@ -399,10 +416,15 @@ def create_booking(request):
         'tax': float(business_settings.taxPercent)
     }
 
+    # Get all customers for this business
+    customers = Customer.objects.filter(booking__business=business).distinct()
+    
     context = {
         'customAddons': customAddons,
         'prices': json.dumps(prices),
-        'business_timezone': business_timezone
+        'business_timezone': business_timezone,
+        'customers': customers,
+        'today': date.today()
     }
 
     return render(request, 'bookings/create_booking.html', context)

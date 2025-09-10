@@ -49,21 +49,23 @@ def send_email(from_email, to_email, subject, reply_to=None, text_content='', at
     if attachments:
         data["attachments"] = attachments
 
-    try:
-        response = requests.post(url, json=data, headers=req_headers)
+    if settings.DEBUG == False:
+        try:
+            response = requests.post(url, json=data, headers=req_headers)
 
-        if response.status_code in [200, 201]:
-            print("Email sent successfully")
-            return {"success": True, "response": response.json()}
-        else:
-            print("Email not Sent")
-            print(response.text)
+            if response.status_code in [200, 201]:
+                return {"success": True, "response": response.json()}
+            else:
+                print(response.text)
 
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to send email: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e),
-            "status_code": getattr(e.response, "status_code", None),
-            "response_text": getattr(e.response, "text", None)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send email: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+                "status_code": getattr(e.response, "status_code", None),
+                "response_text": getattr(e.response, "text", None)
         }
+
+    else:
+        return {"success": True, "response": "Email not sent in debug mode"}

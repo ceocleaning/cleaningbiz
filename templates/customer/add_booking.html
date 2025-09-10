@@ -182,14 +182,7 @@
                                     <h6 class="mb-2">Alternative Available Slots:</h6>
                                     <div id="alt-slots-list" class="d-flex flex-wrap gap-2 mb-3"></div>
                                 </div>
-                                
-                                <!-- Available cleaners selection -->
-                                <div id="available-cleaners-container" style="display: none;" class="mt-3">
-                                    <h6 class="mb-2">Select a Cleaner:</h6>
-                                    <select id="selectedCleaner" name="selectedCleaner" class="form-select">
-                                        <option value="">Select a cleaner</option>
-                                    </select>
-                                </div>
+                
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="serviceType" class="form-label">Service Type</label>
@@ -418,7 +411,7 @@
                 <!-- Submit Button for Booking -->                
                 <div class="mt-4">
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="rightColumnTermsCheck" required>
+                        <input class="form-check-input" type="checkbox" id="rightColumnTermsCheck" required checked>
                         <label class="form-check-label small" for="rightColumnTermsCheck">
                             I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
                         </label>
@@ -825,7 +818,7 @@
             const availabilityMessage = document.getElementById('availability-message');
             const alternativeSlots = document.getElementById('alternative-slots');
             const altSlotsList = document.getElementById('alt-slots-list');
-            const availableCleanersContainer = document.getElementById('available-cleaners-container');
+  
             const selectedCleaner = document.getElementById('selectedCleaner');
             
             availabilityAlert.style.display = 'block';
@@ -846,14 +839,7 @@
                             availabilityAlert.style.display = 'none';
                         }, 3000);
                         alternativeSlots.style.display = 'none';
-                        availableCleanersContainer.style.display = 'block';
-                        selectedCleaner.innerHTML = '<option value="">Select a cleaner</option>';
-                        data.cleaners.forEach(cleaner => {
-                            const option = document.createElement('option');
-                            option.value = cleaner.id;
-                            option.textContent = cleaner.name;
-                            selectedCleaner.appendChild(option);
-                        });
+                       
                     } else {
                         // Show error message
                         availabilityAlert.className = 'alert alert-danger mt-2';
@@ -892,7 +878,7 @@
                         } else {
                             alternativeSlots.style.display = 'none';
                         }
-                        availableCleanersContainer.style.display = 'none';
+                      
                     }
                 })
                 .catch(error => {
