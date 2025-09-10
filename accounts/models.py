@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import pytz
+
 from django.urls import reverse
 
 
@@ -122,7 +123,8 @@ class Business(models.Model):
 
     def get_booking_page_url(self):
         """Returns the URL for the customer booking page."""
-        return reverse('customer:add_booking', kwargs={'business_id': self.businessId})
+        path = reverse('customer:add_booking', kwargs={'business_id': self.businessId})
+        return f"{URL}/{path}"
 
 
 
