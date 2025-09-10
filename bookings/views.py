@@ -784,3 +784,10 @@ def booking_calendar(request):
     }
     
     return render(request, 'bookings/booking_calendar.html', context)
+
+
+# Embed Booking Widget instructions page
+@login_required
+def embed_booking_widget(request):
+    """Render instructions and live preview for embedding the external booking widget."""
+    return render(request, 'bookings/embed_booking_widget.html')

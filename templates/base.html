@@ -730,6 +730,12 @@
                                     Customers
                                 </a>
                             </li>
+                            <li>    
+                                <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}" 
+                                    href="{% url 'bookings:embed_booking_widget' %}">
+                                    Embed Booking Widget
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     
