@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from django.http import JsonResponse
+from django.db.models import Avg
 from decimal import Decimal
 import json
 
@@ -718,9 +719,13 @@ def customer_reviews(request):
                 }
             businesses[business.id]['reviews'].append(review)
         
+
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0.0
+        
         context = {
             'reviews': reviews,
             'businesses': businesses.values(),
+            'avg_rating': avg_rating
         }
         
         return render(request, 'customer/reviews.html', context)

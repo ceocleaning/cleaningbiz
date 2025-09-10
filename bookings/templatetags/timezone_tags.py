@@ -72,7 +72,7 @@ def format_datetime(value, format_string=None):
         return value.strftime(format_string)
     else:
         # Default format: "January 1, 2023, 3:45 PM"
-        return value.strftime("%B %d, %Y, %I:%M %p")
+        return value.strftime("%I:%M %p")
 
 
 def change_to_timezone(value, date=None, tz_name=None):

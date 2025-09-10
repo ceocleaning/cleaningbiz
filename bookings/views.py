@@ -811,5 +811,74 @@ def booking_calendar(request):
 # Embed Booking Widget instructions page
 @login_required
 def embed_booking_widget(request):
-    """Render instructions and live preview for embedding the external booking widget."""
     return render(request, 'bookings/embed_booking_widget.html')
+
+
+@login_required
+def booking_history_data(request):
+    """
+    API endpoint to fetch booking history data for the customer dashboard chart.
+    Returns monthly booking counts and payment amounts for the last 6 months.
+    """
+    from django.db.models import Count, Sum
+    from django.db.models.functions import TruncMonth
+    import datetime
+    
+    # Determine if the request is from a customer or business user
+    if hasattr(request.user, 'customer') and request.user.customer:
+        # Customer view - show their own booking history
+        customer = request.user.customer
+        
+        # Get the last 6 months of data
+        end_date = datetime.date.today()
+        start_date = (end_date - datetime.timedelta(days=180))  # Approximately 6 months
+        
+        # Get bookings for this customer in the date range
+        bookings = Booking.objects.filter(
+            customer=customer
+        )
+        
+        # Group by month and count bookings
+        booking_counts = bookings.annotate(
+            month=TruncMonth('cleaningDate')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        # Get payment amounts by month
+        payment_amounts = bookings.annotate(
+            month=TruncMonth('cleaningDate')
+        ).values('month').annotate(
+            amount=Sum('totalPrice')
+        ).order_by('month')
+        
+    else:
+        # Business view - not applicable for this endpoint
+        return JsonResponse({'error': 'This endpoint is only available for customer users'}, status=403)
+    
+    # Format the data for the chart
+    months = []
+    booking_counts_data = []
+    payment_amounts_data = []
+    
+    # Create a dictionary to easily look up values by month
+    counts_by_month = {item['month'].strftime('%Y-%m'): item['count'] for item in booking_counts}
+    amounts_by_month = {item['month'].strftime('%Y-%m'): float(item['amount']) for item in payment_amounts}
+    
+    # Generate data for the last 6 months, including months with zero bookings
+    for i in range(5, -1, -1):
+        # Calculate month date
+        month_date = end_date - datetime.timedelta(days=i*30)  # Approximate
+        month_key = month_date.strftime('%Y-%m')
+        month_name = month_date.strftime('%b')  # Short month name
+        
+        months.append(month_name)
+        booking_counts_data.append(counts_by_month.get(month_key, 0))
+        payment_amounts_data.append(amounts_by_month.get(month_key, 0))
+    
+    # Return the formatted data
+    return JsonResponse({
+        'months': months,
+        'bookingCounts': booking_counts_data,
+        'paymentAmounts': payment_amounts_data
+    })

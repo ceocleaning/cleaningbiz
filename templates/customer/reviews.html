@@ -3,12 +3,686 @@
 
 {% block title %}My Reviews{% endblock %}
 
+{% block styles %}
+<style>
+    :root {
+        --primary-color: #4e73df;
+        --primary-light: #6f8df7;
+        --primary-dark: #3a56b0;
+        --secondary-color: #1cc88a;
+        --secondary-light: #2fe2a4;
+        --secondary-dark: #169e6c;
+        --warning-color: #f6c23e;
+        --danger-color: #e74a3b;
+        --gray-100: #f8f9fc;
+        --gray-200: #eaecf4;
+        --gray-300: #dddfeb;
+        --gray-400: #d1d3e2;
+        --gray-500: #b7b9cc;
+        --gray-600: #858796;
+        --gray-700: #6e707e;
+        --gray-800: #5a5c69;
+        --gray-900: #3a3b45;
+        --shadow-sm: 0 .125rem .25rem rgba(58, 59, 69, .15);
+        --shadow-md: 0 .5rem 1rem rgba(58, 59, 69, .15);
+        --shadow-lg: 0 1rem 3rem rgba(58, 59, 69, .175);
+        --border-radius-sm: 0.25rem;
+        --border-radius: 0.5rem;
+        --border-radius-lg: 1rem;
+        --transition-speed: 0.3s;
+    }
+    
+    /* General Styles */
+    .reviews-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
+    }
+    
+    .reviews-subtitle {
+        font-size: 1.1rem;
+        color: var(--gray-600);
+        margin-bottom: 0;
+    }
+    
+    /* Reviews Header Stats */
+    .reviews-header {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
+    }
+    
+    .reviews-stats-card {
+        background: linear-gradient(to right, var(--primary-light), var(--primary-color));
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .stats-item {
+        text-align: center;
+        padding: 0.5rem;
+    }
+    
+    .stats-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+    
+    /* Filter Section */
+    .reviews-filter {
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+    }
+    
+    .review-count {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        margin-left: 0.75rem;
+    }
+    
+    .btn-filter {
+        background-color: var(--gray-100);
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.5rem 1rem;
+        transition: all var(--transition-speed);
+    }
+    
+    .btn-filter:hover {
+        background-color: var(--gray-200);
+    }
+    
+    .btn-filter.active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    /* Review Cards */
+    .review-card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 0;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all var(--transition-speed);
+    }
+    
+    .review-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
+    
+    .review-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        z-index: 1;
+    }
+    
+    .review-badge.new {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .review-badge.recent {
+        background-color: var(--warning-color);
+        color: var(--gray-800);
+    }
+    
+    .review-content {
+        padding: 1.5rem;
+        transition: opacity var(--transition-speed);
+    }
+    
+    /* Business Info */
+    .review-business {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .business-avatar {
+        width: 2.5rem;
+        height: 2.5rem;
+        background-color: var(--primary-light);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .business-name {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 1.1rem;
+    }
+    
+    /* Rating */
+    .review-rating {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stars-container {
+        display: flex;
+        margin-right: 0.75rem;
+    }
+    
+    .stars-container i {
+        color: var(--warning-color);
+        font-size: 1.25rem;
+        margin-right: 0.25rem;
+    }
+    
+    .stars-container i.far {
+        color: var(--gray-400);
+    }
+    
+    .rating-number {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--gray-800);
+    }
+    
+    /* Review Text */
+    .review-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--gray-700);
+        margin-bottom: 1.25rem;
+    }
+    
+    /* Review Metadata */
+    .review-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+    }
+    
+    .review-date, .booking-date {
+        display: flex;
+        align-items: center;
+    }
+    
+    .review-date i, .booking-date i {
+        margin-right: 0.5rem;
+    }
+    
+    .updated-badge {
+        display: inline-block;
+        background-color: var(--gray-500);
+        color: white;
+        border-radius: 50px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+    
+    /* Review Actions */
+    .review-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    
+    .btn-action {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--gray-100);
+        color: var(--gray-700);
+        border: none;
+        transition: all var(--transition-speed);
+    }
+    
+    .btn-action:hover {
+        background-color: var(--gray-200);
+    }
+    
+    .btn-action.edit-review-btn:hover {
+        background-color: var(--primary-light);
+        color: white;
+    }
+    
+    .btn-action.delete-review-btn:hover {
+        background-color: var(--danger-color);
+        color: white;
+    }
+    
+    /* Edit Mode */
+    .review-edit-mode {
+        padding: 1.5rem;
+        transition: opacity var(--transition-speed);
+    }
+    
+    .edit-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .edit-header h5 {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+    
+    .edit-subtitle {
+        color: var(--gray-600);
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .edit-rating-container {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 0.5rem;
+    }
+    
+    .edit-star-rating {
+        display: flex;
+        flex-direction: row-reverse;
+        font-size: 1.75rem;
+        justify-content: flex-end;
+    }
+    
+    .edit-star-rating input {
+        display: none;
+    }
+    
+    .edit-star-rating label {
+        color: var(--gray-400);
+        cursor: pointer;
+        padding: 0 0.2em;
+        transition: all var(--transition-speed);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .edit-star-rating label span {
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+        color: var(--gray-600);
+        font-weight: 500;
+    }
+    
+    .edit-star-rating label:hover,
+    .edit-star-rating label:hover ~ label,
+    .edit-star-rating input:checked ~ label {
+        color: var(--warning-color);
+    }
+    
+    .edit-star-rating label:hover span,
+    .edit-star-rating label:hover ~ label span,
+    .edit-star-rating input:checked ~ label span {
+        color: var(--gray-800);
+    }
+    
+    .textarea-container {
+        position: relative;
+    }
+    
+    .textarea-container textarea {
+        padding-bottom: 2rem;
+        resize: vertical;
+        min-height: 120px;
+        border-color: var(--gray-300);
+        transition: border-color var(--transition-speed);
+    }
+    
+    .textarea-container textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .character-count {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 1rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn-outline {
+        border: 1px solid var(--gray-400);
+        background-color: transparent;
+        color: var(--gray-700);
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-speed);
+    }
+    
+    .btn-outline:hover {
+        background-color: var(--gray-200);
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-speed);
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+    
+    /* Delete Confirmation */
+    .review-delete-confirm {
+        padding: 1.5rem;
+        transition: opacity var(--transition-speed);
+    }
+    
+    .delete-dialog {
+        text-align: center;
+        padding: 1.5rem;
+        background-color: var(--gray-100);
+        border-radius: var(--border-radius);
+    }
+    
+    .delete-icon {
+        font-size: 3rem;
+        color: var(--danger-color);
+        margin-bottom: 1rem;
+    }
+    
+    .delete-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.75rem;
+    }
+    
+    .delete-message {
+        color: var(--gray-700);
+        margin-bottom: 1.5rem;
+    }
+    
+    .delete-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .btn-danger {
+        background-color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-speed);
+    }
+    
+    .btn-danger:hover {
+        background-color: #d13b2d;
+        border-color: #d13b2d;
+    }
+    
+    /* Loading Overlays */
+    .form-loading-overlay,
+    .delete-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        border-radius: var(--border-radius);
+    }
+    
+    /* Business Reviews Section styles have been removed */
+    
+    /* Empty State */
+    .empty-state {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-state-container {
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: var(--primary-light);
+        margin-bottom: 1.5rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .empty-state-title {
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-description {
+        color: var(--gray-700);
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .empty-state-steps {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    .step {
+        display: flex;
+        align-items: flex-start;
+        text-align: left;
+        max-width: 250px;
+    }
+    
+    .step-number {
+        width: 2rem;
+        height: 2rem;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .step-content h6 {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+    
+    .step-content p {
+        color: var(--gray-600);
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .empty-state-action {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+    }
+    
+    /* Toast Notifications */
+    .toast-container {
+        z-index: 1050;
+    }
+    
+    .toast {
+        background-color: white;
+        border: none;
+        box-shadow: var(--shadow-md);
+        border-radius: var(--border-radius-sm);
+        overflow: hidden;
+        margin-bottom: 1rem;
+        min-width: 300px;
+    }
+    
+    .toast-success .toast-header {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .toast-error .toast-header {
+        background-color: var(--danger-color);
+        color: white;
+    }
+    
+    .toast-header {
+        padding: 0.75rem 1rem;
+        border-bottom: none;
+    }
+    
+    .toast-body {
+        padding: 1rem;
+        color: var(--gray-700);
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 767.98px) {
+        .reviews-header {
+            padding: 1rem;
+        }
+        
+        .reviews-stats-card {
+            margin-top: 1rem;
+        }
+        
+        .reviews-filter .btn-group {
+            margin-top: 1rem;
+            width: 100%;
+        }
+        
+        .btn-filter {
+            flex: 1;
+        }
+        
+        .business-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+        
+        .business-stats .stat-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .business-stats .stat-value {
+            margin-right: 0.5rem;
+            font-size: 1.25rem;
+        }
+        
+        .empty-state-steps {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h3 mb-0">My Reviews</h1>
-            <p class="text-muted">All reviews you've submitted for cleaning services</p>
+    <div class="reviews-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h2 class="reviews-title">My Reviews</h2>
+                <p class="reviews-subtitle">Your feedback on cleaning services you've experienced</p>
+            </div>
+            <div class="col-md-5">
+                <div class="reviews-stats-card">
+                    <div class="row g-0">
+                        <div class="col-6 stats-item">
+                            <div class="stats-value">{{ reviews.count }}</div>
+                            <div class="stats-label">Total Reviews</div>
+                        </div>
+                        <div class="col-6 stats-item">
+                            <div class="stats-value">
+                                {{ avg_rating }}
+                            </div>
+                            <div class="stats-label">Avg Rating</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -28,18 +702,48 @@
     <div class="row">
         <div class="col">
             {% if reviews %}
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">All Reviews ({{ reviews.count }})</h5>
+                <div class="reviews-filter mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="filter-title mb-0">All Reviews <span class="review-count">{{ reviews.count }}</span></h5>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="btn-group" role="group" aria-label="Review filters">
+                                <button type="button" class="btn btn-filter active" data-filter="all">All</button>
+                                <button type="button" class="btn btn-filter" data-filter="recent">Recent</button>
+                                <button type="button" class="btn btn-filter" data-filter="highest">Highest Rated</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
+                </div>
+                
+                <div class="reviews-masonry">
+                    <div class="row" data-masonry='{"percentPosition": true}'>
                         {% for review in reviews %}
-                        <div class="review-card mb-3" id="review-card-{{ review.id }}">
-                            <!-- View Mode -->
-                            <div id="view-mode-{{ review.id }}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="review-stars">
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="review-card" id="review-card-{{ review.id }}" data-rating="{{ review.rating }}" data-date="{{ review.created_at|date:'Y-m-d' }}">
+                                <!-- Review Age Badge -->
+                                {% with days_old=review.created_at|timesince %}
+                                    {% if "day" not in days_old %}
+                                        <div class="review-badge new">New</div>
+                                    {% elif "month" not in days_old and "year" not in days_old %}
+                                        <div class="review-badge recent">Recent</div>
+                                    {% endif %}
+                                {% endwith %}
+                                
+                                <!-- View Mode -->
+                                <div id="view-mode-{{ review.id }}" class="review-content">
+                                    <!-- Business Info -->
+                                    <div class="review-business">
+                                        <div class="business-avatar">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="business-name">{{ review.booking.business.businessName }}</div>
+                                    </div>
+                                    
+                                    <!-- Rating -->
+                                    <div class="review-rating">
+                                        <div class="stars-container">
                                             {% for i in "12345"|make_list %}
                                                 {% if forloop.counter <= review.rating %}
                                                 <i class="fas fa-star"></i>
@@ -48,70 +752,104 @@
                                                 {% endif %}
                                             {% endfor %}
                                         </div>
-                                        <p class="mb-2">{{ review.review }}</p>
-                                        <p class="review-date mb-0">
-                                            Reviewed on {{ review.created_at|date:"F d, Y" }}
-                                            {% if review.updated_at and review.updated_at != review.created_at %}
-                                            <span class="text-muted">(Updated on {{ review.updated_at|date:"F d, Y" }})</span>
-                                            {% endif %}
-                                        </p>
-                                        <p class="text-primary mb-0">
-                                            <i class="fas fa-building me-1"></i> {{ review.booking.business.businessName }}
-                                        </p>
-                                        <p class="text-muted small mb-0">
-                                            <i class="fas fa-calendar-alt me-1"></i> Booking: {{ review.booking.cleaningDate|date:"F d, Y" }}
-                                        </p>
+                                        <div class="rating-number">{{ review.rating }}.0</div>
                                     </div>
+                                    
+                                    <!-- Review Text -->
+                                    <div class="review-text">{{ review.review }}</div>
+                                    
+                                    <!-- Review Metadata -->
+                                    <div class="review-meta">
+                                        <div class="review-date">
+                                            <i class="far fa-clock"></i> {{ review.created_at|date:"F d, Y" }}
+                                            {% if review.updated_at and review.updated_at != review.created_at %}
+                                            <span class="updated-badge">Updated</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="booking-date">
+                                            <i class="fas fa-calendar-alt"></i> {{ review.booking.cleaningDate|date:"F d, Y" }}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Review Actions -->
                                     <div class="review-actions">
-                                        <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-review-btn" data-review-id="{{ review.id }}">
-                                            <i class="fas fa-edit"></i> Edit
+                                        <button type="button" class="btn btn-action edit-review-btn" data-review-id="{{ review.id }}" aria-label="Edit review">
+                                            <i class="fas fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger delete-review-btn" data-review-id="{{ review.id }}">
-                                            <i class="fas fa-trash-alt"></i> Delete
+                                        <button type="button" class="btn btn-action delete-review-btn" data-review-id="{{ review.id }}" aria-label="Delete review">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
                                 </div>
+                            
                             </div>
+
 
                             <!-- Edit Mode -->
                             <div id="edit-mode-{{ review.id }}" class="review-edit-mode d-none">
                                 <form id="edit-review-form-{{ review.id }}" data-review-id="{{ review.id }}">
                                     {% csrf_token %}
-                                    <div class="mb-3">
-                                        <label class="form-label">Rating</label>
-                                        <div class="rating-container">
-                                            <div class="star-rating">
+                                    <div class="edit-header">
+                                        <h5>Edit Your Review</h5>
+                                        <p class="edit-subtitle">Update your feedback for {{ review.booking.business.businessName }}</p>
+                                    </div>
+                                    
+                                    <div class="form-group mb-4">
+                                        <label class="form-label">Your Rating</label>
+                                        <div class="edit-rating-container">
+                                            <div class="edit-star-rating">
                                                 <input type="radio" id="edit_star5_{{ review.id }}" name="rating" value="5" {% if review.rating == 5 %}checked{% endif %} />
-                                                <label for="edit_star5_{{ review.id }}" title="5 stars"><i class="fas fa-star"></i></label>
+                                                <label for="edit_star5_{{ review.id }}" title="5 stars"><i class="fas fa-star"></i><span>Excellent</span></label>
+                                                
                                                 <input type="radio" id="edit_star4_{{ review.id }}" name="rating" value="4" {% if review.rating == 4 %}checked{% endif %} />
-                                                <label for="edit_star4_{{ review.id }}" title="4 stars"><i class="fas fa-star"></i></label>
+                                                <label for="edit_star4_{{ review.id }}" title="4 stars"><i class="fas fa-star"></i><span>Very Good</span></label>
+                                                
                                                 <input type="radio" id="edit_star3_{{ review.id }}" name="rating" value="3" {% if review.rating == 3 %}checked{% endif %} />
-                                                <label for="edit_star3_{{ review.id }}" title="3 stars"><i class="fas fa-star"></i></label>
+                                                <label for="edit_star3_{{ review.id }}" title="3 stars"><i class="fas fa-star"></i><span>Good</span></label>
+                                                
                                                 <input type="radio" id="edit_star2_{{ review.id }}" name="rating" value="2" {% if review.rating == 2 %}checked{% endif %} />
-                                                <label for="edit_star2_{{ review.id }}" title="2 stars"><i class="fas fa-star"></i></label>
+                                                <label for="edit_star2_{{ review.id }}" title="2 stars"><i class="fas fa-star"></i><span>Fair</span></label>
+                                                
                                                 <input type="radio" id="edit_star1_{{ review.id }}" name="rating" value="1" {% if review.rating == 1 %}checked{% endif %} />
-                                                <label for="edit_star1_{{ review.id }}" title="1 star"><i class="fas fa-star"></i></label>
+                                                <label for="edit_star1_{{ review.id }}" title="1 star"><i class="fas fa-star"></i><span>Poor</span></label>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mb-3">
-                                        <textarea class="form-control" name="review" rows="3" required>{{ review.review }}</textarea>
+                                    
+                                    <div class="form-group mb-4">
+                                        <label class="form-label">Your Review</label>
+                                        <div class="textarea-container">
+                                            <textarea class="form-control" name="review" rows="4" maxlength="500" required>{{ review.review }}</textarea>
+                                            <div class="character-count"><span class="current">0</span>/<span class="maximum">500</span></div>
+                                        </div>
                                     </div>
-                                    <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-outline-secondary me-2 cancel-edit-btn" data-review-id="{{ review.id }}">Cancel</button>
-                                        <button type="submit" class="btn btn-primary save-edit-btn">Save Changes</button>
+                                    
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-outline cancel-edit-btn" data-review-id="{{ review.id }}">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                        <button type="submit" class="btn btn-primary save-edit-btn">
+                                            <i class="fas fa-check"></i> Save Changes
+                                        </button>
                                     </div>
                                 </form>
                             </div>
 
                             <!-- Delete Confirmation -->
                             <div id="delete-confirm-{{ review.id }}" class="review-delete-confirm d-none">
-                                <div class="alert alert-warning">
-                                    <h5><i class="fas fa-exclamation-triangle me-2"></i> Delete Review?</h5>
-                                    <p>Are you sure you want to delete this review? This action cannot be undone.</p>
-                                    <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-outline-secondary me-2 cancel-delete-btn" data-review-id="{{ review.id }}">Cancel</button>
-                                        <button type="button" class="btn btn-danger confirm-delete-btn" data-review-id="{{ review.id }}">Delete Review</button>
+                                <div class="delete-dialog">
+                                    <div class="delete-icon">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <h5 class="delete-title">Delete This Review?</h5>
+                                    <p class="delete-message">This action cannot be undone. Your review will be permanently removed.</p>
+                                    <div class="delete-actions">
+                                        <button type="button" class="btn btn-outline cancel-delete-btn" data-review-id="{{ review.id }}">
+                                            Keep Review
+                                        </button>
+                                        <button type="button" class="btn btn-danger confirm-delete-btn" data-review-id="{{ review.id }}">
+                                            <i class="fas fa-trash-alt"></i> Delete Review
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -120,65 +858,44 @@
                     </div>
                 </div>
 
-                <!-- Reviews by Business -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Reviews by Business</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="accordion" id="businessReviewsAccordion">
-                            {% for business_data in businesses %}
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="heading{{ business_data.business.id }}">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                            data-bs-target="#collapse{{ business_data.business.id }}" aria-expanded="false" 
-                                            aria-controls="collapse{{ business_data.business.id }}">
-                                        <div>
-                                            <span class="fw-bold">{{ business_data.business.businessName }}</span>
-                                            <span class="badge bg-primary ms-2">{{ business_data.reviews|length }} Reviews</span>
-                                        </div>
-                                    </button>
-                                </h2>
-                                <div id="collapse{{ business_data.business.id }}" class="accordion-collapse collapse" 
-                                     aria-labelledby="heading{{ business_data.business.id }}" data-bs-parent="#businessReviewsAccordion">
-                                    <div class="accordion-body">
-                                        {% for review in business_data.reviews %}
-                                        <div class="review-card mb-3">
-                                            <div class="review-stars">
-                                                {% for i in "12345"|make_list %}
-                                                    {% if forloop.counter <= review.rating %}
-                                                    <i class="fas fa-star"></i>
-                                                    {% else %}
-                                                    <i class="far fa-star"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                            <p class="mb-2">{{ review.review }}</p>
-                                            <p class="review-date mb-0">
-                                                Reviewed on {{ review.created_at|date:"F d, Y" }}
-                                                {% if review.updated_at and review.updated_at != review.created_at %}
-                                                <span class="text-muted">(Updated on {{ review.updated_at|date:"F d, Y" }})</span>
-                                                {% endif %}
-                                            </p>
-                                            <p class="text-muted small mb-0">
-                                                <i class="fas fa-calendar-alt me-1"></i> Booking: {{ review.booking.cleaningDate|date:"F d, Y" }}
-                                            </p>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
+                <!-- Reviews by Business section has been removed -->
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-container">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <h3 class="empty-state-title">No Reviews Yet</h3>
+                        <p class="empty-state-description">
+                            Share your experiences and help others by reviewing your cleaning services.
+                            Your feedback is valuable to the businesses and other customers.
+                        </p>
+                        <div class="empty-state-steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h6>Find Your Bookings</h6>
+                                    <p>View your past cleaning service bookings</p>
                                 </div>
                             </div>
-                            {% endfor %}
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h6>Rate Your Experience</h6>
+                                    <p>Share your honest feedback about the service</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h6>Submit Your Review</h6>
+                                    <p>Help others make informed decisions</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="card shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
-                        <h5>No Reviews Yet</h5>
-                        <p class="text-muted">You haven't submitted any reviews for your bookings yet.</p>
-                        <a href="{% url 'customer:bookings' %}" class="btn btn-primary">View My Bookings</a>
+                        <a href="{% url 'customer:bookings' %}" class="btn btn-primary btn-lg empty-state-action">
+                            <i class="fas fa-calendar-check me-2"></i> View My Bookings
+                        </a>
                     </div>
                 </div>
             {% endif %}
@@ -187,67 +904,219 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // In-place review editing functionality
+    // Initialize Masonry layout if available
+    if (typeof Masonry !== 'undefined') {
+        const grid = document.querySelector('.reviews-masonry .row');
+        if (grid) {
+            const masonry = new Masonry(grid, {
+                itemSelector: '.col-md-6',
+                percentPosition: true
+            });
+        }
+    }
+    
+    // Filter functionality
+    function setupFilters() {
+        const filterButtons = document.querySelectorAll('.btn-filter');
+        const reviewCards = document.querySelectorAll('.review-card');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active state
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                
+                // Apply filter
+                reviewCards.forEach(card => {
+                    const rating = parseInt(card.getAttribute('data-rating'));
+                    const date = new Date(card.getAttribute('data-date'));
+                    const now = new Date();
+                    const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+                    
+                    switch(filter) {
+                        case 'recent':
+                            card.parentElement.style.display = (daysDiff <= 30) ? '' : 'none';
+                            break;
+                        case 'highest':
+                            card.parentElement.style.display = (rating >= 4) ? '' : 'none';
+                            break;
+                        default: // 'all'
+                            card.parentElement.style.display = '';
+                    }
+                });
+                
+                // Re-layout Masonry
+                if (typeof Masonry !== 'undefined') {
+                    const grid = document.querySelector('.reviews-masonry .row');
+                    if (grid && grid.masonry) {
+                        setTimeout(() => grid.masonry.layout(), 100);
+                    }
+                }
+            });
+        });
+    }
+    
+    // Character counter for review textarea
+    function setupCharacterCounter() {
+        document.querySelectorAll('.textarea-container textarea').forEach(textarea => {
+            const counter = textarea.nextElementSibling.querySelector('.current');
+            const updateCounter = () => {
+                counter.textContent = textarea.value.length;
+                // Add visual feedback
+                const max = parseInt(textarea.getAttribute('maxlength'));
+                const remaining = max - textarea.value.length;
+                if (remaining < 20) {
+                    counter.classList.add('text-danger');
+                } else if (remaining < 50) {
+                    counter.classList.add('text-warning');
+                    counter.classList.remove('text-danger');
+                } else {
+                    counter.classList.remove('text-warning', 'text-danger');
+                }
+            };
+            
+            textarea.addEventListener('input', updateCounter);
+            // Initialize counter
+            updateCounter();
+        });
+    }
+    
+    // Enhanced review editing functionality
     function setupReviewEditing() {
-        // Edit review buttons
+        // Edit review buttons with animation
         document.querySelectorAll('.edit-review-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const reviewId = this.getAttribute('data-review-id');
-                // Hide view mode, show edit mode
-                document.getElementById(`view-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`edit-mode-${reviewId}`).classList.remove('d-none');
+                const viewMode = document.getElementById(`view-mode-${reviewId}`);
+                const editMode = document.getElementById(`edit-mode-${reviewId}`);
+                
+                // Fade out view mode
+                viewMode.style.opacity = '0';
+                setTimeout(() => {
+                    viewMode.classList.add('d-none');
+                    // Show edit mode with fade in
+                    editMode.classList.remove('d-none');
+                    editMode.style.opacity = '0';
+                    setTimeout(() => {
+                        editMode.style.opacity = '1';
+                    }, 10);
+                }, 200);
+                
                 // Hide delete confirmation if visible
                 document.getElementById(`delete-confirm-${reviewId}`).classList.add('d-none');
             });
         });
 
-        // Cancel edit buttons
+        // Cancel edit buttons with animation
         document.querySelectorAll('.cancel-edit-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const reviewId = this.getAttribute('data-review-id');
-                // Hide edit mode, show view mode
-                document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`view-mode-${reviewId}`).classList.remove('d-none');
+                const viewMode = document.getElementById(`view-mode-${reviewId}`);
+                const editMode = document.getElementById(`edit-mode-${reviewId}`);
+                
+                // Fade out edit mode
+                editMode.style.opacity = '0';
+                setTimeout(() => {
+                    editMode.classList.add('d-none');
+                    // Show view mode with fade in
+                    viewMode.classList.remove('d-none');
+                    viewMode.style.opacity = '0';
+                    setTimeout(() => {
+                        viewMode.style.opacity = '1';
+                    }, 10);
+                }, 200);
             });
         });
 
-        // Delete review buttons
+        // Delete review buttons with animation
         document.querySelectorAll('.delete-review-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const reviewId = this.getAttribute('data-review-id');
-                // Hide view mode, show delete confirmation
-                document.getElementById(`view-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`delete-confirm-${reviewId}`).classList.remove('d-none');
+                const viewMode = document.getElementById(`view-mode-${reviewId}`);
+                const deleteConfirm = document.getElementById(`delete-confirm-${reviewId}`);
+                
+                // Fade out view mode
+                viewMode.style.opacity = '0';
+                setTimeout(() => {
+                    viewMode.classList.add('d-none');
+                    // Show delete confirmation with fade in
+                    deleteConfirm.classList.remove('d-none');
+                    deleteConfirm.style.opacity = '0';
+                    setTimeout(() => {
+                        deleteConfirm.style.opacity = '1';
+                    }, 10);
+                }, 200);
+                
                 // Hide edit mode if visible
                 document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
             });
         });
 
-        // Cancel delete buttons
+        // Cancel delete buttons with animation
         document.querySelectorAll('.cancel-delete-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const reviewId = this.getAttribute('data-review-id');
-                // Hide delete confirmation, show view mode
-                document.getElementById(`delete-confirm-${reviewId}`).classList.add('d-none');
-                document.getElementById(`view-mode-${reviewId}`).classList.remove('d-none');
+                const viewMode = document.getElementById(`view-mode-${reviewId}`);
+                const deleteConfirm = document.getElementById(`delete-confirm-${reviewId}`);
+                
+                // Fade out delete confirmation
+                deleteConfirm.style.opacity = '0';
+                setTimeout(() => {
+                    deleteConfirm.classList.add('d-none');
+                    // Show view mode with fade in
+                    viewMode.classList.remove('d-none');
+                    viewMode.style.opacity = '0';
+                    setTimeout(() => {
+                        viewMode.style.opacity = '1';
+                    }, 10);
+                }, 200);
             });
         });
 
-        // Save edit form submissions
+        // Save edit form submissions with enhanced feedback
         document.querySelectorAll('[id^="edit-review-form-"]').forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                
+                // Form validation
+                let isValid = true;
+                const reviewText = this.querySelector('textarea[name="review"]');
+                if (!reviewText.value.trim()) {
+                    isValid = false;
+                    // Add validation error
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'invalid-feedback d-block';
+                    errorMsg.textContent = 'Please provide your review text';
+                    reviewText.classList.add('is-invalid');
+                    if (!reviewText.nextElementSibling.classList.contains('invalid-feedback')) {
+                        reviewText.parentNode.insertBefore(errorMsg, reviewText.nextElementSibling.nextElementSibling);
+                    }
+                } else {
+                    reviewText.classList.remove('is-invalid');
+                    const existingError = reviewText.parentNode.querySelector('.invalid-feedback');
+                    if (existingError) existingError.remove();
+                }
+                
+                if (!isValid) return;
+                
                 const reviewId = this.getAttribute('data-review-id');
                 const formData = new FormData(this);
                 
-                // Show loading state
+                // Show loading state with enhanced animation
                 const saveBtn = this.querySelector('.save-edit-btn');
                 const originalBtnText = saveBtn.innerHTML;
-                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
                 saveBtn.disabled = true;
+                
+                // Add loading overlay
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'form-loading-overlay';
+                this.appendChild(loadingOverlay);
                 
                 // Send AJAX request
                 fetch(`/customer/review/edit/${reviewId}/`, {
@@ -263,10 +1132,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         // Update the view mode with new data
                         const viewMode = document.getElementById(`view-mode-${reviewId}`);
+                        const reviewCard = document.getElementById(`review-card-${reviewId}`);
+                        
+                        // Update rating number
+                        const rating = parseInt(formData.get('rating'));
+                        reviewCard.setAttribute('data-rating', rating);
                         
                         // Update stars
-                        const starsContainer = viewMode.querySelector('.review-stars');
-                        const rating = parseInt(formData.get('rating'));
+                        const starsContainer = viewMode.querySelector('.stars-container');
                         starsContainer.innerHTML = '';
                         for (let i = 1; i <= 5; i++) {
                             const star = document.createElement('i');
@@ -274,70 +1147,77 @@ document.addEventListener('DOMContentLoaded', function() {
                             starsContainer.appendChild(star);
                         }
                         
+                        // Update rating number
+                        const ratingNumber = viewMode.querySelector('.rating-number');
+                        if (ratingNumber) {
+                            ratingNumber.textContent = `${rating}.0`;
+                        }
+                        
                         // Update review text
-                        const reviewText = viewMode.querySelector('p.mb-2');
-                        reviewText.textContent = formData.get('review');
+                        const reviewTextElement = viewMode.querySelector('.review-text');
+                        reviewTextElement.textContent = formData.get('review');
                         
-                        // Switch back to view mode
-                        document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
-                        viewMode.classList.remove('d-none');
+                        // Add updated badge if not already present
+                        const reviewDate = viewMode.querySelector('.review-date');
+                        if (reviewDate && !reviewDate.querySelector('.updated-badge')) {
+                            const updatedBadge = document.createElement('span');
+                            updatedBadge.className = 'updated-badge';
+                            updatedBadge.textContent = 'Updated';
+                            reviewDate.appendChild(updatedBadge);
+                        }
                         
-                        // Show success message
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Success!</strong> Your review has been updated.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.getElementById(`review-card-${reviewId}`).appendChild(alertDiv);
-                        
-                        // Auto-dismiss the alert after 3 seconds
+                        // Switch back to view mode with animation
+                        const editMode = document.getElementById(`edit-mode-${reviewId}`);
+                        editMode.style.opacity = '0';
                         setTimeout(() => {
-                            alertDiv.classList.remove('show');
-                            setTimeout(() => alertDiv.remove(), 150);
-                        }, 3000);
+                            editMode.classList.add('d-none');
+                            viewMode.classList.remove('d-none');
+                            viewMode.style.opacity = '0';
+                            setTimeout(() => {
+                                viewMode.style.opacity = '1';
+                            }, 10);
+                        }, 300);
+                        
+                        // Show success toast
+                        showToast('success', 'Review Updated', 'Your review has been successfully updated.');
                     } else {
-                        // Show error message
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Error!</strong> ${data.error || 'Something went wrong. Please try again.'}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.getElementById(`edit-mode-${reviewId}`).appendChild(alertDiv);
+                        // Show error toast
+                        showToast('error', 'Update Failed', data.error || 'Something went wrong. Please try again.');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    // Show error message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                    alertDiv.innerHTML = `
-                        <strong>Error!</strong> Something went wrong. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.getElementById(`edit-mode-${reviewId}`).appendChild(alertDiv);
+                    // Show error toast
+                    showToast('error', 'Update Failed', 'Something went wrong. Please try again.');
                 })
                 .finally(() => {
                     // Restore button state
                     saveBtn.innerHTML = originalBtnText;
                     saveBtn.disabled = false;
+                    
+                    // Remove loading overlay
+                    this.querySelector('.form-loading-overlay').remove();
                 });
             });
         });
 
-        // Confirm delete buttons
+        // Confirm delete buttons with enhanced feedback
         document.querySelectorAll('.confirm-delete-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const reviewId = this.getAttribute('data-review-id');
-                const reviewCard = document.getElementById(`review-card-${reviewId}`);
+                const reviewCard = document.getElementById(`review-card-${reviewId}`).closest('.col-md-6');
                 const deleteConfirm = document.getElementById(`delete-confirm-${reviewId}`);
                 
-                // Show loading state
+                // Show loading state with enhanced animation
                 const deleteBtn = this;
                 const originalBtnText = deleteBtn.innerHTML;
-                deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+                deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
                 deleteBtn.disabled = true;
+                
+                // Add loading overlay
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'delete-loading-overlay';
+                deleteConfirm.appendChild(loadingOverlay);
                 
                 // Send AJAX request
                 fetch(`/customer/review/delete/${reviewId}/`, {
@@ -350,13 +1230,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Add fade-out animation
-                        reviewCard.style.transition = 'opacity 0.5s ease';
+                        // Add enhanced fade-out animation
+                        reviewCard.style.transition = 'all 0.5s ease';
                         reviewCard.style.opacity = '0';
+                        reviewCard.style.transform = 'scale(0.9)';
+                        
+                        // Show success toast
+                        showToast('success', 'Review Deleted', 'Your review has been successfully deleted.');
                         
                         // Remove the review card after animation
                         setTimeout(() => {
                             reviewCard.remove();
+                            
+                            // Update review count in header
+                            const countElement = document.querySelector('.stats-value:first-child');
+                            if (countElement) {
+                                const currentCount = parseInt(countElement.textContent);
+                                if (!isNaN(currentCount)) {
+                                    countElement.textContent = currentCount - 1;
+                                }
+                            }
+                            
+                            // Update review count in filter
+                            const filterCountElement = document.querySelector('.review-count');
+                            if (filterCountElement) {
+                                const currentCount = parseInt(filterCountElement.textContent);
+                                if (!isNaN(currentCount)) {
+                                    filterCountElement.textContent = currentCount - 1;
+                                }
+                            }
+                            
+                            // Re-layout Masonry if available
+                            if (typeof Masonry !== 'undefined') {
+                                const grid = document.querySelector('.reviews-masonry .row');
+                                if (grid && grid.masonry) {
+                                    setTimeout(() => grid.masonry.layout(), 100);
+                                }
+                            }
                             
                             // Check if there are no more reviews
                             if (!document.querySelector('.review-card')) {
@@ -364,111 +1274,103 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }, 500);
                     } else {
-                        // Show error message
+                        // Remove loading overlay
+                        deleteConfirm.querySelector('.delete-loading-overlay').remove();
+                        
+                        // Restore button state
                         deleteBtn.innerHTML = originalBtnText;
                         deleteBtn.disabled = false;
                         
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Error!</strong> ${data.error || 'Something went wrong. Please try again.'}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        deleteConfirm.appendChild(alertDiv);
+                        // Show error toast
+                        showToast('error', 'Delete Failed', data.error || 'Something went wrong. Please try again.');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    
+                    // Remove loading overlay
+                    deleteConfirm.querySelector('.delete-loading-overlay').remove();
+                    
                     // Restore button state
                     deleteBtn.innerHTML = originalBtnText;
                     deleteBtn.disabled = false;
                     
-                    // Show error message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                    alertDiv.innerHTML = `
-                        <strong>Error!</strong> Something went wrong. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    deleteConfirm.appendChild(alertDiv);
+                    // Show error toast
+                    showToast('error', 'Delete Failed', 'Something went wrong. Please try again.');
                 });
             });
         });
     }
     
-    // Initialize review editing functionality
+    // Toast notification system
+    function showToast(type, title, message) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type} show`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.setAttribute('id', toastId);
+        
+        // Toast content
+        toast.innerHTML = `
+            <div class="toast-header">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+        
+        // Add click listener to close button
+        toast.querySelector('.btn-close').addEventListener('click', () => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        });
+    }
+    
+    // Initialize all functionality
     setupReviewEditing();
+    setupCharacterCounter();
+    setupFilters();
+    
+    // Add Masonry layout script if not already loaded
+    if (typeof Masonry === 'undefined' && document.querySelector('.reviews-masonry')) {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js';
+        script.onload = function() {
+            const grid = document.querySelector('.reviews-masonry .row');
+            if (grid) {
+                new Masonry(grid, {
+                    itemSelector: '.col-md-6',
+                    percentPosition: true
+                });
+            }
+        };
+        document.head.appendChild(script);
+    }
 });
 </script>
 {% endblock %}
 
-{% block styles %}
-<style>
-    /* Star Rating Styles */
-    .rating-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .star-rating {
-        display: flex;
-        flex-direction: row-reverse;
-        font-size: 1.5em;
-        justify-content: center;
-        padding: 0 0.2em;
-        text-align: center;
-        width: 5em;
-    }
-    
-    .star-rating input {
-        display: none;
-    }
-    
-    .star-rating label {
-        color: #ccc;
-        cursor: pointer;
-        padding: 0 0.1em;
-        transition: color 0.3s;
-    }
-    
-    .star-rating label:hover,
-    .star-rating label:hover ~ label,
-    .star-rating input:checked ~ label {
-        color: #f90;
-    }
-    
-    /* Review Card Styles */
-    .review-card {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        position: relative;
-    }
-    
-    .review-stars {
-        color: #f90;
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .review-date {
-        color: #6c757d;
-        font-size: 0.85rem;
-    }
-    
-    .review-actions {
-        display: flex;
-    }
-    
-    .review-edit-mode textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
-    
-    .review-delete-confirm {
-        margin-top: 1rem;
-    }
-</style>
-{% endblock %}
+
