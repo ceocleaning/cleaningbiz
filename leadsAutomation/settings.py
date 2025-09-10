@@ -128,7 +128,7 @@ MIDDLEWARE = [
 ]
 
 if not DEBUG:
-    MIDDLEWARE.append('rollbar.middleware.RollbarMiddleware')
+    MIDDLEWARE.append('rollbar.contrib.django.middleware.RollbarNotifierMiddleware')
     MIDDLEWARE.append('leadsAutomation.middleware.CustomRollbarNotifierMiddleware')
 
 ROOT_URLCONF = 'leadsAutomation.urls'

@@ -27,6 +27,9 @@ class CustomRollbarNotifierMiddleware(RollbarNotifierMiddleware):
                     'id': request.user.id,
                     'username': request.user.username,
                     'email': request.user.email,
+                    'is_customer': request.user.groups.filter(name='Customer').exists(),
+                    'is_owner': request.user.groups.filter(name='Owner').exists() or request.user.is_superuser,
+                    'is_cleaner': request.user.groups.filter(name='Cleaner').exists(),
                 },
             }
 
