@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from accounts.models import Business
 from django.conf import settings
+import uuid
 import json
 from datetime import datetime, timedelta
 from django.utils.text import slugify
@@ -35,7 +36,6 @@ class SubscriptionPlan(models.Model):
         ('custom', 'Custom'),
     ]
 
- 
     name = models.CharField(max_length=100, help_text="Internal name for the plan", default="")
     display_name = models.CharField(max_length=100, help_text="Name displayed to users")
     description = models.TextField(blank=True, null=True)

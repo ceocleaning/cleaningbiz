@@ -101,6 +101,7 @@ def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj
     service_type = service_type.lower().replace(" ", "")
     
     bedroomPrice = businessSettingsObj.bedroomPrice
+    base_price = businessSettingsObj.base_price
     bathroomPrice = businessSettingsObj.bathroomPrice
     depositFee = businessSettingsObj.depositFee
     taxPercent = businessSettingsObj.taxPercent
@@ -110,22 +111,22 @@ def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj
     sqftAirbnb = businessSettingsObj.sqftMultiplierAirbnb
 
     if "deep" in service_type:
-        base_price = sqftDeep * area
+        sqft_price = sqftDeep * area
 
     elif "moveinmoveout" in service_type:
-        base_price = sqftMoveinout * area
+        sqft_price = sqftMoveinout * area
 
     elif "airbnb" in service_type:
-        base_price = sqftAirbnb * area
+        sqft_price = sqftAirbnb * area
 
     else:
-        base_price = sqftStandard * area
+        sqft_price = sqftStandard * area
     
     bathroomTotal = bathrooms * bathroomPrice
     bedroomTotal = bedrooms * bedroomPrice
 
     # Calculate the total amount
-    total_amount = bedroomTotal + bathroomTotal + base_price + depositFee
+    total_amount = bedroomTotal + bathroomTotal + base_price + depositFee + sqft_price
     
     
     return total_amount

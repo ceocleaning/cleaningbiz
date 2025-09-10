@@ -472,6 +472,7 @@ def check_availability_for_booking(request):
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
+
 # API endpoint to create a new booking from Retell
 @csrf_exempt
 @api_view(['POST', 'GET'])
@@ -675,7 +676,6 @@ def create_booking(request):
                 'cleaningDate': booking.cleaningDate.strftime('%Y-%m-%d'),
                 'startTime': booking.startTime.strftime('%H:%M'),
                 'endTime': booking.endTime.strftime('%H:%M'),
-                'cleaner': booking.cleaner.name,
                 'totalPrice': float(booking.totalPrice)
             }
         })
