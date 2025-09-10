@@ -227,6 +227,7 @@ def register_business(request):
         address = request.POST.get('address')
         job_assignment = request.POST.get('job_assignment')
         selected_timezone = request.POST.get('timezone', 'UTC')
+        cleaner_payout_percentage = request.POST.get('cleaner_payout_percentage', 0)
         
         # Validate required fields
         if not all([businessName, phone, address]):
@@ -242,6 +243,7 @@ def register_business(request):
                 address=address,
                 job_assignment=job_assignment,
                 timezone=selected_timezone,
+                cleaner_payout_percentage=cleaner_payout_percentage,
                 isActive=False,  # Set to False by default
                 isApproved=False  # Set to False by default
             )
@@ -286,6 +288,7 @@ def edit_business(request):
         job_assignment = request.POST.get('job_assignment')
         email = request.POST.get('email')
         selected_timezone = request.POST.get('timezone', 'UTC')
+        cleaner_payout_percentage = request.POST.get('cleaner_payout_percentage', 0)
         
         if not all([businessName, phone, address]):
             messages.error(request, 'All fields are required.')
@@ -298,6 +301,7 @@ def edit_business(request):
             business.job_assignment = job_assignment
             business.timezone = selected_timezone
             business.user.email = email
+            business.cleaner_payout_percentage = cleaner_payout_percentage
             business.user.save()
             business.save()
             
@@ -807,47 +811,34 @@ def send_otp_email(user, otp):
         email_from = settings.EMAIL_HOST_USER
         email_to = user.email
         
-        # Email content
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Password Reset OTP</h2>
-            <p>Dear {user.first_name or user.username},</p>
-            <p>You have requested to reset your password. Please use the following OTP to verify your identity:</p>
-            
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
-                <h1 style="font-size: 32px; letter-spacing: 5px;">{otp}</h1>
-            </div>
-            
-            <p>This OTP will expire in 10 minutes.</p>
-            <p>If you did not request a password reset, please ignore this email or contact support.</p>
-            
-            <p>Best regards,<br>
-            CEO Cleaners Support Team</p>
-        </body>
-        </html>
+
+        text_content = f"""
+        Dear {user.first_name or user.username},
+        
+        You have requested to reset your password. Please use the following OTP to verify your identity:
+
+        {otp}
+
+        This OTP will expire in 10 minutes.
+
+        If you did not request a password reset, please ignore this email or contact support.
+
+        Best regards,
+        CEO Cleaners Support Team
         """
         
-        text_content = strip_tags(html_content)
-        
        
-        
-        # For debugging
-        print(f"Attempting to send email from: {sender_email}")
-        
-        # Skip Django's email system and use direct SMTP since we know it works
+
         try:
             send_email(
                 from_email=email_from,
                 to_email=email_to,
                 subject='Password Reset OTP',
-                html_body=html_content,
                 text_content=text_content
             )
-            print("Email sent successfully using direct SMTP")
             return True
         except Exception as smtp_error:
-            print(f"SMTP error: {smtp_error}")
+            print(f"Error Sending Email: {smtp_error}")
      
             return False
                 
@@ -1603,22 +1594,16 @@ def reset_cleaner_password(request):
     # Send reset email
     try:
         subject = f'{business.businessName} - Your Password Has Been Changed'
-        html_message = f"""
-        <p>Hello {cleaner.name},</p>
-        <p>Your password has been changed by your business administrator.</p>
-        <p>Please contact your administrator if you did not request this change.</p>
-        <p>Thank you,<br>{business.businessName}</p>
-        """
+      
 
         text_content = f"Hello {cleaner.name}, Your password has been changed by your business administrator. Please contact them if you did not request this change."
         # Check for business configured email settings
         try:
             send_email(
-                from_email=email_from,
+                from_email=f"CleaningBiz AI <noreply@cleaningbizai.com>",
                 to_email=email_to,
                 reply_to=business.user.email,
                 subject=subject,
-                html_body=html_message,
                 text_content=text_content
             )
             messages.success(request, f'Password for {cleaner.name} has been changed successfully. A notification has been sent to {user.email}.')

@@ -25,7 +25,7 @@
     <!-- Custom timezone utilities -->
     <script src="{% static 'js/timezone.js' %}"></script>
     
-    {% block extra_js %}{% endblock %}
+    
     <style>
         :root {
             --primary-color: #2563eb;
@@ -730,6 +730,12 @@
                                     Customers
                                 </a>
                             </li>
+                            <li>    
+                                <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}" 
+                                    href="{% url 'bookings:embed_booking_widget' %}">
+                                    Embed Booking Widget
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     
@@ -761,12 +767,12 @@
                                     <i class="fas fa-user-friends me-2 text-primary"></i>All Cleaners
                                 </a>
                             </li>
-                            <!-- <li>
+                            <li>
                                 <a class="dropdown-item {% if '/payouts/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:payouts_dashboard' %}">
                                     <i class="fas fa-money-bill-wave me-2 text-success"></i>Payouts
                                 </a>
-                            </li> -->
+                            </li>
                         </ul>
                     </li>
      
@@ -914,6 +920,19 @@
                                         <i class="fas fa-robot me-2 text-primary"></i>
                                         Help Center
                                     </a>
+                                </li>
+
+                                <li>
+                                    {% load subscription_tags %}
+                                    {% get_setup_fee_status as setup_fee %}
+                                    {% if setup_fee %}
+                                    {% if setup_fee.call_status == 'pending' %}
+                                    <a id="app-scheduling" href="#" class="dropdown-item" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
+                                        <i class="fas fa-phone-alt me-2"></i>
+                                        Schedule Onboarding Call Now</a>
+                                    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
+                                    {% endif %}
+                                {% endif %}
                                 </li>
                                 
 
@@ -1077,26 +1096,7 @@
 
     {% block chats %}{% endblock %}
     
-    {% if user.is_authenticated and user.business_set.exists %}
-    {% load subscription_tags %}
-    {% get_setup_fee_status as setup_fee %}
-    {% if setup_fee %}
-    <!-- Floating Onboarding Call Button -->
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
-        {% if setup_fee.call_status == 'pending' %}
-        <a id="app-scheduling" href="#" class="btn btn-dark btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
-            <i class="fas fa-phone-alt me-2"></i>
-            Schedule Onboarding Call Now</a>
-    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
-        {% elif setup_fee.call_status == 'booked' %}
-        <div class="btn btn-success btn-lg shadow rounded-pill px-4 py-3 d-flex align-items-center">
-            <i class="fas fa-check-circle me-2"></i>
-            <span>Onboarding Call Booked</span>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-    {% endif %}
+
 
     <!-- Footer -->
     <footer>
@@ -1155,6 +1155,7 @@
     </script>
 
     {% block scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
     
 </body>
 </html>

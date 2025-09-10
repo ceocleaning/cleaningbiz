@@ -5,233 +5,1138 @@
 
 {% block header_title %}Your Profile{% endblock %}
 
+{% block styles %}
+<style>
+:root {
+    --primary-color: #4e73df;
+    --primary-dark: #2e59d9;
+    --secondary-color: #1cc88a;
+    --accent-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --dark-text: #5a5c69;
+    --light-text: #858796;
+    --card-border-radius: 0.75rem;
+    --input-border-radius: 0.5rem;
+    --transition-speed: 0.3s;
+}
+
+/* Profile Header Styles */
+.profile-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: var(--card-border-radius);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+    background-size: cover;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: white;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 3px solid white;
+    margin-bottom: 1rem;
+}
+
+.profile-stats {
+    display: flex;
+    margin-top: 1rem;
+}
+
+.stat-item {
+    padding-right: 1.5rem;
+    margin-right: 1.5rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.stat-item:last-child {
+    border-right: none;
+    margin-right: 0;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+/* Profile Completeness */
+.profile-completeness {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    height: 8px;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.completeness-bar {
+    height: 100%;
+    background-color: var(--secondary-color);
+    border-radius: 1rem;
+    transition: width 1s ease-in-out;
+}
+
+/* Tab Navigation */
+.profile-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    padding-bottom: 0;
+}
+
+.profile-tab {
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: var(--light-text);
+    cursor: pointer;
+    position: relative;
+    transition: all var(--transition-speed);
+    border-bottom: 3px solid transparent;
+}
+
+.profile-tab.active {
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+}
+
+.profile-tab:hover:not(.active) {
+    color: var(--dark-text);
+    border-bottom: 3px solid #e3e6f0;
+}
+
+/* Card Styles */
+.profile-card {
+    border: none;
+    border-radius: var(--card-border-radius);
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    margin-bottom: 1.5rem;
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+}
+
+.profile-card .card-header {
+    background-color: white;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 1.25rem 1.5rem;
+    border-top-left-radius: var(--card-border-radius);
+    border-top-right-radius: var(--card-border-radius);
+}
+
+.profile-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border-radius: var(--input-border-radius);
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d3e2;
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 0.5rem;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    transition: all var(--transition-speed);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Password Strength Meter */
+.password-strength-meter {
+    height: 5px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.password-strength-meter-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+.strength-weak {
+    background-color: var(--danger-color);
+    width: 25%;
+}
+
+.strength-fair {
+    background-color: var(--accent-color);
+    width: 50%;
+}
+
+.strength-good {
+    background-color: #36b9cc;
+    width: 75%;
+}
+
+.strength-strong {
+    background-color: var(--secondary-color);
+    width: 100%;
+}
+
+.password-feedback {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1050;
+}
+
+.toast {
+    background-color: white;
+    border-radius: var(--card-border-radius);
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease-in-out;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-success {
+    border-left-color: var(--secondary-color);
+}
+
+.toast-error {
+    border-left-color: var(--danger-color);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.tab-content {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease;
+}
+
+.tab-content.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .profile-header {
+        padding: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .profile-stats {
+        flex-wrap: wrap;
+    }
+    
+    .stat-item {
+        padding-right: 1rem;
+        margin-right: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Personal Information</h5>
-                <button class="btn btn-sm btn-primary" id="editProfileBtn">Edit Profile</button>
-            </div>
-            <div class="card-body">
-                {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <!-- View Profile Mode -->
-                <div id="viewProfileSection">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p class="text-muted mb-1">First Name</p>
-                            <p class="fw-bold">{{ customer.first_name }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="text-muted mb-1">Last Name</p>
-                            <p class="fw-bold">{{ customer.last_name }}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p class="text-muted mb-1">Email Address</p>
-                            <p class="fw-bold">{{ customer.email }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="text-muted mb-1">Phone Number</p>
-                            <p class="fw-bold">{{ customer.phone_number }}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <p class="text-muted mb-1">Address</p>
-                            <p class="fw-bold">{{ customer.address|default:"Not provided" }}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <p class="text-muted mb-1">City</p>
-                            <p class="fw-bold">{{ customer.city|default:"Not provided" }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <p class="text-muted mb-1">State/Province</p>
-                            <p class="fw-bold">{{ customer.state_or_province|default:"Not provided" }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <p class="text-muted mb-1">ZIP Code</p>
-                            <p class="fw-bold">{{ customer.zip_code|default:"Not provided" }}</p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <p class="text-muted mb-1">Timezone</p>
-                            <p class="fw-bold">{{ customer.timezone|default:"UTC" }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Edit Profile Mode -->
-                <div id="editProfileSection" style="display: none;">
-                    <form method="post" action="{% url 'customer:profile' %}">
-                        {% csrf_token %}
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="first_name" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ customer.first_name }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="last_name" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ customer.last_name }}" required>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" value="{{ customer.email }}" required>
-                            </div>
-                            <div class="col-md-12">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <div class="d-flex">
-                                    <div class="input-group me-2" style="width: 200px;">
-                                        <span class="input-group-text">+</span>
-                                        <select class="form-select" id="country_code" name="country_code">
-                                            <option value="1" {% if customer.phone_number|extract_country_code == '1' %}selected{% endif %}>1 (US/CA)</option>
-                                            <option value="44" {% if customer.phone_number|extract_country_code == '44' %}selected{% endif %}>44 (UK)</option>
-                                            <option value="49" {% if customer.phone_number|extract_country_code == '49' %}selected{% endif %}>49 (DE)</option>
-                                            <option value="61" {% if customer.phone_number|extract_country_code == '61' %}selected{% endif %}>61 (AU)</option>
-                                            <option value="86" {% if customer.phone_number|extract_country_code == '86' %}selected{% endif %}>86 (CN)</option>
-                                            <option value="91" {% if customer.phone_number|extract_country_code == '91' %}selected{% endif %}>91 (IN)</option>
-                                            <option value="92" {% if customer.phone_number|extract_country_code == '92' %}selected{% endif %}>92 (PK)</option>
-                                        </select>
-                                    </div>
-                                    <input type="tel" class="form-control" id="phone" name="phone" 
-                                           value="{{ customer.phone_number|extract_phone_without_code }}" 
-                                           pattern="^\d{3}[\s-]?\d{3}[\s-]?\d{4}$"
-                                           placeholder="555 123 4567" 
-                                           title="Format: Area code and phone number (e.g., 555 123 4567)" required>
-                                </div>
-                                <small class="form-text text-muted">Select country code and enter your phone number</small>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Address</label>
-                            <input type="text" class="form-control" id="address" name="address" value="{{ customer.address|default:'' }}">
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label for="city" class="form-label">City</label>
-                                <input type="text" class="form-control" id="city" name="city" value="{{ customer.city|default:'' }}">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="state_or_province" class="form-label">State/Province</label>
-                                <input type="text" class="form-control" id="state_or_province" name="state_or_province" value="{{ customer.state_or_province|default:'' }}">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="zip_code" class="form-label">ZIP Code</label>
-                                <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ customer.zip_code|default:'' }}">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="timezone" class="form-label">Timezone</label>
-                            <select class="form-select" id="timezone" name="timezone" required>
-                                {% for tz in timezone_choices %}
-                                    <option value="{{ tz.0 }}" {% if business.timezone == tz.0 %}selected{% endif %}>
-                                        {{ tz.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <small class="form-text text-muted">Select your timezone for accurate booking times</small>
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-secondary me-2" id="cancelEditBtn">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
-                    </form>
-                </div>
+<!-- Profile Header with Avatar and Stats -->
+<div class="profile-header">
+    <div class="row align-items-center">
+        <div class="col-md-2 col-sm-3 text-center text-md-start">
+            <div class="profile-avatar mx-auto mx-md-0">
+                {{ customer.first_name|slice:"0:1" }}{{ customer.last_name|slice:"0:1" }}
             </div>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Change Password</h5>
+        <div class="col-md-10 col-sm-9">
+            <h2 class="mb-1">{{ customer.first_name }} {{ customer.last_name }}</h2>
+            <p class="mb-3">{{ customer.email }}</p>
+            
+            <!-- Profile Completeness Indicator -->
+            <div class="d-flex align-items-center">
+                <span class="me-2">Profile Completeness:</span>
+                <div class="profile-completeness flex-grow-1">
+                    <div class="completeness-bar" style="width: {{ profile_completeness }}%;"></div>
+                </div>
+                <span class="ms-2">{{ profile_completeness }}%</span>
             </div>
-            <div class="card-body">
-                <form method="post" action="{% url 'customer:change_password' %}">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="current_password" class="form-label">Current Password</label>
-                        <input type="password" class="form-control" id="current_password" name="current_password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_password" class="form-label">New Password</label>
-                        <input type="password" class="form-control" id="new_password" name="new_password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm_new_password" class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary">Change Password</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Account Summary</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Account Created:</strong> {{ customer.created_at|date:"F j, Y" }}</p>
-                <p><strong>Total Bookings:</strong> {{ total_bookings|default:"0" }}</p>
-                <p><strong>Completed Services:</strong> {{ completed_services|default:"0" }}</p>
-                <p><strong>Pending Invoices:</strong> {{ pending_invoices|default:"0" }}</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Need Help?</h5>
-            </div>
-            <div class="card-body">
-                <p>If you need assistance with your account or have any questions, our customer support team is here to help.</p>
-                <p><i class="fas fa-phone me-2"></i> (555) 123-4567</p>
-                <p><i class="fas fa-envelope me-2"></i> support@cleaningbiz.com</p>
-                <a href="#" class="btn btn-outline-primary w-100">Contact Support</a>
+            
+            <!-- Profile Stats -->
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{ total_bookings|default:"0" }}</div>
+                    <div class="stat-label">Bookings</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ completed_services|default:"0" }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ customer.created_at|date:"M Y" }}</div>
+                    <div class="stat-label">Member Since</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Tab Navigation -->
+<div class="profile-tabs">
+    <div class="profile-tab active" data-tab="personal-info">Personal Information</div>
+    <div class="profile-tab" data-tab="security">Security</div>
+    <div class="profile-tab" data-tab="account-summary">Account Summary</div>
+    <div class="profile-tab" data-tab="support">Support</div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Tab Content Container -->
+        <div class="tab-content-container">
+            <!-- Personal Information Tab Content -->
+            <div id="personal-info" class="tab-content active fade-in">
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Personal Information</h5>
+                        <button class="btn btn-sm btn-primary" id="editProfileBtn">
+                            <i class="fas fa-edit me-1"></i> Edit Profile
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- View Profile Mode -->
+                        <div id="viewProfileSection" class="fade-in">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h6 class="text-primary mb-3">Contact Information</h6>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">Full Name</p>
+                                            <p class="fw-bold">{{ customer.first_name }} {{ customer.last_name }}</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">Email Address</p>
+                                            <p class="fw-bold">{{ customer.email }}</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">Phone Number</p>
+                                            <p class="fw-bold">{{ customer.phone_number }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h6 class="text-primary mb-3">Location Information</h6>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">Address</p>
+                                            <p class="fw-bold">{{ customer.address|default:"Not provided" }}</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">City, State, ZIP</p>
+                                            <p class="fw-bold">
+                                                {{ customer.city|default:"--" }}, 
+                                                {{ customer.state_or_province|default:"--" }} 
+                                                {{ customer.zip_code|default:"" }}
+                                            </p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-muted mb-1 small">Timezone</p>
+                                            <p class="fw-bold">{{ customer.timezone|default:"UTC" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Profile Mode -->
+                        <div id="editProfileSection" style="display: none;" class="fade-in">
+                            <form method="post" action="{% url 'customer:profile' %}" id="profileForm" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ customer.first_name }}" required>
+                                            <div class="invalid-feedback">Please enter your first name.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ customer.last_name }}" required>
+                                            <div class="invalid-feedback">Please enter your last name.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ customer.email }}" required>
+                                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                                    </div>
+                                    <small class="form-text text-muted">We'll never share your email with anyone else.</small>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <div class="d-flex">
+                                        <div class="input-group me-2" style="width: 200px;">
+                                            <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                            <select class="form-select" id="country_code" name="country_code">
+                                                <option value="1" {% if customer.phone_number|extract_country_code == '1' %}selected{% endif %}>1 (US/CA)</option>
+                                                <option value="44" {% if customer.phone_number|extract_country_code == '44' %}selected{% endif %}>44 (UK)</option>
+                                                <option value="49" {% if customer.phone_number|extract_country_code == '49' %}selected{% endif %}>49 (DE)</option>
+                                                <option value="61" {% if customer.phone_number|extract_country_code == '61' %}selected{% endif %}>61 (AU)</option>
+                                                <option value="86" {% if customer.phone_number|extract_country_code == '86' %}selected{% endif %}>86 (CN)</option>
+                                                <option value="91" {% if customer.phone_number|extract_country_code == '91' %}selected{% endif %}>91 (IN)</option>
+                                                <option value="92" {% if customer.phone_number|extract_country_code == '92' %}selected{% endif %}>92 (PK)</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group flex-grow-1">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                                value="{{ customer.phone_number|extract_phone_without_code }}" 
+                                                pattern="^\d{3}[\s-]?\d{3}[\s-]?\d{4}$"
+                                                placeholder="555 123 4567" 
+                                                title="Format: Area code and phone number (e.g., 555 123 4567)" required>
+                                            <div class="invalid-feedback">Please enter a valid phone number.</div>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Select country code and enter your phone number</small>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="address" class="form-label">Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                        <input type="text" class="form-control" id="address" name="address" value="{{ customer.address|default:'' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label for="city" class="form-label">City</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-city"></i></span>
+                                            <input type="text" class="form-control" id="city" name="city" value="{{ customer.city|default:'' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="state_or_province" class="form-label">State/Province</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-map"></i></span>
+                                            <input type="text" class="form-control" id="state_or_province" name="state_or_province" value="{{ customer.state_or_province|default:'' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="zip_code" class="form-label">ZIP Code</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
+                                            <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ customer.zip_code|default:'' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="timezone" class="form-label">Timezone</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                        <select class="form-select" id="timezone" name="timezone" required>
+                                            {% for tz in timezone_choices %}
+                                                <option value="{{ tz.0 }}" {% if customer.timezone == tz.0 %}selected{% endif %}>
+                                                    {{ tz.1 }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <small class="form-text text-muted">Select your timezone for accurate booking times</small>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-secondary me-2" id="cancelEditBtn">
+                                        <i class="fas fa-times me-1"></i> Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            
+            <!-- Security Tab Content -->
+            <div id="security" class="tab-content fade-in" style="display: none;">
+                <div class="card profile-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Security Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Change Password</h6>
+                            <p class="text-muted mb-4">Strong passwords help protect your account. We recommend using a unique password that you don't use for other websites.</p>
+                            
+                            <form method="post" action="{% url 'customer:change_password' %}" id="passwordForm" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                <div class="mb-4 col-6">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="current_password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <div class="invalid-feedback">Please enter your current password.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row col-12">
+                                    
+                                    <div class="mb-3 col-6">
+                                        <label for="new_password" class="form-label">New Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new_password">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <div class="invalid-feedback">Please enter a new password.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4 col-6">
+                                        <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-check-double"></i></span>
+                                            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
+                                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirm_new_password">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <div class="invalid-feedback">Please confirm your new password.</div>
+                                        </div>
+                                        <div class="match-feedback mt-1" id="match-feedback"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Password Strength Meter -->
+                                <div class="password-strength-meter mb-1">
+                                    <div class="password-strength-meter-bar" id="password-strength-bar"></div>
+                                </div>
+                                <div class="password-feedback mb-4" id="password-feedback">Password strength: Enter a new password</div>
+                                
+                                
+                                
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i> Change Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+          
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Summary Tab Content -->
+            <div id="account-summary" class="tab-content fade-in" style="display: none;">
+                <div class="card profile-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Account Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4 mb-md-0">
+                                <div class="p-3 border rounded bg-light h-100">
+                                    <h6 class="text-primary mb-3">Account Information</h6>
+                                    <div class="mb-3 d-flex align-items-center">
+                                        <div class="me-3 text-primary"><i class="fas fa-calendar-alt fa-fw fa-lg"></i></div>
+                                        <div>
+                                            <p class="text-muted mb-0 small">Member Since</p>
+                                            <p class="fw-bold mb-0">{{ customer.created_at|date:"F j, Y" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 d-flex align-items-center">
+                                        <div class="me-3 text-primary"><i class="fas fa-user-check fa-fw fa-lg"></i></div>
+                                        <div>
+                                            <p class="text-muted mb-0 small">Account Status</p>
+                                            <p class="fw-bold mb-0 text-success">Active</p>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0 d-flex align-items-center">
+                                        <div class="me-3 text-primary"><i class="fas fa-clock fa-fw fa-lg"></i></div>
+                                        <div>
+                                            <p class="text-muted mb-0 small">Last Login</p>
+                                            <p class="fw-bold mb-0">Today</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded bg-light h-100">
+                                    <h6 class="text-primary mb-3">Activity Summary</h6>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small">Total Bookings</span>
+                                            <span class="fw-bold">{{ total_bookings|default:"0" }}</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ total_bookings|default:0|floatformat:0 }}%;" aria-valuenow="{{ total_bookings|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small">Completed Services</span>
+                                            <span class="fw-bold">{{ completed_services|default:"0" }}</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ completed_services|default:0|floatformat:0 }}%;" aria-valuenow="{{ completed_services|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small">Pending Invoices</span>
+                                            <span class="fw-bold">{{ pending_invoices|default:"0" }}</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ pending_invoices|default:0|floatformat:0 }}%;" aria-valuenow="{{ pending_invoices|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="p-3 border rounded bg-light">
+                                    <h6 class="text-primary mb-3">Recent Activity</h6>
+                                    <div class="timeline">
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-primary"></div>
+                                            <div class="timeline-content">
+                                                <h6 class="mb-0">Profile Updated</h6>
+                                                <p class="text-muted small mb-0">Today</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-success"></div>
+                                            <div class="timeline-content">
+                                                <h6 class="mb-0">Service Completed</h6>
+                                                <p class="text-muted small mb-0">3 days ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-info"></div>
+                                            <div class="timeline-content">
+                                                <h6 class="mb-0">New Booking Created</h6>
+                                                <p class="text-muted small mb-0">1 week ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-secondary"></div>
+                                            <div class="timeline-content">
+                                                <h6 class="mb-0">Account Created</h6>
+                                                <p class="text-muted small mb-0">{{ customer.created_at|date:"F j, Y" }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Support Tab Content -->
+            <div id="support" class="tab-content fade-in" style="display: none;">
+                <div class="card profile-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-headset me-2"></i>Customer Support</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="p-4 border rounded bg-light text-center h-100">
+                                    <div class="mb-3">
+                                        <i class="fas fa-phone-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <h5>Call Us</h5>
+                                    <p class="text-muted mb-3">Our support team is available Monday-Friday, 9am-5pm</p>
+                                    <p class="fw-bold fs-5 mb-3">(555) 123-4567</p>
+                                    <button class="btn btn-primary w-100">
+                                        <i class="fas fa-phone me-2"></i> Call Now
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-4 border rounded bg-light text-center h-100">
+                                    <div class="mb-3">
+                                        <i class="fas fa-envelope fa-3x text-primary"></i>
+                                    </div>
+                                    <h5>Email Us</h5>
+                                    <p class="text-muted mb-3">We'll respond to your inquiry within 24 hours</p>
+                                    <p class="fw-bold fs-5 mb-3">support@cleaningbiz.com</p>
+                                    <button class="btn btn-primary w-100">
+                                        <i class="fas fa-envelope me-2"></i> Send Email
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+       
+                        <div class="mt-5">
+                            <h5 class="text-primary mb-3">Frequently Asked Questions</h5>
+                            <div class="accordion" id="faqAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="faqOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                            How do I reschedule a booking?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="faqOne" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            You can reschedule a booking by going to your Bookings page, finding the booking you want to change, and clicking the "Reschedule" button. You can reschedule up to 24 hours before your appointment.
+                                        </div>
+                                    </div>
+                                </div>
+                             
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="faqThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                            What is your cancellation policy?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="faqThree" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            You can cancel a booking without charge up to 24 hours before your scheduled appointment. Cancellations within 24 hours may be subject to a cancellation fee of 50% of the service cost.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container for Notifications -->
+<div class="toast-container">
+    <!-- Toasts will be dynamically added here -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add timeline styles -->
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    top: 5px;
+}
+
+.timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    width: 2px;
+    background-color: #e3e6f0;
+    top: 25px;
+    bottom: 0;
+}
+
+.match-feedback {
+    font-size: 0.8rem;
+}
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Profile Completeness Calculation
+        calculateProfileCompleteness();
+        
+        // Tab Navigation
+        initializeTabs();
+        
+        // Profile Edit Toggle
+        initializeProfileEdit();
+        
+        // Form Validation
+        initializeFormValidation();
+        
+        // Password Strength Meter
+        initializePasswordStrengthMeter();
+        
+        // Toggle Password Visibility
+        initializePasswordToggle();
+        
+        // Phone Number Formatting
+        initializePhoneFormatting();
+        
+        // Show toast notifications if there are messages
+        showMessagesToasts();
+    });
+    
+    // Calculate and set profile completeness
+    function calculateProfileCompleteness() {
+        // This would ideally be calculated on the server side
+        // For now, we'll set a default value or use a value passed from the backend
+        const completenessBar = document.querySelector('.completeness-bar');
+        if (completenessBar) {
+            // If no value is set in the style attribute, set a default
+            if (!completenessBar.style.width) {
+                // Count filled fields to calculate completeness
+                const customer = {
+                    first_name: '{{ customer.first_name }}',
+                    last_name: '{{ customer.last_name }}',
+                    email: '{{ customer.email }}',
+                    phone_number: '{{ customer.phone_number }}',
+                    address: '{{ customer.address|default:"" }}',
+                    city: '{{ customer.city|default:"" }}',
+                    state_or_province: '{{ customer.state_or_province|default:"" }}',
+                    zip_code: '{{ customer.zip_code|default:"" }}',
+                    timezone: '{{ customer.timezone|default:"" }}'
+                };
+                
+                let filledFields = 0;
+                let totalFields = 0;
+                
+                for (const key in customer) {
+                    totalFields++;
+                    if (customer[key] && customer[key].trim() !== '') {
+                        filledFields++;
+                    }
+                }
+                
+                const completeness = Math.round((filledFields / totalFields) * 100);
+                completenessBar.style.width = completeness + '%';
+                
+                // Update the percentage text
+                const percentageText = document.querySelector('.profile-completeness + .ms-2');
+                if (percentageText) {
+                    percentageText.textContent = completeness + '%';
+                }
+            }
+        }
+    }
+    
+    // Initialize tab navigation
+    function initializeTabs() {
+        const tabs = document.querySelectorAll('.profile-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and hide all tab contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => {
+                    content.style.display = 'none';
+                    content.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab and show corresponding content
+                this.classList.add('active');
+                const activeContent = document.getElementById(tabId);
+                if (activeContent) {
+                    activeContent.style.display = 'block';
+                    setTimeout(() => {
+                        activeContent.classList.add('active');
+                    }, 10);
+                }
+            });
+        });
+    }
+    
+    // Initialize profile edit toggle
+    function initializeProfileEdit() {
         const viewProfileSection = document.getElementById('viewProfileSection');
         const editProfileSection = document.getElementById('editProfileSection');
         const editProfileBtn = document.getElementById('editProfileBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const phoneInput = document.getElementById('phone');
-
-        // Toggle between view and edit modes
-        editProfileBtn.addEventListener('click', function() {
-            viewProfileSection.style.display = 'none';
-            editProfileSection.style.display = 'block';
+        
+        if (editProfileBtn && cancelEditBtn) {
+            // Toggle between view and edit modes
+            editProfileBtn.addEventListener('click', function() {
+                viewProfileSection.style.display = 'none';
+                editProfileSection.style.display = 'block';
+            });
+            
+            cancelEditBtn.addEventListener('click', function() {
+                editProfileSection.style.display = 'none';
+                viewProfileSection.style.display = 'block';
+            });
+        }
+    }
+    
+    // Initialize form validation
+    function initializeFormValidation() {
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        forms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    // Show a loading state or toast notification
+                    showToast('Submitting form...', 'info');
+                }
+                
+                form.classList.add('was-validated');
+            });
         });
-
-        cancelEditBtn.addEventListener('click', function() {
-            editProfileSection.style.display = 'none';
-            viewProfileSection.style.display = 'block';
+    }
+    
+    // Initialize password strength meter
+    function initializePasswordStrengthMeter() {
+        const newPasswordInput = document.getElementById('new_password');
+        const confirmPasswordInput = document.getElementById('confirm_new_password');
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strengthFeedback = document.getElementById('password-feedback');
+        const matchFeedback = document.getElementById('match-feedback');
+        
+        if (newPasswordInput && strengthBar && strengthFeedback) {
+            newPasswordInput.addEventListener('input', function() {
+                const password = this.value;
+                const strength = calculatePasswordStrength(password);
+                
+                // Update strength bar
+                strengthBar.className = 'password-strength-meter-bar';
+                
+                if (password.length === 0) {
+                    strengthBar.style.width = '0';
+                    strengthFeedback.textContent = 'Password strength: Enter a new password';
+                } else if (strength < 30) {
+                    strengthBar.classList.add('strength-weak');
+                    strengthFeedback.textContent = 'Password strength: Weak - Add numbers and special characters';
+                    strengthFeedback.className = 'password-feedback text-danger';
+                } else if (strength < 60) {
+                    strengthBar.classList.add('strength-fair');
+                    strengthFeedback.textContent = 'Password strength: Fair - Try adding special characters';
+                    strengthFeedback.className = 'password-feedback text-warning';
+                } else if (strength < 80) {
+                    strengthBar.classList.add('strength-good');
+                    strengthFeedback.textContent = 'Password strength: Good';
+                    strengthFeedback.className = 'password-feedback text-info';
+                } else {
+                    strengthBar.classList.add('strength-strong');
+                    strengthFeedback.textContent = 'Password strength: Strong';
+                    strengthFeedback.className = 'password-feedback text-success';
+                }
+                
+                // Check password match if confirm field has value
+                if (confirmPasswordInput && confirmPasswordInput.value) {
+                    checkPasswordMatch();
+                }
+            });
+            
+            // Check if passwords match
+            if (confirmPasswordInput && matchFeedback) {
+                confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+                
+                function checkPasswordMatch() {
+                    const password = newPasswordInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+                    
+                    if (confirmPassword.length === 0) {
+                        matchFeedback.textContent = '';
+                        matchFeedback.className = 'match-feedback';
+                    } else if (password === confirmPassword) {
+                        matchFeedback.textContent = 'Passwords match';
+                        matchFeedback.className = 'match-feedback text-success';
+                    } else {
+                        matchFeedback.textContent = 'Passwords do not match';
+                        matchFeedback.className = 'match-feedback text-danger';
+                    }
+                }
+            }
+        }
+    }
+    
+    // Calculate password strength score
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        
+        // Length check
+        score += Math.min(password.length * 4, 25);
+        
+        // Complexity checks
+        const patterns = [
+            /[0-9]/, // Numbers
+            /[a-z]/, // Lowercase
+            /[A-Z]/, // Uppercase
+            /[^a-zA-Z0-9]/ // Special characters
+        ];
+        
+        let complexity = 0;
+        patterns.forEach(pattern => {
+            if (pattern.test(password)) complexity++;
         });
         
-        // Phone number formatting
+        score += complexity * 10;
+        
+        // Bonus for mixed character types
+        if (complexity > 2) score += 10;
+        if (complexity > 3) score += 15;
+        
+        // Penalize repeated characters
+        const repeats = password.match(/(.+)\1+/g);
+        if (repeats) score -= repeats.length * 5;
+        
+        return Math.max(0, Math.min(100, score));
+    }
+    
+    // Initialize password toggle visibility
+    function initializePasswordToggle() {
+        const toggleButtons = document.querySelectorAll('.toggle-password');
+        
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                
+                if (passwordInput) {
+                    const type = passwordInput.getAttribute('type');
+                    passwordInput.setAttribute('type', type === 'password' ? 'text' : 'password');
+                    
+                    // Toggle icon
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.className = type === 'password' ? 'fas fa-eye-slash' : 'fas fa-eye';
+                    }
+                }
+            });
+        });
+    }
+    
+    // Initialize phone number formatting
+    function initializePhoneFormatting() {
+        const phoneInput = document.getElementById('phone');
+        
         if (phoneInput) {
-            phoneInput.addEventListener('input', function(e) {
+            phoneInput.addEventListener('input', function() {
                 // Remove all non-digit characters
                 let value = this.value.replace(/\D/g, '');
                 
@@ -258,6 +1163,63 @@
             const initialEvent = new Event('input');
             phoneInput.dispatchEvent(initialEvent);
         }
-    });
+    }
+    
+    // Show toast notifications
+    function showMessagesToasts() {
+        const messages = document.querySelectorAll('.alert');
+        
+        messages.forEach(message => {
+            const messageText = message.textContent.trim();
+            const messageType = message.classList.contains('alert-success') ? 'success' : 
+                               message.classList.contains('alert-danger') ? 'error' : 
+                               message.classList.contains('alert-warning') ? 'warning' : 'info';
+            
+            showToast(messageText, messageType);
+        });
+    }
+    
+    // Create and show a toast notification
+    function showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container');
+        
+        if (!toastContainer) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-header d-flex justify-content-between align-items-center p-3">
+                <div>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                                    type === 'error' ? 'exclamation-circle' : 
+                                    type === 'warning' ? 'exclamation-triangle' : 'info-circle'} 
+                              me-2 ${type === 'success' ? 'text-success' : 
+                                    type === 'error' ? 'text-danger' : 
+                                    type === 'warning' ? 'text-warning' : 'text-info'}"></i>
+                    <strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+            <div class="toast-body p-3">
+                ${message}
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Show the toast with animation
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 5000);
+    }
 </script>
+
 {% endblock %}

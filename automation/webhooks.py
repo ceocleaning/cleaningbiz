@@ -367,6 +367,21 @@ def chatgpt_analysis_webhook(request, secretKey):
             # Parse the structured response
             structured_data = json.loads(response.choices[0].message.content)
             print(f"Structured data from ChatGPT: {structured_data}")
+
+            # Validate incoming data
+            missing_fields = []
+            if not structured_data.get('name'):
+                missing_fields.append('name')
+            if not structured_data.get('email'):
+                missing_fields.append('email')
+            if not structured_data.get('phone_number'):
+                missing_fields.append('phone_number')
+
+            if missing_fields:
+                return JsonResponse({
+                    'message': 'Invalid Data',
+                    'missing_fields': missing_fields
+                }, status=400)
             
             # Extract fields for Lead model
             lead_data = {

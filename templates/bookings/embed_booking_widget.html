@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Embed Booking Form Widget{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-12 col-xl-12">
+      <!-- Hero Section -->
+      <div class="card bg-primary text-white mb-4 border-0 shadow">
+        <div class="card-body p-4">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h1 class="display-6 fw-bold mb-2"><i class="fas fa-plug me-2"></i>Embed Booking Widget</h1>
+              <p class="lead mb-0">Let customers book your services directly from your website</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+              <span class="badge bg-light text-primary fs-6 px-3 py-2">
+                <i class="fas fa-code me-1"></i> Easy Integration
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integration Steps -->
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-copy text-primary fs-3"></i>
+              </div>
+              <h5 class="card-title">Step 1</h5>
+              <p class="card-text">Copy the code snippet</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-paste text-primary fs-3"></i>
+              </div>
+              <h5 class="card-title">Step 2</h5>
+              <p class="card-text">Paste into your website</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-edit text-primary fs-3"></i>
+              </div>
+              <h5 class="card-title">Step 3</h5>
+              <p class="card-text">Replace Business ID</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                <i class="fas fa-check-circle text-primary fs-3"></i>
+              </div>
+              <h5 class="card-title">Step 4</h5>
+              <p class="card-text">Publish your page</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code Snippet Section -->
+      <div class="card mb-4 border-0 shadow">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-code me-2"></i>Copy This Code</h5>
+          <div>
+            <span class="badge bg-light text-dark me-2">HTML</span>
+            <span class="badge bg-light text-dark">JavaScript</span>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted mb-3">
+            Add this code to your website where you want the booking form to appear. Make sure to replace <code>YOUR_BUSINESS_ID</code> with your actual Business ID.
+          </p>
+
+          <div class="bg-light rounded position-relative mb-4" style="padding: 16px 16px 0 16px;">
+            <button id="copy-embed-code" class="btn btn-sm btn-primary position-absolute" style="top: 10px; right: 10px;">
+              <i class="far fa-copy me-1"></i> Copy Code
+            </button>
+            <pre class="mb-0 p-3 bg-white border rounded" style="overflow:auto; white-space:pre; max-height: 300px;">
+&lt;!-- CleaningBiz Booking Form Widget --&gt;
+&lt;script src="https://cleaningbizai.com/static/js/embeddable-booking-form.js"&gt;&lt;/script&gt;
+&lt;div id="booking-form-container"&gt;&lt;/div&gt;
+&lt;script&gt;
+  document.addEventListener('DOMContentLoaded', function() {
+    new CleaningBizBookingForm({
+      businessId: 'YOUR_BUSINESS_ID',
+      targetElement: '#booking-form-container',
+      apiBaseUrl: 'https://cleaningbizai.com',
+      onSuccess: function(result) {
+        console.log('Booking created successfully:', result);
+      },
+      onError: function(error) {
+        console.error('Error creating booking:', error);
+      }
+    });
+  });
+&lt;/script&gt;
+            </pre>
+          </div>
+
+          <div class="alert alert-info d-flex align-items-center" role="alert">
+            <i class="fas fa-lightbulb me-3 fs-4"></i>
+            <div>
+              <strong>Pro Tip:</strong> Your Business ID is <code>{{ request.user.business_set.first.businessId }}</code>. Replace <code>YOUR_BUSINESS_ID</code> with this value.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Preview Section -->
+      <div class="card border-0 shadow">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Live Preview</h5>
+          <span class="badge bg-success">Try it now</span>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+              <label for="demo-business-id" class="form-label fw-medium">Your Business ID</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fas fa-building"></i></span>
+                <input type="text" class="form-control" id="demo-business-id" placeholder="e.g., BUS-1234" value="{{ request.user.business_set.first.businessId }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label for="demo-api-url" class="form-label fw-medium">API Base URL</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fas fa-server"></i></span>
+                <input type="text" class="form-control" id="demo-api-url" value="https://cleaningbizai.com">
+              </div>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button id="load-widget" class="btn btn-primary btn-lg">
+                <i class="fas fa-play me-1"></i> Load
+              </button>
+            </div>
+          </div>
+
+          <div id="demo-result" class="mt-3" style="display:none;"></div>
+
+          <div class="mt-4 border-top pt-4">
+            <h6 class="text-muted mb-3">Widget Preview</h6>
+            <div id="widget-preview" class="border rounded p-3 bg-white">
+              <div class="text-center p-5">
+                <i class="fas fa-arrow-up fa-2x text-muted mb-3"></i>
+                <h5>Click the Load button above to preview the booking form</h5>
+                <p class="text-muted">The widget will appear exactly as it will on your website</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="card mt-4 border-0 shadow">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Frequently Asked Questions</h5>
+        </div>
+        <div class="card-body p-4">
+          <div class="accordion" id="embedFAQ">
+            <div class="accordion-item border-0 mb-2">
+              <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                  Where can I embed this booking form?
+                </button>
+              </h2>
+              <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#embedFAQ">
+                <div class="accordion-body">
+                  You can embed this booking form on any website that allows custom HTML/JavaScript, including WordPress, Squarespace, Wix, Webflow, and custom websites.
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item border-0 mb-2">
+              <h2 class="accordion-header" id="headingTwo">
+                <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  Can I customize the appearance of the form?
+                </button>
+              </h2>
+              <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#embedFAQ">
+                <div class="accordion-body">
+                  Yes, the form automatically adapts to your website's styling. For advanced customization, you can add custom CSS to your website to target the form elements.
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item border-0">
+              <h2 class="accordion-header" id="headingThree">
+                <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                  How do I know when a customer books through the widget?
+                </button>
+              </h2>
+              <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#embedFAQ">
+                <div class="accordion-body">
+                  All bookings made through the widget will appear in your CleaningBiz dashboard just like any other booking. You'll also receive email notifications for new bookings.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4 mb-2">
+        <p class="text-muted">Need help with implementation? <a href="#" class="text-decoration-none">Contact our support team</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Load the booking widget for the on-page demo -->
+  <script src="{% static 'js/embeddable-booking-form.js' %}"></script>
+  <script>
+    (function() {
+      const copyBtn = document.getElementById('copy-embed-code');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+          const codeBlock = this.parentElement.querySelector('pre');
+          if (!codeBlock) return;
+          const text = codeBlock.innerText;
+          navigator.clipboard.writeText(text).then(() => {
+            const original = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+            copyBtn.classList.remove('btn-primary');
+            copyBtn.classList.add('btn-success');
+            setTimeout(() => {
+              copyBtn.innerHTML = original;
+              copyBtn.classList.remove('btn-success');
+              copyBtn.classList.add('btn-primary');
+            }, 2000);
+          });
+        });
+      }
+
+      const loadBtn = document.getElementById('load-widget');
+      const preview = document.getElementById('widget-preview');
+      const result = document.getElementById('demo-result');
+
+      function clearPreview() {
+        preview.innerHTML = '';
+        result.style.display = 'none';
+        result.className = '';
+        result.innerHTML = '';
+      }
+
+      if (loadBtn) {
+        loadBtn.addEventListener('click', function() {
+          const businessId = document.getElementById('demo-business-id').value.trim();
+          const apiBaseUrl = document.getElementById('demo-api-url').value.trim() || 'https://cleaningbizai.com';
+
+          clearPreview();
+          
+          // Show loading state
+          loadBtn.disabled = true;
+          loadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading...';
+
+          if (!businessId) {
+            result.style.display = 'block';
+            result.className = 'alert alert-warning mt-3';
+            result.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Please enter a Business ID.';
+            loadBtn.disabled = false;
+            loadBtn.innerHTML = '<i class="fas fa-play me-1"></i> Load';
+            return;
+          }
+
+          // Create a container for the widget
+          const container = document.createElement('div');
+          container.id = 'external-booking-form-container';
+          preview.innerHTML = '';
+          preview.appendChild(container);
+
+          try {
+            new CleaningBizBookingForm({
+              businessId: businessId,
+              targetElement: '#external-booking-form-container',
+              apiBaseUrl: apiBaseUrl,
+              onSuccess: function(data) {
+                result.style.display = 'block';
+                result.className = 'alert alert-success mt-3';
+                result.innerHTML = '<i class="fas fa-check-circle me-1"></i> Booking created!';
+                console.log('Demo success:', data);
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = '<i class="fas fa-play me-1"></i> Load';
+              },
+              onError: function(err) {
+                result.style.display = 'block';
+                result.className = 'alert alert-danger mt-3';
+                result.innerHTML = '<i class="fas fa-times-circle me-1"></i> Error creating booking. Check console for details.';
+                console.error('Demo error:', err);
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = '<i class="fas fa-play me-1"></i> Load';
+              }
+            });
+            
+            // Re-enable button after a short delay even if callbacks aren't triggered
+            setTimeout(() => {
+              loadBtn.disabled = false;
+              loadBtn.innerHTML = '<i class="fas fa-play me-1"></i> Load';
+            }, 3000);
+            
+          } catch (e) {
+            result.style.display = 'block';
+            result.className = 'alert alert-danger mt-3';
+            result.innerHTML = '<i class="fas fa-bug me-1"></i> Failed to initialize widget: ' + (e?.message || e);
+            loadBtn.disabled = false;
+            loadBtn.innerHTML = '<i class="fas fa-play me-1"></i> Load';
+          }
+        });
+      }
+    })();
+  </script>
+{% endblock %}

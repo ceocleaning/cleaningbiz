@@ -43,9 +43,9 @@ def all_invoices(request):
         base_template = 'base.html'
         invoices = Invoice.objects.select_related('booking').filter(booking__business__user=request.user).order_by('createdAt')
     
-    pending_invoices = invoices.filter(isPaid=False, payment_details__isnull=True)
-    paid_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status__in=['COMPLETED', 'APPROVED'])
-    authorized_invoices = invoices.filter(isPaid=True, payment_details__isnull=False, payment_details__status='AUTHORIZED')
+    pending_invoices = invoices.filter(isPaid=False, payments__isnull=True)
+    paid_invoices = invoices.filter(isPaid=True, payments__status__in=['COMPLETED', 'APPROVED'])
+    authorized_invoices = invoices.filter(isPaid=True, payments__status='AUTHORIZED')
    
     context = {
         'invoices': invoices,
@@ -199,8 +199,8 @@ def mark_invoice_paid(request, invoiceId):
         )
         
         invoice.isPaid = True
-        invoice.payment_details = payment
         invoice.save()
+        # The payment will update the invoice status through its save method
         
         messages.success(request, f'Invoice {invoice.invoiceId} marked as paid successfully!')
         return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
@@ -288,7 +288,7 @@ def generate_pdf(request, invoiceId):
         [Paragraph('<b>Due Date:</b>', styles['Normal']), 
          Paragraph(f"{(invoice.createdAt + timezone.timedelta(days=30)).strftime('%B %d, %Y')}", styles['Normal']),
          Paragraph('<b>Payment Date:</b>', styles['Normal']), 
-         Paragraph(f"{invoice.payment_details.paidAt.strftime('%B %d, %Y') if invoice.isPaid and hasattr(invoice.payment_details, 'paidAt') and invoice.payment_details.paidAt else 'Not Paid Yet'}", styles['Normal'])]
+         Paragraph(f"{invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).first().paidAt.strftime('%B %d, %Y') if invoice.isPaid and invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).exists() and invoice.payments.filter(status__in=['COMPLETED', 'APPROVED']).first().paidAt else 'Not Paid Yet'}", styles['Normal'])]
     ]
     
     details_table = Table(details_data, colWidths=[doc.width/8.0, doc.width*3/8.0, doc.width/8.0, doc.width*3/8.0])
@@ -375,11 +375,23 @@ def generate_pdf(request, invoiceId):
     ]
     
     # Add totals rows
-    service_data.extend([
+    totals_rows = [
         ['', '', Paragraph('<b>Subtotal:</b>', styles['RightAlign']), Paragraph(f"<b>${subtotal:.2f}</b>", styles['RightAlign'])],
         ['', '', Paragraph('<b>Tax:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.booking.tax:.2f}</b>", styles['RightAlign'])],
-        ['', '', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount:.2f}</b>", styles['RightAlign'])],
-    ])
+    ]
+    
+    # Add tip row if applicable
+    if invoice.booking.tip and float(invoice.booking.tip) > 0:
+        totals_rows.append(
+            ['', '', Paragraph('<b>Tip:</b>', styles['RightAlign']), Paragraph(f"<b>${float(invoice.booking.tip):.2f}</b>", styles['RightAlign'])]
+        )
+    
+    # Add total row
+    totals_rows.append(
+        ['', '', Paragraph('<b>Total:</b>', styles['RightAlign']), Paragraph(f"<b>${invoice.amount:.2f}</b>", styles['RightAlign'])]
+    )
+    
+    service_data.extend(totals_rows)
     
     # Create service table with styling to match the preview
     service_table = Table(service_data, colWidths=[doc.width/4.0]*4)
@@ -487,16 +499,66 @@ def manual_payment(request, invoice_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
         business = invoice.booking.business
+        booking = invoice.booking
 
         if request.method == 'POST':
             transaction_id = request.POST.get('transaction_id')
             screen_shot = request.FILES.get('screen_shot')
             from_account_number = request.POST.get('from_account_number')
             from_bank_name = request.POST.get('from_bank_name')
-
+            payment_type = request.POST.get('payment_type', 'full')
+            
+            # Get tip amount if provided
+            tip_amount = 0
+            try:
+                tip_amount = float(request.POST.get('tip_amount', 0))
+            except (ValueError, TypeError):
+                # If tip amount is invalid, set to 0
+                tip_amount = 0
+            
+            # Process tip if provided
+            if tip_amount > 0:
+                from decimal import Decimal
+                from .services import TipService
+                
+                # Convert to Decimal for precision
+                tip_decimal = Decimal(str(tip_amount))
+                
+                # Validate tip amount
+                invoice_amount = Decimal(str(invoice.amount))
+                is_valid, error_message = TipService.validate_tip_amount(tip_decimal, invoice_amount)
+                
+                if not is_valid:
+                    messages.error(request, f'Invalid tip amount: {error_message}')
+                    return redirect('invoice:invoice_preview', invoice.invoiceId)
+                
+                # Add tip to booking
+                booking, invoice = TipService.add_tip_to_booking(booking, tip_decimal)
+            
+            # Determine payment amount based on payment type
+            if payment_type == 'partial':
+                # Get the amount from the form for partial payment
+                try:
+                    amount = float(request.POST.get('amount', 0))
+                    if amount <= 0:
+                        messages.error(request, 'Payment amount must be greater than zero.')
+                        return redirect('invoice:invoice_preview', invoice.invoiceId)
+                    
+                    # Make sure partial payment doesn't exceed the remaining amount
+                    remaining = invoice.get_remaining_amount()
+                    if amount > remaining:
+                        amount = remaining
+                except (ValueError, TypeError):
+                    messages.error(request, 'Invalid payment amount.')
+                    return redirect('invoice:invoice_preview', invoice.invoiceId)
+            else:
+                # For full payment, use the remaining amount
+                amount = invoice.get_remaining_amount()
+            
             payment = Payment.objects.create(
                 invoice=invoice,
-                amount=invoice.amount,
+                amount=amount,
+                payment_type=payment_type,
                 paymentMethod='bank_transfer',
                 transactionId=transaction_id,
                 fromAccountNumber=from_account_number,
@@ -505,8 +567,16 @@ def manual_payment(request, invoice_id):
                 status='SUBMITTED'
             )
             
-      
-            messages.success(request, f'Bank Transfer Payment Submitted Successfully! Please wait for approval.')
+            # Update the invoice payment status
+            invoice.update_payment_status()
+            
+            # Include tip in success message if applicable
+            success_message = f'Bank Transfer Payment of ${amount:.2f}'
+            if tip_amount > 0:
+                success_message += f' (including ${tip_amount:.2f} tip)'
+            success_message += ' Submitted Successfully! Please wait for approval.'
+            
+            messages.success(request, success_message)
             return redirect('invoice:invoice_preview', invoice.invoiceId)
 
         return redirect('invoice:invoice_preview', invoice.invoiceId)
@@ -523,13 +593,14 @@ def manual_payment(request, invoice_id):
 
 
 
-def approve_payment(request, invoice_id):
+def approve_payment(request, invoice_id, payment_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
-        payment = invoice.payment_details
-        payment.status = 'APPROVED'
-        invoice.isPaid = True
-        payment.save()
+        payment = invoice.payments.get(paymentId=payment_id)
+        if payment:
+            payment.status = 'APPROVED'
+            payment.save()
+            # The payment save method will update the invoice status
         invoice.save()
         messages.success(request, f'Payment approved successfully!')
         return redirect('invoice:invoice_detail', invoice.invoiceId)
@@ -542,12 +613,13 @@ def approve_payment(request, invoice_id):
         raise Exception(f"Error approving payment: {str(e)}")
 
 
-def reject_payment(request, invoice_id):
+def reject_payment(request, invoice_id, payment_id):
     try:
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
-        payment = invoice.payment_details
-        payment.status = 'REJECTED'
-        payment.save()
+        payment = invoice.payments.get(paymentId=payment_id)
+        if payment:
+            payment.status = 'REJECTED'
+            payment.save()
         messages.success(request, f'Payment rejected successfully!')
         return redirect('invoice:invoice_detail', invoice.invoiceId)
     except Invoice.DoesNotExist:

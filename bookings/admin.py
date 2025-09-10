@@ -24,27 +24,7 @@ class BookingAdmin(admin.ModelAdmin):
     date_hierarchy = 'cleaningDate'
     list_per_page = 50
     inlines = [BookingCustomAddonsInline]
-    fieldsets = (
-        ('Booking Information', {
-            'fields': ('bookingId', 'business', 'cleaner', 'totalPrice')
-        }),
-        ('Customer Information', {
-            'fields': ('customer',)
-        }),
-        ('Service Details', {
-            'fields': ('serviceType', 'recurring', 'cleaningDate', 'startTime', 'endTime',
-                      ('bedrooms', 'bathrooms', 'squareFeet'))
-        }),
-        ('Address', {
-            'fields': ('address1', 'address2', 'city', 'stateOrProvince', 'zipCode')
-        }),
-        ('Payment', {
-            'fields': ('paymentMethod', 'tax')
-        }),
-        ('Additional Information', {
-            'fields': ('otherRequests',)
-        }),
-    )
+   
 
     def get_full_name(self, obj):
         return f"{obj.customer.first_name} {obj.customer.last_name}" if obj.customer else 'N/A'

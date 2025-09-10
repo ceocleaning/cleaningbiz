@@ -88,6 +88,11 @@ class Booking(models.Model):
     totalPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
+    tip = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+
+    
+
     # cancelled
     cancelled_at = models.DateTimeField(null=True, blank=True)
     
@@ -115,7 +120,7 @@ class Booking(models.Model):
             # Check payment details if they exist
             if hasattr(self.invoice, 'payment_details'):
                 notPaidStatus = ['PENDING', 'FAILED']
-                return self.invoice.payment_details.status not in notPaidStatus
+                return self.invoice.payment_details.status not in notPaidStatus if self.invoice.payment_details else False
             return False
         return False
     
@@ -123,7 +128,7 @@ class Booking(models.Model):
         """Get the payment status of the booking."""
         if hasattr(self, 'invoice') and self.invoice:
             if hasattr(self.invoice, 'payment_details'):
-                return self.invoice.payment_details.status
+                return self.invoice.payment_details.status if self.invoice.payment_details else 'Unpaid'
             return 'Unpaid'
         return 'No Invoice'
     
@@ -170,9 +175,9 @@ class Booking(models.Model):
     
 
     def get_cleaner_payout(self):
-        # TODO: Implement proper cleaner payment calculation
-        # This is a placeholder until the proper payment system is implemented
-        return 0.0
+        payout = float(self.totalPrice * self.business.cleaner_payout_percentage / 100)
+
+        return payout
 
 
         

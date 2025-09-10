@@ -51,9 +51,13 @@
                                         <span class="badge bg-success py-2 px-3 rounded-pill">
                                             <i class="fas fa-check me-1"></i>Responded
                                         </span>
+                                        {% elif lead.is_call_sent %}
+                                        <span class="badge bg-warning text-dark py-2 px-3 rounded-pill">
+                                            <i class="fas fa-clock me-1"></i>Contacted through Call at {{lead.call_sent_at|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
+                                        </span>
                                         {% else %}
                                         <span class="badge bg-warning text-dark py-2 px-3 rounded-pill">
-                                            <i class="fas fa-clock me-1"></i>Pending
+                                            <i class="fas fa-clock me-1"></i>Contacted via SMS at {{lead.createdAt|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
                                         </span>
                                         {% endif %}
                                     </div>

@@ -505,12 +505,15 @@
 </head>
 <body data-customer-timezone="{% if user.is_authenticated %}{{ user.customer.timezone|default:'UTC' }}{% else %}UTC{% endif %}">
     <div class="customer-layout">
-        <!-- Sidebar -->
+
+       
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="{% url 'home' %}" class="sidebar-brand">
+                <a href="{% url 'customer:dashboard' %}" class="sidebar-brand">
                     <i class="fas fa-broom me-2"></i>
-                    <span class="sidebar-brand-text">CleaningBiz</span>
+                    <span class="sidebar-brand-text">
+                        CleaningBiz AI
+                    </span>
                 </a>
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
@@ -588,12 +591,7 @@
                             <span class="sidebar-text">Sign Up</span>
                         </a>
                     </li>
-                    <li class="sidebar-nav-item">
-                        <a href="{% url 'home' %}" class="sidebar-link">
-                            <i class="fas fa-home sidebar-icon"></i>
-                            <span class="sidebar-text">Back to Home</span>
-                        </a>
-                    </li>
+                  
                     {% endif %}
                 </ul>
             </div>
@@ -659,7 +657,7 @@
     <div class="toast-container">
         {% if messages %}
             {% for message in messages %}
-                <div class="toast show bg-{{ message.tags|default:'info' }} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast show bg-{{ message.tags|default:'info' }} {% if message.tags == 'error' %}bg-danger{% endif %} text-white" role="alert" aria-live="assertive" aria-atomic="true">
                     <div class="toast-body d-flex align-items-center">
                         {% if message.tags == 'success' %}
                             <i class="fas fa-check-circle me-2"></i>

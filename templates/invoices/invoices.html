@@ -112,18 +112,18 @@
                                 <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
-                                    {% if invoice.payment_details.status == 'COMPLETED' %}
-                                    <span class="badge bg-success">{{invoice.payment_details.status}}</span>
-                                    {% elif invoice.payment_details.status == 'AUTHORIZED' %}
-                                    <span class="badge bg-info">{{invoice.payment_details.status}}</span>
-                                    {% elif invoice.payment_details.status == 'FAILED' %}
-                                    <span class="badge bg-danger">{{invoice.payment_details.status}}</span>
-                                    {% elif invoice.payment_details.status == 'PENDING' %}
-                                    <span class="badge bg-secondary">{{invoice.payment_details.status}}</span>
+                                    {% if invoice.payments.first.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">{{invoice.payments.first.status}}</span>
+                                    {% elif invoice.payments.first.status == 'AUTHORIZED' %}
+                                    <span class="badge bg-info">{{invoice.payments.first.status}}</span>
+                                    {% elif invoice.payments.first.status == 'FAILED' %}
+                                    <span class="badge bg-danger">{{invoice.payments.first.status}}</span>
+                                    {% elif invoice.payments.first.status == 'PENDING' %}
+                                    <span class="badge bg-secondary">{{invoice.payments.first.status}}</span>
                                     {% else %}
-                                    <span class="badge bg-info">{{invoice.payment_details.status}}</span>
+                                    <span class="badge bg-info">{{invoice.payments.first.status}}</span>
                                     {% endif %}
-                                    {% if not invoice.payment_details %}
+                                    {% if not invoice.payments %}
                                     <span class="badge bg-warning">Pending</span>
                                     {% endif %}
                                    
@@ -132,7 +132,8 @@
                                 <td class="text-end text-md-start">
                                     <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">
                                         <!-- View button always visible -->
-                                        <a href="{% url 'invoice:invoice_detail' invoice.invoiceId %}" 
+                                        <a 
+                                        href="{% if request.user.customer %}{% url 'invoice:invoice_preview' invoice.invoiceId %}{% else %}{% url 'invoice:invoice_detail' invoice.invoiceId %}{% endif %}" 
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip" 
                                            data-bs-title="View invoice details">
@@ -189,7 +190,7 @@
                                 <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
-                                    <span class="badge bg-success">{{invoice.payment_details.status}}</span>
+                                    <span class="badge bg-success">{% if invoice.payments.exists %}{{invoice.payments.first.status}}{% else %}Paid{% endif %}</span>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.createdAt|date:"M d, Y" }}</td>
                                 <td class="text-end text-md-start">
@@ -250,7 +251,7 @@
                                 <td>{{ invoice.booking.customer.get_full_name }}</td>
                                 <td>${{ invoice.amount }}</td>
                                 <td>
-                                    <span class="badge bg-info">{{invoice.payment_details.status}}</span>
+                                    <span class="badge bg-info">{% if invoice.payments.exists %}{{invoice.payments.first.status}}{% else %}Authorized{% endif %}</span>
                                 </td>
                                 <td class="d-none d-md-table-cell">{{ invoice.createdAt|date:"M d, Y" }}</td>
                                 <td class="text-end text-md-start">

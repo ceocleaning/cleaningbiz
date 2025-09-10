@@ -104,43 +104,47 @@ def customers(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
-    # Get all bookings for the user's business
-    bookings = Booking.objects.filter(business__user=request.user)
+    # Get the business for the current user
+    business = request.user.business_set.first()
     
-    # Dictionary to store unique customers
-    unique_customers = {}
+    # Get all unique customers who have bookings with this business
+    customers_with_bookings = Customer.objects.filter(
+        booking__business=business
+    ).distinct()
     
-    # Process bookings to extract unique customers by email or phone
-    for booking in bookings:
-        # Skip if no email and no phone
-        if not booking.customer.email and not booking.customer.phone_number:
-            continue
-            
-        # Create a unique key based on email or phone
-        key = booking.customer.email if booking.customer.email else booking.customer.phone_number
+    # Create a list to store customer data with booking statistics
+    customers_list = []
+    
+    for customer in customers_with_bookings:
+        # Get all bookings for this customer with this business
+        customer_bookings = Booking.objects.filter(
+            business=business,
+            customer=customer
+        )
         
-        if key not in unique_customers:
-            # First occurrence - create new customer entry
-            unique_customers[key] = {
-                'firstName': booking.customer.first_name,
-                'lastName': booking.customer.last_name,
-                'email': booking.customer.email,
-                'phoneNumber': booking.customer.phone_number,
-                'joinedDate': booking.createdAt,
-                'bookingCount': 1,
-                'totalSpent': booking.totalPrice,
-                'identifier': key  # Store identifier for linking to detail page
-            }
-        else:
-            # Update existing customer with additional booking info
-            unique_customers[key]['bookingCount'] += 1
-            unique_customers[key]['totalSpent'] += booking.totalPrice
-            # Keep the earliest created date as joined date
-            if booking.createdAt < unique_customers[key]['joinedDate']:
-                unique_customers[key]['joinedDate'] = booking.createdAt
-    
-    # Convert dictionary to list for template
-    customers_list = list(unique_customers.values())
+        # Calculate statistics
+        booking_count = customer_bookings.count()
+        total_spent = sum(booking.totalPrice for booking in customer_bookings)
+        
+        # Get the earliest booking date as joined date
+        first_booking = customer_bookings.order_by('createdAt').first()
+        joined_date = first_booking.createdAt if first_booking else customer.created_at
+        
+        # Create identifier for customer detail page
+        identifier = customer.email if customer.email else customer.phone_number
+        
+        # Add customer to the list
+        customers_list.append({
+            'firstName': customer.first_name,
+            'lastName': customer.last_name,
+            'email': customer.email,
+            'phoneNumber': customer.phone_number,
+            'joinedDate': joined_date,
+            'bookingCount': booking_count,
+            'totalSpent': total_spent,
+            'identifier': identifier,
+            'customer_id': customer.id  # Include customer ID for direct reference
+        })
     
     # Sort customers by joined date (newest first)
     customers_list.sort(key=lambda x: x['joinedDate'], reverse=True)
@@ -158,22 +162,35 @@ def customer_detail(request, identifier):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
+    business = request.user.business_set.first()
+    
     # Determine if identifier is an email or phone
     if '@' in identifier:
         # It's an email
-        bookings = Booking.objects.filter(business__user=request.user, customer__email=identifier).order_by('-createdAt')
-        identifier_type = 'email'
+        try:
+            customer = Customer.objects.get(email=identifier)
+            identifier_type = 'email'
+        except Customer.DoesNotExist:
+            messages.error(request, 'Customer not found.')
+            return redirect('bookings:customers')
     else:
         # It's a phone number
-        bookings = Booking.objects.filter(business__user=request.user, customer__phone_number=identifier).order_by('-createdAt')
-        identifier_type = 'phone'
+        try:
+            customer = Customer.objects.get(phone_number=identifier)
+            identifier_type = 'phone'
+        except Customer.DoesNotExist:
+            messages.error(request, 'Customer not found.')
+            return redirect('bookings:customers')
+    
+    # Get all bookings for this customer with this business
+    bookings = Booking.objects.filter(
+        business=business,
+        customer=customer
+    ).order_by('-createdAt')
     
     if not bookings.exists():
-        messages.error(request, 'Customer not found.')
+        messages.error(request, 'No bookings found for this customer with your business.')
         return redirect('bookings:customers')
-    
-    # Get customer details from the most recent booking
-    most_recent_booking = bookings.first()
     
     # Calculate statistics
     total_spent = sum(booking.totalPrice for booking in bookings)
@@ -182,7 +199,7 @@ def customer_detail(request, identifier):
     
     # Find the first booking to determine join date
     first_booking = bookings.order_by('createdAt').first()
-    join_date = first_booking.createdAt if first_booking else None
+    join_date = first_booking.createdAt if first_booking else customer.created_at
     
     # Service type distribution
     service_stats = {}
@@ -193,16 +210,24 @@ def customer_detail(request, identifier):
         else:
             service_stats[service_type] = 1
     
+    # Get company name from most recent booking if available
+    most_recent_booking = bookings.first()
+    company_name = most_recent_booking.companyName if most_recent_booking and hasattr(most_recent_booking, 'companyName') else ''
+    
     context = {
         'customer': {
-            'firstName': most_recent_booking.customer.first_name,
-            'lastName': most_recent_booking.customer.last_name,
-            'email': most_recent_booking.customer.email,
-            'phoneNumber': most_recent_booking.customer.phone_number,
-            'companyName': most_recent_booking.companyName,
+            'firstName': customer.first_name,
+            'lastName': customer.last_name,
+            'email': customer.email,
+            'phoneNumber': customer.phone_number,
+            'companyName': company_name,
             'joinDate': join_date,
             'identifier': identifier,
-            'identifier_type': identifier_type
+            'identifier_type': identifier_type,
+            'address': customer.address,
+            'city': customer.city,
+            'state': customer.state_or_province,
+            'zipCode': customer.zip_code
         },
         'bookings': bookings,
         'stats': {
@@ -227,6 +252,10 @@ def create_booking(request):
     from datetime import datetime, timedelta
     import pytz
     from bookings.timezone_utils import convert_local_to_utc
+
+    redirect_url = request.GET.get('next')
+
+  
     
     business = Business.objects.get(user=request.user)
     business_settings = BusinessSettings.objects.get(business=business)
@@ -240,20 +269,12 @@ def create_booking(request):
             # Get price details from form
             totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
-            phone_number = request.POST.get('phoneNumber')
-            if phone_number:
-                phone_number = format_phone_number(phone_number)
-
-            if not phone_number:
-                messages.error(request, 'Please enter a valid US phone number.')
-                return redirect('bookings:create_booking')
+            
             
             cleaningDate = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
 
-            print(f"cleaningDate: {cleaningDate}")
-            print(f"start_time: {start_time}")
-           
+
 
             # Convert cleaning date and time from business timezone to UTC
             start_time_utc = convert_local_to_utc(
@@ -264,27 +285,46 @@ def create_booking(request):
 
             end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
 
-            print(f"start_time_utc: {start_time_utc}")
-            print(f"end_time_utc: {end_time_utc}")
 
-            customer_email = request.POST.get('email')
-            try:
-                customer = Customer.objects.get(email=customer_email)
-            except Customer.DoesNotExist:
-                customer = None
 
-      
-            if not customer:
-                customer = Customer.objects.create(
-                    first_name=request.POST.get('firstName'),
-                    last_name=request.POST.get('lastName'),
-                    email=customer_email,
-                    phone_number=request.POST.get('phoneNumber'),
-                    address=request.POST.get('address1'),
-                    city=request.POST.get('city'),
-                    state_or_province=request.POST.get('stateOrProvince'),
-                    zip_code=request.POST.get('zipCode'),
-                )
+            # Check customer type selection
+            customer_type = request.POST.get('customerType')
+            
+            if customer_type == 'regular':
+                # Get existing customer by ID
+                customer_id = request.POST.get('customerId')
+                try:
+                    customer = Customer.objects.get(id=customer_id)
+                except Customer.DoesNotExist:
+                    messages.error(request, 'Selected customer not found.')
+                    return redirect('bookings:create_booking')
+            else:
+                # Create new customer
+                customer_email = request.POST.get('email')
+                phone_number = request.POST.get('phoneNumber')
+                if phone_number:
+                    phone_number = format_phone_number(phone_number)
+
+                if not phone_number:
+                    messages.error(request, 'Please enter a valid US phone number.')
+                    return redirect('bookings:create_booking')
+                
+                try:
+                    customer = Customer.objects.get(email=customer_email)
+                except Customer.DoesNotExist:
+                    customer = None
+                
+                if not customer:
+                    customer = Customer.objects.create(
+                        first_name=request.POST.get('firstName'),
+                        last_name=request.POST.get('lastName'),
+                        email=customer_email,
+                        phone_number=request.POST.get('phoneNumber'),
+                        address=request.POST.get('address1'),
+                        city=request.POST.get('city'),
+                        state_or_province=request.POST.get('stateOrProvince'),
+                        zip_code=request.POST.get('zipCode'),
+                    )
             
             # Create the booking
             booking = Booking.objects.create(
@@ -337,22 +377,19 @@ def create_booking(request):
                     )
                     booking.customAddons.add(newCustomBookingAddon)
             
-            from .utils import send_jobs_to_cleaners
-
-            send_jobs_to_cleaners(business, booking)
-
+          
 
 
             messages.success(request, 'Booking created successfully!')
-            return redirect('bookings:booking_detail', bookingId=booking.bookingId)
+            return redirect(redirect_url if redirect_url else 'bookings:booking_detail', bookingId=booking.bookingId)
         
         except Business.DoesNotExist:
             messages.error(request, 'Business not found')
-            return redirect('bookings:all_bookings')
+            return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
             
         except Exception as e:
             messages.error(request, f'Error creating booking: {str(e)}')
-            return redirect('bookings:all_bookings')
+            return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
     
     
     prices = {
@@ -362,6 +399,7 @@ def create_booking(request):
         'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
         'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
         'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+        'base_price': float(business_settings.base_price),
 
         'addonPriceDishes': float(business_settings.addonPriceDishes),
         'addonPriceLaundry': float(business_settings.addonPriceLaundry),
@@ -378,10 +416,15 @@ def create_booking(request):
         'tax': float(business_settings.taxPercent)
     }
 
+    # Get all customers for this business
+    customers = Customer.objects.filter(booking__business=business).distinct()
+    
     context = {
         'customAddons': customAddons,
         'prices': json.dumps(prices),
-        'business_timezone': business_timezone
+        'business_timezone': business_timezone,
+        'customers': customers,
+        'today': date.today()
     }
 
     return render(request, 'bookings/create_booking.html', context)
@@ -763,3 +806,79 @@ def booking_calendar(request):
     }
     
     return render(request, 'bookings/booking_calendar.html', context)
+
+
+# Embed Booking Widget instructions page
+@login_required
+def embed_booking_widget(request):
+    return render(request, 'bookings/embed_booking_widget.html')
+
+
+@login_required
+def booking_history_data(request):
+    """
+    API endpoint to fetch booking history data for the customer dashboard chart.
+    Returns monthly booking counts and payment amounts for the last 6 months.
+    """
+    from django.db.models import Count, Sum
+    from django.db.models.functions import TruncMonth
+    import datetime
+    
+    # Determine if the request is from a customer or business user
+    if hasattr(request.user, 'customer') and request.user.customer:
+        # Customer view - show their own booking history
+        customer = request.user.customer
+        
+        # Get the last 6 months of data
+        end_date = datetime.date.today()
+        start_date = (end_date - datetime.timedelta(days=180))  # Approximately 6 months
+        
+        # Get bookings for this customer in the date range
+        bookings = Booking.objects.filter(
+            customer=customer
+        )
+        
+        # Group by month and count bookings
+        booking_counts = bookings.annotate(
+            month=TruncMonth('cleaningDate')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        # Get payment amounts by month
+        payment_amounts = bookings.annotate(
+            month=TruncMonth('cleaningDate')
+        ).values('month').annotate(
+            amount=Sum('totalPrice')
+        ).order_by('month')
+        
+    else:
+        # Business view - not applicable for this endpoint
+        return JsonResponse({'error': 'This endpoint is only available for customer users'}, status=403)
+    
+    # Format the data for the chart
+    months = []
+    booking_counts_data = []
+    payment_amounts_data = []
+    
+    # Create a dictionary to easily look up values by month
+    counts_by_month = {item['month'].strftime('%Y-%m'): item['count'] for item in booking_counts}
+    amounts_by_month = {item['month'].strftime('%Y-%m'): float(item['amount']) for item in payment_amounts}
+    
+    # Generate data for the last 6 months, including months with zero bookings
+    for i in range(5, -1, -1):
+        # Calculate month date
+        month_date = end_date - datetime.timedelta(days=i*30)  # Approximate
+        month_key = month_date.strftime('%Y-%m')
+        month_name = month_date.strftime('%b')  # Short month name
+        
+        months.append(month_name)
+        booking_counts_data.append(counts_by_month.get(month_key, 0))
+        payment_amounts_data.append(amounts_by_month.get(month_key, 0))
+    
+    # Return the formatted data
+    return JsonResponse({
+        'months': months,
+        'bookingCounts': booking_counts_data,
+        'paymentAmounts': payment_amounts_data
+    })

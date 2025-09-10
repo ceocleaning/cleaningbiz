@@ -13,6 +13,7 @@ class Invoice(models.Model):
     invoiceId = models.CharField(max_length=11, unique=True, null=True, blank=True)
     booking = models.OneToOneField('bookings.Booking', on_delete=models.SET_NULL, null=True, blank=True)
     amount = models.IntegerField(default=0)
+    total_paid_amount = models.IntegerField(default=0)
     isPaid = models.BooleanField(default=False)
 
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -23,8 +24,34 @@ class Invoice(models.Model):
 
     def generateInvoiceId(self):
         prefix = "inv"
-        id = random.choices(string.digits, k=5)
+        id = random.choices(string.digits, k=8)
         return prefix + ''.join(id)
+    
+    def get_remaining_amount(self):
+        return max(0, self.amount - self.total_paid_amount)
+    
+    def is_partially_paid(self):
+        return 0 < self.total_paid_amount < self.amount
+    
+    def update_payment_status(self):
+        completed_payments = self.payments.filter(status__in=['COMPLETED', 'APPROVED'])
+        total_paid = sum(payment.amount for payment in completed_payments)
+        
+        self.total_paid_amount = total_paid
+        if total_paid >= self.amount:
+            self.isPaid = True
+        else:
+            self.isPaid = False
+        self.save()
+    
+
+    class Meta:
+        ordering = ['-createdAt']  # newest first
+    
+
+    @property
+    def payment_details(self):
+        return self.payments.first()
     
     def save(self, *args, **kwargs):
         if not self.invoiceId:
@@ -52,8 +79,15 @@ class Payment(models.Model):
      
     ]
 
+    PAYMENT_TYPE_CHOICES = [
+        ('partial', 'Partial Payment'),
+        ('full', 'Full Payment'),
+        ('authorized', 'Authorized Payment')
+    ]
+
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, null=True, blank=True)
     paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)  # Our Own ID
-    invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name='payment_details')
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     amount = models.IntegerField(default=0)
     paymentMethod = models.CharField(max_length=50, null=True, blank=True, choices=PAYMENT_METHOD_CHOICES)
     squarePaymentId = models.CharField(max_length=100, null=True, blank=True)  # Square's payment ID
@@ -71,10 +105,14 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.paymentId}"
     
+    class Meta:
+        ordering = ['-createdAt']  # newest first
+    
     def generatePaymentId(self):
         prefix = "pay"
         id = random.choices(string.digits, k=5)
         return prefix + ''.join(id)
+    
     
     def compress_image(self, image_field):
         if image_field:
@@ -109,12 +147,18 @@ class Payment(models.Model):
                 self.screenshot = compressed_image
         
         if self.status in ['COMPLETED', 'APPROVED'] and not self.paidAt:
+            if self.status == 'APPROVED':
+                self.status = "COMPLETED"
             self.paidAt = timezone.now()
             
         if not self.paymentId:
             self.paymentId = self.generatePaymentId()
             
         super().save(*args, **kwargs)
+        
+        # Update the invoice payment status after saving
+        if self.status in ['COMPLETED', 'APPROVED']:
+            self.invoice.update_payment_status()
         
         # Clean up the temporary file if it exists
         if hasattr(self, '_temp_screenshot'):

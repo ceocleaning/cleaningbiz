@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import pytz
+from django.urls import reverse
 
 
 User = get_user_model()
@@ -40,6 +41,8 @@ class Business(models.Model):
     defaultPaymentMethod = models.CharField(max_length=255, null=True, blank=True, help_text="Default payment method for collecting payments", choices=PAYMENT_METHODS)
 
     job_assignment = models.CharField(max_length=255, null=True, blank=True, help_text="Job assignment method", choices=JOB_ASSIGNMENT_OPTIONS, default='all_available')
+
+    cleaner_payout_percentage = models.IntegerField(default=0, null=True, blank=True)
 
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
@@ -115,6 +118,13 @@ class Business(models.Model):
     def get_local_time(self):
         """Get current time in business's timezone"""
         return timezone.now().astimezone(self.get_timezone())
+    
+
+    def get_booking_page_url(self):
+        """Returns the URL for the customer booking page."""
+        return reverse('customer:add_booking', kwargs={'business_id': self.businessId})
+
+
 
 class ApiCredential(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)

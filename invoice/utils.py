@@ -82,7 +82,7 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         # Send email using Django's built-in email function
         send_email(
             subject=subject,
-            html_content=body,
+            text_content=body,
             from_email=f"{business.businessName} <{business.user.email}>",
             to_email=owner_email,
             reply_to=business.user.email
@@ -111,91 +111,7 @@ def send_email_payment_completed(instance):
            
             # Create email subject and content
             subject = f"Payment Confirmation - {business.businessName}"
-            
-            # Create HTML email body
-            html_body = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Payment Confirmation</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background-color: #4a90e2; color: white; padding: 20px; text-align: center; }}
-                    .content {{ padding: 20px; background-color: #f9f9f9; }}
-                    .details {{ margin: 20px 0; }}
-                    .details table {{ width: 100%; border-collapse: collapse; }}
-                    .details table td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                    .details table td:first-child {{ font-weight: bold; width: 40%; }}
-                    .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 20px; }}
-                    .footer {{ margin-top: 20px; text-align: center; font-size: 12px; color: #777; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Payment Confirmed!</h1>
-                </div>
-                <div class="content">
-                    <p>Hello {booking.customer.get_full_name()},</p>
-                    <p>We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}</p>
-                    
-                    <div class="details">
-                        <h3>Payment Details:</h3>
-                        <table>
-                            <tr>
-                                <td>Invoice ID:</td>
-                                <td>{invoice.invoiceId}</td>
-                            </tr>
-                            <tr>
-                                <td>Square Payment ID:</td>
-                                <td>{instance.squarePaymentId}</td>
-                            </tr>
-                            <tr>
-                                <td>Amount Paid:</td>
-                                <td>${invoice.amount:.2f}</td>
-                            </tr>
-                            <tr>
-                                <td>Payment Date:</td>
-                                <td>{format_date(instance.paidAt)}</td>
-                            </tr>
-                            <tr>
-                                <td>Payment Method:</td>
-                                <td>Card</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div class="details">
-                        <h3>Appointment Details:</h3>
-                        <table>
-                            <tr>
-                                <td>Date:</td>
-                                <td>{format_date(booking.cleaningDate)}</td>
-                            </tr>
-                            <tr>
-                                <td>Time:</td>
-                                <td>{format_time(booking.startTime)} - {format_time(booking.endTime)}</td>
-                            </tr>
-                            <tr>
-                                <td>Service:</td>
-                                <td>{booking.serviceType.title()} Cleaning</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <p>Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!</p>
-                    
-                    <p>If you have any questions or need to make changes to your appointment, please contact us.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; {timezone.now().year} {business.businessName}. All rights reserved.</p>
-                    <p>{business.address}</p>
-                    <p>Phone: {business.phone} | Email: {business.user.email}</p>
-                </div>
-            </body>
-            </html>
-            """
+
             
             # Create plain text version
             text_body = f"""Payment Confirmation - {business.businessName}
@@ -233,7 +149,6 @@ def send_email_payment_completed(instance):
             # Send email based on available configuration
             send_email(
                 subject=subject,
-                html_body=html_body,
                 text_content=text_body,
                 from_email=from_email,
                 to_email=recipient_email,

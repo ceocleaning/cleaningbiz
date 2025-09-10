@@ -122,6 +122,17 @@
                                     <span class="fw-bold">Base Price:</span>
                                     <span id="base-price" class="fw-bold">${{ plan.get_display_price|floatformat:2 }}</span>
                                 </div>
+
+                                {% if platform_settings.setup_fee and not has_paid_setup_fee %}
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="fw-medium">
+                                        Setup Fee:
+                                        <i class="fas fa-info-circle text-primary ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="This is a mandatory one-time fee for setting up CleaningBiz on your behalf for proper usage. This fee is only charged once."></i>
+                                    </span>
+                                    <span id="setup-fee">${{ platform_settings.setup_fee_amount|floatformat:2 }}</span>
+                                </div>
+                                <input type="hidden" id="setup-fee-amount" value="{{ platform_settings.setup_fee_amount }}">
+                                {% endif %}
                                 
                                 {% else %}
                                 <div class="d-flex justify-content-between mb-3">

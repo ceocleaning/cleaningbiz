@@ -33,17 +33,20 @@
                             <span class="badge bg-success rounded-pill px-3 py-2">
                                 <i class="fas fa-check me-1"></i> Paid
                             </span>
-                            {% elif invoice.payment_details.status == "SUBMITTED" %}
+                            {% elif invoice.payments.exists and invoice.payments.first.status == "SUBMITTED" %}
                             <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
                                 <i class="fas fa-clock me-1"></i> Submitted
                             </span>
                             {% else %}
                             <span class="badge bg-info rounded-pill px-3 py-2">
-                                <i class="fas fa-clock me-1"></i> {{ invoice.payment_details.status|default:"Not Paid" }}
+                                <i class="fas fa-clock me-1"></i> {{ invoice.payments.first.status|default:"Not Paid" }}
                             </span>
                             {% endif %}
                         </div>
                         <h3 class="mb-0 text-success fw-bold">${{ invoice.amount }}</h3>
+                        {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                        <span class="text-info"><i class="fas fa-hand-holding-usd me-1"></i>Includes ${{ invoice.booking.tip }} tip</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -176,32 +179,115 @@
                     <h5 class="card-title mb-0">Payment Information</h5>
                 </div>
 
-                {% if invoice.payment_details %}
+                {% if invoice.payments.exists %}
+                <!-- Payment Summary -->
+                <div class="mb-4">
+                    <div class="alert {% if invoice.isPaid %}alert-success{% elif invoice.is_partially_paid %}alert-info{% else %}alert-warning{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">Payment Summary</h5>
+                                <p class="mb-0">Total Invoice Amount: <strong>${{ invoice.amount }}</strong></p>
+                                <p class="mb-0">Total Paid: <strong>${{ invoice.total_paid_amount }}</strong></p>
+                                {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                                <p class="mb-0">Tip Amount: <strong>${{ invoice.booking.tip }}</strong></p>
+                                {% endif %}
+                                {% if invoice.is_partially_paid %}
+                                <p class="mb-0">Remaining: <strong>${{ invoice.get_remaining_amount }}</strong></p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="badge {% if invoice.isPaid %}bg-success{% elif invoice.is_partially_paid %}bg-info{% else %}bg-warning{% endif %} px-3 py-2">
+                                    {% if invoice.isPaid %}Fully Paid
+                                    {% elif invoice.is_partially_paid %}Partially Paid
+                                    {% else %}Unpaid{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- All Payments Table -->
+                <div class="table-responsive mb-4">
+                    <h5 class="mb-3">Payment History</h5>
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Payment ID</th>
+                                <th>Date</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in invoice.payments.all %}
+                            <tr>
+                                <td>{{ payment.paymentId }}</td>
+                                <td>{{ payment.paidAt|date:"Y-m-d H:i"|default:payment.createdAt|date:"Y-m-d H:i" }}</td>
+                                <td>{{ payment.get_paymentMethod_display }}</td>
+                                <td class="text-end">${{ payment.amount }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if payment.status == 'COMPLETED' or payment.status == 'APPROVED' %}bg-success
+                                        {% elif payment.status == 'AUTHORIZED' %}bg-info
+                                        {% elif payment.status == 'FAILED' or payment.status == 'REJECTED' %}bg-danger
+                                        {% else %}bg-warning{% endif %} ">
+                                        {{ payment.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if payment.paymentMethod == 'bank_transfer' and payment.screenshot %}
+                                    <a href="{{ payment.screenshot.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-image"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if payment.status == 'SUBMITTED' %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'invoice:approve_payment' invoice.invoiceId payment.paymentId %}" class="btn btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        <a href="{% url 'invoice:reject_payment' invoice.invoiceId payment.paymentId %}" class="btn btn-danger">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
                 <div class="row g-4 align-items-stretch">
+                    <!-- Payment Details for Latest Payment -->
+                    <div class="col-12">
+                        <h5 class="mb-3">Latest Payment Details</h5>
+                    </div>
                     
                     <!-- Left Column: Payment Info -->
                     <div class="col-12 col-md-6">
                         <div class="payment-info">
-
                             <!-- Payment ID -->
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Payment ID</span>
-                                <span class="fw-bold">{{ invoice.payment_details.paymentId }}</span>
+                                <span class="fw-bold">{{ invoice.payments.first.paymentId }}</span>
                             </div>
 
                             <!-- Square Payment ID -->
-                            {% if invoice.payment_details.paymentMethod == 'Square' %}
+                            {% if invoice.payments.first.paymentMethod == 'Square' %}
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Square Payment ID</span>
-                                <span class="fw-bold text-break">{{ invoice.payment_details.squarePaymentId|default:"N/A" }}</span>
+                                <span class="fw-bold text-break">{{ invoice.payments.first.squarePaymentId|default:"N/A" }}</span>
                             </div>
                             {% endif %}
 
                             <!-- Transaction ID -->
-                            {% if invoice.payment_details.paymentMethod == 'Bank Transfer' and invoice.payment_details.transactionId %}
+                            {% if invoice.payments.first.paymentMethod == 'Bank Transfer' and invoice.payments.first.transactionId %}
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Transaction ID</span>
-                                <span class="fw-bold text-break">{{ invoice.payment_details.transactionId }}</span>
+                                <span class="fw-bold text-break">{{ invoice.payments.first.transactionId }}</span>
                             </div>
                             {% endif %}
 
@@ -209,7 +295,7 @@
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Payment Method</span>
                                 <span class="badge bg-primary text-white px-3">
-                                    {{ invoice.payment_details.get_paymentMethod_display }}
+                                    {{ invoice.payments.first.get_paymentMethod_display }}
                                 </span>
                             </div>
 
@@ -217,27 +303,35 @@
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Payment Status</span>
                                 <span class="badge 
-                                    {% if invoice.payment_details.status == 'COMPLETED' %}bg-success
-                                    {% elif invoice.payment_details.status == 'AUTHORIZED' %}bg-info
-                                    {% elif invoice.payment_details.status == 'FAILED' %}bg-danger
-                                    {% elif invoice.payment_details.status == 'APPROVED' %}bg-success
-                                    {% elif invoice.payment_details.status == 'REJECTED' %}bg-danger
+                                    {% if invoice.payments.first.status == 'COMPLETED' %}bg-success
+                                    {% elif invoice.payments.first.status == 'AUTHORIZED' %}bg-info
+                                    {% elif invoice.payments.first.status == 'FAILED' %}bg-danger
+                                    {% elif invoice.payments.first.status == 'APPROVED' %}bg-success
+                                    {% elif invoice.payments.first.status == 'REJECTED' %}bg-danger
                                     {% else %}bg-warning{% endif %} 
                                     text-white px-3">
-                                    {{ invoice.payment_details.status|title }}
+                                    {{ invoice.payments.first.status|title }}
                                 </span>
                             </div>
 
                             <!-- Amount -->
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">Amount</span>
-                                <span class="text-success fw-bold">${{ invoice.payment_details.amount }}</span>
+                                <span class="text-success fw-bold">${{ invoice.payments.first.amount }}</span>
                             </div>
+                            
+                            {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                            <!-- Tip Amount -->
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Tip Amount</span>
+                                <span class="text-info fw-bold">${{ invoice.booking.tip }}</span>
+                            </div>
+                            {% endif %}
 
                             <!-- Payment Date -->
                             <div class="d-flex justify-content-between">
                                 <span class="text-muted">Payment Date</span>
-                                <span>{{ invoice.payment_details.paidAt|date:"Y-m-d H:i:s"|default:"N/A" }}</span>
+                                <span>{{ invoice.payments.first.paidAt|date:"Y-m-d H:i:s"|default:"N/A" }}</span>
                             </div>
 
                         </div>
@@ -247,14 +341,14 @@
                     <div class="col-12 col-md-6">
 
                         <!-- CARD PAYMENTS -->
-                        {% if invoice.payment_details.paymentMethod == "card" %}
-                            {% if invoice.payment_details.status == 'COMPLETED' %}
+                        {% if invoice.payments.first.paymentMethod == "card" %}
+                            {% if invoice.payments.first.status == 'COMPLETED' %}
                                 <div class="bg-success rounded-3 p-3 p-md-4 text-center h-100 d-flex flex-column justify-content-center">
                                     <i class="fas fa-check-circle text-white mb-3" style="font-size: 2.5rem;"></i>
                                     <h3 class="text-white mb-2 fs-4 fs-md-3">Payment Complete</h3>
                                     <p class="text-white mb-0">Thank you for your payment!</p>
                                 </div>
-                            {% elif invoice.payment_details.status == 'AUTHORIZED' %}
+                            {% elif invoice.payments.first.status == 'AUTHORIZED' %}
                                 <div class="bg-info rounded-3 p-3 p-md-4 text-center h-100 d-flex flex-column justify-content-center">
                                     <i class="fas fa-clock text-white mb-3" style="font-size: 2.5rem;"></i>
                                     <h3 class="text-white mb-2 fs-4 fs-md-3">Payment Authorized</h3>
@@ -267,11 +361,11 @@
                         {% endif %}
 
                         <!-- BANK TRANSFER -->
-                        {% if invoice.payment_details.paymentMethod == "bank_transfer" %}
+                        {% if invoice.payments.first.paymentMethod == "bank_transfer" %}
                         <div class="bg-secondary rounded-3 p-3 p-md-4 text-center h-100 d-flex flex-column">
 
-                            {% if invoice.payment_details.screenshot %}
-                            <a href="{{ invoice.payment_details.screenshot.url }}" target="_blank" class="btn btn-outline-light btn-sm mb-3">
+                            {% if invoice.payments.first.screenshot %}
+                            <a href="{{ invoice.payments.first.screenshot.url }}" target="_blank" class="btn btn-outline-light btn-sm mb-3">
                                 <i class="fas fa-image me-2"></i> View Screenshot
                             </a>
                             {% endif %}
@@ -280,22 +374,22 @@
 
                             <!-- From Account Details -->
                             <div class="bg-white text-dark rounded p-3 mb-3 text-start">
-                                <p class="mb-1"><strong>From Account Name:</strong> {{ invoice.payment_details.fromBankName }}</p>
-                                <p class="mb-1"><strong>From Account Number:</strong> {{ invoice.payment_details.fromAccountNumber }}</p>
+                                <p class="mb-1"><strong>From Account Name:</strong> {{ invoice.payments.first.fromBankName }}</p>
+                                <p class="mb-1"><strong>From Account Number:</strong> {{ invoice.payments.first.fromAccountNumber }}</p>
                             </div>
 
                             <!-- Status Handling -->
-                            {% if invoice.payment_details.status == 'APPROVED' %}
+                            {% if invoice.payments.first.status == 'APPROVED' %}
                                 <p class="text-white fw-bold mb-0">✅ Payment Approved</p>
-                            {% elif invoice.payment_details.status == 'REJECTED' %}
+                            {% elif invoice.payments.first.status == 'REJECTED' %}
                                 <p class="text-white fw-bold mb-0">❌ Payment Rejected</p>
-                            {% elif invoice.payment_details.status == 'SUBMITTED' %}
+                            {% elif invoice.payments.first.status == 'SUBMITTED' %}
                                 <div class="d-flex flex-wrap gap-2 justify-content-center">
-                                    <a href="{% url 'invoice:approve_payment' invoice.invoiceId %}" 
+                                    <a href="{% url 'invoice:approve_payment' invoice.invoiceId invoice.payments.first.paymentId %}" 
                                             class="btn btn-light">
                                         <i class="fas fa-check me-2"></i> Approve Payment
                                     </a>
-                                    <a href="{% url 'invoice:reject_payment' invoice.invoiceId %}" 
+                                    <a href="{% url 'invoice:reject_payment' invoice.invoiceId invoice.payments.first.paymentId %}" 
                                             class="btn btn-danger">
                                         <i class="fas fa-times me-2"></i> Reject Payment
                                     </a>

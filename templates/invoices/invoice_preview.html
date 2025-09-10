@@ -268,17 +268,125 @@
     @keyframes spinner {
         to {transform: translate(-50%, -50%) rotate(360deg);}
     }
+    
+    /* Payment History Sliding Panel */
+    .payment-history-panel {
+        position: fixed;
+        top: 0;
+        right: -400px; /* Start off-screen */
+        width: 400px;
+        height: 100%;
+        background-color: #fff;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 1050;
+        transition: right 0.3s ease-in-out;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .payment-history-panel.show {
+        right: 0;
+    }
+    
+    .payment-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .payment-item {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+        transition: all 0.2s;
+    }
+    
+    .payment-item:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="invoice-container position-relative">
+    {% if invoice.payments.exists %}
+    <!-- Payment History Button -->
+    <div class="position-fixed" style="top: 50%; right: 0; transform: translateY(-50%); z-index: 1000;">
+        <button id="showPaymentHistoryBtn" class="btn btn-info rounded-start rounded-0 px-2 py-3" style="writing-mode: vertical-lr; transform: rotate(180deg); z-index: 1001;">
+            <i class="fas fa-history mb-2"></i> Payment History
+        </button>
+    </div>
+    
+    <!-- Payment History Panel -->
+    <div id="paymentHistoryPanel" class="payment-history-panel">
+        <div class="payment-history-header">
+            <h5 class="mb-0">Payment History</h5>
+            <button id="closePaymentHistoryBtn" class="btn-close" aria-label="Close"></button>
+        </div>
+        
+        <div class="payment-history-content">
+            {% for payment in invoice.payments.all %}
+            <div class="payment-item">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge {% if payment.status == 'COMPLETED' or payment.status == 'APPROVED' %}bg-success{% elif payment.status == 'AUTHORIZED' %}bg-info{% elif payment.status == 'FAILED' or payment.status == 'REJECTED' %}bg-danger{% else %}bg-warning{% endif %} px-2 py-1">
+                        {{ payment.status|title }}
+                    </span>
+                    <small class="text-muted">{{ payment.createdAt|date:"M d, Y H:i" }}</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">Amount:</span>
+                    <span class="text-success">${{ payment.amount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">Method:</span>
+                    <span>{{ payment.get_paymentMethod_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">ID:</span>
+                    <span class="text-muted">{{ payment.paymentId }}</span>
+                </div>
+                {% if payment.paymentMethod == 'bank_transfer' and payment.screenshot %}
+                <div class="mt-2">
+                    <a href="{{ payment.screenshot.url }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-image me-2"></i>View Receipt
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
+    {% endif %}
+
+    
     <div class="text-center mb-3">
         {% if invoice.isPaid %}
         <div class="payment-badge bg-success text-white">
             <i class="fas fa-check-circle me-1"></i>Paid
         </div>
-        {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
+        {% elif invoice.is_partially_paid %}
+        <div class="payment-badge bg-warning text-dark">
+            <i class="fas fa-exclamation-circle me-1"></i>Partially Paid
+        </div>
+        {% elif invoice.payments.exists and invoice.payments.first.status == 'AUTHORIZED' %}
         <div class="payment-badge bg-info text-white">
             <i class="fas fa-clock me-1"></i>Payment Authorized
         </div>
@@ -297,6 +405,7 @@
             <p class="mb-0">{{ business.user.email }}</p>
         </div>
     </div>
+
 
     <!-- Invoice Details -->
     <div class="row mb-4">
@@ -344,7 +453,9 @@
         <div class="col-6 text-end">
             {% if invoice.isPaid %}
             <h2 class="mb-0 h3 text-success invoice-status">PAID</h2>
-            {% elif invoice.payment_details and invoice.payment_details.status == 'AUTHORIZED' %}
+            {% elif invoice.is_partially_paid %}
+            <h2 class="mb-0 h3 text-warning invoice-status">PARTIALLY PAID</h2>
+            {% elif invoice.payments.exists and invoice.payments.first.status == 'AUTHORIZED' %}
             <h2 class="mb-0 h3 text-info invoice-status">AUTHORIZED</h2>
             {% else %}
             <h2 class="mb-0 h3 text-danger invoice-status">UNPAID</h2>
@@ -431,9 +542,15 @@
                     <td data-label="" class="text-end"><strong id="sub_total_display">{{ invoice.booking.totalPrice|format_currency }}</strong></td>
                 </tr>
                 <tr class="invoice-summary-row">
-                    <td colspan="3" data-label="Tax:" class="text-end"><strong>Tax (0%):</strong></td>
+                    <td colspan="3" data-label="Tax:" class="text-end"><strong>Tax ({{ invoice.booking.business.settings.taxPercent }}%):</strong></td>
                     <td data-label="" class="text-end"><strong id="tax_display">{{ invoice.booking.tax|format_currency }}</strong></td>
                 </tr>
+                {% if invoice.booking.tip and invoice.booking.tip > 0 %}
+                <tr class="invoice-summary-row">
+                    <td colspan="3" data-label="Tip:" class="text-end"><strong>Tip:</strong></td>
+                    <td data-label="" class="text-end"><strong id="tip_display">{{ invoice.booking.tip|format_currency }}</strong></td>
+                </tr>
+                {% endif %}
                 <tr class="invoice-summary-row">
                     <td colspan="3" data-label="Total:" class="text-end border-bottom"><strong>Total:</strong></td>
                     <td data-label="" class="text-end border-bottom"><strong id="total_display">{{ invoice.amount|format_currency }}</strong></td>
@@ -494,35 +611,27 @@
     </div>
     {% endif %}
 
-    {% if not invoice.isPaid and not invoice.payment_details.status == 'AUTHORIZED' and not request.user == booking.business.user %}
+    {% if not invoice.isPaid and not request.user == booking.business.user %}
     <div class="fixed-bottom mb-3 px-3" id="payButtonContainer">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-4">
                     <a href="#" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                        <i class="fas fa-credit-card me-2"></i>Pay {{ invoice.amount}}
+                        <i class="fas fa-credit-card me-2"></i>Pay {% if invoice.is_partially_paid %}${{ invoice.get_remaining_amount }}{% else %}{{ invoice.amount|format_currency }}{% endif %}
                     </a>
                 </div>
-                {% if not invoice.payment_details.status == 'SUBMITTED' and not invoice.payment_details.status == 'APPROVED' %}
                 <div class="col-md-6 col-lg-4">
                     <a href="#" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#manualPaymentModal">
                         <i class="fas fa-credit-card me-2"></i>Pay by Bank Transfer
                     </a>
                 </div>
-                {% else %}
-                <div class="col-md-6 col-lg-4">
-                    <a href="#" class="btn btn-disabled w-100">
-                        <i class="fas fa-credit-card me-2"></i>Bank Trasnfer {{ invoice.payment_details.status }}
-                    </a>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Floating button for mobile -->
     <a href="#" class="btn btn-success mobile-float-btn" data-bs-toggle="modal" data-bs-target="#paymentModal" id="mobilePayBtn">
-        <i class="fas fa-credit-card me-2"></i>Pay Now
+        <i class="fas fa-credit-card me-2"></i>Pay {% if invoice.is_partially_paid %}${{ invoice.get_remaining_amount }}{% else %}{{ invoice.amount|format_currency }}{% endif %}
     </a>
     {% endif %}
 
@@ -537,7 +646,74 @@
                 </div>
                 <form id="manualPaymentForm" method="post" enctype="multipart/form-data" action="{% url 'invoice:manual_payment' invoice.invoiceId %}">
                     {% csrf_token %}
+                    <!-- Hidden tip amount field that will be populated by JavaScript -->
+                    <input type="hidden" id="manual-hidden-tip-amount" name="tip_amount" value="0">
                     <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Type:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_type" id="manualFullPayment" value="full" checked>
+                                <label class="form-check-label" for="manualFullPayment">
+                                    {% if invoice.is_partially_paid %}
+                                    Full Payment (Remaining: <span id="manual-payment-amount-display">${{ invoice.get_remaining_amount }}</span>)
+                                    {% else %}
+                                    Full Payment (<span id="manual-payment-amount-display">{{ invoice.amount|format_currency }}</span>)
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% if not invoice.payments.exists %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_type" id="manualPartialPayment" value="partial">
+                                <label class="form-check-label" for="manualPartialPayment">
+                                    Partial Payment
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if invoice.is_partially_paid %}
+                        <div class="alert alert-info mb-3">
+                            <p class="mb-1"><strong>Partially Paid:</strong> {{ invoice.total_paid_amount|format_currency }}</p>
+                            <p class="mb-0"><strong>Remaining Amount:</strong> {{ invoice.get_remaining_amount|format_currency }}</p>
+                        </div>
+                        <input type="hidden" name="amount" value="{{ invoice.get_remaining_amount }}">
+                        {% endif %}
+                        
+                        <div id="manualPartialAmountContainer" class="mb-3" {% if not invoice.payments.exists %}style="display: none;"{% else %}style="display: none;"{% endif %}>
+                            <label for="manual_partial_amount" class="form-label">Amount Paid:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="manual_partial_amount" name="amount" min="1" 
+                                       {% if invoice.is_partially_paid %}
+                                       max="{{ invoice.get_remaining_amount }}" value="{{ invoice.get_remaining_amount }}"
+                                       {% else %}
+                                       max="{{ invoice.amount }}" value="{{ invoice.amount }}"
+                                       {% endif %}
+                                       step="0.01">
+                            </div>
+                            <div class="form-text">Enter the amount you've paid via bank transfer.</div>
+                        </div>
+                        
+                        <script>
+                            // Update manual partial payment amount when tip changes
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const manualPartialAmountInput = document.getElementById('manual_partial_amount');
+                                if (manualPartialAmountInput) {
+                                    // Store original max and value
+                                    const originalMax = manualPartialAmountInput.getAttribute('max');
+                                    const originalValue = manualPartialAmountInput.value;
+                                    
+                                    // Function to update manual partial payment input
+                                    window.updateManualPartialPaymentAmount = function(newAmount) {
+                                        if (manualPartialAmountInput) {
+                                            manualPartialAmountInput.setAttribute('max', newAmount);
+                                            manualPartialAmountInput.value = newAmount;
+                                        }
+                                    };
+                                }
+                            });
+                        </script>
+                        
                         <div class="mb-3">
                             <label for="transaction_id" class="form-label">Transaction ID <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="transaction_id" name="transaction_id" required>
@@ -561,6 +737,33 @@
                             Please ensure all details match your bank transfer. Your payment will be verified manually.
                         </div>
                     </div>
+                    
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const manualFullPaymentRadio = document.getElementById('manualFullPayment');
+                            const manualPartialPaymentRadio = document.getElementById('manualPartialPayment');
+                            const manualPartialAmountContainer = document.getElementById('manualPartialAmountContainer');
+                            const manualPartialAmountInput = document.getElementById('manual_partial_amount');
+                            
+                            if (manualFullPaymentRadio && manualPartialPaymentRadio) {
+                                // Toggle partial amount input visibility
+                                manualFullPaymentRadio.addEventListener('change', function() {
+                                    if (this.checked) {
+                                        manualPartialAmountContainer.style.display = 'none';
+                                        if (manualPartialAmountInput) {
+                                            manualPartialAmountInput.value = {{ invoice.amount }};
+                                        }
+                                    }
+                                });
+                                
+                                manualPartialPaymentRadio.addEventListener('change', function() {
+                                    if (this.checked) {
+                                        manualPartialAmountContainer.style.display = 'block';
+                                    }
+                                });
+                            }
+                        });
+                    </script>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-success">
@@ -582,12 +785,139 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-4">
-                        <h6 class="mb-3">Amount to Pay: <strong>{{ invoice.amount|format_currency }}</strong></h6>
+                        <h6 class="mb-3">Total Invoice Amount: <strong id="base-invoice-amount">{{ invoice.amount|format_currency }}</strong></h6>
+                        
+                        {% if invoice.is_partially_paid %}
+                        <div class="alert alert-info">
+                            <p class="mb-1"><strong>Partially Paid:</strong> {{ invoice.total_paid_amount|format_currency }}</p>
+                            <p class="mb-0"><strong>Remaining Amount:</strong> {{ invoice.get_remaining_amount|format_currency }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Tipping Section -->
+                        <div class="card mb-3 border-success">
+                            <div class="card-header bg-success bg-opacity-10">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Add a Tip</h6>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enableTipToggle">
+                                        <label class="form-check-label" for="enableTipToggle">Include Tip</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body" id="tipOptionsContainer" style="display: none;">
+                                <!-- Percentage-based tip options -->
+                                <div class="mb-3">
+                                    <label class="form-label">Suggested Tip:</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="10">10%</button>
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="15">15%</button>
+                                        <button type="button" class="btn btn-outline-success tip-percent-btn" data-percent="20">20%</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="5">$5</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="10">$10</button>
+                                        <button type="button" class="btn btn-outline-success tip-amount-btn" data-amount="20">$20</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Custom tip amount -->
+                                <div class="mb-3">
+                                    <label for="customTipAmount" class="form-label">Custom Tip Amount:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="customTipAmount" min="0" step="0.01" value="0.00">
+                                    </div>
+                                </div>
+                                
+                                <!-- Tip summary -->
+                                <div class="d-flex justify-content-between align-items-center mt-3 fw-bold">
+                                    <span>Tip Amount:</span>
+                                    <span id="tipAmountDisplay">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Updated Total with Tip -->
+                        <div class="alert alert-success" id="totalWithTipContainer" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>New Total (with tip):</strong>
+                                <strong id="totalWithTipDisplay">{{ invoice.amount|format_currency }}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Payment Type:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_type" id="fullPayment" value="full" checked>
+                                <label class="form-check-label" for="fullPayment">
+                                    {% if invoice.is_partially_paid %}
+                                    Full Payment (Remaining: <span id="payment-amount-display">${{ invoice.get_remaining_amount }}</span>)
+                                    {% else %}
+                                    Full Payment (<span id="payment-amount-display">{{ invoice.amount|format_currency }}</span>)
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% if not invoice.payments.exists %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_type" id="partialPayment" value="partial">
+                                <label class="form-check-label" for="partialPayment">
+                                    Partial Payment
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="partialAmountContainer" class="mb-3" style="display: none;">
+                            <label for="partialAmount" class="form-label">Amount to Pay:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="partialAmount" name="amount" min="1" 
+                                       {% if invoice.is_partially_paid %}
+                                       max="{{ invoice.get_remaining_amount }}" value="{{ invoice.get_remaining_amount }}"
+                                       {% else %}
+                                       max="{{ invoice.amount }}" value="{{ invoice.amount }}"
+                                       {% endif %}
+                                       step="0.01" placeholder="Enter amount">
+                            </div>
+                            <div class="form-text">Enter an amount less than the total invoice amount.</div>
+                        </div>
+                        
+                        <script>
+                            // Update partial payment amount when tip changes
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const partialAmountInput = document.getElementById('partialAmount');
+                                if (partialAmountInput) {
+                                    // Store original max and value
+                                    const originalMax = partialAmountInput.getAttribute('max');
+                                    const originalValue = partialAmountInput.value;
+                                    
+                                    // Function to update partial payment input
+                                    window.updatePartialPaymentAmount = function(newAmount) {
+                                        if (partialAmountInput) {
+                                            partialAmountInput.setAttribute('max', newAmount);
+                                            partialAmountInput.value = newAmount;
+                                        }
+                                    };
+                                }
+                            });
+                        </script>
+                        
+                        {% if invoice.is_partially_paid %}
+                        <div class="alert alert-info">
+                            <p class="mb-0">You will be charged the remaining amount: <strong>{{ invoice.get_remaining_amount|format_currency }}</strong></p>
+                        </div>
+                        {% endif %}
 
                         {% if booking.business.defaultPaymentMethod == 'square' %}
                         <!-- Square Payment Form -->
                         <div id="card-container"></div>
                         <div id="payment-status-container" class="payment-status-container"></div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. For authorized payments, the full amount will be charged after service completion.
+                        </div>
+                        {% endif %}
 
                         <div class="d-grid gap-3 mt-4">
                             <button id="pay-now-button" class="btn btn-success">
@@ -603,6 +933,13 @@
                             <div id="stripe-card-element"></div>
                             <div id="stripe-payment-status" class="payment-status-container mt-3"></div>
                         </div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. For authorized payments, the full amount will be charged after service completion.
+                        </div>
+                        {% endif %}
 
                         <div class="d-grid gap-3 mt-4">
                             <button id="stripe-pay-button" class="btn btn-success">
@@ -616,6 +953,13 @@
                         <div id="paypal-button-container">
 
                         </div>
+                        
+                        {% if not invoice.payments.exists %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Partial Payments:</strong> You can make a partial payment now and pay the remaining amount later. Select the payment type above before proceeding with PayPal checkout.
+                        </div>
+                        {% endif %}
                         {% else %}
                         <!-- Default payment options if none set -->
                         <div class="alert alert-info">
@@ -636,7 +980,279 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
+
+<!-- Tip Calculation JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tip-related elements
+        const enableTipToggle = document.getElementById('enableTipToggle');
+        const tipOptionsContainer = document.getElementById('tipOptionsContainer');
+        const tipPercentButtons = document.querySelectorAll('.tip-percent-btn');
+        const tipAmountButtons = document.querySelectorAll('.tip-amount-btn');
+        const customTipAmount = document.getElementById('customTipAmount');
+        const tipAmountDisplay = document.getElementById('tipAmountDisplay');
+        const totalWithTipContainer = document.getElementById('totalWithTipContainer');
+        const totalWithTipDisplay = document.getElementById('totalWithTipDisplay');
+        const baseInvoiceAmountElement = document.getElementById('base-invoice-amount');
+        
+        // Get base invoice amount
+        let baseInvoiceAmount = parseFloat(baseInvoiceAmountElement.innerText.replace(/[^0-9.-]+/g, '')) || 0;
+        let tipAmount = 0;
+        
+        // Toggle tip options visibility
+        if (enableTipToggle) {
+            enableTipToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    tipOptionsContainer.style.display = 'block';
+                    updateTipDisplay();
+                } else {
+                    tipOptionsContainer.style.display = 'none';
+                    totalWithTipContainer.style.display = 'none';
+                    customTipAmount.value = '0.00';
+                    tipAmount = 0;
+                    clearSelectedTipButtons();
+                }
+            });
+        }
+        
+        // Handle percentage-based tip buttons
+        tipPercentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const percent = parseFloat(this.getAttribute('data-percent'));
+                tipAmount = (baseInvoiceAmount * percent / 100).toFixed(2);
+                customTipAmount.value = tipAmount;
+                updateTipDisplay();
+                highlightSelectedButton(this);
+            });
+        });
+        
+        // Handle fixed amount tip buttons
+        tipAmountButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                tipAmount = parseFloat(this.getAttribute('data-amount')).toFixed(2);
+                customTipAmount.value = tipAmount;
+                updateTipDisplay();
+                highlightSelectedButton(this);
+            });
+        });
+        
+        // Handle custom tip amount input
+        if (customTipAmount) {
+            customTipAmount.addEventListener('input', function() {
+                tipAmount = parseFloat(this.value) || 0;
+                updateTipDisplay();
+                clearSelectedTipButtons();
+            });
+        }
+        
+        // Update tip display and total
+        function updateTipDisplay() {
+            if (tipAmount > 0) {
+                tipAmountDisplay.textContent = '$' + parseFloat(tipAmount).toFixed(2);
+                const totalWithTip = baseInvoiceAmount + parseFloat(tipAmount);
+                totalWithTipDisplay.textContent = '$' + totalWithTip.toFixed(2);
+                totalWithTipContainer.style.display = 'block';
+                
+                // Update payment amount display in payment type section
+                updatePaymentAmountDisplay(totalWithTip);
+                
+                // Update pay button text
+                updatePayButtonText(totalWithTip);
+                
+                // Update partial payment amount inputs if they exist
+                if (window.updatePartialPaymentAmount) {
+                    window.updatePartialPaymentAmount(totalWithTip.toFixed(2));
+                }
+                
+                if (window.updateManualPartialPaymentAmount) {
+                    window.updateManualPartialPaymentAmount(totalWithTip.toFixed(2));
+                }
+                
+                // Add hidden input for form submission
+                addOrUpdateHiddenTipInput();
+            } else {
+                tipAmountDisplay.textContent = '$0.00';
+                totalWithTipContainer.style.display = 'none';
+                
+                // Reset payment amount display to original amount
+                updatePaymentAmountDisplay(baseInvoiceAmount);
+                
+                // Reset pay button text
+                updatePayButtonText(baseInvoiceAmount);
+                
+                // Reset partial payment amount inputs if they exist
+                if (window.updatePartialPaymentAmount) {
+                    window.updatePartialPaymentAmount(baseInvoiceAmount.toFixed(2));
+                }
+                
+                if (window.updateManualPartialPaymentAmount) {
+                    window.updateManualPartialPaymentAmount(baseInvoiceAmount.toFixed(2));
+                }
+                
+                removeHiddenTipInput();
+            }
+        }
+        
+        // Update payment amount display in payment type section
+        function updatePaymentAmountDisplay(amount) {
+            // Update main payment modal amount display
+            const paymentAmountDisplay = document.getElementById('payment-amount-display');
+            if (paymentAmountDisplay) {
+                paymentAmountDisplay.textContent = '$' + parseFloat(amount).toFixed(2);
+            }
+            
+            // Update manual payment modal amount display
+            const manualPaymentAmountDisplay = document.getElementById('manual-payment-amount-display');
+            if (manualPaymentAmountDisplay) {
+                manualPaymentAmountDisplay.textContent = '$' + parseFloat(amount).toFixed(2);
+            }
+        }
+        
+        // Update pay button text
+        function updatePayButtonText(amount) {
+            // Update all payment buttons including regular pay and bank transfer buttons
+            const payButtons = document.querySelectorAll('[data-bs-target="#paymentModal"], [data-bs-target="#manualPaymentModal"]');
+            payButtons.forEach(button => {
+                // Extract the button text and update only the amount part
+                const buttonText = button.innerHTML;
+                const newText = buttonText.replace(/\$[\d,\.]+/g, '$' + parseFloat(amount).toFixed(2));
+                button.innerHTML = newText;
+            });
+            
+            // Also update mobile pay button if it exists
+            const mobilePayBtn = document.getElementById('mobilePayBtn');
+            if (mobilePayBtn) {
+                const buttonText = mobilePayBtn.innerHTML;
+                const newText = buttonText.replace(/\$[\d,\.]+/g, '$' + parseFloat(amount).toFixed(2));
+                mobilePayBtn.innerHTML = newText;
+            }
+        }
+        
+        // Highlight selected button and clear others
+        function highlightSelectedButton(selectedButton) {
+            tipPercentButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            tipAmountButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            
+            selectedButton.classList.remove('btn-outline-success');
+            selectedButton.classList.add('btn-success');
+        }
+        
+        // Clear button selection
+        function clearSelectedTipButtons() {
+            tipPercentButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+            tipAmountButtons.forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            });
+        }
+        
+        // Add or update hidden tip input for form submission
+        function addOrUpdateHiddenTipInput() {
+            // Update the manual payment form hidden tip field
+            const manualTipInput = document.getElementById('manual-hidden-tip-amount');
+            if (manualTipInput) {
+                manualTipInput.value = tipAmount;
+            }
+            
+            // Handle other payment forms
+            let tipInput = document.getElementById('hidden-tip-amount');
+            if (!tipInput) {
+                tipInput = document.createElement('input');
+                tipInput.type = 'hidden';
+                tipInput.id = 'hidden-tip-amount';
+                tipInput.name = 'tip_amount';
+                
+                // Add to all payment forms except the manual payment form
+                const paymentForms = document.querySelectorAll('form:not(#manualPaymentForm)');
+                paymentForms.forEach(form => {
+                    const clonedInput = tipInput.cloneNode();
+                    form.appendChild(clonedInput);
+                });
+            }
+            
+            // Update all tip inputs
+            document.querySelectorAll('#hidden-tip-amount').forEach(input => {
+                input.value = tipAmount;
+            });
+            
+            // Log for debugging
+            console.log('Tip amount set to:', tipAmount);
+        }
+        
+        // Remove hidden tip input
+        function removeHiddenTipInput() {
+            // Set manual payment form tip to 0
+            const manualTipInput = document.getElementById('manual-hidden-tip-amount');
+            if (manualTipInput) {
+                manualTipInput.value = 0;
+            }
+            
+            // Remove other hidden tip inputs
+            document.querySelectorAll('#hidden-tip-amount').forEach(input => {
+                input.parentNode.removeChild(input);
+            });
+            
+            console.log('Tip inputs reset to 0');
+        }
+    });
+</script>
+
+<!-- Payment History Panel JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const showPaymentHistoryBtn = document.getElementById('showPaymentHistoryBtn');
+        const closePaymentHistoryBtn = document.getElementById('closePaymentHistoryBtn');
+        const paymentHistoryPanel = document.getElementById('paymentHistoryPanel');
+        const overlay = document.getElementById('overlay');
+        
+        if (showPaymentHistoryBtn && closePaymentHistoryBtn && paymentHistoryPanel && overlay) {
+
+            console.log("All Elements Present");
+            
+            // Show payment history panel
+            showPaymentHistoryBtn.addEventListener('click', function() {
+                console.log("Button Clicked")
+                paymentHistoryPanel.classList.add('show');
+                overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+            
+            // Close payment history panel
+            closePaymentHistoryBtn.addEventListener('click', function() {
+                closePaymentHistory();
+            });
+            
+            // Close when clicking on overlay
+            overlay.addEventListener('click', function() {
+                closePaymentHistory();
+            });
+            
+            // Close function
+            function closePaymentHistory() {
+                paymentHistoryPanel.classList.remove('show');
+                overlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+            
+            // Close on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePaymentHistory();
+                }
+            });
+        }
+    });
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -658,6 +1274,74 @@
         // Format with currency symbol
         sub_total_display.textContent = `$${sub_total.toFixed(2)}`;
         amount_display.textContent = `$${sub_total.toFixed(2)}`;
+
+        // Handle payment type selection
+        const fullPaymentRadio = document.getElementById('fullPayment');
+        const partialPaymentRadio = document.getElementById('partialPayment');
+        const partialAmountContainer = document.getElementById('partialAmountContainer');
+        const partialAmountInput = document.getElementById('partialAmount');
+        
+        if (fullPaymentRadio && partialPaymentRadio) {
+            // Set max value for partial payment
+            if (partialAmountInput) {
+                {% if invoice.is_partially_paid %}
+                const remainingAmount = {{ invoice.get_remaining_amount }};
+                partialAmountInput.max = remainingAmount;
+                partialAmountInput.value = remainingAmount;
+                {% else %}
+                const invoiceAmount = {{ invoice.amount }};
+                partialAmountInput.max = invoiceAmount;
+                partialAmountInput.value = invoiceAmount;
+                {% endif %}
+            }
+            
+            // Toggle partial amount input visibility
+            fullPaymentRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    partialAmountContainer.style.display = 'none';
+                }
+            });
+            
+            partialPaymentRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    partialAmountContainer.style.display = 'block';
+                }
+            });
+        }
+        
+        // Function to get current payment amount based on selection
+        window.getPaymentAmount = function() {
+            if (!partialPaymentRadio || !partialAmountInput) {
+                {% if invoice.is_partially_paid %}
+                return {{ invoice.get_remaining_amount }};
+                {% else %}
+                return {{ invoice.amount }};
+                {% endif %}
+            }
+            
+            if (partialPaymentRadio.checked) {
+                return parseFloat(partialAmountInput.value) || 0;
+            } else {
+                {% if invoice.is_partially_paid %}
+                return {{ invoice.get_remaining_amount }};
+                {% else %}
+                return {{ invoice.amount }};
+                {% endif %}
+            }
+        };
+        
+        // Function to get payment type
+        window.getPaymentType = function() {
+            if (!partialPaymentRadio) {
+                {% if invoice.is_partially_paid %}
+                return 'partial';
+                {% else %}
+                return 'full';
+                {% endif %}
+            }
+            
+            return partialPaymentRadio.checked ? 'partial' : 'full';
+        };
 
         // Adjust position of payment button on small screens
         function adjustPayButton() {
@@ -689,7 +1373,8 @@
     {% if settings.SQUARE_ENVIRONMENT == 'sandbox' %}
     <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
     {% else %}
-    <script src="https://web.squarecdn.com/v1/square.js"></script>
+
+    <script src="https://js.squareup.com/v2/paymentform"></script>
     {% endif %}
     <script>
         // Square Payment JS
@@ -750,11 +1435,24 @@
         }
 
         async function createPayment(token, autoComplete = true) {
+            // Get payment amount and type
+            const paymentAmount = window.getPaymentAmount();
+            const paymentType = window.getPaymentType();
+            
+            // Get tip amount if available
+            let tipAmount = 0;
+            const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+            if (tipInput && tipInput.value) {
+                tipAmount = parseFloat(tipInput.value) || 0;
+            }
+            
+            // Prepare payment data
             const bodyData = {
                 sourceId: token,
-                amount: {{ invoice.amount }},
                 invoiceId: '{{ invoice.invoiceId }}',
-                autoComplete: autoComplete
+                amount: paymentAmount,
+                paymentType: paymentType,
+                tipAmount: tipAmount
             };
 
             const paymentResponse = await fetch('{% url "invoice:process_payment" %}', {
@@ -863,7 +1561,7 @@
             // Initialize Stripe
             const stripePublishableKey = '{{ booking.business.stripe_credentials.stripe_publishable_key }}';
 
-            console.log(stripePublishableKey);
+        
             if (!stripePublishableKey) {
                 console.error('Stripe publishable key not found');
                 return;
@@ -941,18 +1639,25 @@
                 statusContainer.innerHTML = `<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin me-2"></i>Processing payment...</div>`;
 
                 try {
+                    // Get tip amount if available
+                    let tipAmount = 0;
+                    const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+                    if (tipInput && tipInput.value) {
+                        tipAmount = parseFloat(tipInput.value) || 0;
+                    }
+                    
+                    // Create a payment method with card element
                     const { paymentMethod, error } = await stripe.createPaymentMethod({
                         type: 'card',
-                        card: card,
+                        card: card
                     });
-
+                    
                     if (error) {
-                        // Show error
                         displayStripePaymentResult({ error: error.message });
                         return;
                     }
-
-                    // Send payment method ID to server
+                    
+                    // Now send the payment method ID to the server
                     const response = await fetch('{% url "invoice:process_stripe_payment" %}', {
                         method: 'POST',
                         headers: {
@@ -962,11 +1667,13 @@
                         body: JSON.stringify({
                             payment_method_id: paymentMethod.id,
                             invoice_id: '{{ invoice.invoiceId }}',
-                            amount: {{ invoice.amount }},
-                            auto_complete: autoComplete
+                            amount: window.getPaymentAmount(),
+                            auto_complete: autoComplete,
+                            payment_type: window.getPaymentType(),
+                            tip_amount: tipAmount
                         })
                     });
-
+                    
                     const result = await response.json();
 
                     if (result.success) {
@@ -1004,11 +1711,7 @@
     </script>
 
 {% elif booking.business.defaultPaymentMethod == 'paypal' %}
-<!-- PayPal SDK with Sandbox-specific configuration -->
-<script>
-    // Log PayPal integration status to console for debugging
-    console.log('Loading PayPal SDK with client ID:', '{{ booking.business.paypal_credentials.paypal_client_id }}');
-</script>
+
 
 <!-- Load the PayPal SDK with specific parameters for Sandbox environment -->
 <script src="https://www.paypal.com/sdk/js?client-id={{ booking.business.paypal_credentials.paypal_client_id }}&currency=USD&intent=capture"></script>
@@ -1027,6 +1730,13 @@
             console.log('Manually processing PayPal payment for order:', orderID);
             const paypalContainer = document.getElementById('paypal-button-container');
             
+            // Get tip amount if available
+            let tipAmount = 0;
+            const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+            if (tipInput && tipInput.value) {
+                tipAmount = parseFloat(tipInput.value) || 0;
+            }
+            
             // Send the payment details directly to our server
             return fetch('{% url "invoice:process_paypal_payment" %}', {
                 method: 'POST',
@@ -1037,7 +1747,9 @@
                 body: JSON.stringify({
                     orderID: orderID,
                     invoiceId: '{{ invoice.invoiceId }}',
-                    manualVerification: true
+                    amount: window.getPaymentAmount(),
+                    paymentType: window.getPaymentType(),
+                    tipAmount: tipAmount
                 })
             })
             .then(response => {
@@ -1088,13 +1800,18 @@
 
             // Set up the transaction
             createOrder: function(data, actions) {
+                const paymentAmount = window.getPaymentAmount();
+                const formattedPaymentAmount = paymentAmount.toFixed(2);
+                
                 return actions.order.create({
                     purchase_units: [{
                         amount: {
-                            value: formattedAmount,
+                            value: formattedPaymentAmount,
                             currency_code: 'USD'
                         },
-                        description: 'Payment for Invoice #{{ invoice.invoiceId }}'
+                        description: 'Payment for Invoice #{{ invoice.invoiceId }}',
+                        payment_amount: paymentAmount,
+                        payment_type: window.getPaymentType()
                     }]
                 });
             },
@@ -1121,9 +1838,19 @@
                         clearTimeout(captureTimeout);
                         console.log('PayPal order captured successfully', orderData);
                         // Send the payment details to our server
+                        // Get tip amount if available
+                        let tipAmount = 0;
+                        const tipInput = document.getElementById('hidden-tip-amount') || document.getElementById('manual-hidden-tip-amount');
+                        if (tipInput && tipInput.value) {
+                            tipAmount = parseFloat(tipInput.value) || 0;
+                        }
+                        
                         console.log('Sending payment details to server...', {
                             orderID: orderData.id,
-                            invoiceId: '{{ invoice.invoiceId }}'
+                            invoiceId: '{{ invoice.invoiceId }}',
+                            paymentAmount: window.getPaymentAmount(),
+                            paymentType: window.getPaymentType(),
+                            tipAmount: tipAmount
                         });
                         return fetch('{% url "invoice:process_paypal_payment" %}', {
                             method: 'POST',
@@ -1133,7 +1860,10 @@
                             },
                             body: JSON.stringify({
                                 orderID: orderData.id,
-                                invoiceId: '{{ invoice.invoiceId }}'
+                                invoiceId: '{{ invoice.invoiceId }}',
+                                amount: window.getPaymentAmount(),
+                                paymentType: window.getPaymentType(),
+                                tipAmount: tipAmount
                             })
                         })
                     .then(response => {
@@ -1246,6 +1976,7 @@
     });
 </script>
 
-
 {% endif %}
+
+
 {% endblock %}
