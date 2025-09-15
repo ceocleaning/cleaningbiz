@@ -562,7 +562,6 @@ def edit_booking(request, bookingId):
     context = {
         'customAddons': customAddons,
         'prices': json.dumps(prices),
-        'standardAddons': standardAddons,
         'today': timezone.now().date(),
         'business_timezone': business_timezone
     }
