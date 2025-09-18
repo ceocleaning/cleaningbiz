@@ -55,9 +55,9 @@ def calculate_total(business, client_phone_number=None, session_key=None):
         
         # Convert numeric fields if they're strings
         try:
-            bedrooms = int(summary.get("bedrooms", 0) or 0)
-            bathrooms = int(summary.get("bathrooms", 0) or 0)
-            area = int(summary.get("squareFeet", 0) or 0)
+            bedrooms = Decimal(summary.get("bedrooms", 0) or 0)
+            bathrooms = Decimal(summary.get("bathrooms", 0) or 0)
+            area = Decimal(summary.get("squareFeet", 0) or 0)
         except ValueError:
             error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
             return {"success": False, "error": error_msg}
@@ -271,9 +271,9 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         
         # Convert numeric fields if they're strings
         try:
-            bedrooms = int(data["bedrooms"]) if data["bedrooms"] else 0
-            bathrooms = int(data["bathrooms"]) if data["bathrooms"] else 0
-            area = int(data["squareFeet"]) if data["squareFeet"] else 0
+            bedrooms = Decimal(data["bedrooms"]) if data["bedrooms"] else 0
+            bathrooms = Decimal(data["bathrooms"]) if data["bathrooms"] else 0
+            area = Decimal(data["squareFeet"]) if data["squareFeet"] else 0
            
         except ValueError as e:
             error_msg = f"Invalid numeric values for bedrooms, bathrooms, or area: {str(e)}"

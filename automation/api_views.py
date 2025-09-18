@@ -307,7 +307,34 @@ def check_availability_retell(request, secretKey):
         if not cleaningDateTime:
             return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
 
+        # Extract timezone if provided, default to UTC
+        timezone_str = args.get('timezone', 'UTC')
+        
+        # Parse the date
         time_to_check = datetime.fromisoformat(cleaningDateTime)
+        current_year = datetime.now().year
+        time_to_check = time_to_check.replace(year=current_year)
+        
+        # Convert from provided timezone to UTC
+        try:
+            local_tz = pytz.timezone(timezone_str)
+            # Make the datetime timezone-aware if it's naive
+            if is_naive(time_to_check):
+                time_to_check = local_tz.localize(time_to_check)
+            else:
+                # If already timezone-aware, convert to the specified timezone
+                time_to_check = time_to_check.astimezone(local_tz)
+                
+            # Convert to UTC
+            utc_datetime = time_to_check.astimezone(pytz.UTC)
+            time_to_check = utc_datetime.replace(tzinfo=None)  # Remove tzinfo for compatibility with existing code
+        except pytz.exceptions.UnknownTimeZoneError:
+            # Fall back to naive datetime if timezone is invalid
+            print(f"Invalid timezone: {timezone_str}")
+            # Make naive datetime timezone-aware with UTC
+            if is_naive(time_to_check):
+                time_to_check = make_aware(time_to_check)
+            time_to_check = time_to_check.astimezone(pytz.UTC).replace(tzinfo=None)
         cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         available_cleaners = []
 
@@ -554,9 +581,9 @@ def create_booking(request):
         booking = Booking(
             business=business,
             customer=customer,
-            bedrooms=int(data.get('bedrooms', 0)) or 0,
-            bathrooms=int(data.get('bathrooms', 0)) or 0,
-            squareFeet=int(data.get('area', 0)) or 0,
+            bedrooms=Decimal(data.get('bedrooms', 0) or 0),
+            bathrooms=Decimal(data.get('bathrooms', 0) or 0),
+            squareFeet=Decimal(data.get('area', 0) or 0),
             cleaningDate=cleaning_date,
             startTime=start_time,
             endTime=end_time,

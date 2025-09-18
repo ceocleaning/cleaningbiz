@@ -4,11 +4,20 @@
             <label class="form-label">Source Field</label>
             <select class="form-select source-field" required>
                 <option value="">Select a field</option>
-                {% for field_name, field_label in booking_fields %}
-                <option value="{{ field_name }}" {% if mapping.source_field == field_name %}selected{% endif %}>
-                    {{ field_label }}
-                </option>
-                {% endfor %}
+                <optgroup label="Booking Fields">
+                    {% for field_name, field_label in booking_fields %}
+                    <option value="{{ field_name }}" {% if mapping.source_field == field_name %}selected{% endif %}>
+                        {{ field_label }}
+                    </option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Customer Fields">
+                    {% for field_name, field_label in customer_fields %}
+                    <option value="{{ field_name }}" {% if mapping.source_field == field_name %}selected{% endif %}>
+                        {{ field_label }}
+                    </option>
+                    {% endfor %}
+                </optgroup>
             </select>
         </div>
         <div class="col-md-3">

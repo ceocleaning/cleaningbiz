@@ -35,7 +35,7 @@
         <!-- Left side - Image and branding -->
         <div class="hidden md:flex md:w-1/2 bg-primary-500 text-white p-8 flex-col justify-between">
             <div>
-                <h1 class="text-4xl font-bold mb-2">CleaningBiz AI</h1>
+                <h1 class="text-4xl font-bold mb-2">CleaningBiz AI <span class="text-light font-normal text-md">Customer Portal</span></h1>
                 <p class="text-xl">Book Professional Cleaning Services</p>
             </div>
             
@@ -85,6 +85,9 @@
                     </h2>
                     <p class="mt-2 text-center text-sm text-gray-600">
                         {% block auth_subtitle %}{% endblock %}
+                    </p>
+                    <p class="mt-2 text-center text-sm text-gray-600">
+                        Or sign in as a business <a href="{% url 'accounts:login' %}" class="text-primary-500 hover:underline">here</a>
                     </p>
                 </div>
                 

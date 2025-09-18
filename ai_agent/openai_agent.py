@@ -263,7 +263,7 @@ class OpenAIAgent:
                        - When to use: After confirming availability and collecting all required customer information
                        - DO NOT use this tool if a booking has already been confirmed in the conversation unless the customer explicitly asks for a new/additional booking
 
-                    3. current_time: Use this tool to get the current time in Chicago timezone
+                    3. current_time: Use this tool to get the current time in business timezone
                        - When to use: When a customer asks about current time, business hours, or what time it is
                        - Example trigger phrases: "What time is it?", "What is the current time?", "What time is it now?"
 
@@ -978,7 +978,7 @@ class OpenAIAgent:
                 messages = []
                 
                 # Add a more detailed system prompt that ensures continuity with the business script
-                system_prompt = f"""You are Sarah, an SMS agent for {business.businessName}, a professional cleaning company. 
+                system_prompt = f"""You are an SMS agent for {business.businessName}, a professional cleaning company. 
                                     
                     You MUST follow these instructions when responding after tool calls:
                     1. Generate a natural, conversational response based on the tool results
@@ -1243,9 +1243,9 @@ class OpenAIAgent:
             - city: City name
             - state: State
             - zipCode: 5-digit or 9-digit zip code
-            - squareFeet: Square footage of the property as a numeric string
-            - bedrooms: Number of bedrooms as a numeric string
-            - bathrooms: Number of bathrooms as a numeric string
+            - squareFeet: Square footage of the property as a Decimal string
+            - bedrooms: Number of bedrooms as a Decimal string
+            - bathrooms: Number of bathrooms as a Decimal string
             - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
             - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
             - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time_in_chicago()}

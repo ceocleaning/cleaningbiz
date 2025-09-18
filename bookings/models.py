@@ -55,9 +55,9 @@ class Booking(models.Model):
 
     
     # Property Details
-    bedrooms = models.IntegerField(default=0)
-    bathrooms = models.IntegerField(default=0)
-    squareFeet = models.IntegerField(default=0)
+    bedrooms = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    bathrooms = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    squareFeet = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     # Service Information
     cleaningDate = models.DateField(null=True, blank=True)

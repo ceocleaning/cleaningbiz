@@ -330,9 +330,9 @@ def create_booking(request):
             booking = Booking.objects.create(
                 business=business,
                 customer=customer,
-                bedrooms=int(request.POST.get('bedrooms', 0)),
-                bathrooms=int(request.POST.get('bathrooms', 0)),
-                squareFeet=int(request.POST.get('squareFeet', 0)),
+                bedrooms=Decimal(request.POST.get('bedrooms', 0)),
+                bathrooms=Decimal(request.POST.get('bathrooms', 0)),
+                squareFeet=Decimal(request.POST.get('squareFeet', 0)),
 
                 serviceType=request.POST.get('serviceType'),
                 # Convert cleaning date and time from business timezone to UTC
@@ -376,6 +376,14 @@ def create_booking(request):
                         qty=quantity
                     )
                     booking.customAddons.add(newCustomBookingAddon)
+            
+
+            # Import threading for background execution
+            import threading
+            from automation.webhooks import send_booking_data
+            webhook_thread = threading.Thread(target=send_booking_data, args=(booking,))
+            webhook_thread.daemon = True
+            webhook_thread.start()
             
           
 
@@ -470,9 +478,9 @@ def edit_booking(request, bookingId):
             booking.customer.zip_code = request.POST.get('zipCode')
 
             # Handle numeric fields with proper default values
-            booking.bedrooms = int(request.POST.get('bedrooms', '0').strip() or '0')
-            booking.bathrooms = int(request.POST.get('bathrooms', '0').strip() or '0')
-            booking.squareFeet = int(request.POST.get('squareFeet', '0').strip() or '0')
+            booking.bedrooms = Decimal(request.POST.get('bedrooms', '0').strip() or '0')
+            booking.bathrooms = Decimal(request.POST.get('bathrooms', '0').strip() or '0')
+            booking.squareFeet = Decimal(request.POST.get('squareFeet', '0').strip() or '0')
 
             booking.serviceType = request.POST.get('serviceType')
             booking.cleaningDate = request.POST.get('cleaningDate')

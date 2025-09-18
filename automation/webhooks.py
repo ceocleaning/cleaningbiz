@@ -261,48 +261,64 @@ def create_mapped_payload(booking_data, integration):
     """Create payload based on user-defined field mappings"""
     mappings = DataMapping.objects.filter(platform=integration)
     payload = {}
-    
-    # Convert datetime fields to string format
-    if isinstance(booking_data["cleaningDate"], datetime):
-        booking_data = dict(booking_data)  # Create a copy to avoid modifying the original
-        booking_data["cleaningDate"] = booking_data["cleaningDate"].date().isoformat()
-        # Store the datetime object before converting to string
-        start_time_dt = booking_data["startTime"]
-        # Calculate end time using the datetime object
-        end_time_dt = start_time_dt + timedelta(minutes=60)
-        # Convert to string format after calculations
-        booking_data["startTime"] = start_time_dt.strftime("%H:%M:%S")
-        booking_data["endTime"] = end_time_dt.strftime("%H:%M:%S")
 
-    # Apply mappings
-    for mapping in mappings:
-        source_value = booking_data.get(mapping.source_field)
+    try:
+    
+        # Convert datetime fields to string format
+        if "cleaningDate" in booking_data and isinstance(booking_data["cleaningDate"], datetime):
+            booking_data = dict(booking_data)  # Create a copy to avoid modifying the original
+            booking_data["cleaningDate"] = booking_data["cleaningDate"].date().isoformat()
+            
+            if "startTime" in booking_data and booking_data["startTime"]:
+                # Store the datetime object before converting to string
+                start_time_dt = booking_data["startTime"]
+                # Calculate end time using the datetime object
+                end_time_dt = start_time_dt + timedelta(minutes=60)
+                # Convert to string format after calculations
+                booking_data["startTime"] = start_time_dt
+                booking_data["endTime"] = end_time_dt
         
-        # Skip if source field doesn't exist
-        if source_value is None and not mapping.default_value:
-            if mapping.is_required:
-                raise ValueError(f"Required field {mapping.source_field} not found in booking data")
-            continue
-            
-        # Use default value if source is None
-        if source_value is None:
-            source_value = mapping.default_value
+        # Process mappings
+        for mapping in mappings:
+            # Check if it's a customer field using dot notation (customer.field_name)
+            if '.' in mapping.source_field and mapping.source_field.startswith('customer.'):
+                # Split to get the relationship and field name
+                _, field_name = mapping.source_field.split('.', 1)
                 
-        # Handle nested fields
-        if mapping.parent_path:
-            parts = mapping.parent_path.split('.')
-            current = payload
-            for part in parts[:-1]:
-                if part not in current:
-                    current[part] = {}
-                current = current[part]
-            if parts[-1] not in current:
-                current[parts[-1]] = {}
-            current[parts[-1]][mapping.target_field] = source_value
-        else:
-            payload[mapping.target_field] = source_value
+                # Check if customer data is available in booking_data
+                if hasattr(booking_data, 'customer') and booking_data.customer:
+                    value = getattr(booking_data.customer, field_name, mapping.default_value)
+                else:
+                    value = mapping.default_value
+            else:
+                # Regular booking field
+                if isinstance(booking_data, dict):
+                    value = booking_data.get(mapping.source_field, mapping.default_value)
+                else:
+                    value = getattr(booking_data, mapping.source_field, mapping.default_value)
             
-    return payload
+            # Handle nested paths
+            if mapping.parent_path:
+                path_parts = mapping.parent_path.split('.')
+                current_dict = payload
+                
+                # Create nested structure
+                for part in path_parts:
+                    if part not in current_dict:
+                        current_dict[part] = {}
+                    current_dict = current_dict[part]
+                
+                current_dict[mapping.target_field] = value
+            else:
+                payload[mapping.target_field] = value
+        
+        return payload
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        
+        print(f"Error creating payload: {str(e)}")
+        return {}
 
 
 
@@ -553,13 +569,11 @@ def send_booking_data(booking):
                     print(f"Creating mapped payload for {integration.name}")
                     # Convert date fields to string format before creating mapped payload
                     booking_dict = booking.__dict__.copy()
-                    if 'cleaningDate' in booking_dict:
-                        booking_dict['cleaningDate'] = booking.cleaningDate.strftime('%Y-%m-%d') if booking.cleaningDate else None
-                    if 'startTime' in booking_dict:
-                        booking_dict['startTime'] = booking.startTime.strftime('%H:%M') if booking.startTime else None
-                    if 'endTime' in booking_dict:
-                        booking_dict['endTime'] = booking.endTime.strftime('%H:%M') if booking.endTime else None
                     
+                    # Add customer object to booking_dict for dot notation access
+                    booking_dict['customer'] = booking.customer
+                    
+                
                     payload = create_mapped_payload(booking_dict, integration)
                     
                     # Send to base URL
@@ -605,6 +619,8 @@ def send_booking_data(booking):
                 })
                 
             except Exception as e:
+                import traceback
+                print(traceback.format_exc())
                 error_msg = f"Error sending booking data to {integration.name}: {str(e)}"
                 print(error_msg)
                 

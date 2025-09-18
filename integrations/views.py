@@ -115,6 +115,16 @@ def integration_mapping(request, platform_id):
     for field in Booking._meta.get_fields():
         if not field.is_relation and not field.auto_created:
             booking_fields.append((field.name, field.verbose_name or field.name.replace('_', ' ').title()))
+            
+    # Get all available fields from Customer model through Booking's customer relation
+    from customer.models import Customer
+    customer_fields = []
+    for field in Customer._meta.get_fields():
+        if not field.is_relation and not field.auto_created:
+            # Format as customer.field_name to indicate the relationship
+            field_name = f"customer.{field.name}"
+            field_label = f"Customer: {field.verbose_name or field.name.replace('_', ' ').title()}"
+            customer_fields.append((field_name, field_label))
 
     field_types = [
         ('string', 'Text'),
@@ -131,6 +141,7 @@ def integration_mapping(request, platform_id):
         'platform': platform,
         'mappings': mappings,
         'booking_fields': booking_fields,
+        'customer_fields': customer_fields,
         'field_types': field_types
     }
 
@@ -145,39 +156,49 @@ def preview_mapping(request, platform_id):
     sample_booking = Booking.objects.filter(business=request.user.business_set.first()).first()
     
     if not sample_booking:
+        # Create a dummy customer for the sample booking
+        from customer.models import Customer
+        import uuid
+        
+        # Create a dummy customer
+        sample_customer = Customer(
+            id=uuid.uuid4(),
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+            phone_number="123-456-7890",
+            address="123 Main St",
+            city="Sample City",
+            state_or_province="State",
+            zip_code="12345"
+        )
+        
         # Create a dummy booking for preview if none exists
         sample_booking = Booking(
-            firstName="John",
-            lastName="Doe",
-            email="john@example.com",
-            phoneNumber="123-456-7890",
-            address1="123 Main St",
-            city="Sample City",
-            stateOrProvince="State",
-            zipCode="12345",
             bedrooms=3,
             bathrooms=2,
             serviceType="standard",
             cleaningDate="2025-03-01",
             totalPrice="150.00"
         )
+        
+        # Assign the customer to the booking
+        sample_booking.customer = sample_customer
 
     # Prepare sample booking data
-    sample_data = {
-        'firstName': sample_booking.customer.first_name,
-        'lastName': sample_booking.customer.last_name,
-        'email': sample_booking.customer.email,
-        'phoneNumber': sample_booking.customer.phone_number,
-        'address1': sample_booking.customer.address,
-        'city': sample_booking.customer.city,
-        'stateOrProvince': sample_booking.customer.state_or_province,
-        'zipCode': sample_booking.customer.zip_code,
-        'bedrooms': sample_booking.bedrooms,
-        'bathrooms': sample_booking.bathrooms,
-        'serviceType': sample_booking.serviceType,
-        'cleaningDate': sample_booking.cleaningDate,
-        'totalPrice': sample_booking.totalPrice
-    }
+    sample_data = {}
+    
+    # Add booking fields
+    for field in Booking._meta.get_fields():
+        if not field.is_relation and not field.auto_created:
+            sample_data[field.name] = getattr(sample_booking, field.name, None)
+    
+    # Add customer fields if customer exists
+    if sample_booking.customer:
+        for field in sample_booking.customer._meta.get_fields():
+            if not field.is_relation and not field.auto_created:
+                # Use the same format as in the mapping (customer.field_name)
+                sample_data[f'customer.{field.name}'] = getattr(sample_booking.customer, field.name, None)
 
     # Generate mapped data
     mapped_data = {}
@@ -190,7 +211,18 @@ def preview_mapping(request, platform_id):
     }
     
     for mapping in mappings:
-        value = getattr(sample_booking, mapping.source_field, mapping.default_value)
+        # Check if it's a customer field using dot notation (customer.field_name)
+        if '.' in mapping.source_field and mapping.source_field.startswith('customer.'):
+            # Split to get the relationship and field name
+            _, field_name = mapping.source_field.split('.', 1)
+            # Get the value from the customer object if it exists
+            if sample_booking.customer:
+                value = getattr(sample_booking.customer, field_name, mapping.default_value)
+            else:
+                value = mapping.default_value
+        else:
+            # Regular booking field
+            value = getattr(sample_booking, mapping.source_field, mapping.default_value)
         
         # Track required fields
         if mapping.is_required:

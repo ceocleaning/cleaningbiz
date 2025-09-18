@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin-dashboard/', include('admin_dashbaord.urls')),
     path('saas/', include('saas.urls')),
     path('customer/', include('customer.urls')),
+    path('notification/', include('notification.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     'admin_dashbaord',
     'saas',
     'customer',
+    'notification',
 ]
 
 MIDDLEWARE = [

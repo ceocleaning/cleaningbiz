@@ -489,9 +489,9 @@ def edit_booking(request, bookingId):
                 customer.save()
             
             # Update the booking
-            booking.bedrooms = int(request.POST.get('bedrooms', 0))
-            booking.bathrooms = int(request.POST.get('bathrooms', 0))
-            booking.squareFeet = int(request.POST.get('squareFeet', 0))
+            booking.bedrooms = Decimal(request.POST.get('bedrooms', 0))
+            booking.bathrooms = Decimal(request.POST.get('bathrooms', 0))
+            booking.squareFeet = Decimal(request.POST.get('squareFeet', 0))
             booking.serviceType = request.POST.get('serviceType')
             booking.cleaningDate = cleaning_date
             booking.startTime = start_time_utc
