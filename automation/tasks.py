@@ -13,7 +13,6 @@ def send_call_to_lead(lead_id):
     try:
         # Get the lead object from the database using the ID
         lead = Lead.objects.get(id=lead_id)
-        chat = Chat.objects.get(lead=lead)
         retellAgent = RetellAgent.objects.get(business=lead.business)
 
         lead_details = f"Here are the details about the lead:\nName: {lead.name}\nPhone: {lead.phone_number}\nEmail: {lead.email if lead.email else 'Not provided'}\nAddress: {lead.address1 if lead.address1 else 'Not provided'}\nCity: {lead.city if lead.city else 'Not provided'}\nState: {lead.state if lead.state else 'Not provided'}\nZip Code: {lead.zipCode if lead.zipCode else 'Not provided'}\nProposed Start Time: {lead.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if lead.proposed_start_datetime else 'Not provided'}\nNotes: {lead.notes if lead.notes else 'No additional notes'}"
