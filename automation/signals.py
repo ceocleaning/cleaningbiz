@@ -18,6 +18,8 @@ import datetime
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
+from retell_agent.models import RetellAgent
+
 
 
 
