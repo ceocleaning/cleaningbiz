@@ -56,7 +56,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
    
 
             # Check if Twilio credentials are properly set
-            if apiCred.twilioAccountSid and apiCred.twilioAuthToken and apiCred.twilioSmsNumber and instance.phone_number and len(instance.phone_number) == 10:
+            if apiCred.twilioAccountSid and apiCred.twilioAuthToken and apiCred.twilioSmsNumber and instance.phone_number:
               
                 client = Client(apiCred.twilioAccountSid, apiCred.twilioAuthToken)
 
@@ -70,7 +70,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
 
                 except TwilioRestException as e:
                     print("Error sending SMS: ", e)
-                    pass
+                    return
 
                 chat = Chat.objects.filter(clientPhoneNumber=instance.phone_number).first()
                 if chat:
@@ -130,5 +130,5 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
 
             
                 
-        except TwilioRestException as e:
+        except Exception as e:
             print(f"Error sending message: {e}")
