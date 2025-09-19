@@ -110,7 +110,7 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
             
 
             else:
-                retellAgent = RetellAgent.objects.get(business=lead.business)
+                retellAgent = RetellAgent.objects.get(business=instance.business)
                 if retellAgent.agent_number:
                     client = Retell(api_key=settings.RETELL_API_KEY)
                     call_response = client.call.create_phone_call(
