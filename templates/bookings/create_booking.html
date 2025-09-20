@@ -511,7 +511,7 @@
             'addonBlinds': pricingData.addonPriceBlinds || 0
         };
         
-        const TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0.08;
+        const TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0;
         
         // Form steps navigation
         const formSteps = document.querySelectorAll('.form-step');
@@ -519,7 +519,7 @@
         const prevButtons = document.querySelectorAll('.prev-step');
         const progressBar = document.getElementById('form-progress');
         const stepIndicators = document.querySelectorAll('.step-indicator');
-        
+
         let currentStep = 0;
         
         // Initialize the form
