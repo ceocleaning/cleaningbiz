@@ -1,23 +1,18 @@
-from email.utils import parsedate
-from accounts.models import CustomAddons, BusinessSettings, ApiCredential, Business
-from bookings.models import Booking, BookingCustomAddons
+from accounts.models import BusinessSettings, Business
+from bookings.models import Booking
 from datetime import datetime, timedelta
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
 import json
-import dateparser
 from automation.api_views import get_cleaners_for_business, find_available_cleaner, is_slot_available, find_alternate_slots
-from automation.utils import calculateAmount, calculateAddonsAmount, sendInvoicetoClient, sendEmailtoClientInvoice 
+from automation.utils import calculateAmount, getServiceType
 from django.utils import timezone
 import traceback
 import pytz
-from .utils import convert_date_str_to_date
 from .models import Chat
-from django.utils.html import strip_tags
-from leadsAutomation.utils import send_email
-from bookings.timezone_utils import convert_to_utc
-from bookings.utils import send_jobs_to_cleaners
+from accounts.timezone_utils import parse_business_datetime, convert_from_utc
+from customer.utils import create_customer
+from decimal import Decimal
+
+from notification.services import NotificationService
 
 
 def calculate_total(business, client_phone_number=None, session_key=None):
@@ -26,10 +21,7 @@ def calculate_total(business, client_phone_number=None, session_key=None):
             chat = Chat.objects.get(business=business, sessionKey=session_key)
         elif client_phone_number:
             chat = Chat.objects.get(clientPhoneNumber=client_phone_number, business=business)
-        
-        # Get business settings
-        businessSettingsObj = BusinessSettings.objects.get(business=business)
-        
+
         # Parse summary if it's a string
         if isinstance(chat.summary, str):
             try:
@@ -38,102 +30,16 @@ def calculate_total(business, client_phone_number=None, session_key=None):
                 summary = {}
         else:
             summary = chat.summary or {}
-        
-        # Normalize service type
-        serviceType = summary.get("serviceType", "").lower().replace(" ", "")
-        if 'regular' in serviceType or 'standard' in serviceType:
-            serviceType = 'standard'
-        elif 'deep' in serviceType:
-            serviceType = 'deep'
-        elif 'moveinmoveout' in serviceType or 'move-in' in serviceType or 'moveout' in serviceType:
-            serviceType = 'moveinmoveout'
-        elif 'airbnb' in serviceType:
-            serviceType = 'airbnb'
-        else:
-            # Default to standard if no valid service type
-            serviceType = 'standard'
-        
-        # Convert numeric fields if they're strings
-        try:
-            bedrooms = Decimal(summary.get("bedrooms", 0) or 0)
-            bathrooms = Decimal(summary.get("bathrooms", 0) or 0)
-            area = Decimal(summary.get("squareFeet", 0) or 0)
-        except ValueError:
-            error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
-            return {"success": False, "error": error_msg}
-        
+
         # Calculate base price
-        base_price = calculateAmount(
-            bedrooms,
-            bathrooms,
-            area,
-            serviceType,
-            businessSettingsObj
+        amount_calculation = calculateAmount(
+            business,
+            summary
         )
-        
-        # Process addons - extract from the data structure
-        addons = {
-            "dishes": int(summary.get("addonDishes", 0) or 0),
-            "laundry": int(summary.get("addonLaundryLoads", 0) or 0),
-            "windows": int(summary.get("addonWindowCleaning", 0) or 0),
-            "pets": int(summary.get("addonPetsCleaning", 0) or 0),
-            "fridge": int(summary.get("addonFridgeCleaning", 0) or 0),
-            "oven": int(summary.get("addonOvenCleaning", 0) or 0),
-            "baseboards": int(summary.get("addonBaseboard", 0) or 0),
-            "blinds": int(summary.get("addonBlinds", 0) or 0),
-            "green": int(summary.get("addonGreenCleaning", 0) or 0),
-            "cabinets": int(summary.get("addonCabinetsCleaning", 0) or 0),
-            "patio": int(summary.get("addonPatioSweeping", 0) or 0),
-            "garage": int(summary.get("addonGarageSweeping", 0) or 0)
-        }
-        
-        addonsPrices = {
-            "dishes": businessSettingsObj.addonPriceDishes,
-            "laundry": businessSettingsObj.addonPriceLaundry,
-            "windows": businessSettingsObj.addonPriceWindow,
-            "pets": businessSettingsObj.addonPricePets,
-            "fridge": businessSettingsObj.addonPriceFridge,
-            "oven": businessSettingsObj.addonPriceOven,
-            "baseboards": businessSettingsObj.addonPriceBaseboard,
-            "blinds": businessSettingsObj.addonPriceBlinds,
-            "green": businessSettingsObj.addonPriceGreen,
-            "cabinets": businessSettingsObj.addonPriceCabinets,
-            "patio": businessSettingsObj.addonPricePatio,
-            "garage": businessSettingsObj.addonPriceGarage
-        }
-        
-        # Calculate addons total
-        addons_total = calculateAddonsAmount(addons, addonsPrices)
-        
-        # Calculate custom addons (if needed)
-        customAddonsObj = CustomAddons.objects.filter(business=business)
-        customAddonTotal = 0
-        
-        # Process custom addons from chat summary
-        for custom_addon in customAddonsObj:
-            addon_data_name = custom_addon.addonDataName
-            if addon_data_name and addon_data_name in summary:
-                quantity = int(summary.get(addon_data_name, 0) or 0)
-                if quantity > 0:
-                    addon_price = custom_addon.addonPrice
-                    addon_total = quantity * addon_price
-                    customAddonTotal += addon_total
-        
-        # Calculate final amounts
-        sub_total = base_price + addons_total + customAddonTotal
-        tax = sub_total * (businessSettingsObj.taxPercent / 100)
-        total = sub_total + tax
-        
-        # Return pricing details
+
         return {
             "success": True,
-            "base_price": float(base_price),
-            "addons_total": float(addons_total),
-            "custom_addons_total": float(customAddonTotal),
-            "sub_total": float(sub_total),
-            "tax_percent": float(businessSettingsObj.taxPercent),
-            "tax_amount": float(tax),
-            "total": float(total),
+            "result": amount_calculation
         }
         
     except BusinessSettings.DoesNotExist:
@@ -144,7 +50,7 @@ def calculate_total(business, client_phone_number=None, session_key=None):
         return {"success": False, "error": str(e)}
 
 
-def get_current_time_in_chicago(business=None):
+def get_current_time(business=None):
     """Get the current time in business timezone with additional context"""
     try:
         # Get business timezone if available, otherwise default to Chicago
@@ -177,35 +83,20 @@ def check_availability(business, date_string):
         if not date_string:
             return {"success": False, "error": "Missing datetime parameter"}
         
-        # Pass business to convert_date_str_to_date to use business timezone
-        converted_datetime = convert_date_str_to_date(date_string, business)
-        converted_datetime = converted_datetime.strip()
-        
-        try:
-            # Parse the datetime string into a datetime object
-            parsed_datetime = datetime.fromisoformat(converted_datetime)
-            
-            # Make sure the datetime is timezone-aware in the business's timezone
-            business_timezone = business.get_timezone()
-            if parsed_datetime.tzinfo is None:
-                # If the datetime is naive, make it aware in the business timezone
-                parsed_datetime = business_timezone.localize(parsed_datetime)
-            else:
-                # If it already has timezone info, convert to business timezone
-                parsed_datetime = parsed_datetime.astimezone(business_timezone)
-        except Exception as e:
-            return {"success": False, "error": f"Invalid date format: {str(e)}"}
+        res = parse_business_datetime(date_string, business)
+        print(res)
+
 
         cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         
-        is_available, _ = is_slot_available(cleaners, parsed_datetime)
+        is_available, _ = is_slot_available(cleaners, res["data"]["utc_datetime"])
         
         alternative_slots = []
         if not is_available:
-            alt_slots, _ = find_alternate_slots(cleaners, parsed_datetime, max_alternates=3)
+            alt_slots, _ = find_alternate_slots(cleaners, res["data"]["utc_datetime"], max_alternates=3)
             alternative_slots = alt_slots
         
-        formatted_datetime = parsed_datetime.strftime('%Y-%m-%d %H:%M')
+        formatted_datetime = res["data"]["utc_datetime"].strftime('%Y-%m-%d %H:%M')
         
         response_data = {
             "success": True,
@@ -252,21 +143,11 @@ def book_appointment(business, client_phone_number=None, session_key=None):
           
             return {"success": False, "error": error_msg}
         
-        # Get business settings
-        businessSettingsObj = BusinessSettings.objects.get(business=business)
         
         # Normalize service type
         serviceType = data["serviceType"].lower().replace(" ", "")
-        original_service_type = data["serviceType"]
+        serviceType = getServiceType(serviceType)
         
-        if 'regular' in serviceType or 'standard' in serviceType:
-            serviceType = 'standard'
-        elif 'deep' in serviceType:
-            serviceType = 'deep'
-        elif 'moveinmoveout' in serviceType or 'move-in' in serviceType or 'moveout' in serviceType:
-            serviceType = 'moveinmoveout'
-        elif 'airbnb' in serviceType:
-            serviceType = 'airbnb'
         
         
         # Convert numeric fields if they're strings
@@ -281,177 +162,60 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             return {"success": False, "error": error_msg}
         
         # Calculate base price
-        calculateTotal = calculateAmount(
-            bedrooms,
-            bathrooms,
-            area,
-            serviceType,
-            businessSettingsObj
-        )
+        calculateTotal = calculateAmount(business, data)
         
-        # Process addons - extract from the data structure
-        addons = {
-            "dishes": int(data.get("addonDishes", 0) or 0),
-            "laundry": int(data.get("addonLaundryLoads", 0) or 0),
-            "windows": int(data.get("addonWindowCleaning", 0) or 0),
-            "pets": int(data.get("addonPetsCleaning", 0) or 0),
-            "fridge": int(data.get("addonFridgeCleaning", 0) or 0),
-            "oven": int(data.get("addonOvenCleaning", 0) or 0),
-            "baseboards": int(data.get("addonBaseboard", 0) or 0),
-            "blinds": int(data.get("addonBlinds", 0) or 0),
-            "green": int(data.get("addonGreenCleaning", 0) or 0),
-            "cabinets": int(data.get("addonCabinetsCleaning", 0) or 0),
-            "patio": int(data.get("addonPatioSweeping", 0) or 0),
-            "garage": int(data.get("addonGarageSweeping", 0) or 0)
-        }
-        
-        addonsPrices = {
-            "dishes": businessSettingsObj.addonPriceDishes,
-            "laundry": businessSettingsObj.addonPriceLaundry,
-            "windows": businessSettingsObj.addonPriceWindow,
-            "pets": businessSettingsObj.addonPricePets,
-            "fridge": businessSettingsObj.addonPriceFridge,
-            "oven": businessSettingsObj.addonPriceOven,
-            "baseboards": businessSettingsObj.addonPriceBaseboard,
-            "blinds": businessSettingsObj.addonPriceBlinds,
-            "green": businessSettingsObj.addonPriceGreen,
-            "cabinets": businessSettingsObj.addonPriceCabinets,
-            "patio": businessSettingsObj.addonPricePatio,
-            "garage": businessSettingsObj.addonPriceGarage
-        }
-        
-        # Calculate custom addons
-        customAddonsObj = CustomAddons.objects.filter(business=business)
-        bookingCustomAddons = []
-        customAddonTotal = 0
+       
+        res = parse_business_datetime(data["appointmentDateTime"], business, to_utc=True, duration_hours=1)
 
-        for custom_addon in customAddonsObj:
-            addon_data_name = custom_addon.addonDataName
-            if addon_data_name and addon_data_name in data:
-                quantity = int(data.get(addon_data_name, 0) or 0)
-                if quantity > 0:
-                    addon_price = custom_addon.addonPrice
-                    addon_total = quantity * addon_price
-                    customAddonTotal += addon_total
-        
-       
-        # Calculate final amounts
-        addons_result = calculateAddonsAmount(addons, addonsPrices)
-        
-        sub_total = calculateTotal + addons_result + customAddonTotal
-        tax = sub_total * (businessSettingsObj.taxPercent / 100)
-        total = sub_total + tax
-        
-       
-        
-        # Parse appointment datetime with business timezone
-        try:
-            # Convert date string using business timezone
-            converted_datetime = convert_date_str_to_date(data["appointmentDateTime"], business)
-            
-            # Strip any whitespace including newlines and then parse
-            converted_datetime = converted_datetime.strip()
-            
-            # Parse the datetime string
-            local_datetime = datetime.fromisoformat(converted_datetime)
-            
-            # Make sure the datetime is timezone-aware in the business's timezone
-            business_timezone = business.get_timezone()
-            if local_datetime.tzinfo is None:
-                # If the datetime is naive, make it aware in the business timezone
-                local_datetime = business_timezone.localize(local_datetime)
-            else:
-                # If it already has timezone info, convert to business timezone
-                local_datetime = local_datetime.astimezone(business_timezone)
-            
-            # Convert to UTC for storage in the database
-            
-            utc_datetime = convert_to_utc(local_datetime, business_timezone)
-            
-            # Calculate end time (1 hour after start time) in UTC
-            utc_end_datetime = utc_datetime + timedelta(hours=1)
-            
-            # Extract date and time components from UTC datetime
-            cleaningDate = utc_datetime.date()
-            startTime = utc_datetime.time()
-            endTime = utc_end_datetime.time()
-        
-        except Exception as e:
-            error_msg = f"Invalid appointment date/time format: {str(e)}"
-            return {"success": False, "error": error_msg}
         
         # Find available cleaner for the booking
         cleaners = get_cleaners_for_business(business, assignment_check_null=True)
-        available_cleaner = find_available_cleaner(cleaners, utc_datetime)
+        available_cleaner = find_available_cleaner(cleaners, res["data"]["utc_datetime"])
                 
         if not available_cleaner:
             error_msg = "No cleaners available for the requested time"
             return {"success": False, "error": error_msg}
         
-        # Create or get customer
-        from customer.models import Customer
-        
-        # Try to find existing customer by email
-        customer_email = data.get("email", "")
-        customer = None
-        
-        if customer_email:
-            try:
-                customer = Customer.objects.get(email=customer_email)
-            except Customer.DoesNotExist:
-                pass
-        
-        # If no customer found, create a new one
-        if not customer:
-            customer = Customer.objects.create(
-                first_name=data["firstName"],
-                last_name=data["lastName"],
-                email=customer_email,
-                phone_number=data["phoneNumber"],
-                address=data["address1"],
-                city=data["city"],
-                state_or_province=data["state"],
-                zip_code=data.get("zipCode", "")
-            )
+        customer = create_customer(data)
         
         # Create booking with customer reference
-        newBooking = Booking.objects.create(
+        newBooking = Booking(
             business=business,
             customer=customer,
-            cleaningDate=cleaningDate,
-            startTime=startTime,
-            endTime=endTime,
+            cleaningDate=res["data"]["utc_date"],
+            startTime=res["data"]["utc_start_time"],
+            endTime=res["data"]["utc_end_time"],
             serviceType=serviceType,
             bedrooms=bedrooms,
             bathrooms=bathrooms,
             squareFeet=area,
             otherRequests=data.get("otherRequests", ""),
-            totalPrice=total,
-            tax=tax,
-            addonDishes=addons["dishes"],
-            addonLaundryLoads=addons["laundry"],
-            addonWindowCleaning=addons["windows"],
-            addonPetsCleaning=addons["pets"],
-            addonFridgeCleaning=addons["fridge"],
-            addonOvenCleaning=addons["oven"],
-            addonBaseboard=addons["baseboards"],
-            addonBlinds=addons["blinds"],
-            addonGreenCleaning=addons["green"],
-            addonCabinetsCleaning=addons["cabinets"],
-            addonPatioSweeping=addons["patio"],
-            addonGarageSweeping=addons["garage"],
+            totalPrice=calculateTotal.get("total_amount", 0),
+            tax=calculateTotal.get("tax", 0),
+            addonDishes=int(data.get("addonDishes", 0) or 0),
+            addonLaundryLoads=int(data.get("addonLaundryLoads", 0) or 0),
+            addonWindowCleaning=int(data.get("addonWindowCleaning", 0) or 0),
+            addonPetsCleaning=int(data.get("addonPetsCleaning", 0) or 0),
+            addonFridgeCleaning=int(data.get("addonFridgeCleaning", 0) or 0),
+            addonOvenCleaning=int(data.get("addonOvenCleaning", 0) or 0),
+            addonBaseboard= int(data.get("addonBaseboard", 0) or 0),
+            addonBlinds=int(data.get("addonBlinds", 0) or 0),
+            addonGreenCleaning=int(data.get("addonGreenCleaning", 0) or 0),
+            addonCabinetsCleaning=int(data.get("addonCabinetsCleaning", 0) or 0),
+            addonPatioSweeping=int(data.get("addonPatioSweeping", 0) or 0),
+            addonGarageSweeping=int(data.get("addonGarageSweeping", 0) or 0),
         )
+
+        newBooking.save()
         
         # Add custom addons
+        bookingCustomAddons = calculateTotal.get("custom_addons", {}).get("bookingCustomAddons")
         if bookingCustomAddons:
             newBooking.customAddons.set(bookingCustomAddons)
             newBooking.save()
         
 
-        import threading
-        
-       
-        
+        import threading 
         from automation.webhooks import send_booking_data
         webhook_thread = threading.Thread(target=send_booking_data, args=(newBooking,))
         webhook_thread.daemon = True
@@ -468,11 +232,21 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             
       
         
+        booking_details = {
+            "bookingId": newBooking.bookingId,
+            "cleaningDate": newBooking.cleaningDate.strftime('%Y-%m-%d'),
+            "startTime": convert_from_utc(res["data"]["utc_datetime"], business.timezone).strftime('%H:%M'),
+            "serviceType": newBooking.serviceType,
+            "totalPrice": float(newBooking.totalPrice),
+            "customer_name": f"{newBooking.customer.first_name} {newBooking.customer.last_name}"
+        }
+
         # Return success response
         return {
             "success": True,
             "booking_id": newBooking.bookingId,
-            "message": "Appointment booked successfully"
+            "message": "Appointment booked successfully",
+            "data": booking_details,
         }
         
     except Exception as e:
@@ -481,59 +255,42 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         return {"success": False, "error": str(e)}
 
 
-
-
 def reschedule_appointment(business, booking_id, new_date_time):
     try:
         booking = Booking.objects.get(bookingId=booking_id, business=business)
         cleaners = get_cleaners_for_business(business)
 
-        # Convert date string using business timezone
-        converted_datetime = convert_date_str_to_date(new_date_time, business)
-        converted_datetime = converted_datetime.strip()
+
         
-        try:
-            # Parse the datetime string
-            local_datetime = datetime.fromisoformat(converted_datetime)
-            
-            # Make sure the datetime is timezone-aware in the business's timezone
-            business_timezone = business.get_timezone()
-            if local_datetime.tzinfo is None:
-                # If the datetime is naive, make it aware in the business timezone
-                local_datetime = business_timezone.localize(local_datetime)
-            else:
-                # If it already has timezone info, convert to business timezone
-                local_datetime = local_datetime.astimezone(business_timezone)
-            
-            # Convert to UTC for availability check and storage
-            from bookings.timezone_utils import convert_to_utc
-            utc_datetime = convert_to_utc(local_datetime, business_timezone)
-            
-            # Calculate end time (1 hour after start time) in UTC
-            utc_end_datetime = utc_datetime + timedelta(hours=1)
-        except Exception as e:
-            return {"success": False, "error": f"Invalid date format: {str(e)}"}
+        res = parse_business_datetime(new_date_time, business)
     
         # Check availability using UTC datetime
-        is_available, _ = is_slot_available(cleaners, utc_datetime)
+        is_available, _ = is_slot_available(cleaners, res['data']['utc_datetime'])
         
+        alternative_slots = []
         if not is_available:
-            error_msg = "The requested time is not available"
-            return {"success": False, "error": error_msg}
+            alt_slots, _ = find_alternate_slots(cleaners, res['data']['utc_datetime'], max_alternates=3)
+            alternative_slots = alt_slots
+
+            return {
+                "success": False,
+                "error": "The requested time is not available",
+                "alternative_slots": alternative_slots
+            }
         
         # Save UTC date and times to booking
-        booking.cleaningDate = utc_datetime.date()
-        booking.startTime = utc_datetime.time()
-        booking.endTime = utc_end_datetime.time()
+        booking.cleaningDate = res['data']['utc_date']
+        booking.startTime = res['data']['utc_start_time']
+        booking.endTime = res['data']['utc_end_time']
         booking.save()
         
        
-        email_sent = send_reschedule_email(booking)
+        email_sent = send_reschedule_email(booking, res['data']['local_datetime'])
         
         return {
             "success": True,
             "message": "Appointment rescheduled successfully",
-            "email_sent": email_sent
+            "email_sent": email_sent,
         }
         
     
@@ -570,7 +327,7 @@ def cancel_appointment(business, booking_id):
 
 
 
-def reschedule_appointment(booking, new_date_time):
+def send_reschedule_email(booking, new_date_time):
     try:
         # Get business and SMTP configuration
         business = booking.business
@@ -611,9 +368,9 @@ def reschedule_appointment(booking, new_date_time):
 
         Service Details:
         Service Type: {booking.serviceType}
-        Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-        Time: {booking.startTime.strftime('%I:%M %p')}
-        Location: {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}
+        Date: {appointment_date}
+        Time: {appointment_time}
+        Location: {booking.customer.get_address()}
 
         New Date and Time: {new_date_time.strftime('%A, %B %d, %Y %I:%M %p')}
 
@@ -623,12 +380,15 @@ def reschedule_appointment(booking, new_date_time):
         """
 
       
-        send_email(
+        NotificationService.send_notification(
+            recipient=booking.customer.user if booking.customer.user else None,
+            notification_type=['email', 'sms'],
             from_email=from_name,
-            to_email=recipient_email,
-            reply_to=business.user.email,
             subject=subject,
-            text_content=text_content
+            content=text_content,
+            sender=business,
+            email_to=recipient_email,
+            sms_to=booking.customer.phone_number,
         )
 
         return True
@@ -677,24 +437,28 @@ def send_cancel_email(booking):
         
         # Create plain text version
         text_content = f"""
-        Dear {booking.customer.first_name},
+        Dear {booking.customer.get_full_name()},
         Your appointment with {business.businessName} has been canceled.
         
         Service Details:
         Service Type: {booking.serviceType}
-        Date: {booking.cleaningDate.strftime('%A, %B %d, %Y')}
-        Time: {booking.startTime.strftime('%I:%M %p')}
-        Location: {booking.customer.address}, {booking.customer.city}, {booking.customer.state_or_province} {booking.customer.zip_code}
+        Date: {appointment_date}
+        Time: {appointment_time}
+        Location: {booking.customer.get_address()}
         
         Thank you for choosing {business.businessName}!
         """
         
-        send_email(
+        NotificationService.send_notification(
+            recipient=booking.customer.user if booking.customer.user else None,
+            notification_type=['email', 'sms'],
             from_email=from_name,
-            to_email=recipient_email,
-            reply_to=business.user.email,
             subject=subject,
-            text_content=text_content
+            content=text_content,
+           
+            sender=business,
+            email_to=recipient_email,
+            sms_to=booking.customer.phone_number,
         )
 
         return True

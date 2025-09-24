@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,6 +70,10 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--dark-surface);
             color: var(--dark-text-primary);
+        }
+
+        .logo{
+            height: 50px;
         }
         
         /* Text Styles */
@@ -312,7 +317,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark-surface fixed-top shadow-lg">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="/">
-                <span class="text-white fw-bold fs-4">CleaningBiz AI</span>
+                <img class="logo" src="{% static 'img/logo_light.png' %}" alt="">
             </a>
             <button class="navbar-toggler" type="button"    data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>

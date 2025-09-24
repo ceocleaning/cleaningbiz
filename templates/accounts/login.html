@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,14 +29,19 @@
             }
         }
     </script>
+
+    <style>
+        .logo{
+            height: 60px;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <div class="min-h-screen flex flex-col md:flex-row">
         <!-- Left side - Image and branding -->
         <div class="hidden md:flex md:w-1/2 bg-primary-500 text-white p-8 flex-col justify-between">
             <div>
-                <h1 class="text-4xl font-bold mb-2">CleaningBiz AI</h1>
-                <p class="text-xl">Automate your Cleaning Business</p>
+                <img src="{% static 'img/logo_light.png' %}" alt="" class="logo">
             </div>
             
             <div class="relative h-full flex items-center justify-center">
@@ -75,9 +81,7 @@
             <div class="max-w-md w-full space-y-8">
                 <div>
                     <div class="flex justify-center mb-6">
-                        <div class="bg-primary-500 text-white p-4 rounded-full">
-                            <i class="fas fa-broom text-3xl"></i>
-                        </div>
+                        <img src="{% static 'img/icon_dark.png' %}" alt="" class="logo">
                     </div>
                     <h2 class="text-center text-3xl font-extrabold text-gray-900">
                         Welcome Back

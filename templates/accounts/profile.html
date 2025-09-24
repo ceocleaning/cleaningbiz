@@ -739,6 +739,10 @@
                                             <i class="fas fa-clipboard"></i>
                                         </button>
                                     </div>
+                                    <a href="{% url 'twilio_phone_numbers' %}" class="mt-2 btn btn-sm btn-outline-primary key-action-btn">
+                                        <i class="fas fa-plus"></i>Manage SMS Agent Number
+                                    </a>
+                                    
                                     {% else %}
                                     <a href="{% url 'twilio_phone_numbers' %}" class="btn btn-sm btn-outline-primary key-action-btn">
                                         <i class="fas fa-plus"></i> Add SMS Agent Number

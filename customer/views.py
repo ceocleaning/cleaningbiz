@@ -15,7 +15,7 @@ from customer.models import Customer, Review
 from automation.utils import format_phone_number
 from invoice.models import Invoice
 from datetime import datetime, timedelta
-from bookings.timezone_utils import convert_local_to_utc
+from accounts.timezone_utils import convert_to_utc
 import pytz
 from django.utils import timezone
 
@@ -287,9 +287,8 @@ def add_booking(request, business_id):
             start_time = request.POST.get('startTime')
             
             # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_local_to_utc(
-                cleaning_date,
-                start_time,
+            start_time_utc = convert_to_utc(
+                cleaning_date + ' ' + start_time,
                 business.timezone
             ).time()
             
@@ -466,9 +465,8 @@ def edit_booking(request, bookingId):
             start_time = request.POST.get('startTime')
             
             # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_local_to_utc(
-                cleaning_date,
-                start_time,
+            start_time_utc = convert_to_utc(
+                cleaning_date + ' ' + start_time,
                 business.timezone
             ).time()
             

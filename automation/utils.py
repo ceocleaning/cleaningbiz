@@ -1,15 +1,12 @@
 from twilio.rest import Client
 import uuid
 from dotenv import load_dotenv
-from django.core.mail import send_mail
-from accounts.models import Business, ApiCredential
-import os
-from django.core.mail import EmailMultiAlternatives
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from accounts.models import Business, ApiCredential, CustomAddons
+from bookings.models import BookingCustomAddons
 from django.conf import settings
 from leadsAutomation.utils import send_email
+from decimal import Decimal
+
 
 
 load_dotenv()
@@ -96,9 +93,11 @@ def generateAppoitnmentId():
 
 
 
-def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj):
+def calculateAmount(business, summary):
     # Convert service type to match choices
-    service_type = service_type.lower().replace(" ", "")
+    serviceType = str(summary.get("serviceType") or summary.get("service_type") or "").lower().replace(" ", "")
+    service_type = getServiceType(serviceType)
+    businessSettingsObj = business.settings
     
     bedroomPrice = businessSettingsObj.bedroomPrice
     base_price = businessSettingsObj.base_price
@@ -109,6 +108,14 @@ def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj
     sqftDeep = businessSettingsObj.sqftMultiplierDeep
     sqftMoveinout = businessSettingsObj.sqftMultiplierMoveinout
     sqftAirbnb = businessSettingsObj.sqftMultiplierAirbnb
+
+    try:
+        bedrooms = Decimal(summary.get("bedrooms", 0) or 0)
+        bathrooms = Decimal(summary.get("bathrooms", 0) or 0)
+        area = Decimal(summary.get("squareFeet", 0) or summary.get("area", 0))
+    except ValueError:
+        error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
+        return {"success": False, "error": error_msg}
 
     if "deep" in service_type:
         sqft_price = sqftDeep * area
@@ -121,22 +128,136 @@ def calculateAmount(bedrooms, bathrooms, area, service_type, businessSettingsObj
 
     else:
         sqft_price = sqftStandard * area
+
+    
     
     bathroomTotal = bathrooms * bathroomPrice
     bedroomTotal = bedrooms * bedroomPrice
 
     # Calculate the total amount
-    total_amount = bedroomTotal + bathroomTotal + base_price + depositFee + sqft_price
-    
-    
-    return total_amount
+    base_total = bedroomTotal + bathroomTotal + base_price + depositFee + sqft_price
+    addons_total = calculateAddonsAmount(businessSettingsObj, summary)
+    customAddons = calculateCustomAddons(business, summary)
+
+    bookingCustomAddons = customAddons.get("bookingCustomAddons", [])
+    customAddonTotal = customAddons.get("customAddonTotal", 0)
 
 
-def calculateAddonsAmount(addons, addonsPrices):
+    sub_total = base_total + addons_total + customAddonTotal
+    tax = sub_total * (taxPercent / 100)
+    total_amount = sub_total + tax
+
+
+
+
+    response = {
+        'base_price': base_price,
+        'sqft_price': sqft_price,
+        'bedroom_total': bedroomTotal,
+        'bathroom_total': bathroomTotal,
+        'addons_total': addons_total,
+        'custom_addon_total': customAddonTotal,
+        'sub_total': sub_total,
+        'tax': tax,
+        'tax_rate': taxPercent,
+        'total_amount': total_amount,
+        
+        "custom_addons": {
+            "note": "No Concern of AI in this Field (Internal use only)",
+            "customAddonTotal": customAddonTotal,
+            "bookingCustomAddons": bookingCustomAddons,
+            },
+    }
+    
+    
+    return response
+
+
+def calculateAddonsAmount(businessSettingsObj, summary):
+    addonsPrices = {
+        "dishes": businessSettingsObj.addonPriceDishes,
+        "laundry": businessSettingsObj.addonPriceLaundry,
+        "windows": businessSettingsObj.addonPriceWindow,
+        "pets": businessSettingsObj.addonPricePets,
+        "fridge": businessSettingsObj.addonPriceFridge,
+        "oven": businessSettingsObj.addonPriceOven,
+        "baseboards": businessSettingsObj.addonPriceBaseboard,
+        "blinds": businessSettingsObj.addonPriceBlinds,
+        "green": businessSettingsObj.addonPriceGreen,
+        "cabinets": businessSettingsObj.addonPriceCabinets,
+        "patio": businessSettingsObj.addonPricePatio,
+        "garage": businessSettingsObj.addonPriceGarage
+    }
+
+    addons = {
+        "dishes": int(summary.get("addonDishes", 0) or summary.get("dishes", 0)),
+        "laundry": int(summary.get("addonLaundryLoads", 0) or summary.get("laundry", 0)),
+        "windows": int(summary.get("addonWindowCleaning", 0) or summary.get("windows", 0)),
+        "pets": int(summary.get("addonPetsCleaning", 0) or summary.get("pets", 0)),
+        "fridge": int(summary.get("addonFridgeCleaning", 0) or summary.get("fridge", 0)),
+        "oven": int(summary.get("addonOvenCleaning", 0) or summary.get("oven", 0)),
+        "baseboards": int(summary.get("addonBaseboard", 0) or summary.get("baseboard", 0)),
+        "blinds": int(summary.get("addonBlinds", 0) or summary.get("blinds", 0)),
+        "green": int(summary.get("addonGreenCleaning", 0) or summary.get("green", 0)),
+        "cabinets": int(summary.get("addonCabinetsCleaning", 0) or summary.get("cabinets", 0)),
+        "patio": int(summary.get("addonPatioSweeping", 0) or summary.get("patio", 0)),
+        "garage": int(summary.get("addonGarageSweeping", 0) or summary.get("garage", 0))
+        }
+
     total = 0
     for key in addons:
         total += addons[key] * addonsPrices.get(key, 0)  # Use `.get()` to avoid KeyError
     return total
+
+
+
+def calculateCustomAddons(business, summary):
+    # Calculate custom addons
+    customAddonsObj = CustomAddons.objects.filter(business=business)
+    bookingCustomAddons = []
+    customAddonTotal = 0
+
+    for custom_addon in customAddonsObj:
+        addon_data_name = custom_addon.addonDataName
+        if addon_data_name and addon_data_name in summary:
+            quantity = int(summary.get(addon_data_name, 0) or 0)
+            if quantity > 0:
+                addon_price = custom_addon.addonPrice
+                addon_total = quantity * addon_price
+                customAddonTotal += addon_total
+
+                custom_addon_obj = BookingCustomAddons.objects.create(
+                    addon=custom_addon,
+                    qty=quantity
+                )
+                bookingCustomAddons.append(custom_addon_obj)
+    
+    response = {
+        "customAddonTotal": customAddonTotal,
+        "bookingCustomAddons": bookingCustomAddons
+    }
+    
+    return response
+    
+
+def getServiceType(serviceType):
+    if 'regular' in serviceType or 'standard' in serviceType:
+        serviceType = 'standard'
+    elif 'deep' in serviceType:
+        serviceType = 'deep'
+    elif 'moveinmoveout' in serviceType or 'move-in' in serviceType or 'moveout' in serviceType:
+        serviceType = 'moveinmoveout'
+    elif 'airbnb' in serviceType:
+        serviceType = 'airbnb'
+    else:
+        serviceType = 'standard'
+    
+    return serviceType
+
+
+
+
+
 
 
 def format_phone_number(phone_number):

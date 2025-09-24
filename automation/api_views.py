@@ -1,5 +1,6 @@
 import os
 import json
+from rest_framework.decorators import api_view
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -13,9 +14,11 @@ from django.conf import settings
 from leadsAutomation.utils import send_email
 from customer.models import Customer
 import threading
+from accounts.timezone_utils import parse_business_datetime
+from customer.utils import create_customer
 
 
-from .utils import calculateAddonsAmount, calculateAmount
+from .utils import calculateAmount, getServiceType
 import pytz
 import traceback
 
@@ -283,8 +286,14 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
 
     return alternate_slots, logs
 
+
+
+
+
+
+
 # API endpoint to check availability
-from rest_framework.decorators import api_view
+
 @api_view(['POST'])
 def check_availability_retell(request, secretKey):
     """
@@ -315,42 +324,25 @@ def check_availability_retell(request, secretKey):
         current_year = datetime.now().year
         time_to_check = time_to_check.replace(year=current_year)
         
-        # Convert from provided timezone to UTC
-        try:
-            local_tz = pytz.timezone(timezone_str)
-            # Make the datetime timezone-aware if it's naive
-            if is_naive(time_to_check):
-                time_to_check = local_tz.localize(time_to_check)
-            else:
-                # If already timezone-aware, convert to the specified timezone
-                time_to_check = time_to_check.astimezone(local_tz)
-                
-            # Convert to UTC
-            utc_datetime = time_to_check.astimezone(pytz.UTC)
-            time_to_check = utc_datetime.replace(tzinfo=None)  # Remove tzinfo for compatibility with existing code
-        except pytz.exceptions.UnknownTimeZoneError:
-            # Fall back to naive datetime if timezone is invalid
-            print(f"Invalid timezone: {timezone_str}")
-            # Make naive datetime timezone-aware with UTC
-            if is_naive(time_to_check):
-                time_to_check = make_aware(time_to_check)
-            time_to_check = time_to_check.astimezone(pytz.UTC).replace(tzinfo=None)
+        res = parse_business_datetime(cleaningDateTime, business)
+        
+      
         cleaners = get_cleaners_for_business(business, assignment_check_null=True)
         available_cleaners = []
 
         # Check if the requested time is available
-        is_available, availability_logs = is_slot_available(cleaners, time_to_check, available_cleaners)
+        is_available, availability_logs = is_slot_available(cleaners, res['data']['utc_datetime'], available_cleaners)
         
         # Base response with common fields
         response = {
             "status": "success",
             "available": is_available,
-            "timeslot": time_to_check.strftime("%Y-%m-%d %H:%M:%S")
+            "timeslot": res['data']['utc_datetime'].strftime("%Y-%m-%d %H:%M:%S")
         }
 
         # If not available, find alternate slots
         if not is_available:
-            alternate_slots, alternate_logs = find_alternate_slots(cleaners, time_to_check)
+            alternate_slots, alternate_logs = find_alternate_slots(cleaners, res['data']['utc_datetime'])
             response["alternates"] = alternate_slots
 
         return JsonResponse(response, status=200)
@@ -360,62 +352,7 @@ def check_availability_retell(request, secretKey):
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
-# Test endpoint to check availability without Retell signature verification
-@csrf_exempt
-def test_check_availability(request, secretKey):
-    """
-    Test endpoint for checking appointment availability without Retell signature verification.
-    This is only for testing purposes and should not be used in production.
-    """
-    try:
-        if request.method != "POST":
-            return JsonResponse({"error": "Invalid request method"}, status=405)
-        
-        # Try to get API credentials
-        try:
-            apiCreds = ApiCredential.objects.get(secretKey=secretKey)
-            business = apiCreds.business
-        except ApiCredential.DoesNotExist:
-            return JsonResponse({"error": "Invalid secret key"}, status=401)
 
-        # Parse request body
-        post_data = json.loads(request.body)
-        
-        # Extract parameters
-        args = post_data.get("args", {})
-        cleaningDateTime = args.get("cleaningDateTime")
-
-        if not cleaningDateTime:
-            return JsonResponse({"error": "Missing required field: cleaningDateTime"}, status=400)
-
-        cleaners = get_cleaners_for_business(business, assignment_check_null=True)
-        time_to_check = datetime.fromisoformat(cleaningDateTime)
-        available_cleaners = []
-
-        # Check if the requested time is available
-        is_available, availability_logs = is_slot_available(cleaners, time_to_check, available_cleaners)
-        
-        # Base response with common fields
-        response = {
-            "status": "success",
-            "available": is_available,
-            "timeslot": time_to_check.strftime("%Y-%m-%d %I:%M %p"),
-            "cleaners": [{"id": c.id, "name": c.name, "rating": c.rating} for c in available_cleaners],
-            "logs": availability_logs
-        }
-
-        # If not available, find alternate slots
-        if not is_available:
-            alternate_slots, alternate_logs = find_alternate_slots(cleaners, time_to_check)
-            response["alternates"] = alternate_slots
-            response["logs"].extend(alternate_logs)
-
-        return JsonResponse(response, status=200)
-
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
 
 # API endpoint to check availability for the booking form
 @api_view(['GET'])
@@ -428,30 +365,13 @@ def check_availability_for_booking(request):
         if not date_str or not time_str:
             return JsonResponse({"error": "Missing date or time parameter"}, status=400)
         
-        # Parse the local date and time
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-        time_obj = datetime.strptime(time_str, '%H:%M').time()
-        
-        # Combine into a datetime object
-        local_datetime = datetime.combine(date_obj, time_obj)
-        
-        # Convert from business timezone to UTC
-        try:
-            local_tz = pytz.timezone(timezone_str)
-            local_datetime_aware = local_tz.localize(local_datetime)
-            utc_datetime = local_datetime_aware.astimezone(pytz.UTC)
-            datetime_to_check = utc_datetime.replace(tzinfo=None)  # Remove tzinfo for compatibility with existing code
-        except pytz.exceptions.UnknownTimeZoneError:
-            # Fall back to naive datetime if timezone is invalid
-            print("Invalid timezone")
-            datetime_to_check = local_datetime
+        res = parse_business_datetime(date_str + ' ' + time_str, business)
         
         if hasattr(request.user, 'customer') and request.user.customer or not request.user.is_authenticated:
             print(request.GET.get("businessId"))
             business_id = request.GET.get("businessId")
             current_business = Business.objects.get(businessId=business_id)
-        else:
-            current_business = request.user.business_set.first()
+
 
         if not current_business:
             return JsonResponse({"error": "Business not found"}, status=404)
@@ -460,12 +380,12 @@ def check_availability_for_booking(request):
         
         # Check availability
         available_cleaners = []
-        is_available, _ = is_slot_available(cleaners, datetime_to_check, available_cleaners)
+        is_available, _ = is_slot_available(cleaners, res['data']['utc_datetime'], available_cleaners)
         
         # Find alternative slots if not available
         alternative_slots = []
         if not is_available:
-            alt_slots, _ = find_alternate_slots(cleaners, datetime_to_check, max_alternates=3)
+            alt_slots, _ = find_alternate_slots(cleaners, res['data']['utc_datetime'], max_alternates=3)
             
             # Convert alternative slots back to business timezone for display
             formatted_alt_slots = []
@@ -487,11 +407,7 @@ def check_availability_for_booking(request):
         return JsonResponse({
             "available": is_available,
             "alternative_slots": alternative_slots,
-            "cleaners": [{
-                "id": c.id,
-                "name": c.name,
-                "rating": c.rating
-            } for c in available_cleaners]
+            
         })
     except Exception as e:
         import traceback
@@ -517,31 +433,15 @@ def create_booking(request):
                 'message': 'Business not found'
             }, status=404)
         
-        # Parse appointment date and time
-        try:
-            dt_with_timezone = datetime.fromisoformat(data['appointment_date_time'])
-            utc_timezone = pytz.utc
-            dt_with_utc = dt_with_timezone.replace(tzinfo=utc_timezone)
-          
-            cleaning_date = dt_with_utc.date()
-            start_time = dt_with_utc.time()
-      
-            # Calculate end time (default to 1 hour after start time)
-            end_datetime = dt_with_utc + timedelta(hours=1)
-            end_time = end_datetime.time()
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'Invalid date or time format: {str(e)}'
-            }, status=400)
+        res = parse_business_datetime(data['appointment_date_time'], business)
         
         # Find an available cleaner
         cleaners = get_cleaners_for_business(business, assignment_check_null=True)
-        available_cleaner = find_available_cleaner(cleaners, dt_with_utc)
+        available_cleaner = find_available_cleaner(cleaners, res['data']['utc_datetime'])
         
         if not available_cleaner:
             # Find alternate slots
-            alternate_slots, _ = find_alternate_slots(cleaners, dt_with_utc)
+            alternate_slots, _ = find_alternate_slots(cleaners, res['data']['utc_datetime'])
             return JsonResponse({
                 'success': False,
                 'message': 'No cleaners available for the requested time',
@@ -550,32 +450,10 @@ def create_booking(request):
         
         # Normalize service type
         service_type = data["service_type"].lower().replace(" ", "")
-        if 'regular' in service_type or 'standard' in service_type:
-            service_type = 'standard'
-        elif 'deep' in service_type:
-            service_type = 'deep'
-        elif 'moveinmoveout' in service_type or 'move-in' in service_type or 'moveout' in service_type:
-            service_type = 'moveinmoveout'
-        elif 'airbnb' in service_type:
-            service_type = 'airbnb'
+        service_type = getServiceType(service_type)
         
 
-        customer_email = data.get('email', 'Not Set')
-        customer = Customer.objects.filter(email=customer_email)
-        if not customer.exists():
-            customer = Customer.objects.create(
-                first_name=data.get('first_name', 'Not Set'),
-                last_name=data.get('last_name', 'Not Set'),
-                email=customer_email,
-                phone_number=data.get('phone_number', 'Not Set'),
-                address=data.get('address', 'Not Set'),
-                city=data.get('city', 'Not Set'),
-                state_or_province=data.get('state', 'Not Set'),
-                zip_code=data.get('zip_code', 'Not Set'),
-            )
-        
-        else:
-            customer = customer.first()
+        customer = create_customer(data)
 
         # Create booking object with mapped fields
         booking = Booking(
@@ -584,107 +462,44 @@ def create_booking(request):
             bedrooms=Decimal(data.get('bedrooms', 0) or 0),
             bathrooms=Decimal(data.get('bathrooms', 0) or 0),
             squareFeet=Decimal(data.get('area', 0) or 0),
-            cleaningDate=cleaning_date,
-            startTime=start_time,
-            endTime=end_time,
+            cleaningDate=res['data']['utc_datetime'],
+            startTime=res['data']['utc_start_time'],
+            endTime=res['data']['utc_end_time'],
             serviceType=service_type,
             recurring=data.get('recurring', 'one-time'),
-            otherRequests=data.get('otherRequests', 'Not Set')
+            otherRequests=data.get('otherRequests', 'Not Set'),
+            addonDishes = int(data.get('dishes', 0) or 0),
+            addonLaundryLoads = int(data.get('laundry', 0) or 0),
+            addonWindowCleaning = int(data.get('windows', 0) or 0),
+            addonPetsCleaning = int(data.get('pets', 0) or 0),
+            addonFridgeCleaning = int(data.get('fridge', 0) or 0),
+            addonOvenCleaning = int(data.get('oven', 0) or 0),
+            addonBaseboard = int(data.get('baseboard', 0) or 0),
+            addonBlinds = int(data.get('blinds', 0) or 0),
+            addonGreenCleaning = int(data.get('green', 0) or 0),
+            addonCabinetsCleaning = int(data.get('cabinets', 0) or 0),
+            addonPatioSweeping = int(data.get('patio', 0) or 0),
+            addonGarageSweeping = int(data.get('garage', 0) or 0)
         )
         
-        # Process addons
-        addons = {
-            'dishes': int(data.get('dishes', 0) or 0),
-            'laundry': int(data.get('laundry', 0) or 0),
-            'windows': int(data.get('windows', 0) or 0),
-            'pets': int(data.get('pets', 0) or 0),
-            'fridge': int(data.get('fridge', 0) or 0),
-            'oven': int(data.get('oven', 0) or 0),
-            'baseboards': int(data.get('baseboard', 0) or 0),
-            'blinds': int(data.get('blinds', 0) or 0),
-            'green': int(data.get('green', 0) or 0),
-            'cabinets': int(data.get('cabinets', 0) or 0),
-            'patio': int(data.get('patio', 0) or 0),
-            'garage': int(data.get('garage', 0) or 0)
-        }
-        
-        # Set addon values on booking object
-        booking.addonDishes = addons['dishes']
-        booking.addonLaundryLoads = addons['laundry']
-        booking.addonWindowCleaning = addons['windows']
-        booking.addonPetsCleaning = addons['pets']
-        booking.addonFridgeCleaning = addons['fridge']
-        booking.addonOvenCleaning = addons['oven']
-        booking.addonBaseboard = addons['baseboards']
-        booking.addonBlinds = addons['blinds']
-        booking.addonGreenCleaning = addons['green']
-        booking.addonCabinetsCleaning = addons['cabinets']
-        booking.addonPatioSweeping = addons['patio']
-        booking.addonGarageSweeping = addons['garage']
+
         
         # Calculate price using business settings
         # Calculate base price
-        base_price = calculateAmount(
-            booking.bedrooms,
-            booking.bathrooms,
-            booking.squareFeet,
-            booking.serviceType,
-            businessSettingsObj
+        amount_calculation = calculateAmount(
+             business,
+             booking,             
         )
         
-        # Process addons for pricing
-        addon_prices = {
-            'dishes': businessSettingsObj.addonPriceDishes,
-            'laundry': businessSettingsObj.addonPriceLaundry,
-            'windows': businessSettingsObj.addonPriceWindow,
-            'pets': businessSettingsObj.addonPricePets,
-            'fridge': businessSettingsObj.addonPriceFridge,
-            'oven': businessSettingsObj.addonPriceOven,
-            'baseboards': businessSettingsObj.addonPriceBaseboard,
-            'blinds': businessSettingsObj.addonPriceBlinds,
-            'green': businessSettingsObj.addonPriceGreen,
-            'cabinets': businessSettingsObj.addonPriceCabinets,
-            'patio': businessSettingsObj.addonPricePatio,
-            'garage': businessSettingsObj.addonPriceGarage
-        }
-        
-        # Calculate addons total
-        addons_total = calculateAddonsAmount(addons, addon_prices)
-        
-        # Calculate custom addons (if needed)
-        customAddonsObj = CustomAddons.objects.filter(business=business)
-        customAddonTotal = 0
-        bookingCustomAddons = []
-        
-        # Process custom addons if present in data
-        for custom_addon in customAddonsObj:
-            addon_data_name = custom_addon.addonDataName
-            if addon_data_name and addon_data_name in data:
-                quantity = int(data.get(addon_data_name, 0) or 0)
-                if quantity > 0:
-                    addon_price = custom_addon.addonPrice
-                    addon_total = quantity * addon_price
-                    customAddonTotal += addon_total
-                    
-                    # Create BookingCustomAddons object
-                    custom_addon_obj = BookingCustomAddons.objects.create(
-                        addon=custom_addon,
-                        qty=quantity
-                    )
-                    bookingCustomAddons.append(custom_addon_obj)
-        
-        # Calculate final amounts
-        sub_total = base_price + addons_total + customAddonTotal
-        tax = sub_total * (businessSettingsObj.taxPercent / 100)
-        total = sub_total + tax
-        
-        booking.totalPrice = total
-        booking.tax = tax
+      
+        booking.totalPrice = amount_calculation['total_amount']
+        booking.tax = amount_calculation['tax']
         
         # Save the booking
         booking.save()
         
         # Add custom addons if any
+        bookingCustomAddons = amount_calculation['custom_addons']['bookingCustomAddons']
         if bookingCustomAddons:
             booking.customAddons.set(bookingCustomAddons)
             booking.save()

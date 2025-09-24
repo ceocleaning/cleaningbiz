@@ -14,7 +14,7 @@ from customer.models import Customer
 from customer.serializers import BookingSerializer, CustomerSerializer
 from automation.utils import format_phone_number
 from invoice.models import Invoice
-from bookings.timezone_utils import convert_local_to_utc
+from accounts.timezone_utils import convert_to_utc
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -108,9 +108,8 @@ def booking_api(request, business_id):
             start_time = data.get('startTime')
             
             # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_local_to_utc(
-                cleaning_date,
-                start_time,
+            start_time_utc = convert_to_utc(
+                cleaning_date + ' ' + start_time,
                 business.timezone
             ).time()
             

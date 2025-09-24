@@ -30,6 +30,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 import json
 import random
 from accounts.decorators import owner_or_customer
+from .utils import handle_payment_completed
 
 
 
@@ -602,6 +603,7 @@ def approve_payment(request, invoice_id, payment_id):
             payment.save()
             # The payment save method will update the invoice status
         invoice.save()
+        handle_payment_completed(payment)
         messages.success(request, f'Payment approved successfully!')
         return redirect('invoice:invoice_detail', invoice.invoiceId)
     except Invoice.DoesNotExist:

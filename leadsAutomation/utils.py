@@ -4,7 +4,7 @@ from django.conf import settings
 
 EMAILIT_API_KEY = settings.EMAILIT_API_KEY
 
-def send_email(from_email, to_email, subject, reply_to=None, text_content='', attachments=None):
+def send_email(from_email, to_email, subject, reply_to=None, text_content='', attachments=None, html_content=None):
     """
     Send an email using the EmailIt API.
 
@@ -43,6 +43,9 @@ def send_email(from_email, to_email, subject, reply_to=None, text_content='', at
         "subject": subject,
         "text": text_content
     }
+
+    if html_content:
+        data["html"] = html_content
 
     if reply_to:
         data["reply_to"] = reply_to

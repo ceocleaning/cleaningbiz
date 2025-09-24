@@ -106,7 +106,8 @@ class CleanerAccessMiddleware:
             'TermsOfServicePage', 'sitemap',
             'update_cleaner_profile',
             'update_cleaner_schedule', 'add_specific_date', 'delete_specific_date',
-            'accept_open_job', 'reject_open_job'
+            'accept_open_job', 'reject_open_job', 'notification_list', 'notification_detail', 'mark_on_the_way', 'confirm_arrival', 'confirm_completed'
+
         ]
         
         # Public paths always accessible

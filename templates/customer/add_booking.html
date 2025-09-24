@@ -84,13 +84,8 @@
                                     <div class="input-group me-2" style="width: 150px;">
                                         <span class="input-group-text">+</span>
                                         <select class="form-select" id="countryCode" name="countryCode">
-                                            <option value="1" selected>1 (US/CA)</option>
-                                            <option value="44">44 (UK)</option>
-                                            <option value="49">49 (DE)</option>
-                                            <option value="61">61 (AU)</option>
-                                            <option value="86">86 (CN)</option>
-                                            <option value="91">91 (IN)</option>
-                                            <option value="92">92 (PK)</option>
+                                            <option value="1" selected>1</option>
+                                          
                                         </select>
                                     </div>
                                     <input type="tel" 
@@ -147,12 +142,24 @@
                         <h5 class="mb-4"><i class="fas fa-broom me-2"></i>Service Details</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="cleaningDate" class="form-label">Cleaning Date <small class="text-muted">({{ request.user.customer.timezone }})</small></label>
+                                <label for="cleaningDate" class="form-label">Cleaning Date <small class="text-muted">
+                                    {% if request.user.customer %}
+                                    ({{ request.user.customer.timezone }})
+                                    {% else %}
+                                    ({{ business.timezone }})
+                                    {% endif %}
+                                </small></label>
                                 <input type="date" class="form-control" id="cleaningDate" name="cleaningDate" required min="{{ today|date:'Y-m-d' }}">
-                                <input type="hidden" id="businessTimezone" value="{{ request.user.customer.timezone }}">
+                                <input type="hidden" id="businessTimezone" value="{% if request.user.customer %}{{ request.user.customer.timezone }}{% else %}{{ business.timezone }}{% endif %}">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="startTime" class="form-label">Start Time <small class="text-muted">({{ request.user.customer.timezone }})</small></label>
+                                <label for="startTime" class="form-label">Start Time <small class="text-muted">
+                                    {% if request.user.customer %}
+                                    ({{ request.user.customer.timezone }})
+                                    {% else %}
+                                    ({{ business.timezone }})
+                                    {% endif %}
+                                </small></label>
                                 <select class="form-control form-select" id="startTime" name="startTime" required>
                                     <option value="">Select Time</option>
                                     <option value="06:00">6:00 AM</option>

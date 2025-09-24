@@ -1,7 +1,8 @@
 
 from django.utils import timezone
-from leadsAutomation.utils import send_email
 import threading
+
+from notification.services import NotificationService
 
 
 def create_and_start_thread(fn, args):
@@ -80,12 +81,16 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
         """
         
         # Send email using Django's built-in email function
-        send_email(
+        NotificationService.send_notification(
+            recipient=business.user,
+            notification_type=['email', 'sms'],
+            from_email=from_email,
             subject=subject,
-            text_content=body,
-            from_email=f"{business.businessName} <{business.user.email}>",
-            to_email=owner_email,
-            reply_to=business.user.email
+            content=body,
+            
+            sender=business,
+            email_to=owner_email,
+            sms_to=business.phone,
         )
         
         print(f"Payment notification email sent to business owner: {owner_email}")
@@ -147,12 +152,16 @@ def send_email_payment_completed(instance):
             recipient_email = booking.customer.email
             
             # Send email based on available configuration
-            send_email(
-                subject=subject,
-                text_content=text_body,
+            NotificationService.send_notification(
+                recipient=booking.customer.user if booking.customer.user else None,
+                notification_type=['email', 'sms'],
                 from_email=from_email,
-                to_email=recipient_email,
-                reply_to=reply_to_email
+                subject=subject,
+                content=text_body,
+              
+                sender=business,
+                email_to=recipient_email,
+                sms_to=booking.customer.phone_number,
             )
         
    

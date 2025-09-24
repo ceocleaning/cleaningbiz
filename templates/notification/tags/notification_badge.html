@@ -1,0 +1,9 @@
+<a href="{% url 'notification:notification_list' %}" class="position-relative" title="Notifications{% if user_type %} ({{ user_type|title }}){% endif %}">
+    <i class="fas fa-bell{% if user_type == 'business_owner' %} text-primary{% elif user_type == 'cleaner' %} text-success{% elif user_type == 'customer' %} text-info{% endif %}"></i>
+    {% if has_unread %}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill {% if user_type == 'business_owner' %}bg-primary{% elif user_type == 'cleaner' %}bg-success{% elif user_type == 'customer' %}bg-info{% else %}bg-danger{% endif %}">
+            {{ count }}
+            <span class="visually-hidden">unread notifications</span>
+        </span>
+    {% endif %}
+</a>

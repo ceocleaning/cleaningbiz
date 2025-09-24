@@ -1848,7 +1848,7 @@ def reject_open_job(request, job_id):
 
 
 
-def confirm_arrival(request, booking_id):
+def mark_on_the_way(request, booking_id):
     booking = Booking.objects.get(bookingId=booking_id)
     
     from .emails import send_arrival_confirmation_email
@@ -1857,6 +1857,24 @@ def confirm_arrival(request, booking_id):
     
     # Update Booking Status
     booking.arrival_confirmed_at = timezone.now()
+    booking.save()
+    
+    # Add success message
+    messages.success(request, 'On the way notifcation sent successfully!')
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+def confirm_arrival(request, booking_id):
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    from .emails import send_cleaner_arrived_notification
+    # Send Email to Client
+    send_cleaner_arrived_notification(booking)
+    
+    # Update Booking Status
+    booking.arrived_at = timezone.now()
     booking.save()
     
     # Add success message

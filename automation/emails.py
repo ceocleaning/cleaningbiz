@@ -2,6 +2,9 @@ from accounts.models import CleanerProfile
 from django.utils import timezone
 import datetime
 from leadsAutomation.utils import send_email
+from notification.services import NotificationService
+from accounts.timezone_utils import convert_from_utc
+from datetime import datetime
 
 
 def send_arrival_confirmation_email(booking):
@@ -91,23 +94,29 @@ def send_completion_notification_emails(booking):
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
-    booking_time = f"{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}" if booking.startTime and booking.endTime else "N/A"
+
+    business_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), business.timezone)
+    business_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), business.timezone)
+
+    customer_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), booking.customer.timezone)
+    customer_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), booking.customer.timezone)
+
+    customer_booking_time = f"{customer_start_time.strftime('%I:%M %p')} - {customer_end_time.strftime('%I:%M %p')}" if customer_start_time and customer_end_time else "N/A"
+
+    business_booking_time = f"{business_start_time.strftime('%I:%M %p')} - {business_end_time.strftime('%I:%M %p')}" if business_start_time and business_end_time else "N/A"
+
     
-    # Format address
-    address_parts = []
-    if booking.customer.address:
-        address_parts.append(booking.customer.address)
-    if booking.customer.city and booking.customer.state_or_province:
-        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
-    if booking.customer.zip_code:
-        address_parts.append(booking.customer.zip_code)
+
+
+
     
-    full_address = ", ".join(address_parts) if address_parts else "N/A"
+    
+    
+    full_address = booking.customer.get_address()
     
     # Get cleaner name and email
     cleaner_name = booking.cleaner.name if booking.cleaner else "Your cleaner"
     cleaner_profile = CleanerProfile.objects.filter(cleaner=booking.cleaner).first()
-    cleaner_email = cleaner_profile.user.email if cleaner_profile and cleaner_profile.user else None
     
     # Get business owner email
     business_owner_email = business.user.email if business.user else None
@@ -122,36 +131,44 @@ def send_completion_notification_emails(booking):
         customer_subject = f"Cleaning Service Completed - {business.businessName}"
         
         
-        cleaner_text_body = f"""
-        Hello {cleaner_name},
+        customer_text_body = f"""
+        Hello {customer_name},
+
+        Your Cleaning Service with {booking.business.businessName} has completed
         
-        Thank you for completing the cleaning service for booking {booking.bookingId}.
+        Thank you for chosing {booking.business.businessName} for your cleaning service.
         
         JOB DETAILS:
         Client: {customer_name}
         Service: {booking.serviceType}
+        Bedrooms: {booking.bedrooms}
+        Bathrooms: {booking.bathrooms}
+        Service Area: {booking.squareFeet}
         Date: {booking_date}
-        Time: {booking_time}
+        Time: {customer_booking_time}
         Address: {full_address}
         Booking ID: {booking.bookingId}
         
-        The job has been marked as completed in our system. Thank you for your hard work!
+
         
         {timezone.now().year} {business.businessName}. All rights reserved.
         This is an automated message, please do not reply directly to this email.
         """
         
         try:
-            send_email(
-                subject=cleaner_subject,
-                to_email=cleaner_email,
-                reply_to=business.user.email,
-                text_content=cleaner_text_body,
-                from_email=from_email
+            NotificationService.send_notification(
+                recipient=booking.customer.user if booking.customer.user else None,
+                from_email=from_email,
+                notification_type=['sms', 'email'],
+                subject=customer_subject,
+                content=customer_text_body,
+                to_email=booking.customer.email,
+                to_sms=booking.customer.phone_number,
+                sender=booking.business
             )
 
         except Exception as e:
-            print(f"Error sending completion email to cleaner: {str(e)}")
+            print(f"Error sending completion email and sms to customer: {str(e)}")
     
     # 3. Send email to business owner
     if business_owner_email:
@@ -168,7 +185,7 @@ def send_completion_notification_emails(booking):
         Cleaner: {cleaner_name}
         Service: {booking.serviceType}
         Date: {booking_date}
-        Time: {booking_time}
+        Time: {business_booking_time}
         Address: {full_address}
         Booking ID: {booking.bookingId}
         
@@ -179,14 +196,88 @@ def send_completion_notification_emails(booking):
         """
         
         try:
-            send_email(
+            NotificationService.send_notification(
+                recipient=booking.business.user,
+                from_email=from_email,
+                notification_type=['sms', 'email'],
                 subject=owner_subject,
-                to_email=business_owner_email,
-                reply_to=business.user.email,
-                text_content=owner_text_body,
-                from_email=from_email
+                content=owner_text_body,
+                to_email=booking.business.user.email,
+                to_sms=booking.business.phone,
+                sender=booking.business
             )
         except Exception as e:
             print(f"Error sending completion email to business owner: {str(e)}")
     
     return True
+
+
+def send_cleaner_arrived_notification(booking):
+    """
+    Send email and SMS notification to the customer when the cleaner has arrived at their location
+    """
+    business = booking.business
+    customer_name = booking.customer.get_full_name()
+    
+    # Format date and time
+    booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
+
+    # Convert booking times to customer timezone
+    customer_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), booking.customer.timezone)
+    customer_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), booking.customer.timezone)
+    customer_booking_time = f"{customer_start_time.strftime('%I:%M %p')} - {customer_end_time.strftime('%I:%M %p')}" if customer_start_time and customer_end_time else "N/A"
+    
+
+    full_address = booking.customer.get_address()
+    
+    # Get cleaner name
+    cleaner_name = booking.cleaner.name if booking.cleaner else "Your cleaner"
+    
+    # Get current time in customer's timezone
+    now = timezone.now()
+    current_time = convert_from_utc(now, booking.customer.timezone)
+    arrival_time_str = current_time.strftime("%I:%M %p")
+    
+    # Email subject
+    subject = f"Cleaner Has Arrived - {business.businessName}"
+    
+    # Create message content
+    message_content = f"""
+    Hello {customer_name},
+    
+    {cleaner_name} has arrived at your location at {arrival_time_str} and is ready to begin the cleaning service.
+    
+    BOOKING DETAILS:
+    Service: {booking.serviceType}
+    Date: {booking_date}
+    Time: {customer_booking_time}
+    Address: {full_address}
+    Booking ID: {booking.bookingId}
+    
+    If you have any questions or need to provide additional instructions, please contact our customer service.
+    
+    Thank you for choosing {business.businessName}!
+    
+    {timezone.now().year} {business.businessName}. All rights reserved.
+    This is an automated message, please do not reply directly to this email.
+    """
+    
+    # Set the from email address
+    from_email = f"{business.businessName} <{business.user.email}>"
+    
+    # Send notification to customer
+    try:
+        NotificationService.send_notification(
+            recipient=booking.customer.user if booking.customer.user else None,
+            from_email=from_email,
+            notification_type=['sms', 'email'],
+            subject=subject,
+            content=message_content,
+            to_email=booking.customer.email,
+            to_sms=booking.customer.phone_number,
+            sender=booking.business
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending cleaner arrived notification: {str(e)}")
+        return False

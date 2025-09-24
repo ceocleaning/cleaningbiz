@@ -59,6 +59,9 @@
             flex-direction: column;
         }
 
+        .logo {
+            height: 30px
+        }
         /* Default HTML element sizes */
         h1 {
             font-size: 1.75rem;
@@ -510,10 +513,8 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="{% url 'customer:dashboard' %}" class="sidebar-brand">
-                    <i class="fas fa-broom me-2"></i>
-                    <span class="sidebar-brand-text">
-                        CleaningBiz AI
-                    </span>
+                    <img src="{% static 'img/logo_dark.png' %}" alt="" class="logo">
+                   
                 </a>
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="fas fa-bars"></i>

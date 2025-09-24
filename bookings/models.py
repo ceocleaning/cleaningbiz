@@ -106,6 +106,7 @@ class Booking(models.Model):
     hourBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
 
     arrival_confirmed_at = models.DateTimeField(null=True, blank=True)
+    arrived_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):

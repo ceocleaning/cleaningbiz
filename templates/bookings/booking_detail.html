@@ -5,9 +5,9 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-10">
+    <div class="col-md-12">
         <!-- Header Card -->
-        <div class="card shadow-sm mb-4">
+        <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
                     <div>
@@ -20,6 +20,7 @@
                             <i class="fas fa-times me-1"></i>
                             Cancelled
                         </span>
+                    </div>
                     {% else %}
                     <div class="d-flex gap-2 mt-2 mt-sm-0">
                         <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
@@ -133,67 +134,7 @@
             </div>
         </div>
 
-       <!-- Cleaner Info -->
-<div class="row g-3">
-    <div class="col-12 mb-md-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-3 p-md-4">
-                <div class="d-flex align-items-center mb-3 mb-md-4">
-                    <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                        <i class="fas fa-user-tie fa-lg"></i>
-                    </div>
-                    <h5 class="card-title mb-0">Assigned Cleaner</h5>
-                </div>
-                
-                {% if booking.cleaner %}
-                <div class="cleaner-info">
-                    <div class="row g-3"> <!-- Added gutter spacing between cards -->
-                        <!-- Name Card -->
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-user text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Name</strong></h6>
-                                    <p class="card-text text-muted">{{ booking.cleaner.name }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Email Card -->
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-envelope text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Email</strong></h6>
-                                    <p class="card-text text-muted text-break">{{ booking.cleaner.email }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Phone Number Card -->
-                        {% if booking.cleaner.phoneNumber %}
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-phone text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Phone</strong></h6>
-                                    <p class="card-text text-muted" id="cleanerPhoneNumber">{{ booking.cleaner.phoneNumber }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-3 py-md-4">
-                    <i class="fas fa-user-clock fa-3x mb-3 text-info"></i>
-                    <p class="mb-0">No cleaner has been assigned to this booking yet.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+       
 
         <div class="row g-3">
             <!-- Property Info -->
@@ -359,6 +300,8 @@
             </div>
         </div>
 
+        
+
         <!-- Special Requests -->
         <div class="card shadow-sm mb-4">
             <div class="card-body p-3 p-md-4">
@@ -376,6 +319,186 @@
                     <p class="mb-0">No special requests or notes have been added for this booking.</p>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Cleaner Info -->
+        <div class="row g-3">
+            <div class="col-12 mb-md-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center mb-3 mb-md-4">
+                            <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-user-tie fa-lg"></i>
+                            </div>
+                            <h5 class="card-title mb-0">Assigned Cleaner</h5>
+                        </div>
+                        
+                        {% if booking.cleaner %}
+                        <div class="cleaner-info">
+                            <div class="row g-3"> <!-- Added gutter spacing between cards -->
+                                <!-- Name Card -->
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 shadow-sm h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-user text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Name</strong></h6>
+                                            <p class="card-text text-muted">{{ booking.cleaner.name }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Card -->
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 shadow-sm h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-envelope text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Email</strong></h6>
+                                            <p class="card-text text-muted text-break">{{ booking.cleaner.email }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Phone Number Card -->
+                                {% if booking.cleaner.phoneNumber %}
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 shadow-sm h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-phone text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Phone</strong></h6>
+                                            <p class="card-text text-muted" id="cleanerPhoneNumber">{{ booking.cleaner.phoneNumber }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3 py-md-4">
+                            <i class="fas fa-user-clock fa-3x mb-3 text-info"></i>
+                            <p class="mb-0">No cleaner has been assigned to this booking yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Jobs Status and Timeline-->
+         <div class="row g-3">
+            <div class="col-6 mb-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center mb-3 mb-md-4">
+                            <div class="icon-circle bg-primary text-white me-3">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <h5 class="card-title mb-0">Open Jobs Status</h5>
+                        </div>
+                        {% with open_jobs=booking.openjob_set.all %}
+                        {% if open_jobs %}
+                        <ul class="list-group list-group-flush">
+                            {% for job in open_jobs %}
+                            <li class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-user-tag text-muted me-2"></i>
+                                        <span>{{ job.cleaner.cleaner.name }}</span>
+                                    </div>
+                                    <span class="badge 
+                                        {% if job.status == 'accepted' %}bg-success
+                                        {% elif job.status == 'rejected' %}bg-danger
+                                        {% elif job.status == 'pending' %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %} rounded-pill px-3 py-2">
+                                        {{ job.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="mt-2 text-muted small">
+                                    <p class="mb-0">Sent: {{ job.createdAt|date:"F d, Y, h:i A" }}</p>
+                                    {% if job.status != 'pending' %}
+                                    <p class="mb-0">{{ job.get_status_display }} on: {{ job.updatedAt|date:"F d, Y, h:i A" }}</p>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p class="mb-0">No job offers have been sent out for this booking yet.</p>
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-6 mb-md-4">
+                <!-- Timeline -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-center mb-3 mb-md-4">
+                    <div class="icon-circle bg-secondary text-white me-3">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h5 class="card-title mb-0">Booking Timeline</h5>
+                </div>
+                <ul class="timeline">
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.createdAt %}bg-primary{% else %}bg-secondary{% endif %}"><i class="fas fa-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Booking Created</h6>
+                            <p class="mb-0 text-muted">{% if booking.createdAt %}{{ booking.createdAt|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.dayBeforeReminderSentAt %}bg-info{% else %}bg-secondary{% endif %}"><i class="fas fa-bell"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Day-Before Reminder</h6>
+                            <p class="mb-0 text-muted">{% if booking.dayBeforeReminderSentAt %}{{ booking.dayBeforeReminderSentAt|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.hourBeforeReminderSentAt %}bg-info{% else %}bg-secondary{% endif %}"><i class="fas fa-bell"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Hour-Before Reminder</h6>
+                            <p class="mb-0 text-muted">{% if booking.hourBeforeReminderSentAt %}{{ booking.hourBeforeReminderSentAt|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.arrival_confirmed_at %}bg-success{% else %}bg-secondary{% endif %}"><i class="fas fa-check-circle"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Arrival Confirmed</h6>
+                            <p class="mb-0 text-muted">{% if booking.arrival_confirmed_at %}{{ booking.arrival_confirmed_at|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.arrived_at %}bg-success{% else %}bg-secondary{% endif %}"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Cleaner Arrived</h6>
+                            <p class="mb-0 text-muted">{% if booking.arrived_at %}{{ booking.arrived_at|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    <li class="timeline-item">
+                        <div class="timeline-icon {% if booking.completed_at %}bg-success{% else %}bg-secondary{% endif %}"><i class="fas fa-check-double"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Booking Completed</h6>
+                            <p class="mb-0 text-muted">{% if booking.completed_at %}{{ booking.completed_at|date:"F d, Y, h:i A" }}{% else %}Missing{% endif %}</p>
+                        </div>
+                    </li>
+                    {% if booking.cancelled_at %}
+                    <li class="timeline-item">
+                        <div class="timeline-icon bg-danger"><i class="fas fa-times-circle"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Booking Cancelled</h6>
+                            <p class="mb-0 text-muted">{{ booking.cancelled_at|date:"F d, Y, h:i A" }}</p>
+                        </div>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
             </div>
         </div>
         
@@ -574,6 +697,43 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block styles %}
+<style>
+    .timeline {
+        list-style: none;
+        padding: 0;
+        position: relative;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 20px;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 1;
+        flex-shrink: 0;
+    }
+    .timeline-content {
+        margin-left: 20px;
+        padding-top: 5px;
+    }
+</style>
 <style>
     .icon-circle {
         width: 40px;

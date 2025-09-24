@@ -336,7 +336,9 @@
                                                        data-booking-price="{{ booking.totalPrice }}"
                                                        data-booking-payout="{{ booking.get_cleaner_payout }}"
                                                        data-arrival-confirmed="{% if booking.arrival_confirmed_at %}true{% else %}false{% endif %}"
-                                                       data-completed="{% if booking.isCompleted %}true{% else %}false{% endif %}">
+                                                       data-completed="{% if booking.isCompleted %}true{% else %}false{% endif %}"
+                                                       data-on-the-way="{% if booking.arrived_at %}true{% else %}false{% endif %}"
+                                                       >
                                                     <i class="fas fa-eye"></i> View
                                                 </button>
                                             </td>
@@ -730,6 +732,7 @@
                 <div class="d-flex gap-2 justify-content-between align-items-center">
                   
                     <div id="booking-action-buttons">
+                        <a href="" id="on-the-way-btn" class="btn btn-primary" style="display: none;">On the Way</a>
                         <a href="" id="confirm-arrival-btn" class="btn btn-primary" style="display: none;">Confirm Arrival</a>
                         <a href="" id="mark-completed-btn" class="btn btn-success" style="display: none;">Mark Completed</a>
                     </div>
@@ -1374,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (viewBookingModal) {
         viewBookingModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
-            console.log('Modal opened, button:', button);
+
             
             // Extract booking data from button attributes
             const bookingId = button.getAttribute('data-booking-id');
@@ -1396,24 +1399,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const bookingCustomAddons = button.getAttribute('data-booking-custom-addons');
             const arrivalConfirmed = button.getAttribute('data-arrival-confirmed') === 'true';
             const isCompleted = button.getAttribute('data-completed') === 'true';
+            const onTheWay = button.getAttribute('data-on-the-way') === 'true';
             
-            console.log('Booking data:', {
-                id: bookingId,
-                date: bookingDate,
-                time: bookingTime,
-                client: bookingClient,
-                service: bookingService,
-                status: bookingStatus,
-                arrivalConfirmed: arrivalConfirmed,
-                isCompleted: isCompleted,
-                price: bookingPrice,
-                payout: bookingPayout,
-                addons: bookingAddons,
-                customAddons: bookingCustomAddons,
-            });
-            
+
             // Set up action buttons
             const confirmArrivalBtn = document.getElementById('confirm-arrival-btn');
+            const onTheWayBtn = document.getElementById('on-the-way-btn');
             const markCompletedBtn = document.getElementById('mark-completed-btn');
             
             if (confirmArrivalBtn && markCompletedBtn && bookingId) {
@@ -1422,7 +1413,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 markCompletedBtn.style.display = 'none';
                 
                 // Set up URLs with the correct booking ID
-                if (!arrivalConfirmed && !isCompleted) {
+                if (!arrivalConfirmed && !isCompleted && !onTheWay) {
+                    // Direct URL format that matches Django URL patterns
+                    onTheWayBtn.href = `/${bookingId}/on_the_way/`;
+                    onTheWayBtn.style.display = 'inline-block';
+                } else if (!arrivalConfirmed && !isCompleted && onTheWay) {
                     // Direct URL format that matches Django URL patterns
                     confirmArrivalBtn.href = `/${bookingId}/confirm-arrival/`;
                     confirmArrivalBtn.style.display = 'inline-block';

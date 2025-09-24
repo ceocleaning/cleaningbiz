@@ -251,7 +251,7 @@ def customer_detail(request, identifier):
 def create_booking(request):
     from datetime import datetime, timedelta
     import pytz
-    from bookings.timezone_utils import convert_local_to_utc
+    from accounts.timezone_utils import convert_to_utc
 
     redirect_url = request.GET.get('next')
 
@@ -277,9 +277,8 @@ def create_booking(request):
 
 
             # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_local_to_utc(
-                cleaningDate,
-                start_time,
+            start_time_utc = convert_to_utc(
+                cleaningDate + ' ' + start_time,
                 business_timezone
             ).time()
 

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook, chatgpt_analysis_webhook
-from .api_views import check_availability_retell, test_check_availability, check_availability_for_booking, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
+from .api_views import check_availability_retell, check_availability_for_booking, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
 from . import twilio_views
 
 
@@ -27,7 +27,6 @@ urlpatterns = [
 
     # API endpoints
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
-    path('api/availability/<str:secretKey>/test/', test_check_availability, name='test_check_availability'),
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
     path('api/reschedule-booking/', reschedule_booking, name='reschedule_booking'),
     path('api/cancel-booking/', cancel_booking, name='cancel_booking'),
@@ -37,10 +36,7 @@ urlpatterns = [
     path('api/send-commercial-form-link/', sendCommercialFormLink, name='send_commercial_form_link'),
     path('bulk-delete-leads/', views.bulk_delete_leads, name='bulk_delete_leads'),
    
-    
-    # Test pages
-    path('test/', views.test_features, name='test_features'),
-    path('test/availability/', views.test_availability_api, name='test_availability_api'),
+
 
    
     # Cleaners URLs
@@ -77,6 +73,7 @@ urlpatterns = [
     path('sitemap/', views.sitemap, name='sitemap'),
     
     # Booking status updates
+    path('<str:booking_id>/on_the_way/', views.mark_on_the_way, name='mark_on_the_way'),
     path('<str:booking_id>/confirm-arrival/', views.confirm_arrival, name='confirm_arrival'),
     path('<str:booking_id>/confirm-completed/', views.confirm_completed, name='confirm_completed'),
 
