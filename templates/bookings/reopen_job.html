@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load booking_filters %}
+{% load timezone_tags %}
+
+{% block title %}Reopen Job for Cleaners{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'bookings:all_bookings' %}"><i class="fas fa-calendar-alt me-1"></i>Bookings</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'bookings:booking_detail' booking.bookingId %}"><i class="fas fa-clipboard-list me-1"></i>Booking #{{ booking.bookingId }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><i class="fas fa-redo-alt me-1"></i>Reopen Jobs</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <!-- Booking Summary Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-white text-primary p-2 me-3">
+                            <i class="fas fa-calendar-check fa-lg"></i>
+                        </div>
+                        <h5 class="mb-0">Booking Summary</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 h-100">
+                                <div class="card-body">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-info-circle me-2"></i>Booking Details</h6>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-box bg-primary text-white me-3">
+                                            <i class="fas fa-hashtag"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Booking ID</p>
+                                            <p class="fw-bold mb-0">{{ booking.bookingId }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-box bg-success text-white me-3">
+                                            <i class="fas fa-calendar"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Cleaning Date</p>
+                                            <p class="fw-bold mb-0">{{ booking.cleaningDate|date:"F d, Y" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-box bg-info text-white me-3">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Time Slot</p>
+                                            <p class="fw-bold mb-0">{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }} - {{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 h-100">
+                                <div class="card-body">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-user me-2"></i>Customer Information</h6>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-box bg-primary text-white me-3">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Customer Name</p>
+                                            <p class="fw-bold mb-0">{{ booking.customer.get_full_name }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-box bg-success text-white me-3">
+                                            <i class="fas fa-phone"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Phone Number</p>
+                                            <p class="fw-bold mb-0">{{ booking.customer.phone_number }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-box bg-info text-white me-3">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-muted mb-0">Address</p>
+                                            <p class="fw-bold mb-0">{{ booking.customer.get_address }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cleaners Selection Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-white text-primary p-2 me-3">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
+                        <h5 class="mb-0">Select Cleaners to Reopen Job</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0 d-flex align-items-center mb-4">
+                        <i class="fas fa-info-circle fa-lg me-3"></i>
+                        <div>
+                            <strong>How it works:</strong> Select cleaners to reopen job offers for this booking. You can also force assign a booking to a specific cleaner.
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'bookings:reopen_job_for_cleaner' booking.bookingId %}">
+                        {% csrf_token %}
+                        <div class="table-responsive rounded">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="select-all-cleaners">
+                                                <label class="form-check-label" for="select-all-cleaners">Select All</label>
+                                            </div>
+                                        </th>
+                                        <th>Cleaner</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cleaner in cleaners %}
+                                    <tr class="border-top">
+                                        <td class="ps-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input cleaner-checkbox" type="checkbox" name="cleaner_ids" value="{{ cleaner.id }}" id="cleaner-{{ cleaner.id }}">
+                                                <label class="form-check-label" for="cleaner-{{ cleaner.id }}"></label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle bg-primary text-white me-3">
+                                                    {{ cleaner.name|slice:":1" }}
+                                                </div>
+                                                <div>
+                                                    <p class="fw-bold mb-0">{{ cleaner.name }}</p>
+                                                    <small class="text-muted">{{ cleaner.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if cleaner.id in cleaner_statuses %}
+                                                {% if cleaner_statuses|get_item:cleaner.id == 'pending' %}
+                                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                                                        <i class="fas fa-clock me-1"></i> Pending
+                                                    </span>
+                                                {% elif cleaner_statuses|get_item:cleaner.id == 'accepted' %}
+                                                    <span class="badge bg-success rounded-pill px-3 py-2">
+                                                        <i class="fas fa-check me-1"></i> Accepted
+                                                    </span>
+                                                {% elif cleaner_statuses|get_item:cleaner.id == 'rejected' %}
+                                                    <span class="badge bg-danger rounded-pill px-3 py-2">
+                                                        <i class="fas fa-times me-1"></i> Rejected
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary rounded-pill px-3 py-2">
+                                                        {{ cleaner_statuses|get_item:cleaner.id|title }}
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                                    <i class="fas fa-minus-circle me-1"></i> No Job Sent
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'bookings:force_assign_booking' booking.bookingId cleaner.id %}" 
+                                               class="btn btn-primary btn-sm rounded-pill">
+                                                <i class="fas fa-user-check me-1"></i> Force Assign
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5">
+                                            <div class="empty-state">
+                                                <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                                                <h6 class="mb-1">No Active Cleaners Found</h6>
+                                                <p class="text-muted mb-0">There are no active cleaners available for this booking.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'bookings:booking_detail' booking.bookingId %}" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Booking
+                            </a>
+                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                <i class="fas fa-paper-plane me-2"></i>Reopen Selected Jobs
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .icon-box {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .empty-state {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: #6c757d;
+    }
+    
+    .breadcrumb-item a {
+        color: #4e73df;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item a:hover {
+        color: #224abe;
+        text-decoration: underline;
+    }
+    
+    .breadcrumb-item.active {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all checkbox functionality
+        const selectAllCheckbox = document.getElementById('select-all-cleaners');
+        const cleanerCheckboxes = document.querySelectorAll('.cleaner-checkbox');
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                cleanerCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+            });
+        }
+        
+        // Update "select all" checkbox when individual checkboxes change
+        cleanerCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = Array.from(cleanerCheckboxes).every(cb => cb.checked);
+                const anyChecked = Array.from(cleanerCheckboxes).some(cb => cb.checked);
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

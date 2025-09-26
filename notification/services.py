@@ -86,28 +86,29 @@ class NotificationService:
         
     @classmethod
     def _send_sms_notification(cls, notification):
-        # The sender is already a Business object, so we access apicredentials directly
-        api_cred = notification.sender.apicredential
-                    
-        if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-            # Initialize Twilio client
-            client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
+        try:
+            # The sender is already a Business object, so we access apicredentials directly
+            api_cred = notification.sender.apicredential
+                        
+            if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
+                # Initialize Twilio client
+                twilioAccountSid = api_cred.twilioAccountSid.encode('utf-8')
+                twilioAuthToken = api_cred.twilioAuthToken.encode('utf-8')
+                client = Client(twilioAccountSid, twilioAuthToken)
+                
+                # Send SMS
+                message = client.messages.create(
+                    body=notification.content,
+                    from_=api_cred.twilioSmsNumber,
+                    to=notification.sms_to,
+                )
             
+                return {'success': True, 'message': 'SMS notification would be sent (not implemented)'}
+    
+        except Exception as e:
+            print(e)
+            return {'success': False, 'error': str(e)}
             
-            
-            # Send SMS
-            message = client.messages.create(
-                body=notification.content,
-                from_=api_cred.twilioSmsNumber,
-                to=notification.sms_to
-            )
-            
-            print(f"[INFO] Payment reminder SMS sent to {notification.sms_to}, SID: {message.sid}")
-        else:
-            print("[INFO] No Twilio credentials found for business, skipping SMS reminder")
-            return {'success': False, 'error': 'No Twilio credentials found for business'}
-        
-        return {'success': True, 'message': 'SMS notification would be sent (not implemented)'}
         
         
 

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .webhooks import handle_retell_webhook, thumbtack_webhook, chatgpt_analysis_webhook
-from .api_views import check_availability_retell, check_availability_for_booking, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
+from .api_views import check_availability_retell, check_availability_for_booking, fetch_available_time_slots, create_booking, sendCommercialFormLink, reschedule_booking, cancel_booking
 from . import twilio_views
 
 
@@ -28,6 +28,7 @@ urlpatterns = [
     # API endpoints
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),
     path('api/check-availability/', check_availability_for_booking, name='check_availability_for_booking'),
+    path('api/fetch-available-slots/', fetch_available_time_slots, name='fetch_available_time_slots'),
     path('api/reschedule-booking/', reschedule_booking, name='reschedule_booking'),
     path('api/cancel-booking/', cancel_booking, name='cancel_booking'),
 
@@ -36,7 +37,7 @@ urlpatterns = [
     path('api/send-commercial-form-link/', sendCommercialFormLink, name='send_commercial_form_link'),
     path('bulk-delete-leads/', views.bulk_delete_leads, name='bulk_delete_leads'),
    
-
+    path('cleaner/booking/<str:bookingId>/', views.booking_detail, name='booking_detail'),
 
    
     # Cleaners URLs
@@ -64,8 +65,6 @@ urlpatterns = [
     # reCAPTCHA verification endpoint
     path('verify-recaptcha/', views.verify_recaptcha, name='verify_recaptcha'),
 
-    # Demo booking form
-    path('book-demo/', views.book_demo, name='book_demo'),
 
     # Privacy Policy and Terms of Service
     path('privacy-policy/', views.PrivacyPolicyPage, name='privacy_policy'),

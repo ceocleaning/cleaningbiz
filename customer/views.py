@@ -8,6 +8,8 @@ from django.db.models import Avg
 from decimal import Decimal
 import json
 
+from pydantic import functional_serializers
+
 from accounts.decorators import customer_required
 from accounts.models import Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
@@ -15,7 +17,8 @@ from customer.models import Customer, Review
 from automation.utils import format_phone_number
 from invoice.models import Invoice
 from datetime import datetime, timedelta
-from accounts.timezone_utils import convert_to_utc
+from accounts.timezone_utils import convert_to_utc, parse_business_datetime
+from customer.utils import create_customer
 import pytz
 from django.utils import timezone
 
@@ -273,10 +276,8 @@ def add_booking(request, business_id):
             
             # Format phone number
             phone_number = request.POST.get('phoneNumber')
-            print(phone_number)
             if phone_number:
                 phone_number = format_phone_number(phone_number)
-                print(phone_number)
             
             if not phone_number:
                 messages.error(request, 'Please enter a valid phone number.')
@@ -285,15 +286,9 @@ def add_booking(request, business_id):
             # Get cleaning date and time
             cleaning_date = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
+
             
-            # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_to_utc(
-                cleaning_date + ' ' + start_time,
-                business.timezone
-            ).time()
-            
-            # Set end time to 1 hour after start time
-            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
+            datetime_res = parse_business_datetime(f"{cleaning_date} {start_time}", business, need_conversion=False)
             
             # Check if we need to use existing customer or create new one
             use_my_info = request.POST.get('useMyInfo') == 'on'
@@ -302,23 +297,7 @@ def add_booking(request, business_id):
                 # Use the logged-in customer
                 customer = request.user.customer
             else:
-                # Try to find customer by email or create new one
-                customer_email = request.POST.get('email')
-                try:
-                    customer = Customer.objects.get(email=customer_email)
-                except Customer.DoesNotExist:
-                    # Create new customer
-                    customer = Customer.objects.create(
-                        user=request.user if request.user.is_authenticated else None,
-                        first_name=request.POST.get('firstName'),
-                        last_name=request.POST.get('lastName'),
-                        email=customer_email,
-                        phone_number=phone_number,
-                        address=request.POST.get('address1'),
-                        city=request.POST.get('city'),
-                        state_or_province=request.POST.get('stateOrProvince'),
-                        zip_code=request.POST.get('zipCode')
-                    )
+                customer = create_customer(request.POST)
             
             # Create the booking
             booking = Booking.objects.create(
@@ -328,9 +307,9 @@ def add_booking(request, business_id):
                 bathrooms=int(request.POST.get('bathrooms', 0)),
                 squareFeet=int(request.POST.get('squareFeet', 0)),
                 serviceType=request.POST.get('serviceType'),
-                cleaningDate=cleaning_date,
-                startTime=start_time_utc,
-                endTime=end_time_utc,
+                cleaningDate=datetime_res['data']['utc_date'],
+                startTime=datetime_res['data']['utc_start_time'],
+                endTime=datetime_res['data']['utc_end_time'],
                 recurring=request.POST.get('recurring'),
                 paymentMethod='creditcard',  # Default payment method
                 otherRequests=request.POST.get('otherRequests', ''),
@@ -459,19 +438,7 @@ def edit_booking(request, bookingId):
             if not phone_number:
                 messages.error(request, 'Please enter a valid phone number.')
                 return redirect('customer:edit_booking', bookingId=bookingId)
-            
-            # Get cleaning date and time
-            cleaning_date = request.POST.get('cleaningDate')
-            start_time = request.POST.get('startTime')
-            
-            # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_to_utc(
-                cleaning_date + ' ' + start_time,
-                business.timezone
-            ).time()
-            
-            # Set end time to 1 hour after start time
-            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
+         
             
             # Update customer information if needed
             customer = booking.customer
@@ -491,9 +458,7 @@ def edit_booking(request, bookingId):
             booking.bathrooms = Decimal(request.POST.get('bathrooms', 0))
             booking.squareFeet = Decimal(request.POST.get('squareFeet', 0))
             booking.serviceType = request.POST.get('serviceType')
-            booking.cleaningDate = cleaning_date
-            booking.startTime = start_time_utc
-            booking.endTime = end_time_utc
+         
             booking.recurring = request.POST.get('recurring')
             booking.otherRequests = request.POST.get('otherRequests', '')
             booking.tax = tax

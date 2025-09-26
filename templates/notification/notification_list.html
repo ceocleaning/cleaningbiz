@@ -17,9 +17,9 @@
                     {% if page_obj %}
                         <div class="list-group">
                             {% for notification in page_obj %}
-                                <a href="{% url 'notification:notification_detail' notification.id %}" class="list-group-item list-group-item-action {% if notification.status != 'read' %}list-group-item-light{% endif %}">
+                                <a href="{% url 'notification:notification_detail' notification.id %}" class="list-group-item list-group-item-action {% if notification.read_at %}list-group-item-light{% endif %}">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h5 class="mb-1">{{ notification.subject }}</h5>
+                                        <h5 class="mb-1">{{ notification.subject }} - ({{ notification.read_at }})</h5>
                                         <small>{{ notification.created_at|date:"M d, Y" }}</small>
                                     </div>
                                     <div class="d-flex w-100 justify-content-between">

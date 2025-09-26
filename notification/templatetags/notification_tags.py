@@ -34,13 +34,11 @@ def unread_notification_count(user):
     """Get the count of unread notifications for a user"""
     return get_unread_notification_count(user)
 
-@register.inclusion_tag('notification/tags/notification_badge.html')
+@register.inclusion_tag('base.html')
 def notification_badge(user):
     """Render a notification badge with unread count"""
     count = get_unread_notification_count(user)
-    user_type = get_user_type(user)
     return {
         'count': count,
         'has_unread': count > 0,
-        'user_type': user_type
     }

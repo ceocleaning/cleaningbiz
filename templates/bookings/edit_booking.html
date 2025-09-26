@@ -1,16 +1,30 @@
 {% extends 'base.html' %}
+{% load timezone_tags %}
 
-{% block title %}Create Booking{% endblock %}
+{% block title %}Edit Booking{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'bookings:all_bookings' %}">Bookings</a></li>
+                <li class="breadcrumb-item active">Edit Booking</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column - Booking Form -->
+    <div class="col-lg-8">
         <div class="card">
-            <div class="card-header col-md-12">
-                <h2 class="px-5 py-3"><i class="fas fa-edit me-2"></i>Update Booking</h2>
+            <div class="card-header">
+                <h2 class="px-3 py-3"><i class="fas fa-edit me-2"></i>Update Booking</h2>
                 
                 <!-- Progress Bar -->
-                <div class="px-5">
+                <div class="px-3">
                     <div class="progress">
                         <div id="form-progress" class="progress-bar" role="progressbar" style="width: 20%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">20%</div>
                     </div>
@@ -18,48 +32,59 @@
                         <span class="step-indicator active" id="step1-indicator">Customer</span>
                         <span class="step-indicator" id="step2-indicator">Address</span>
                         <span class="step-indicator" id="step3-indicator">Service</span>
-                        <span class="step-indicator" id="step4-indicator">Property</span>
-                        <span class="step-indicator" id="step5-indicator">Add-ons</span>
-                        <span class="step-indicator" id="step6-indicator">Review</span>
+                        <span class="step-indicator" id="step4-indicator">Add-ons</span>
                     </div>
                 </div>
             </div>
             
-            <div class="card-body px-5 py-5">
-                <form method="post" action="{% url 'bookings:edit_booking' booking.bookingId %}" id="booking-form">
+            <div class="card-body px-4 py-4">
+                <form id="booking-form" method="post" action="{% url 'bookings:edit_booking' booking.bookingId %}" class="needs-validation" novalidate>
                     {% csrf_token %}
-
+                    <input type="hidden" id="subtotal" name="subtotal" value="{{ booking.subtotal|default:'0' }}" />
+                    <input type="hidden" id="tax" name="tax" value="{{ booking.tax|default:'0' }}" />
+                    <input type="hidden" id="totalAmount" name="totalAmount" value="{{ booking.totalAmount|default:'0' }}" />
+                   
                     <!-- Step 1: Customer Information -->
                     <div class="form-step" id="step1">
                         <h5 class="mb-4"><i class="fas fa-user me-2"></i>Customer Information</h5>
+                        
+                        <!-- Customer Information Fields -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="firstName" class="form-label">First Name</label>
-                                <input type="text" value="{{ booking.customer.first_name }}" class="form-control" id="firstName" name="firstName" required>
+                                <input type="text" class="form-control" id="firstName" name="firstName" value="{{ booking.customer.first_name }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="lastName" class="form-label">Last Name</label>
-                                <input type="text" value="{{ booking.customer.last_name }}" class="form-control" id="lastName" name="lastName" required>
+                                <input type="text" class="form-control" id="lastName" name="lastName" value="{{ booking.customer.last_name }}" required>
                             </div>
                         </div>
-
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" value="{{ booking.customer.email }}" class="form-control" id="email" name="email" required>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="john.doe@example.com" value="{{ booking.customer.email }}" required>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="phoneNumber" class="form-label">Phone Number</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">+1</span>
-                                    <input type="tel" value="{{ booking.customer.phone_number }}" class="form-control" id="phoneNumber" name="phoneNumber" required>
+                                <div class="d-flex">
+                                    <div class="input-group me-2" style="width: 150px;">
+                                        <span class="input-group-text">+</span>
+                                        <select class="form-select" id="countryCode" name="countryCode">
+                                            <option value="1" selected>1</option>
+                                        </select>
+                                    </div>
+                                    <input type="tel" 
+                                        class="form-control" 
+                                        id="phoneNumber" 
+                                        name="phoneNumber" 
+                                        placeholder="555 123 4567"
+                                        pattern="^\d{3}[\s-]?\d{3}[\s-]?\d{4}$"
+                                        title="Format: Area code and phone number (e.g., 555 123 4567)"
+                                        value="{{ booking.customer.phone_number }}"
+                                        required>
                                 </div>
-                                <small class="form-text text-muted">Enter your 10-digit phone number</small>
                             </div>
-                            <!-- <div class="col-md-4 mb-3">
-                                <label for="companyName" class="form-label">Company Name (Optional)</label>
-                                <input type="text" value="{{ booking.customer.company_name|default:'' }}" class="form-control" id="companyName" name="companyName">
-                            </div> -->
+                            <small class="form-text text-muted">Select country code and enter your phone number</small>
                         </div>
                         
                         <div class="d-flex justify-content-end mt-4">
@@ -71,28 +96,24 @@
                     <div class="form-step" id="step2" style="display: none;">
                         <h5 class="mb-4"><i class="fas fa-map-marker-alt me-2"></i>Address Information</h5>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="address1" class="form-label">Address Line 1</label>
-                                <input type="text" value="{{ booking.address.address }}" class="form-control" id="address1" name="address1" required>
+                            <div class="col-md-12 mb-3">
+                                <label for="address1" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="address1" name="address1" placeholder="123 Main Street" value="{{ booking.customer.address }}" required>
                             </div>
-                            <!-- <div class="col-md-6 mb-3">
-                                <label for="address2" class="form-label">Address Line 2 (Optional)</label>
-                                <input type="text" value="{{ booking.address.address2|default:'' }}" class="form-control" id="address2" name="address2">
-                            </div> -->
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="city" class="form-label">City</label>
-                                <input type="text" value="{{ booking.customer.city }}" class="form-control" id="city" name="city" required>
+                                <input type="text" class="form-control" id="city" name="city" placeholder="New York" value="{{ booking.customer.city }}" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="stateOrProvince" class="form-label">State/Province</label>
-                                <input type="text" value="{{ booking.customer.state_or_province }}" class="form-control" id="stateOrProvince" name="stateOrProvince" required>
+                                <input type="text" class="form-control" id="stateOrProvince" name="stateOrProvince" placeholder="NY" value="{{ booking.customer.state_or_province }}" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="zipCode" class="form-label">ZIP Code</label>
-                                <input type="text" value="{{ booking.customer.zip_code }}" class="form-control" id="zipCode" name="zipCode">
+                                <input type="text" class="form-control" id="zipCode" name="zipCode" placeholder="10001" value="{{ booking.customer.zip_code }}" required>
                             </div>
                         </div>
                         
@@ -107,174 +128,88 @@
                         <h5 class="mb-4"><i class="fas fa-broom me-2"></i>Service Details</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="cleaningDate" class="form-label">Cleaning Date</label>
-                                <input type="date" class="form-control" id="cleaningDate" name="cleaningDate" required value="{{ booking.cleaningDate|date:'Y-m-d' }}" min="{{ today|date:'Y-m-d' }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="startTime" class="form-label">Start Time</label>
-                                <select class="form-control form-select" id="startTime" name="startTime" required>
-                                    <option {% if booking.startTime|time:'h:i' == '06:00' %}selected{% endif %} value="06:00">6:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '07:00' %}selected{% endif %} value="07:00">7:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '08:00' %}selected{% endif %} value="08:00">8:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '09:00' %}selected{% endif %} value="09:00">9:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '10:00' %}selected{% endif %} value="10:00">10:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '11:00' %}selected{% endif %} value="11:00">11:00 AM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '12:00' %}selected{% endif %} value="12:00">12:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '13:00' %}selected{% endif %} value="13:00">1:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '14:00' %}selected{% endif %} value="14:00">2:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '15:00' %}selected{% endif %} value="15:00">3:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '16:00' %}selected{% endif %} value="16:00">4:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '17:00' %}selected{% endif %} value="17:00">5:00 PM</option>
-                                    <option {% if booking.startTime|time:'h:i' == '18:00' %}selected{% endif %} value="18:00">6:00 PM</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
                                 <label for="serviceType" class="form-label">Service Type</label>
                                 <select class="form-control form-select" name="serviceType" id="serviceType" required>
+                                    <option value="" disabled>Select a service type</option>
                                     <option {% if booking.serviceType == 'standard' %}selected{% endif %} value="standard">Standard Cleaning</option>
                                     <option {% if booking.serviceType == 'deep' %}selected{% endif %} value="deep">Deep Cleaning</option>
                                     <option {% if booking.serviceType == 'moveinmoveout' %}selected{% endif %} value="moveinmoveout">Move In/Move Out</option>
                                     <option {% if booking.serviceType == 'airbnb' %}selected{% endif %} value="airbnb">Airbnb Cleaning</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="recurring" class="form-label">Recurring Service</label>
                                 <select class="form-control form-select" name="recurring" id="recurring">
+                                    <option value="" disabled>Select frequency</option>
                                     <option {% if booking.recurring == 'one-time' %}selected{% endif %} value="one-time">One Time</option>
                                     <option {% if booking.recurring == 'weekly' %}selected{% endif %} value="weekly">Weekly</option>
                                     <option {% if booking.recurring == 'biweekly' %}selected{% endif %} value="biweekly">Bi-weekly</option>
                                     <option {% if booking.recurring == 'monthly' %}selected{% endif %} value="monthly">Monthly</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="paymentMethod" class="form-label">Payment Method</label>
-                                <select class="form-control form-select" name="paymentMethod" id="paymentMethod">
-                                    <option {% if booking.paymentMethod == 'creditcard' %}selected{% endif %} value="creditcard">Credit Card</option>
-                                    <option {% if booking.paymentMethod == 'paypal' %}selected{% endif %} value="paypal">PayPal</option>
-                                    <option {% if booking.paymentMethod == 'stripe' %}selected{% endif %} value="stripe">Stripe</option>
-                                    <option {% if booking.paymentMethod == 'other' %}selected{% endif %} value="other">Other</option>
-                                </select>
-                            </div>
                         </div>
-                        
-                        <!-- Availability Check Alert -->
-                        <div id="availability-alert" class="alert alert-danger mt-2" style="display: none;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <span id="availability-message">This timeslot is not available.</span>
-                        </div>
-                        
-                        <!-- Available Cleaners Selection -->
-                        <div id="available-cleaners-container" class="mt-3" style="display: none;">
-                            <h6 class="text-primary"><i class="fas fa-user-check me-2"></i>Available Cleaners:</h6>
-                            <div class="form-group">
-                                <select class="form-control form-select" id="selectedCleaner" name="selectedCleaner">
-                                    <option value="">Select a cleaner</option>
-                                    <!-- Available cleaners will be added here -->
-                                </select>
-                                <small class="form-text text-muted">Select a cleaner for this booking</small>
-                            </div>
-                        </div>
-                        
-                        <!-- Alternative Slots -->
-                        <div id="alternative-slots" class="mt-3" style="display: none;">
-                            <h6 class="text-primary"><i class="fas fa-calendar-alt me-2"></i>Alternative Available Slots:</h6>
-                            <div class="d-flex flex-wrap gap-2 mt-2" id="alt-slots-list">
-                                <!-- Alternative slots will be added here -->
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-secondary prev-step"><i class="fas fa-arrow-left me-2"></i> Previous</button>
-                            <button type="button" class="btn btn-primary next-step">Next <i class="fas fa-arrow-right ms-2"></i></button>
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Property Details -->
-                    <div class="form-step" id="step4" style="display: none;">
-                        <h5 class="mb-4"><i class="fas fa-home me-2"></i>Property Details</h5>
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="bedrooms" class="form-label">Number of Bedrooms</label>
-                                <input type="number" value="{{ booking.bedrooms }}" class="form-control" id="bedrooms" name="bedrooms" min="0" required>
+                                <input type="number" class="form-control property-input" id="bedrooms" name="bedrooms" min="0" placeholder="2" value="{{ booking.bedrooms }}" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="bathrooms" class="form-label">Number of Bathrooms</label>
-                                <input type="number" value="{{ booking.bathrooms }}" class="form-control" id="bathrooms" name="bathrooms" min="0" required>
+                                <input type="number" class="form-control property-input" id="bathrooms" name="bathrooms" min="0" placeholder="1" value="{{ booking.bathrooms }}" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="squareFeet" class="form-label">Square Footage</label>
-                                <input type="number" value="{{ booking.squareFeet }}" class="form-control" id="squareFeet" name="squareFeet" min="0" required>
+                                <input type="number" class="form-control property-input" id="squareFeet" name="squareFeet" min="100" placeholder="1000" value="{{ booking.squareFeet }}" required>
                             </div>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-secondary prev-step"><i class="fas fa-arrow-left me-2"></i> Previous</button>
                             <button type="button" class="btn btn-primary next-step">Next <i class="fas fa-arrow-right ms-2"></i></button>
                         </div>
                     </div>
 
+   
                     <!-- Step 5: Add-on Services -->
-                    <div class="form-step" id="step5" style="display: none;">
+                    <div class="form-step" id="step4" style="display: none;">
                         <h5 class="mb-4"><i class="fas fa-plus me-2"></i>Add-on Services</h5>
                         
                         <!-- Standard Add-ons -->
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="addonDishes" class="form-label">Dishes</label>
-                                <input type="number" value="{{ booking.addonDishes }}" class="form-control addon-input" id="addonDishes" name="addonDishes" min="0">
+                                <input type="number" class="form-control addon-input" id="addonDishes" name="addonDishes" min="0" value="{{ booking.addonDishes|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonLaundryLoads" class="form-label">Laundry Loads</label>
-                                <input type="number" value="{{ booking.addonLaundryLoads }}" class="form-control addon-input" id="addonLaundryLoads" name="addonLaundryLoads" min="0">
+                                <input type="number" class="form-control addon-input" id="addonLaundryLoads" name="addonLaundryLoads" min="0" value="{{ booking.addonLaundryLoads|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonWindowCleaning" class="form-label">Window Cleaning</label>
-                                <input type="number" value="{{ booking.addonWindowCleaning }}" class="form-control addon-input" id="addonWindowCleaning" name="addonWindowCleaning" min="0">
+                                <input type="number" class="form-control addon-input" id="addonWindowCleaning" name="addonWindowCleaning" min="0" value="{{ booking.addonWindowCleaning|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonPetsCleaning" class="form-label">Pet Cleaning</label>
-                                <input type="number" value="{{ booking.addonPetsCleaning }}" class="form-control addon-input" id="addonPetsCleaning" name="addonPetsCleaning" min="0">
+                                <input type="number" class="form-control addon-input" id="addonPetsCleaning" name="addonPetsCleaning" min="0" value="{{ booking.addonPetsCleaning|default:0 }}">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="addonFridgeCleaning" class="form-label">Fridge Cleaning</label>
-                                <input type="number" value="{{ booking.addonFridgeCleaning }}" class="form-control addon-input" id="addonFridgeCleaning" name="addonFridgeCleaning" min="0">
+                                <input type="number" class="form-control addon-input" id="addonFridgeCleaning" name="addonFridgeCleaning" min="0" value="{{ booking.addonFridgeCleaning|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonOvenCleaning" class="form-label">Oven Cleaning</label>
-                                <input type="number" value="{{ booking.addonOvenCleaning }}" class="form-control addon-input" id="addonOvenCleaning" name="addonOvenCleaning" min="0">
+                                <input type="number" class="form-control addon-input" id="addonOvenCleaning" name="addonOvenCleaning" min="0" value="{{ booking.addonOvenCleaning|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonBaseboard" class="form-label">Baseboard</label>
-                                <input type="number" value="{{ booking.addonBaseboard }}" class="form-control addon-input" id="addonBaseboard" name="addonBaseboard" min="0">
+                                <input type="number" class="form-control addon-input" id="addonBaseboard" name="addonBaseboard" min="0" value="{{ booking.addonBaseboard|default:0 }}">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="addonBlinds" class="form-label">Blinds</label>
-                                <input type="number" value="{{ booking.addonBlinds }}" class="form-control addon-input" id="addonBlinds" name="addonBlinds" min="0">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="addonGreenCleaning" class="form-label">Green Cleaning</label>
-                                <input type="number" value="{{ booking.addonGreenCleaning }}" class="form-control addon-input" id="addonGreenCleaning" name="addonGreenCleaning" min="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="addonCabinetsCleaning" class="form-label">Cabinets Cleaning</label>
-                                <input type="number" value="{{ booking.addonCabinetsCleaning }}" class="form-control addon-input" id="addonCabinetsCleaning" name="addonCabinetsCleaning" min="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="addonPatioSweeping" class="form-label">Patio Sweeping</label>
-                                <input type="number" value="{{ booking.addonPatioSweeping }}" class="form-control addon-input" id="addonPatioSweeping" name="addonPatioSweeping" min="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="addonGarageSweeping" class="form-label">Garage Sweeping</label>
-                                <input type="number" value="{{ booking.addonGarageSweeping }}" class="form-control addon-input" id="addonGarageSweeping" name="addonGarageSweeping" min="0">
+                                <input type="number" class="form-control addon-input" id="addonBlinds" name="addonBlinds" min="0" value="{{ booking.addonBlinds|default:0 }}">
                             </div>
                         </div>
 
@@ -286,10 +221,10 @@
                             <div class="col-md-3 mb-3">
                                 <label for="custom_addon_{{ addon.id }}" class="form-label">{{ addon.addonName }}</label>
                                 <input type="number" class="form-control custom-addon-input" 
-                                       id="custom_addon_{{ addon.id }}" 
-                                       name="custom_addon_qty_{{ addon.id }}" 
-                                       min="0" value="{{ addon.qty }}"
-                                       data-price="{{ addon.addonPrice }}">
+                                    id="custom_addon_{{ addon.id }}" 
+                                    name="custom_addon_qty_{{ addon.id }}" 
+                                    min="0" value="{{ addon.qty|default:0 }}"
+                                    data-price="{{ addon.addonPrice }}">
                             </div>
                             {% endfor %}
                         </div>
@@ -303,165 +238,101 @@
                         
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-secondary prev-step"><i class="fas fa-arrow-left me-2"></i> Previous</button>
-                            <button type="button" class="btn btn-primary next-step">Next <i class="fas fa-arrow-right ms-2"></i></button>
+                            <button type="submit" class="btn btn-primary" id="submitBookingBtn">
+                                <i class="fas fa-check me-2"></i>Update Booking
+                            </button>
                         </div>
                     </div>
-
-                    <!-- Step 6: Review and Submit -->
-<div class="form-step" id="step6" style="display: none;">
-    <h4 class="mb-4 text-primary"><i class="fas fa-check-circle me-2"></i>Review Your Booking</h4>
-    
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-light py-3">
-            <h5 class="mb-0 fw-bold">Booking Summary</h5>
-        </div>
-        <div class="card-body p-4">
-            <!-- Customer Information Section -->
-            <div class="mb-4">
-                <h6 class="text-muted text-uppercase small mb-3 border-bottom pb-2">Customer Information</h6>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-user"></i></div>
-                            <div>
-                                <div class="text-muted small">Customer Name</div>
-                                <div class="fw-medium" id="summary-customer">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-envelope"></i></div>
-                            <div>
-                                <div class="text-muted small">Email Address</div>
-                                <div class="fw-medium" id="summary-email">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-phone"></i></div>
-                            <div>
-                                <div class="text-muted small">Phone Number</div>
-                                <div class="fw-medium" id="summary-phone">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-building"></i></div>
-                            <div>
-                                <div class="text-muted small">Company</div>
-                                <div class="fw-medium" id="summary-company">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-map-marker-alt"></i></div>
-                            <div>
-                                <div class="text-muted small">Service Address</div>
-                                <div class="fw-medium" id="summary-address">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Service Details Section -->
-            <div class="mb-4">
-                <h6 class="text-muted text-uppercase small mb-3 border-bottom pb-2">Service Details</h6>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-tools"></i></div>
-                            <div>
-                                <div class="text-muted small">Service Type</div>
-                                <div class="fw-medium" id="summary-service">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-calendar-alt"></i></div>
-                            <div>
-                                <div class="text-muted small">Appointment</div>
-                                <div class="fw-medium" id="summary-datetime">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-home"></i></div>
-                            <div>
-                                <div class="text-muted small">Property Type</div>
-                                <div class="fw-medium" id="summary-property">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-redo"></i></div>
-                            <div>
-                                <div class="text-muted small">Recurring Schedule</div>
-                                <div class="fw-medium" id="summary-recurring">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="d-flex">
-                            <div class="text-muted me-2"><i class="fas fa-plus-circle"></i></div>
-                            <div>
-                                <div class="text-muted small">Selected Add-ons</div>
-                                <div class="fw-medium" id="summary-addons">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Pricing Section -->
-            <div>
-                <h6 class="text-muted text-uppercase small mb-3 border-bottom pb-2">Pricing Details</h6>
-                <div class="bg-light p-3 rounded">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Subtotal:</span>
-                        <input type="hidden" name="subtotal" step="1" id="subtotal">
-                        <span class="fw-bold text-primary">$<span id="summary-subtotal">0.00</span></span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Tax:</span>
-                        <input type="hidden" name="tax" step="0.01" id="tax">
-                        <span class="fw-bold text-primary">$<span id="summary-tax">0.00</span></span>
-                    </div>
-                    <div class="d-flex justify-content-between pt-2 border-top mt-2">
-                        <span class="fw-bold">Total:</span>
-                        <input type="hidden" name="totalAmount" id="totalAmount">
-                        <span class="fw-bold text-primary">$<span id="summary-total">0.00</span></span>
-                    </div>
-                </div>
-                
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="termsCheck" required>
-                    <label class="form-check-label small" for="termsCheck">
-                        I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="d-flex justify-content-between mt-4">
-        <button type="button" class="btn btn-outline-secondary prev-step">
-            <i class="fas fa-arrow-left me-2"></i>Previous
-        </button>
-        <button type="submit" class="btn btn-primary px-4" id="confirmBookingBtn">
-            <i class="fas fa-check me-2"></i>Confirm Booking
-        </button>
-    </div>
-</div>
-
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column - Booking Summary -->
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Service Overview</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Service Details -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">Service Details</h6>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Service Type:</span>
+                            <span class="fw-medium" id="overview-service">-</span>
+                        </div>
+                    </div>
+                   
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Bedrooms:</span>
+                            <span class="fw-medium" id="overview-bedrooms">-</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Bathrooms:</span>
+                            <span class="fw-medium" id="overview-bathrooms">-</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Square Feet:</span>
+                            <span class="fw-medium" id="overview-squarefeet">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add-ons Summary -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">Add-ons</h6>
+                    <div id="overview-addons-list">
+                        <p class="text-muted small">No add-ons selected</p>
+                    </div>
+                </div>
+
+                <!-- Pricing Summary -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="mb-3">Price Summary</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Base Price:</span>
+                            <span class="fw-medium">$<span id="overview-base-price">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Add-ons:</span>
+                            <span class="fw-medium">$<span id="overview-addons-price">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span class="fw-medium">$<span id="overview-subtotal">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax ({{ business.settings.taxPercent }}%):</span>
+                            <span class="fw-medium">$<span id="overview-tax">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2 border-top mt-2">
+                            <span class="fw-bold">Total:</span>
+                            <span class="fw-bold text-primary">$<span id="overview-total">0.00</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button for Booking -->                
+                    <div class="mt-4">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="rightColumnTermsCheck" required checked>
+                            <label class="form-check-label small" for="rightColumnTermsCheck">
+                                I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="rightColumnSubmitBtn" form="booking-form">
+                            <i class="fas fa-check me-2"></i>Update Booking
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -470,400 +341,289 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Phone number formatting
-    const phoneInput = document.getElementById('phoneNumber');
-    
-    // Format phone number as user types
-    phoneInput.addEventListener('input', function(e) {
-        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
-        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-    });
-    
-    // Create a hidden input to store the full phone number
-    const hiddenPhoneInput = document.createElement('input');
-    hiddenPhoneInput.type = 'hidden';
-    hiddenPhoneInput.name = 'full_phone';
-    document.getElementById('booking-form').appendChild(hiddenPhoneInput);
-    
-    // Handle form submission
-    document.getElementById('booking-form').addEventListener('submit', function(e) {
-        const phoneValue = phoneInput.value.replace(/\D/g, '');
-        if (phoneValue.length === 10) {
-            // Store the full number in the hidden input
-            hiddenPhoneInput.value = '+1' + phoneValue;
-            // Keep the display input unchanged
-            phoneInput.value = phoneValue;
-        }
-    });
-
-    // Format initial phone number value if it exists
-    if (phoneInput.value) {
-        // Remove +1 if present
-        let initialValue = phoneInput.value.replace('+1', '');
-        // Format the number
-        let x = initialValue.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
-        phoneInput.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-    }
-
-    // Multi-step form navigation
-    const steps = document.querySelectorAll('.form-step');
-    const nextButtons = document.querySelectorAll('.next-step');
-    const prevButtons = document.querySelectorAll('.prev-step');
-    const progressBar = document.getElementById('form-progress');
-    const indicators = document.querySelectorAll('.step-indicator');
-    let currentStep = 0;
-    
-    // Next button event handlers
-    nextButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // Validate current step fields before proceeding
-            if (validateStep(currentStep)) {
-                steps[currentStep].style.display = 'none';
-                currentStep++;
-                steps[currentStep].style.display = 'block';
-                updateProgress();
-                
-                // If we reach the final review step, populate the summary
-                if (currentStep === 5) {
-                    populateSummary();
-                }
-            }
-        });
-    });
-    
-    // Previous button event handlers
-    prevButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            steps[currentStep].style.display = 'none';
-            currentStep--;
-            steps[currentStep].style.display = 'block';
-            updateProgress();
-        });
-    });
-    
-    // Update progress bar and step indicators
-    function updateProgress() {
-        // Update progress percentage (steps are 0-indexed)
-        const percent = (currentStep + 1) / steps.length * 100;
-        progressBar.style.width = percent + '%';
-        progressBar.setAttribute('aria-valuenow', percent);
-        progressBar.textContent = Math.round(percent) + '%';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Customer type toggle functionality - Not needed for edit but keeping structure similar
+        const phoneInput = document.getElementById('phoneNumber');
         
-        // Update step indicators
-        indicators.forEach((indicator, index) => {
-            if (index <= currentStep) {
-                indicator.classList.add('active');
-            } else {
-                indicator.classList.remove('active');
-            }
-        });
-    }
-    
-    // Simple validation for required fields in each step
-    function validateStep(stepIndex) {
-        const step = steps[stepIndex];
-        const requiredFields = step.querySelectorAll('[required]');
-        let valid = true;
+        // Get pricing data from server
+        const pricingData = JSON.parse('{{ prices|safe }}');
         
-        requiredFields.forEach(field => {
-            if (!field.value) {
-                field.classList.add('is-invalid');
-                valid = false;
-            } else {
-                field.classList.remove('is-invalid');
-            }
-        });
+        // Base price from business settings
+        const BASE_PRICE = pricingData.base_price || 0;
         
-        return valid;
-    }
-    
-    // Populate the review summary
-    function populateSummary() {
-        document.getElementById('summary-customer').textContent = 
-            document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value;
-        document.getElementById('summary-email').textContent = document.getElementById('email').value;
-        document.getElementById('summary-phone').textContent = document.getElementById('phoneNumber').value;
-        document.getElementById('summary-company').textContent = document.getElementById('companyName').value || 'Not provided';
-        
-        // Format address
-        const address = document.getElementById('address1').value + 
-                      (document.getElementById('address2').value ? ', ' + document.getElementById('address2').value : '') + 
-                      ', ' + document.getElementById('city').value + 
-                      ', ' + document.getElementById('stateOrProvince').value + 
-                      ' ' + document.getElementById('zipCode').value;
-        document.getElementById('summary-address').textContent = address;
-        
-        // Service details
-        const serviceSelect = document.getElementById('serviceType');
-        const serviceName = serviceSelect.options[serviceSelect.selectedIndex].text;
-        document.getElementById('summary-service').textContent = serviceName;
-        
-        // Format date and time
-        const dateTimeStr = document.getElementById('cleaningDate').value + ' ' + document.getElementById('startTime').value;
-        const dateTime = new Date(dateTimeStr);
-        const formattedDateTime = dateTime.toLocaleString();
-        document.getElementById('summary-datetime').textContent = formattedDateTime;
-        
-        // Property details
-        const property = document.getElementById('bedrooms').value + ' Bedroom(s), ' + 
-                        document.getElementById('bathrooms').value + ' Bathroom(s), ' +
-                        document.getElementById('squareFeet').value + ' sq ft';
-        document.getElementById('summary-property').textContent = property;
-        
-        // Recurring info
-        const recurringSelect = document.getElementById('recurring');
-        const recurringName = recurringSelect.options[recurringSelect.selectedIndex].text;
-        document.getElementById('summary-recurring').textContent = recurringName;
-        
-        // Collect add-ons
-        const addons = [];
-        document.querySelectorAll('.addon-input, .custom-addon-input').forEach(input => {
-            const qty = parseInt(input.value);
-            if (qty > 0) {
-                const label = input.previousElementSibling.textContent;
-                addons.push(qty + 'x ' + label);
-            }
-        });
-        
-        document.getElementById('summary-addons').textContent = 
-            addons.length > 0 ? addons.join(', ') : 'None selected';
-    }
-    
-    // Elements that affect price calculation
-    const priceElements = document.querySelectorAll('#bedrooms, #bathrooms, #squareFeet, #serviceType, .addon-input, .custom-addon-input');
-
-    const prices = JSON.parse('{{ prices|escapejs }}');
-    console.log(prices);
-    
-    // Add event listeners to all price-affecting elements
-    priceElements.forEach(element => {
-        element.addEventListener('change', updateTotalPrice);
-        element.addEventListener('input', updateTotalPrice);
-    });
-
-    // Calculate total price
-    function updateTotalPrice() {
-        const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
-        const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
-        const squareFeet = parseInt(document.getElementById('squareFeet').value) || 0;
-        const serviceType = document.getElementById('serviceType').value;
-        
-        // Base calculation
-        let basePrice = calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType);
-        
-        // Add standard add-ons
-        let addonTotal = calculateAddonsTotal();
-        
-        // Add custom add-ons
-        let customAddonTotal = calculateCustomAddonsTotal();
-        
-        // Calculate tax
-        let subtotal = basePrice + addonTotal + customAddonTotal;
-        let tax = subtotal * (prices.tax / 100);
-
-        
-        // Update form fields
-        document.getElementById('subtotal').value = subtotal.toFixed(2);
-        document.getElementById('tax').value = tax.toFixed(2);
-        document.getElementById('totalAmount').value = (subtotal + tax).toFixed(2);
-        
-        // Update summary
-        document.getElementById('summary-subtotal').textContent = subtotal.toFixed(2);
-        document.getElementById('summary-tax').textContent = tax.toFixed(2);
-        document.getElementById('summary-total').textContent = (subtotal + tax).toFixed(2);
-    }
-
-    function calculateBasePrice(bedrooms, bathrooms, squareFeet, serviceType) {
-        // Base rates from business settings
-        const BEDROOM_RATE = prices.bedrooms;
-        const BATHROOM_RATE = prices.bathrooms;
-        
-
-        let basePrice = (bedrooms * BEDROOM_RATE) + (bathrooms * BATHROOM_RATE);
-        
-        // Service type multipliers from business settings
-        const SERVICE_MULTIPLIERS = {
-            'standard': prices.sqftMultiplierStandard,
-            'deep': prices.sqftMultiplierDeep,
-            'moveinmoveout': prices.sqftMultiplierMoveinout,
-            'airbnb': prices.sqftMultiplierAirbnb
-        };
-
-        let sqftTotal = 0;
-        sqftTotal += squareFeet * SERVICE_MULTIPLIERS[serviceType];
-        console.log(sqftTotal);
-        console.log(SERVICE_MULTIPLIERS[serviceType]);
-        
-        return basePrice + sqftTotal;
-    }
-
-    function calculateAddonsTotal() {
-        // Add-on rates from business settings
-        const ADDON_RATES = {
-            'addonDishes': prices.addonPriceDishes,
-            'addonLaundryLoads': prices.addonPriceLaundry,
-            'addonWindowCleaning': prices.addonPriceWindow,
-            'addonPetsCleaning': prices.addonPricePets,
-            'addonFridgeCleaning': prices.addonPriceFridge,
-            'addonOvenCleaning': prices.addonPriceOven,
-            'addonBaseboard': prices.addonPriceBaseboard,
-            'addonBlinds': prices.addonPriceBlinds,
-            'addonGreenCleaning': prices.addonPriceGreen,
-            'addonCabinetsCleaning': prices.addonPriceCabinets,
-            'addonPatioSweeping': prices.addonPricePatio,
-            'addonGarageSweeping': prices.addonPriceGarage
+        // Pricing constants from business settings
+        const BEDROOM_PRICE = pricingData.bedrooms || 0;
+        const BATHROOM_PRICE = pricingData.bathrooms || 0;
+        const SQUARE_FOOT_MULTIPLIERS = {
+            'standard': pricingData.sqftMultiplierStandard || 0,
+            'deep': pricingData.sqftMultiplierDeep || 0,
+            'moveinout': pricingData.sqftMultiplierMoveinout || 0,
+            'airbnb': pricingData.sqftMultiplierAirbnb || 0
         };
         
-        let total = 0;
-        for (const [addon, rate] of Object.entries(ADDON_RATES)) {
-            const quantity = parseInt(document.getElementById(addon).value) || 0;
-            total += quantity * rate;
-        }
-        return total;
-    }
-
-    function calculateCustomAddonsTotal() {
-        let total = 0;
-        document.querySelectorAll('.custom-addon-input').forEach(input => {
-            const quantity = parseInt(input.value) || 0;
-            const price = parseFloat(input.dataset.price) || 0;
-            total += quantity * price;
-        });
-        return total;
-    }
-
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('cleaningDate').setAttribute('min', today);
-    
-    // If the current date is already set and it's before today, clear it
-    const cleaningDateInput = document.getElementById('cleaningDate');
-    if (cleaningDateInput.value && cleaningDateInput.value < today) {
-        cleaningDateInput.value = '';
-    }
-
-    // Initial calculation
-    updateTotalPrice();
-
-    // Check timeslot availability
-    const cleaningDate = document.getElementById('cleaningDate');
-    const startTime = document.getElementById('startTime');
-    const availabilityAlert = document.getElementById('availability-alert');
-    const availabilityMessage = document.getElementById('availability-message');
-    const alternativeSlots = document.getElementById('alternative-slots');
-    const altSlotsList = document.getElementById('alt-slots-list');
-    const availableCleanersContainer = document.getElementById('available-cleaners-container');
-    const selectedCleaner = document.getElementById('selectedCleaner');
-
-    cleaningDate.addEventListener('change', checkAvailability);
-    startTime.addEventListener('change', checkAvailability);
-
-    function checkAvailability() {
-        const date = cleaningDate.value;
-        const time = startTime.value;
+        const ADDON_PRICES = {
+            'addonDishes': pricingData.addonPriceDishes || 0,
+            'addonLaundryLoads': pricingData.addonPriceLaundry || 0,
+            'addonWindowCleaning': pricingData.addonPriceWindow || 0,
+            'addonPetsCleaning': pricingData.addonPricePets || 0,
+            'addonFridgeCleaning': pricingData.addonPriceFridge || 0,
+            'addonOvenCleaning': pricingData.addonPriceOven || 0,
+            'addonBaseboard': pricingData.addonPriceBaseboard || 0,
+            'addonBlinds': pricingData.addonPriceBlinds || 0
+        };
         
-        // Only check if both date and time are selected
-        if (!date || !time) {
-            return;
-        }
-        
-        // Show loading state
-        availabilityAlert.style.display = 'block';
-        availabilityAlert.className = 'alert alert-info mt-2';
-        availabilityMessage.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Checking availability...';
-        
-        const url = '/api/check-availability/?date=' + date + '&time=' + time;
+        const TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0;
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.available) {
-                    // Show success message
-                    availabilityAlert.className = 'alert alert-success mt-2';
-                    availabilityMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i> This timeslot is available!';
-                    setTimeout(() => {
-                        availabilityAlert.style.display = 'none';
-                    }, 3000);
-                    alternativeSlots.style.display = 'none';
-                    availableCleanersContainer.style.display = 'block';
-                    selectedCleaner.innerHTML = '';
-                    data.cleaners.forEach(cleaner => {
-                        const option = document.createElement('option');
-                        option.value = cleaner.id;
-                        option.textContent = cleaner.name;
-                        selectedCleaner.appendChild(option);
-                    });
-                } else {
-                    // Show error message
-                    availabilityAlert.className = 'alert alert-danger mt-2';
-                    availabilityMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> This timeslot is not available.';
+        // Form steps navigation
+        const formSteps = document.querySelectorAll('.form-step');
+        const nextButtons = document.querySelectorAll('.next-step');
+        const prevButtons = document.querySelectorAll('.prev-step');
+        const progressBar = document.getElementById('form-progress');
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+
+        let currentStep = 0;
+        
+        // Initialize the form
+        updateProgressBar();
+        
+        // Next button click handler
+        nextButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    formSteps[currentStep].style.display = 'none';
+                    currentStep++;
+                    formSteps[currentStep].style.display = 'block';
+                    updateProgressBar();
                     
-                    // Show alternative slots if any
-                    if (data.alternative_slots && data.alternative_slots.length > 0) {
-                        alternativeSlots.style.display = 'block';
-                        altSlotsList.innerHTML = '';
-                        
-                        data.alternative_slots.forEach(slot => {
-                            // Parse the slot string to get date and time
-                            const slotParts = slot.split(' ');
-                            const slotDate = slotParts[0];
-                            const slotTime = slotParts[1] + ' ' + slotParts[2]; // e.g., "09:00 AM"
-                            
-                            // Create a button for each alternative slot
-                            const slotButton = document.createElement('button');
-                            slotButton.className = 'btn btn-outline-primary btn-sm';
-                            slotButton.innerHTML = `<i class="fas fa-calendar-check me-1"></i> ${slotTime} on ${formatDate(slotDate)}`;
-                            slotButton.type = 'button';
-                            slotButton.addEventListener('click', () => {
-                                // Set the form fields to this slot
-                                cleaningDate.value = slotDate;
-                                
-                                // Convert 12-hour format to 24-hour format for the select
-                                const timeValue = convert12to24(slotTime);
-                                startTime.value = timeValue;
-                                
-                                // Trigger availability check
-                                checkAvailability();
-                            });
-                            
-                            altSlotsList.appendChild(slotButton);
-                        });
-                    } else {
-                        alternativeSlots.style.display = 'none';
-                    }
-                    availableCleanersContainer.style.display = 'none';
+                    // Scroll to top of the form
+                    document.querySelector('.card-body').scrollTop = 0;
                 }
-            })
-            .catch(error => {
-                console.error('Error checking availability:', error);
-                availabilityAlert.className = 'alert alert-warning mt-2';
-                availabilityMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Could not check availability. Please try again.';
             });
-    }
-    
-    // Helper function to format date nicely
-    function formatDate(dateStr) {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    }
-    
-    // Helper function to convert 12-hour time format to 24-hour format
-    function convert12to24(time12h) {
-        const [time, modifier] = time12h.split(' ');
-        let [hours, minutes] = time.split(':');
+        });
         
-        if (hours === '12') {
-            hours = '00';
+        // Previous button click handler
+        prevButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                formSteps[currentStep].style.display = 'none';
+                currentStep--;
+                formSteps[currentStep].style.display = 'block';
+                updateProgressBar();
+            });
+        });
+        
+        // Update progress bar and step indicators
+        function updateProgressBar() {
+            // Calculate progress percentage
+            const progress = ((currentStep + 1) / formSteps.length) * 100;
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressBar.textContent = Math.round(progress) + '%';
+            
+            // Update step indicators
+            stepIndicators.forEach((indicator, index) => {
+                if (index === currentStep) {
+                    indicator.classList.add('active');
+                    indicator.classList.remove('completed');
+                } else if (index < currentStep) {
+                    indicator.classList.add('completed');
+                    indicator.classList.remove('active');
+                } else {
+                    indicator.classList.remove('active', 'completed');
+                }
+            });
+        }
+    
+        // Validate current step
+        function validateStep(step) {
+            const currentStepEl = formSteps[step];
+            let isValid = true;
+            
+            // Normal validation for all steps
+            const requiredFields = currentStepEl.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            return isValid;
         }
         
-        if (modifier === 'PM') {
-            hours = parseInt(hours, 10) + 12;
+        // Real-time price calculation
+        function calculatePrices() {
+            // Get service type
+            const serviceType = document.getElementById('serviceType').value;
+            
+            // Calculate base price with service type multiplier
+            let basePrice = BASE_PRICE
+            
+            // Get property details
+            const bedrooms = parseInt(document.getElementById('bedrooms').value) || 0;
+            const bathrooms = parseInt(document.getElementById('bathrooms').value) || 0;
+            const squareFeet = parseInt(document.getElementById('squareFeet').value) || 0;
+            
+            // Calculate property price
+            const bedroomCost = bedrooms * BEDROOM_PRICE;
+            const bathroomCost = bathrooms * BATHROOM_PRICE;
+            const squareFeetCost = squareFeet * (SQUARE_FOOT_MULTIPLIERS[serviceType] || 0);
+            const propertyPrice = bedroomCost + bathroomCost + squareFeetCost;
+            
+            // Calculate add-ons price
+            let addonsPrice = 0;
+            Object.keys(ADDON_PRICES).forEach(addon => {
+                const addonInput = document.getElementById(addon);
+                if (addonInput) {
+                    const quantity = parseInt(addonInput.value) || 0;
+                    addonsPrice += quantity * ADDON_PRICES[addon];
+                }
+            });
+            
+            // Calculate custom add-ons price
+            const customAddonInputs = document.querySelectorAll('.custom-addon-input');
+            customAddonInputs.forEach(input => {
+                const quantity = parseInt(input.value) || 0;
+                const price = parseFloat(input.dataset.price) || 0;
+                addonsPrice += quantity * price;
+            });
+            
+            // Calculate subtotal, tax and total
+            const subtotal = basePrice + propertyPrice + addonsPrice;
+            const tax = subtotal * TAX_RATE;
+            const total = subtotal + tax;
+            
+            // Update hidden inputs
+            document.getElementById('subtotal').value = subtotal.toFixed(2);
+            document.getElementById('tax').value = tax.toFixed(2);
+            document.getElementById('totalAmount').value = total.toFixed(2);
+    
+            
+            // Update overview section
+            document.getElementById('overview-service').textContent = document.getElementById('serviceType').options[document.getElementById('serviceType').selectedIndex].text;
+
+            
+            document.getElementById('overview-bedrooms').textContent = bedrooms;
+            document.getElementById('overview-bathrooms').textContent = bathrooms;
+            document.getElementById('overview-squarefeet').textContent = squareFeet + ' sq ft';
+            
+            // Update add-ons list
+            const addonsList = document.getElementById('overview-addons-list');
+            addonsList.innerHTML = '';
+            
+            let hasAddons = false;
+            
+            // Standard add-ons
+            Object.keys(ADDON_PRICES).forEach(addon => {
+                const addonInput = document.getElementById(addon);
+                if (addonInput && parseInt(addonInput.value) > 0) {
+                    hasAddons = true;
+                    const quantity = parseInt(addonInput.value);
+                    const price = ADDON_PRICES[addon] * quantity;
+                    const addonName = addonInput.previousElementSibling.textContent;
+                    
+                    const addonItem = document.createElement('div');
+                    addonItem.className = 'd-flex justify-content-between mb-1';
+                    addonItem.innerHTML = `
+                        <span class="small">${addonName} (${quantity})</span>
+                        <span class="small">$${price.toFixed(2)}</span>
+                    `;
+                    addonsList.appendChild(addonItem);
+                }
+            });
+            
+            // Custom add-ons
+            customAddonInputs.forEach(input => {
+                const quantity = parseInt(input.value) || 0;
+                if (quantity > 0) {
+                    hasAddons = true;
+                    const price = parseFloat(input.dataset.price) * quantity;
+                    const addonName = input.previousElementSibling.textContent;
+                    
+                    const addonItem = document.createElement('div');
+                    addonItem.className = 'd-flex justify-content-between mb-1';
+                    addonItem.innerHTML = `
+                        <span class="small">${addonName} (${quantity})</span>
+                        <span class="small">$${price.toFixed(2)}</span>
+                    `;
+                    addonsList.appendChild(addonItem);
+                }
+            });
+            
+            if (!hasAddons) {
+                addonsList.innerHTML = '<p class="text-muted small">No add-ons selected</p>';
+            }
+            
+            // Update price overview
+            document.getElementById('overview-base-price').textContent = (basePrice + propertyPrice).toFixed(2);
+            document.getElementById('overview-addons-price').textContent = addonsPrice.toFixed(2);
+            document.getElementById('overview-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('overview-tax').textContent = tax.toFixed(2);
+            document.getElementById('overview-total').textContent = total.toFixed(2);
+        }
+
+        // Attach event listeners for real-time calculation
+        document.getElementById('serviceType').addEventListener('change', calculatePrices);
+        document.getElementById('bedrooms').addEventListener('input', calculatePrices);
+        document.getElementById('bathrooms').addEventListener('input', calculatePrices);
+        document.getElementById('squareFeet').addEventListener('input', calculatePrices);
+        
+        // Add-on inputs
+        const addonInputs = document.querySelectorAll('.addon-input');
+        addonInputs.forEach(input => {
+            input.addEventListener('input', calculatePrices);
+        });
+        
+        // Custom add-on inputs
+        const customAddonInputs = document.querySelectorAll('.custom-addon-input');
+        customAddonInputs.forEach(input => {
+            input.addEventListener('input', calculatePrices);
+        });
+        
+
+        // Initialize calculation
+        calculatePrices();
+        
+        // Phone number formatting
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                // Remove all non-digit characters
+                let value = this.value.replace(/\D/g, '');
+                
+                // Format with spaces (North American format: XXX XXX XXXX)
+                if (value.length > 0) {
+                    // Area code (first 3 digits)
+                    let formattedNumber = value.substring(0, 3);
+                    
+                    // First part of local number (next 3 digits)
+                    if (value.length > 3) {
+                        formattedNumber += ' ' + value.substring(3, 6);
+                    }
+                    
+                    // Second part of local number (next 4 digits)
+                    if (value.length > 6) {
+                        formattedNumber += ' ' + value.substring(6, 10);
+                    }
+                    
+                    this.value = formattedNumber;
+                }
+            });
         }
         
-        return `${hours.padStart(2, '0')}:${minutes}`;
-    }
-});
+        // Function to get user's timezone
+        function getUserTimezone() {
+            try {
+                return Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch (e) {
+                console.error('Error getting timezone:', e);
+                return 'UTC';
+            }
+        }
+        
+
+
+    });
 </script>
 
 <style>
@@ -879,6 +639,10 @@ document.addEventListener('DOMContentLoaded', function() {
 .step-indicator.active {
     color: #0d6efd;
     font-weight: bold;
+}
+
+.step-indicator.completed {
+    color: #198754;
 }
 
 /* Animation for step transitions */

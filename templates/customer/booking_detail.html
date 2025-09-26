@@ -5,14 +5,14 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-10">
+    <div class="col-md-12">
         <!-- Header Card -->
-        <div class="card shadow-sm mb-4">
+        <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
                     <div>
                         <h4 class="mb-1 text-primary">Booking #{{ booking.bookingId }}</h4>
-                        <p class="text-muted mb-0">Created on <span data-utc-datetime="{{ booking.createdAt|date:'c' }}">{% convert_and_format booking.createdAt booking.customer.timezone "F d, Y" %}</span></p>
+                        <p class="text-muted mb-0">Created on <span data-utc-datetime="{{ booking.createdAt|date:'c' }}">{% convert_and_format booking.createdAt booking.business.timezone "F d, Y" %}</span></p>
                     </div>
                     {% if booking.cancelled_at %}
                     <div class="d-flex gap-2 mt-2 mt-sm-0">
@@ -20,6 +20,7 @@
                             <i class="fas fa-times me-1"></i>
                             Cancelled
                         </span>
+                    </div>
                     {% else %}
                     <div class="d-flex gap-2 mt-2 mt-sm-0">
                         <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
@@ -41,13 +42,13 @@
         <div class="row g-3">
             <!-- Customer Info -->
             <div class="col-12 col-md-6 mb-md-4">
-                <div class="card shadow-sm h-100">
+                <div class="card border border-1 h-100">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex align-items-center mb-3 mb-md-4">
                             <div class="icon-circle bg-primary text-white me-3">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <h5 class="card-title mb-0">Your Details</h5>
+                            <h5 class="card-title mb-0">Customer Details</h5>
                         </div>
                         <div class="customer-info">
                             <p class="mb-2">
@@ -80,7 +81,7 @@
 
             <!-- Service Info -->
             <div class="col-12 col-md-6 mb-md-4">
-                <div class="card shadow-sm h-100">
+                <div class="card border border-1 h-100">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex align-items-center mb-3 mb-md-4">
                             <div class="icon-circle bg-success text-white me-3">
@@ -93,15 +94,53 @@
                                 <i class="fas fa-tag text-muted me-2"></i>
                                 <span class="text-capitalize">{{ booking.get_serviceType_display }}</span>
                             </p>
+                          
+                                <p class="mb-2">
+                                    <i class="fas fa-sync-alt text-muted me-2"></i>
+                                    <span class="text-capitalize">{{ booking.get_recurring_display }} Service</span>
+                                    {% if booking.next_recurring_date %}
+                                    <span class="badge bg-info ms-2">Next: {{ booking.next_recurring_date|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </p>
+                                {% if booking.parent_booking %}
+                                <p class="mb-2">
+                                    <i class="fas fa-project-diagram text-muted me-2"></i>
+                                    <span>Part of recurring series</span>
+                                    <a href="{% url 'customer:booking_detail' booking.parent_booking.bookingId %}" class="ms-2 small">View original booking</a>
+                                </p>
+                                {% endif %}
+                                {% if booking.recurring_bookings.exists %}
+                                <p class="mb-2">
+                                    <i class="fas fa-calendar-alt text-muted me-2"></i>
+                                    <span>Has {{ booking.recurring_bookings.count }} recurring booking(s)</span>
+                                    <button class="btn btn-sm btn-outline-info ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#recurringBookingsList">View</button>
+                                </p>
+                                <div class="collapse mt-2" id="recurringBookingsList">
+                                    <div class="card card-body bg-light">
+                                        <h6 class="mb-2">Recurring Bookings:</h6>
+                                        <ul class="list-group list-group-flush">
+                                            {% for rec_booking in booking.recurring_bookings.all %}
+                                            <li class="list-group-item bg-transparent px-0 py-1">
+                                                <a href="{% url 'customer:booking_detail' rec_booking.bookingId %}">
+                                                    {{ rec_booking.bookingId }} - {{ rec_booking.cleaningDate|date:"M d, Y" }}
+                                                </a>
+                                                <span class="badge {% if rec_booking.isCompleted %}bg-success{% elif rec_booking.cancelled_at %}bg-danger{% else %}bg-warning text-dark{% endif %} ms-2">
+                                                    {% if rec_booking.isCompleted %}Completed{% elif rec_booking.cancelled_at %}Cancelled{% else %}Pending{% endif %}
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                {% endif %}
                             <p class="mb-2">
                                 <i class="fas fa-calendar text-muted me-2"></i>
                                 <span>{{ booking.cleaningDate|date:"F d, Y" }}</span>
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-clock text-muted me-2"></i>
-                      
-                                <span>{% convert_and_format booking.startTime booking.cleaningDate booking.customer.timezone "%I:%M %p" %}</span> to 
-                                <span>{% convert_and_format booking.endTime booking.cleaningDate booking.customer.timezone "%I:%M %p" %}</span>
+                                <span>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }}</span> to 
+                                <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-credit-card text-muted me-2"></i>
@@ -114,141 +153,32 @@
                                 <small class="text-muted">(+${{ booking.tax }} tax)</small>
                                 {% endif %}
                             </p>
+                            {% if booking.tip and booking.tip > 0 %}
+                            <p class="mb-2">
+                                <i class="fas fa-hand-holding-usd text-muted me-2"></i>
+                                <span class="h6 text-info mb-0">Tip: ${{ booking.tip }}</span>
+                            </p>
+                            {% endif %}
+                            {% if booking.cleaner %}
+                            <p class="mb-0">
+                                <i class="fas fa-hand-holding-usd text-muted me-2"></i>
+                                <span class="h6 text-primary mb-0">Cleaner Payout: ${{ booking.get_cleaner_payout|floatformat:2 }}</span>
+                                <small class="text-muted">({{ booking.business.cleaner_payout_percentage }}% of total)</small>
+                            </p>
+                            {% endif %}
                             
                         </div>
                     </div>
                 </div>
             </div>
-
-
-        <!-- Business Info -->
-        <div class="row g-3">
-            <div class="col-12 mb-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex align-items-center mb-3 mb-md-4">
-                            <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                <i class="fas fa-building fa-lg"></i>
-                            </div>
-                            <h5 class="card-title mb-0">Business Details</h5>
-                        </div>
-                        <div class="row g-3">
-                            <!-- Business Name -->
-                            <div class="col-12 col-sm-6 col-md-4">
-                                <div class="card bg-light border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-3 p-md-4">
-                                        <i class="fas fa-briefcase text-info fa-2x mb-3"></i>
-                                        <h6 class="card-title mb-2"><strong>Business Name</strong></h6>
-                                        <p class="card-text text-muted">{{ booking.business.businessName }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Phone -->
-                            <div class="col-12 col-sm-6 col-md-4">
-                                <div class="card bg-light border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-3 p-md-4">
-                                        <i class="fas fa-phone text-info fa-2x mb-3"></i>
-                                        <h6 class="card-title mb-2"><strong>Phone</strong></h6>
-                                        <p class="card-text text-muted">{{ booking.business.phone }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Address -->
-                            <div class="col-12 col-sm-6 col-md-4">
-                                <div class="card bg-light border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-3 p-md-4">
-                                        <i class="fas fa-map-marker-alt text-info fa-2x mb-3"></i>
-                                        <h6 class="card-title mb-2"><strong>Address</strong></h6>
-                                        <p class="card-text text-muted text-break">{{ booking.business.address }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Email -->
-                            {% if booking.business.user.email %}
-                            <div class="col-12 col-sm-6 col-md-4">
-                                <div class="card bg-light border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-3 p-md-4">
-                                        <i class="fas fa-envelope text-info fa-2x mb-3"></i>
-                                        <h6 class="card-title mb-2"><strong>Email</strong></h6>
-                                        <p class="card-text text-muted text-break">{{ booking.business.user.email }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-                          
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         </div>
 
-       <!-- Cleaner Info -->
-<div class="row g-3">
-    <div class="col-12 mb-md-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-3 p-md-4">
-                <div class="d-flex align-items-center mb-3 mb-md-4">
-                    <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                        <i class="fas fa-user-tie fa-lg"></i>
-                    </div>
-                    <h5 class="card-title mb-0">Assigned Cleaner</h5>
-                </div>
-                
-                {% if booking.cleaner %}
-                <div class="cleaner-info">
-                    <div class="row g-3"> <!-- Added gutter spacing between cards -->
-                        <!-- Name Card -->
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-user text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Name</strong></h6>
-                                    <p class="card-text text-muted">{{ booking.cleaner.name }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Email Card -->
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-envelope text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Email</strong></h6>
-                                    <p class="card-text text-muted text-break">{{ booking.cleaner.email }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Phone Number Card -->
-                        {% if booking.cleaner.phoneNumber %}
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <div class="card bg-light border-0 shadow-sm h-100">
-                                <div class="card-body text-center p-3 p-md-4">
-                                    <i class="fas fa-phone text-info fa-2x mb-3"></i>
-                                    <h6 class="card-title mb-2"><strong>Phone</strong></h6>
-                                    <p class="card-text text-muted" id="cleanerPhoneNumber">{{ booking.cleaner.phoneNumber }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-3 py-md-4">
-                    <i class="fas fa-user-clock fa-3x mb-3 text-info"></i>
-                    <p class="mb-0">No cleaner has been assigned to this booking yet.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+       
 
         <div class="row g-3">
             <!-- Property Info -->
             <div class="col-12 col-md-6 mb-md-4">
-                <div class="card shadow-sm h-100">
+                <div class="card border border-1 h-100">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex align-items-center mb-3 mb-md-4">
                             <div class="icon-circle bg-info text-white me-3">
@@ -282,7 +212,7 @@
 
             <!-- Add-ons -->
             <div class="col-12 col-md-6 mb-md-4">
-                <div class="card shadow-sm h-100">
+                <div class="card border border-1 h-100">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex align-items-center mb-3 mb-md-4">
                             <div class="icon-circle bg-warning text-white me-3">
@@ -409,8 +339,10 @@
             </div>
         </div>
 
+        
+
         <!-- Special Requests -->
-        <div class="card shadow-sm mb-4">
+        <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex align-items-center mb-3 mb-md-4">
                     <div class="icon-circle bg-purple text-white me-3">
@@ -429,86 +361,273 @@
             </div>
         </div>
 
+        <!-- Cleaner Info -->
+        <div class="row g-3">
+            <div class="col-12 mb-md-4">
+                <div class="card border border-1">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center mb-3 mb-md-4">
+                            <div class="icon-circle bg-info text-white me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-user-tie fa-lg"></i>
+                            </div>
+                            <h5 class="card-title mb-0">Assigned Cleaner</h5>
+                        </div>
+                        
+                        {% if booking.cleaner %}
+                        <div class="cleaner-info">
+                            <div class="row g-3"> <!-- Added gutter spacing between cards -->
+                                <!-- Name Card -->
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 border border-1 h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-user text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Name</strong></h6>
+                                            <p class="card-text text-muted">{{ booking.cleaner.name }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Card -->
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 border border-1 h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-envelope text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Email</strong></h6>
+                                            <p class="card-text text-muted text-break">{{ booking.cleaner.email }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Phone Number Card -->
+                                {% if booking.cleaner.phoneNumber %}
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card bg-light border-0 border border-1 h-100">
+                                        <div class="card-body text-center p-3 p-md-4">
+                                            <i class="fas fa-phone text-info fa-2x mb-3"></i>
+                                            <h6 class="card-title mb-2"><strong>Phone</strong></h6>
+                                            <p class="card-text text-muted" id="cleanerPhoneNumber">{{ booking.cleaner.phoneNumber }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-3 py-md-4">
+                            <i class="fas fa-user-clock fa-3x mb-3 text-info"></i>
+                            <p class="mb-0">No cleaner has been assigned to this booking yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Jobs Status and Timeline-->
+         <div class="row g-3">
+            <div class="col-6 mb-md-4">
+                <div class="card border border-1 mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle bg-primary text-white me-3">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Open Jobs Status</h5>
+                            </div>
+                         
+                        </div>
+                        {% with open_jobs=booking.openjob_set.all %}
+                        {% if open_jobs %}
+                        <ul class="list-group list-group-flush">
+                            {% for job in open_jobs %}
+                            <li class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-user-tag text-muted me-2"></i>
+                                        <span>{{ job.cleaner.cleaner.name }}</span>
+                                    </div>
+                                    <span class="badge 
+                                        {% if job.status == 'accepted' %}bg-success
+                                        {% elif job.status == 'rejected' %}bg-danger
+                                        {% elif job.status == 'pending' %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %} rounded-pill px-3 py-2">
+                                        {{ job.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="mt-2 text-muted small">
+                                    <p class="mb-0">Sent: {{ job.createdAt|date:"F d, Y, h:i A" }}</p>
+                                    {% if job.status != 'pending' %}
+                                    <p class="mb-0">{{ job.get_status_display }} on: {{ job.updatedAt|date:"F d, Y, h:i A" }}</p>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p class="mb-0">No job offers have been sent out for this booking yet.</p>
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-6 mb-md-4">
+                <!-- Timeline -->
+                <div class="card border border-1 mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center mb-3 mb-md-4">
+                            <div class="icon-circle bg-secondary text-white me-3">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <h5 class="card-title mb-0">Booking Timeline</h5>
+                        </div>
+                        <ul class="timeline">
+                            {% if booking.createdAt %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-primary"><i class="fas fa-plus"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Booking Created</h6>
+                                    <p class="mb-0 text-muted">{{ booking.createdAt|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.dayBeforeReminderSentAt %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-info"><i class="fas fa-bell"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Day-Before Reminder</h6>
+                                    <p class="mb-0 text-muted">{{ booking.dayBeforeReminderSentAt|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.hourBeforeReminderSentAt %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-info"><i class="fas fa-bell"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Hour-Before Reminder</h6>
+                                    <p class="mb-0 text-muted">{{ booking.hourBeforeReminderSentAt|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.arrival_confirmed_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-success"><i class="fas fa-check-circle"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Arrival Confirmed</h6>
+                                    <p class="mb-0 text-muted">{{ booking.arrival_confirmed_at|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.arrived_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-success"><i class="fas fa-map-marker-alt"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Cleaner Arrived</h6>
+                                    <p class="mb-0 text-muted">{{ booking.arrived_at|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.completed_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-success"><i class="fas fa-check-double"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Booking Completed</h6>
+                                    <p class="mb-0 text-muted">{{ booking.completed_at|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.postServiceFollowupSentAt %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-success"><i class="fas fa-bell"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Post Service Followup Sent</h6>
+                                    <p class="mb-0 text-muted">{{ booking.postServiceFollowupSentAt|date:"F d, Y, h:i A" }}</p>
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.recurring != 'one-time' and booking.last_recurring_created_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-info"><i class="fas fa-sync-alt"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Recurring Booking Created</h6>
+                                    <p class="mb-0 text-muted">{{ booking.last_recurring_created_at|date:"F d, Y, h:i A" }}</p>
+                                    {% if booking.next_recurring_date %}
+                                    <p class="mb-0 text-info">Next scheduled for: {{ booking.next_recurring_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.rescheduled_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-warning"><i class="fas fa-calendar-alt"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Booking Rescheduled</h6>
+                                    <p class="mb-0 text-muted">{{ booking.rescheduled_at|date:"F d, Y, h:i A" }}</p>
+                                    {% if booking.rescheduled_reason %}
+                                    <p class="mb-0 text-muted"><small>Reason: {{ booking.rescheduled_reason }}</small></p>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endif %}
+                            
+                            {% if booking.cancelled_at %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon bg-danger"><i class="fas fa-times-circle"></i></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Booking Cancelled</h6>
+                                    <p class="mb-0 text-muted">{{ booking.cancelled_at|date:"F d, Y, h:i A" }}</p>
+                                    {% if booking.cancelled_reason %}
+                                    <p class="mb-0 text-muted"><small>Reason: {{ booking.cancelled_reason }}</small></p>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Reviews -->
         {% if booking.isCompleted %}
-        <div class="card shadow-sm mb-4">
+        <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex align-items-center mb-3 mb-md-4">
                     <div class="icon-circle bg-success text-white me-3">
                         <i class="fas fa-star"></i>
                     </div>
-                    <h5 class="card-title mb-0">Reviews</h5>
+                    <h5 class="card-title mb-0">Customer Review</h5>
                 </div>
                 
                 {% if booking.reviews.exists %}
                     {% for review in booking.reviews.all %}
-                    <div class="review-card mb-3" id="review-card-{{ review.id }}">
-                        <!-- View Mode -->
-                        <div class="review-view-mode" id="view-mode-{{ review.id }}">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="review-stars">
-                                    {% for i in "12345"|make_list %}
-                                        {% if forloop.counter <= review.rating %}
-                                        <i class="fas fa-star"></i>
-                                        {% else %}
-                                        <i class="far fa-star"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                                {% if review.user == request.user %}
-                                <div class="review-actions">
-                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-review-btn" data-review-id="{{ review.id }}">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-review-btn" data-review-id="{{ review.id }}">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </button>
-                                </div>
+                    <div class="review-card mb-3 p-3 bg-light rounded">
+                        <div class="review-stars mb-2">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= review.rating %}
+                                <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                <i class="far fa-star text-warning"></i>
                                 {% endif %}
-                            </div>
-                            <p class="mb-2">{{ review.review }}</p>
-                            <p class="review-date mb-0">Reviewed on {{ review.created_at|date:"F d, Y" }}</p>
+                            {% endfor %}
                         </div>
-                        
-                        <!-- Edit Mode -->
-                        <div class="review-edit-mode d-none" id="edit-mode-{{ review.id }}">
-                            <form id="edit-review-form-{{ review.id }}" data-review-id="{{ review.id }}">
-                                {% csrf_token %}
-                                <div class="mb-3 text-center">
-                                    <div class="rating-container">
-                                        <div class="star-rating edit-stars">
-                                            <input type="radio" id="edit_star5_{{ review.id }}" name="rating" value="5" {% if review.rating == 5 %}checked{% endif %} required />
-                                            <label for="edit_star5_{{ review.id }}" title="5 stars"><i class="fas fa-star"></i></label>
-                                            <input type="radio" id="edit_star4_{{ review.id }}" name="rating" value="4" {% if review.rating == 4 %}checked{% endif %} />
-                                            <label for="edit_star4_{{ review.id }}" title="4 stars"><i class="fas fa-star"></i></label>
-                                            <input type="radio" id="edit_star3_{{ review.id }}" name="rating" value="3" {% if review.rating == 3 %}checked{% endif %} />
-                                            <label for="edit_star3_{{ review.id }}" title="3 stars"><i class="fas fa-star"></i></label>
-                                            <input type="radio" id="edit_star2_{{ review.id }}" name="rating" value="2" {% if review.rating == 2 %}checked{% endif %} />
-                                            <label for="edit_star2_{{ review.id }}" title="2 stars"><i class="fas fa-star"></i></label>
-                                            <input type="radio" id="edit_star1_{{ review.id }}" name="rating" value="1" {% if review.rating == 1 %}checked{% endif %} />
-                                            <label for="edit_star1_{{ review.id }}" title="1 star"><i class="fas fa-star"></i></label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <textarea class="form-control" name="review" rows="3" required>{{ review.review }}</textarea>
-                                </div>
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-sm btn-secondary me-2 cancel-edit-btn" data-review-id="{{ review.id }}">Cancel</button>
-                                    <button type="submit" class="btn btn-sm btn-primary save-edit-btn" data-review-id="{{ review.id }}">Save Changes</button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <!-- Delete Confirmation -->
-                        <div class="review-delete-confirm d-none" id="delete-confirm-{{ review.id }}">
-                            <div class="alert alert-danger">
-                                <p class="mb-3">Are you sure you want to delete this review? This action cannot be undone.</p>
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-sm btn-secondary me-2 cancel-delete-btn" data-review-id="{{ review.id }}">Cancel</button>
-                                    <button type="button" class="btn btn-sm btn-danger confirm-delete-btn" data-review-id="{{ review.id }}">Delete Review</button>
-                                </div>
-                            </div>
+                        <p class="mb-2">{{ review.review }}</p>
+                        <div class="d-flex justify-content-between">
+                            <p class="review-date mb-0 text-muted"><small>Reviewed on {{ review.created_at|date:"F d, Y" }}</small></p>
+                            <p class="review-author mb-0 text-muted"><small>By {{ review.user.get_full_name|default:review.user.username }}</small></p>
                         </div>
                     </div>
                     {% endfor %}
@@ -521,9 +640,9 @@
             </div>
         </div>
         {% endif %}
-        
+
         <!-- Invoice -->
-        <div class="card shadow-sm mb-4">
+        <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex align-items-center mb-3 mb-md-4">
                     <div class="icon-circle bg-warning text-white me-3">
@@ -563,7 +682,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{% url 'invoice:invoice_preview' booking.invoice.invoiceId %}" 
+                                    <a href="{% url 'invoice:invoice_detail' booking.invoice.invoiceId %}" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-eye me-1"></i> View Details
                                     </a>
@@ -588,387 +707,715 @@
         </div>
 
         <!-- Actions -->
-        <div class="card shadow-sm">
+        <div class="card border border-1">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    {% if not booking.cancelled_at and not booking.isCompleted %}
                     <a href="{% url 'customer:edit_booking' booking.bookingId %}" 
                        class="btn btn-primary px-3 px-md-4">
                         <i class="fas fa-edit me-2"></i>Edit Booking
                     </a>
-                   
-                    <button type="button" class="btn btn-danger px-3 px-md-4" data-bs-toggle="modal" data-bs-target="#deleteBookingModal">
-                        <i class="fas fa-trash-alt me-2"></i>Delete Booking
+                    {% endif %}
+                    {% if not booking.isCompleted and not booking.cancelled_at %}
+                    <button type="button" class="btn btn-warning px-3 px-md-4" data-bs-toggle="modal" data-bs-target="#rescheduleBookingModal">
+                        <i class="fas fa-calendar-alt me-2"></i>Reschedule
                     </button>
-                    
-                    {% if booking.isCompleted and not booking.reviews.exists %}
-                    <button type="button" class="btn btn-success px-3 px-md-4" data-bs-toggle="modal" data-bs-target="#reviewModal">
-                        <i class="fas fa-star me-2"></i>Leave Review
+           
+                    {% endif %}
+          
+                    {% if not booking.cancelled_at and not booking.isCompleted %}
+                    <button type="button" class="btn btn-danger px-3 px-md-4" data-bs-toggle="modal" data-bs-target="#cancelBookingModal">
+                        <i class="fas fa-ban me-2"></i>Cancel Booking
                     </button>
                     {% endif %}
+                   
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteBookingModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Reschedule Booking Modal -->
+<div class="modal fade" id="rescheduleBookingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Delete Booking</h5>
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-calendar-alt me-2"></i>Reschedule Booking</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this booking? This action cannot be undone.</p>
+                <form id="rescheduleForm">
+                    <!-- Current Booking Time -->
+                    <div class="card mb-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Current Schedule</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Current Date</label>
+                                        <div class="form-control-plaintext">
+                                            <i class="fas fa-calendar text-muted me-2"></i>
+                                            <strong>{{ booking.cleaningDate|date:"F d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Current Time</label>
+                                        <div class="form-control-plaintext">
+                                            <i class="fas fa-clock text-muted me-2"></i>
+                                            <strong>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }} to {{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- New Booking Time -->
+                    <h6 class="mb-3">New Schedule</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newCleaningDate" class="form-label">New Date</label>
+                                <input type="date" class="form-control" id="newCleaningDate" name="newCleaningDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6" id="newTimeSlots">
+                            <div class="mb-3">
+                                <label class="form-label">New Time</label>
+                                <div class="time-slots-container">
+                                    <div class="time-slots-grid">
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-06-00" value="06:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-06-00">6:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-07-00" value="07:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-07-00">7:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-08-00" value="08:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-08-00">8:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-09-00" value="09:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-09-00">9:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-10-00" value="10:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-10-00">10:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-11-00" value="11:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-11-00">11:00 AM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-12-00" value="12:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-12-00">12:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-13-00" value="13:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-13-00">1:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-14-00" value="14:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-14-00">2:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-15-00" value="15:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-15-00">3:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-16-00" value="16:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-16-00">4:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-17-00" value="17:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-17-00">5:00 PM</label>
+                                        </div>
+                                        <div class="time-slot-item">
+                                            <input type="radio" class="btn-check" name="newStartTime" id="time-18-00" value="18:00" autocomplete="off" required>
+                                            <label class="btn btn-outline-primary" for="time-18-00">6:00 PM</label>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="newStartTimeValue" name="newStartTimeValue">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                   <!-- Availability Checking UI -->
+                   <div class="col-12">
+                        <div id="availability-alert" style="display: none;" class="alert mt-2">
+                            <div id="availability-message"></div>
+                        </div>
+                        
+                        <!-- Alternative slots suggestion -->
+                        <div id="alternative-slots" style="display: none;" class="mt-3">
+                            <h6 class="mb-2">Alternative Available Slots:</h6>
+                            <div id="alt-slots-list" class="d-flex flex-wrap gap-2 mb-3"></div>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rescheduleReason" class="form-label">Reason for Rescheduling (Optional)</label>
+                        <textarea class="form-control" id="rescheduleReason" name="rescheduleReason" rows="2" placeholder="Provide a reason for rescheduling"></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="bookingId" name="bookingId" value="{{ booking.bookingId }}">
+                    <input type="hidden" id="businessTimezone" value="{{ booking.business.timezone }}">
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="{% url 'bookings:delete_booking' booking.bookingId %}" class="btn btn-danger">Delete</a>
+              
+                <button type="button" class="btn btn-warning" id="rescheduleBtn">
+                    <i class="fas fa-calendar-check me-2"></i>Confirm Reschedule
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Review Modal -->
-<div class="modal fade" id="reviewModal" tabindex="-1">
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Leave a Review</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-ban me-2"></i>Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{% url 'customer:submit_review' booking.bookingId %}" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-4 text-center">
-                        <h6 class="mb-3">How would you rate your experience?</h6>
-                        <div class="rating-container">
-                            <div class="star-rating">
-                                <input type="radio" id="star5" name="rating" value="5" required />
-                                <label for="star5" title="5 stars"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star4" name="rating" value="4" />
-                                <label for="star4" title="4 stars"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star3" name="rating" value="3" />
-                                <label for="star3" title="3 stars"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star2" name="rating" value="2" />
-                                <label for="star2" title="2 stars"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star1" name="rating" value="1" />
-                                <label for="star1" title="1 star"><i class="fas fa-star"></i></label>
-                            </div>
-                        </div>
-                    </div>
+            <div class="modal-body">
+                <form id="cancelForm">
+
                     <div class="mb-3">
-                        <label for="reviewText" class="form-label">Your Review</label>
-                        <textarea class="form-control" id="reviewText" name="review" rows="4" required placeholder="Please share your experience with this service..."></textarea>
+                        <label for="reason" class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="reason" name="reason" rows="2" placeholder="Any additional information about this cancellation"></textarea>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Submit Review</button>
-                </div>
-            </form>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Cancelling this booking may affect your business metrics and customer satisfaction. The customer will be notified of this cancellation.
+                    </div>
+                    
+                    <input type="hidden" id="bookingIdCancel" name="bookingIdCancel" value="{{ booking.bookingId }}">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                    <i class="fas fa-ban me-2"></i>Confirm Cancellation
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Format customer phone numbers
-    const customerPhoneNumbers = document.querySelectorAll('.customer-info p:has(.fa-phone)');
-    customerPhoneNumbers.forEach(function(element) {
-        const phoneNumber = element.textContent.trim();
-        if (phoneNumber) {
-            // Remove any existing formatting and +1 if present
-            let cleanNumber = phoneNumber.replace(/\D/g, '');
-            if (cleanNumber.startsWith('1')) {
-                cleanNumber = cleanNumber.substring(1);
-            }
-            // Format as +1 (555) 555-5555
-            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
-                                  cleanNumber.substring(3, 6) + '-' + 
-                                  cleanNumber.substring(6, 10);
-            element.innerHTML = '<i class="fas fa-phone text-muted me-2"></i>' + formattedNumber;
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById("newCleaningDate");
+        const today = new Date();
+        today.setDate(today.getDate() + 1); // add 1 day (tomorrow)
+        const tomorrow = today.toISOString().split("T")[0]; // format as YYYY-MM-DD
+        dateInput.min = tomorrow;
+
+        const newTimeSlots = document.getElementById("newTimeSlots");
+
+        if (!dateInput.value) {
+            newTimeSlots.style.display = "none";
+        } else {
+            newTimeSlots.style.display = "block";
         }
-    });
-
-    // Format cleaner phone number using ID
-    const cleanerPhoneElement = document.getElementById('cleanerPhoneNumber');
-    if (cleanerPhoneElement) {
-        const phoneNumber = cleanerPhoneElement.textContent.trim();
-        if (phoneNumber) {
-            // Remove any existing formatting and +1 if present
-            let cleanNumber = phoneNumber.replace(/\D/g, '');
-            if (cleanNumber.startsWith('1')) {
-                cleanNumber = cleanNumber.substring(1);
+        
+        // Function to handle reschedule form submission
+        document.getElementById('rescheduleBtn').addEventListener('click', function() {
+            const date = document.getElementById('newCleaningDate').value;
+            // Get the selected time from the radio buttons
+            const selectedTimeRadio = document.querySelector('input[name="newStartTime"]:checked');
+            const time = selectedTimeRadio ? selectedTimeRadio.value : '';
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
             }
-            // Format as +1 (555) 555-5555
-            const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
-                                  cleanNumber.substring(3, 6) + '-' + 
-                                  cleanNumber.substring(6, 10);
-            cleanerPhoneElement.textContent = formattedNumber;
-        }
-    }
-    
-    // In-place review editing functionality
-    function setupReviewEditing() {
-        // Edit review buttons
-        document.querySelectorAll('.edit-review-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const reviewId = this.getAttribute('data-review-id');
-                // Hide view mode, show edit mode
-                document.getElementById(`view-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`edit-mode-${reviewId}`).classList.remove('d-none');
-                // Hide delete confirmation if visible
-                document.getElementById(`delete-confirm-${reviewId}`).classList.add('d-none');
-            });
-        });
-
-        // Cancel edit buttons
-        document.querySelectorAll('.cancel-edit-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const reviewId = this.getAttribute('data-review-id');
-                // Hide edit mode, show view mode
-                document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`view-mode-${reviewId}`).classList.remove('d-none');
-            });
-        });
-
-        // Delete review buttons
-        document.querySelectorAll('.delete-review-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const reviewId = this.getAttribute('data-review-id');
-                // Hide view mode, show delete confirmation
-                document.getElementById(`view-mode-${reviewId}`).classList.add('d-none');
-                document.getElementById(`delete-confirm-${reviewId}`).classList.remove('d-none');
-                // Hide edit mode if visible
-                document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
-            });
-        });
-
-        // Cancel delete buttons
-        document.querySelectorAll('.cancel-delete-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const reviewId = this.getAttribute('data-review-id');
-                // Hide delete confirmation, show view mode
-                document.getElementById(`delete-confirm-${reviewId}`).classList.add('d-none');
-                document.getElementById(`view-mode-${reviewId}`).classList.remove('d-none');
-            });
-        });
-
-        // Save edit form submissions
-        document.querySelectorAll('[id^="edit-review-form-"]').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const reviewId = this.getAttribute('data-review-id');
-                const formData = new FormData(this);
-                
-                // Show loading state
-                const saveBtn = this.querySelector('.save-edit-btn');
-                const originalBtnText = saveBtn.innerHTML;
-                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
-                saveBtn.disabled = true;
-                
-                // Send AJAX request
-                fetch(`/customer/review/edit/${reviewId}/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
+            
+            if (!time) {
+                alert('Please select a time slot');
+                return;
+            }
+            
+            // Proceed with the reschedule
+            const bookingId = document.getElementById('bookingId').value;
+            const reason = document.getElementById('rescheduleReason').value;
+            const businessTimezone = document.getElementById('businessTimezone').value || 'UTC';
+            
+            // Show loading state
+            const rescheduleBtn = document.getElementById('rescheduleBtn');
+            const originalBtnText = rescheduleBtn.innerHTML;
+            rescheduleBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+            rescheduleBtn.disabled = true;
+            
+            // Make API request to reschedule
+            const url = '/booking/api/reschedule-booking/';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    booking_id: bookingId,
+                    new_date_time: date + ' ' + time,
+                    reason: reason,
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update the view mode with new data
-                        const viewMode = document.getElementById(`view-mode-${reviewId}`);
-                        
-                        // Update stars
-                        const starsContainer = viewMode.querySelector('.review-stars');
-                        const rating = parseInt(formData.get('rating'));
-                        starsContainer.innerHTML = '';
-                        for (let i = 1; i <= 5; i++) {
-                            const star = document.createElement('i');
-                            star.className = i <= rating ? 'fas fa-star' : 'far fa-star';
-                            starsContainer.appendChild(star);
-                        }
-                        
-                        // Update review text
-                        const reviewText = viewMode.querySelector('p.mb-2');
-                        reviewText.textContent = formData.get('review');
-                        
-                        // Switch back to view mode
-                        document.getElementById(`edit-mode-${reviewId}`).classList.add('d-none');
-                        viewMode.classList.remove('d-none');
-                        
-                        // Show success message
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Success!</strong> Your review has been updated.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.getElementById(`review-card-${reviewId}`).appendChild(alertDiv);
-                        
-                        // Auto-dismiss the alert after 3 seconds
-                        setTimeout(() => {
-                            alertDiv.classList.remove('show');
-                            setTimeout(() => alertDiv.remove(), 150);
-                        }, 3000);
-                    } else {
-                        // Show error message
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Error!</strong> ${data.error || 'Something went wrong. Please try again.'}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.getElementById(`edit-mode-${reviewId}`).appendChild(alertDiv);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message and reload page
+                    alert('Booking rescheduled successfully!');
+                    window.location.reload();
+                } else {
                     // Show error message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                    alertDiv.innerHTML = `
-                        <strong>Error!</strong> Something went wrong. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.getElementById(`edit-mode-${reviewId}`).appendChild(alertDiv);
-                })
-                .finally(() => {
-                    // Restore button state
-                    saveBtn.innerHTML = originalBtnText;
-                    saveBtn.disabled = false;
-                });
+                    alert(`Error: ${data.error || 'Failed to reschedule booking'}`); 
+                    rescheduleBtn.innerHTML = originalBtnText;
+                    rescheduleBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error rescheduling booking:', error);
+                alert('Failed to reschedule booking. Please try again.');
+                rescheduleBtn.innerHTML = originalBtnText;
+                rescheduleBtn.disabled = false;
             });
         });
-
-        // Confirm delete buttons
-        document.querySelectorAll('.confirm-delete-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const reviewId = this.getAttribute('data-review-id');
-                const reviewCard = document.getElementById(`review-card-${reviewId}`);
-                const deleteConfirm = document.getElementById(`delete-confirm-${reviewId}`);
-                
-                // Show loading state
-                const deleteBtn = this;
-                const originalBtnText = deleteBtn.innerHTML;
-                deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
-                deleteBtn.disabled = true;
-                
-                // Send AJAX request
-                fetch(`/customer/review/delete/${reviewId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
                     }
-                })
+                }
+            }
+            return cookieValue;
+        }
+
+        // Helper function to format date nicely
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+        
+        // Helper function to convert 12-hour time format to 24-hour format
+        function convert12to24(time12h) {
+            const [time, modifier] = time12h.split(' ');
+            let [hours, minutes] = time.split(':');
+            
+            if (hours === '12') {
+                hours = '00';
+            }
+            
+            if (modifier === 'PM') {
+                hours = parseInt(hours, 10) + 12;
+            }
+            
+            // Convert hours to string before using padStart
+            hours = String(hours).padStart(2, '0');
+            
+            return `${hours}:${minutes}`;
+        }
+        
+        // Date input event listener
+        document.getElementById('newCleaningDate').addEventListener('change', function() {
+            const selectedDate = this.value;
+            newTimeSlots.style.display = "block";
+            if (selectedDate) {
+                fetchAvailableTimeSlots(selectedDate);
+            }
+        });
+        
+        // Function to fetch available time slots for a selected date
+        function fetchAvailableTimeSlots(date) {
+            const businessId = "{{ booking.business.businessId }}";
+            const url = `/api/fetch-available-slots/?date=${date}&businessId=${businessId}`;
+            
+            // Show loading state
+            const timeSlotButtons = document.querySelectorAll('.time-slot-item label');
+            timeSlotButtons.forEach(button => {
+                button.classList.remove('btn-outline-primary', 'btn-success', 'btn-secondary');
+                button.classList.add('btn-outline-secondary');
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${button.textContent}`;
+            });
+            
+            // Disable all radio buttons during loading
+            const timeSlotRadios = document.querySelectorAll('input[name="newStartTime"]');
+            timeSlotRadios.forEach(radio => {
+                radio.disabled = true;
+                radio.checked = false;
+            });
+            
+            // Clear any previous availability message and alternative slots
+            const availabilityAlert = document.getElementById('availability-alert');
+            const alternativeSlots = document.getElementById('alternative-slots');
+            availabilityAlert.style.display = 'none';
+            alternativeSlots.style.display = 'none';
+            document.getElementById('alt-slots-list').innerHTML = '';
+            
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        // Add fade-out animation
-                        reviewCard.style.transition = 'opacity 0.5s ease';
-                        reviewCard.style.opacity = '0';
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Update the UI with available time slots
+                    data.time_slots.forEach(slot => {
+                        const radioId = `time-${slot.value.replace(':', '-')}`;
+                        const radio = document.getElementById(radioId);
+                        const label = document.querySelector(`label[for="${radioId}"]`);
                         
-                        // Remove the review card after animation
-                        setTimeout(() => {
-                            reviewCard.remove();
+                        if (radio && label) {
+                            // Enable the radio button
+                            radio.disabled = false;
                             
-                            // Check if there are no more reviews
-                            const reviewsContainer = document.querySelector('.card-body');
-                            if (!document.querySelector('.review-card')) {
-                                reviewsContainer.innerHTML += `
-                                    <div class="text-center text-muted py-3">
-                                        <i class="fas fa-comment-alt fa-2x mb-3"></i>
-                                        <p class="mb-0">No reviews have been added for this booking yet.</p>
-                                    </div>
-                                `;
+                            // Update the label styling based on availability
+                            label.innerHTML = slot.label; // Remove spinner
+                            
+                            if (slot.available) {
+                                label.classList.remove('btn-outline-secondary');
+                                label.classList.add('btn-outline-primary');
+                            } else {
+                                label.classList.remove('btn-outline-secondary', 'btn-outline-primary');
+                                label.classList.add('btn-secondary');
+                                radio.disabled = true; // Disable unavailable slots
+                                radio.style.display = "none";
                             }
-                        }, 500);
-                    } else {
-                        // Show error message
-                        deleteBtn.innerHTML = originalBtnText;
-                        deleteBtn.disabled = false;
+                        }
+                    });
+                    
+                    // Check if there are any available slots
+                    const hasAvailableSlots = data.time_slots.some(slot => slot.available);
+                    
+                    if (!hasAvailableSlots) {
+                        // Show message that no slots are available on this date
+                        availabilityAlert.style.display = 'block';
+                        availabilityAlert.className = 'alert alert-warning mt-2';
+                        document.getElementById('availability-message').innerHTML = 
+                            `<i class="fas fa-exclamation-triangle me-2"></i> No available time slots on this date. Please try another date.`;
                         
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                        alertDiv.innerHTML = `
-                            <strong>Error!</strong> ${data.error || 'Something went wrong. Please try again.'}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        deleteConfirm.appendChild(alertDiv);
+                        // Check if we have alternative dates
+                        if (data.alternative_dates && data.alternative_dates.length > 0) {
+                            // Show alternative dates
+                            alternativeSlots.style.display = 'block';
+                            const altSlotsList = document.getElementById('alt-slots-list');
+                            altSlotsList.innerHTML = '';
+                            
+                            data.alternative_dates.forEach(altDate => {
+                                // Create a button for each alternative date
+                                const dateButton = document.createElement('button');
+                                dateButton.className = 'btn btn-outline-success btn-sm';
+                                dateButton.innerHTML = `<i class="fas fa-calendar-alt me-1"></i> ${formatDate(altDate)}`;
+                                dateButton.type = 'button';
+                                dateButton.addEventListener('click', () => {
+                                    // Set the date input to this alternative date
+                                    document.getElementById('newCleaningDate').value = altDate;
+                                    // Fetch available slots for this date
+                                    fetchAvailableTimeSlots(altDate);
+                                });
+                                
+                                altSlotsList.appendChild(dateButton);
+                            });
+                        }
+                    } else {
+                        // Hide alternative slots if we have available slots
+                        alternativeSlots.style.display = 'none';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    // Restore button state
-                    deleteBtn.innerHTML = originalBtnText;
-                    deleteBtn.disabled = false;
+                    console.error('Error fetching available time slots:', error);
+                    
+                    // Reset all buttons to default state
+                    timeSlotButtons.forEach(button => {
+                        const originalText = button.textContent.replace('Loading...', '');
+                        button.innerHTML = originalText;
+                        button.classList.remove('btn-outline-secondary');
+                        button.classList.add('btn-outline-primary');
+                    });
+                    
+                    // Enable all radio buttons
+                    timeSlotRadios.forEach(radio => {
+                        radio.disabled = false;
+                    });
                     
                     // Show error message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
-                    alertDiv.innerHTML = `
-                        <strong>Error!</strong> Something went wrong. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    deleteConfirm.appendChild(alertDiv);
+                    availabilityAlert.style.display = 'block';
+                    availabilityAlert.className = 'alert alert-danger mt-2';
+                    document.getElementById('availability-message').innerHTML = 
+                        `<i class="fas fa-exclamation-triangle me-2"></i> Error loading available time slots: ${error.message}`;
                 });
-            });
-        });
-    }
-    
-    // Initialize review editing functionality
-    setupReviewEditing();
-    
-    // Fix modal flickering issue
-    const fixModalFlickering = () => {
-        // Get all modals on the page
-        const modals = document.querySelectorAll('.modal');
+        }
         
-        modals.forEach(modal => {
-            // Create a new Bootstrap modal instance with specific options
-            const modalInstance = new bootstrap.Modal(modal, {
-                backdrop: 'static',  // Prevents closing when clicking outside
-                keyboard: true,       // Allows ESC key to close
-                focus: true           // Focuses the modal when initialized
-            });
-            
-            // Store the instance on the element for later use
-            modal._modalInstance = modalInstance;
-            
-            // Prevent any mouse events from causing flickering
-            modal.addEventListener('mouseenter', function(e) {
-                e.stopPropagation();
-            });
-            
-            modal.addEventListener('mouseleave', function(e) {
-                e.stopPropagation();
-            });
-            
-            // Prevent default behavior for modal triggers
-            const triggers = document.querySelectorAll(`[data-bs-target="#${modal.id}"]`);
-            triggers.forEach(trigger => {
-                trigger.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    modalInstance.show();
-                });
+        // Add event listeners to all time slot radio buttons
+        const timeSlotRadios = document.querySelectorAll('input[name="newStartTime"]');
+        timeSlotRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Update the hidden input with the selected value
+                document.getElementById('newStartTimeValue').value = this.value;
+                
+                // Show success message when a time slot is selected
+                const availabilityAlert = document.getElementById('availability-alert');
+                availabilityAlert.style.display = 'block';
+                availabilityAlert.className = 'alert alert-success mt-2';
+                document.getElementById('availability-message').innerHTML = 
+                    `<i class="fas fa-check-circle me-2"></i> Time slot selected: ${document.querySelector(`label[for="${this.id}"]`).textContent}`;
+                
+                setTimeout(() => {
+                    availabilityAlert.style.display = 'none';
+                }, 3000);
             });
         });
-    };
-    
-    // Initialize after a short delay to ensure Bootstrap is fully loaded
-    setTimeout(fixModalFlickering, 500);
-});
+
+
+
+
+
+        // Format customer phone numbers
+        const customerPhoneNumbers = document.querySelectorAll('.customer-info p:has(.fa-phone)');
+        customerPhoneNumbers.forEach(function(element) {
+            const phoneNumber = element.textContent.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                    cleanNumber.substring(3, 6) + '-' + 
+                                    cleanNumber.substring(6, 10);
+                element.innerHTML = '<i class="fas fa-phone text-muted me-2"></i>' + formattedNumber;
+            }
+        });
+
+        // Format cleaner phone number using ID
+        const cleanerPhoneElement = document.getElementById('cleanerPhoneNumber');
+        if (cleanerPhoneElement) {
+            const phoneNumber = cleanerPhoneElement.textContent.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                    cleanNumber.substring(3, 6) + '-' + 
+                                    cleanNumber.substring(6, 10);
+                cleanerPhoneElement.textContent = formattedNumber;
+            }
+        }
+        
+        // Handle cancel reason dropdown change
+        const cancelReason = document.getElementById('reason');
+        
+        
+        // Handle cancel booking form submission
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        
+        if (confirmCancelBtn) {
+            confirmCancelBtn.addEventListener('click', function() {
+                const bookingId = document.getElementById('bookingIdCancel').value;
+                const cancelReason = document.getElementById('reason').value;
+                
+                // Validate form
+                if (!cancelReason) {
+                    alert('Please select a cancellation reason');
+                    return;
+                }
+      
+                
+                // Show loading state
+                const originalBtnText = confirmCancelBtn.innerHTML;
+                confirmCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+                confirmCancelBtn.disabled = true;
+                
+                // Prepare reason text
+                let reasonText = cancelReason;
+                
+                // Make API request to cancel booking
+                const url = '/booking/api/cancel-booking/';
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        booking_id: bookingId,
+                        reason: reasonText,
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message and reload page
+                        alert('Booking cancelled successfully!');
+                        window.location.reload();
+                    } else {
+                        // Show error message
+                        alert(`Error: ${data.message || 'Failed to cancel booking'}`);
+                        confirmCancelBtn.innerHTML = originalBtnText;
+                        confirmCancelBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling booking:', error);
+                    alert('Failed to cancel booking. Please try again.');
+                    confirmCancelBtn.innerHTML = originalBtnText;
+                    confirmCancelBtn.disabled = false;
+                });
+            });
+        }
+    });
 </script>
 {% endblock %}
 
 {% block styles %}
+<style>
+    /* Time slots styling */
+    .time-slots-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .time-slots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .time-slot-item {
+        text-align: center;
+    }
+    
+    .time-slot-item .btn {
+        width: 100%;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        padding: 8px 0;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    /* Available time slot */
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #0d6efd;
+        color: white;
+        box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    /* Unavailable time slot */
+    .btn-secondary {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    
+    .btn-secondary:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Loading state */
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+    
+    /* Hover effect for available slots */
+    .time-slot-item .btn-outline-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Availability indicator */
+    .btn-outline-primary::after {
+        content: '✓';
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #28a745;
+        color: white;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.9;
+    }
+    
+    @media (max-width: 767.98px) {
+        .time-slots-grid {
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 6px;
+        }
+        
+        .time-slot-item .btn {
+            font-size: 0.8rem;
+            padding: 6px 0;
+        }
+    }
+    
+    /* Timeline styling */
+    .timeline {
+        list-style: none;
+        padding: 0;
+        position: relative;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 20px;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 1;
+        flex-shrink: 0;
+    }
+    .timeline-content {
+        margin-left: 20px;
+        padding-top: 5px;
+    }
+</style>
 <style>
     .icon-circle {
         width: 40px;
@@ -992,102 +1439,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .table th {
         font-weight: 600;
         font-size: 0.9rem;
-    }
-    
-    /* Star Rating Styles */
-    .rating-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .star-rating {
-        display: flex;
-        flex-direction: row-reverse;
-        font-size: 1.5em;
-        justify-content: center;
-        padding: 0 0.2em;
-        text-align: center;
-        width: 5em;
-    }
-    
-    .star-rating input {
-        display: none;
-    }
-    
-    .star-rating label {
-        color: #ccc;
-        cursor: pointer;
-        padding: 0 0.1em;
-        transition: color 0.3s;
-    }
-    
-    .star-rating label:hover,
-    .star-rating label:hover ~ label,
-    .star-rating input:checked ~ label {
-        color: #f90;
-    }
-    
-    /* Review Card Styles */
-    .review-card {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        position: relative;
-    }
-    
-    .review-stars {
-        color: #f90;
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .review-date {
-        color: #6c757d;
-        font-size: 0.85rem;
-    }
-    
-    .review-actions {
-        display: flex;
-    }
-    
-    .review-edit-mode textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
-    
-    .review-delete-confirm {
-        margin-top: 1rem;
-    }
-    
-    /* Fix for modal flickering */
-    .modal {
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        will-change: transform;
-    }
-    
-    .modal-content {
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-        will-change: transform;
-    }
-    
-    .modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1040;
-        width: 100vw;
-        height: 100vh;
-        background-color: #000;
-        opacity: 0.5;
-    }
-    
-    body.modal-open {
-        overflow: hidden;
-        padding-right: 0 !important;
     }
     
     @media (max-width: 767.98px) {
@@ -1128,10 +1479,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .text-break {
             word-break: break-word;
         }
-        
-        .star-rating {
-            font-size: 1.5rem;
-        }
     }
 </style>
 {% endblock %}
+

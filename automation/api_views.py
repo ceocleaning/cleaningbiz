@@ -1,7 +1,7 @@
 import os
 import json
 from rest_framework.decorators import api_view
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, is_naive
@@ -365,16 +365,16 @@ def check_availability_for_booking(request):
         if not date_str or not time_str:
             return JsonResponse({"error": "Missing date or time parameter"}, status=400)
         
-        res = parse_business_datetime(date_str + ' ' + time_str, business)
+      
+        business_id = request.GET.get("businessId")
+        current_business = Business.objects.get(businessId=business_id)
         
-        if hasattr(request.user, 'customer') and request.user.customer or not request.user.is_authenticated:
-            print(request.GET.get("businessId"))
-            business_id = request.GET.get("businessId")
-            current_business = Business.objects.get(businessId=business_id)
-
 
         if not current_business:
             return JsonResponse({"error": "Business not found"}, status=404)
+        
+        res = parse_business_datetime(date_str + ' ' + time_str, current_business)
+        
 
         cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
         
@@ -394,7 +394,9 @@ def check_availability_for_booking(request):
                 try:
                     slot_dt = datetime.strptime(slot, '%Y-%m-%d %I:%M %p')
                     slot_dt_utc = pytz.UTC.localize(slot_dt)
-                    slot_dt_local = slot_dt_utc.astimezone(local_tz)
+                    # Convert string timezone to tzinfo object
+                    business_tz = pytz.timezone(current_business.timezone)
+                    slot_dt_local = slot_dt_utc.astimezone(business_tz)
                     formatted_alt_slots.append(slot_dt_local.strftime('%Y-%m-%d %I:%M %p'))
                 except ValueError as e:
                     # Log the error and skip this slot
@@ -412,6 +414,134 @@ def check_availability_for_booking(request):
     except Exception as e:
         import traceback
         print(f"Error in check_availability_for_booking: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# API endpoint to fetch all available time slots for a specific date
+@api_view(['GET'])
+def fetch_available_time_slots(request):
+    try:
+        date_str = request.GET.get('date')
+        business_id = request.GET.get('businessId')
+        
+        if not date_str:
+            return JsonResponse({"error": "Missing date parameter"}, status=400)
+            
+        if not business_id:
+            return JsonResponse({"error": "Missing businessId parameter"}, status=400)
+            
+        try:
+            current_business = Business.objects.get(businessId=business_id)
+        except Business.DoesNotExist:
+            return JsonResponse({"error": "Business not found"}, status=404)
+        
+        # Parse the date string to datetime object
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+            
+        # Get all cleaners for this business
+        cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
+        
+        if not cleaners or len(cleaners) == 0:
+            return JsonResponse({"error": "No cleaners available for this business"}, status=404)
+            
+        # Define time slots (from 6 AM to 6 PM in 1-hour increments)
+        time_slots = [
+            {'value': '06:00', 'label': '6:00 AM', 'available': False},
+            {'value': '07:00', 'label': '7:00 AM', 'available': False},
+            {'value': '08:00', 'label': '8:00 AM', 'available': False},
+            {'value': '09:00', 'label': '9:00 AM', 'available': False},
+            {'value': '10:00', 'label': '10:00 AM', 'available': False},
+            {'value': '11:00', 'label': '11:00 AM', 'available': False},
+            {'value': '12:00', 'label': '12:00 PM', 'available': False},
+            {'value': '13:00', 'label': '1:00 PM', 'available': False},
+            {'value': '14:00', 'label': '2:00 PM', 'available': False},
+            {'value': '15:00', 'label': '3:00 PM', 'available': False},
+            {'value': '16:00', 'label': '4:00 PM', 'available': False},
+            {'value': '17:00', 'label': '5:00 PM', 'available': False},
+            {'value': '18:00', 'label': '6:00 PM', 'available': False},
+        ]
+        
+        # Check availability for each time slot
+        business_tz = pytz.timezone(current_business.timezone)
+        
+        for slot in time_slots:
+            # Create datetime object for this slot
+            time_parts = slot['value'].split(':')
+            slot_datetime = datetime.combine(
+                date_obj, 
+                time(int(time_parts[0]), int(time_parts[1]))
+            )
+            
+            # Localize to business timezone
+            slot_datetime = business_tz.localize(slot_datetime)
+            
+            # Convert to UTC for availability check
+            slot_datetime_utc = slot_datetime.astimezone(pytz.UTC)
+            
+            # Check if any cleaner is available at this time
+            available_cleaners = []
+            is_available, _ = is_slot_available(cleaners, slot_datetime_utc, available_cleaners)
+            
+            # Update availability in the slot
+            slot['available'] = is_available
+        
+        # Check if any slots are available
+        any_available = any(slot['available'] for slot in time_slots)
+        
+        # If no slots are available, find alternative dates
+        alternative_dates = []
+        if not any_available:
+            # Look for available slots in the next 7 days
+            for i in range(1, 8):
+                # Get the next date
+                next_date = date_obj + timedelta(days=i)
+                next_date_str = next_date.strftime('%Y-%m-%d')
+                
+                # Check if there are any available slots on this date
+                has_available_slot = False
+                
+                for hour in range(6, 19):  # 6 AM to 6 PM
+                    # Create datetime object for this slot
+                    slot_datetime = datetime.combine(
+                        next_date, 
+                        time(hour, 0)
+                    )
+                    
+                    # Localize to business timezone
+                    slot_datetime = business_tz.localize(slot_datetime)
+                    
+                    # Convert to UTC for availability check
+                    slot_datetime_utc = slot_datetime.astimezone(pytz.UTC)
+                    
+                    # Check if any cleaner is available at this time
+                    available_cleaners = []
+                    is_available, _ = is_slot_available(cleaners, slot_datetime_utc, available_cleaners)
+                    
+                    if is_available:
+                        has_available_slot = True
+                        break
+                
+                if has_available_slot:
+                    alternative_dates.append(next_date_str)
+                    
+                # Limit to 3 alternative dates
+                if len(alternative_dates) >= 3:
+                    break
+        
+        # Return the time slots with availability information and alternative dates
+        return JsonResponse({
+            "date": date_str,
+            "time_slots": time_slots,
+            "alternative_dates": alternative_dates
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in fetch_available_time_slots: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -631,11 +761,10 @@ def reschedule_booking(request):
         data = request_data.get('args')
         booking_id = data.get('booking_id')
         new_date_time = data.get('next_date_time')
-        
-        booking = Booking.objects.get(bookingId=booking_id)
+        reason = data.get('reason') or None
 
         from ai_agent.api_views import reschedule_appointment
-        reschedule_response = reschedule_appointment(booking, new_date_time)
+        reschedule_response = reschedule_appointment(booking_id, new_date_time, reason)
 
         if reschedule_response['success']:
             return JsonResponse({'success': True, 'message': 'Booking rescheduled successfully'})
@@ -658,11 +787,12 @@ def cancel_booking(request):
         request_data = json.loads(request.body)
         data = request_data.get('args')
         booking_id = data.get('booking_id')
+        reason = data.get('reason') or None
         
         booking = Booking.objects.filter(bookingId=booking_id).first()
         
         from ai_agent.api_views import cancel_appointment
-        cancel_response = cancel_appointment(booking)
+        cancel_response = cancel_appointment(booking_id, reason)
 
         if cancel_response['success']:
             return JsonResponse({'success': True, 'message': 'Booking cancelled successfully'})

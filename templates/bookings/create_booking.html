@@ -160,23 +160,15 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cleaningDate" class="form-label">Cleaning Date <small class="text-muted">
-                                {% if request.user.customer %}
-                                ({{ request.user.customer.timezone }})
-                                {% else %}
-                                ({{ request.user.business_set.first.timezone }})
-                                {% endif %}
+                                ({{ business.timezone }})
                             
                             </small></label>
                             <input type="date" class="form-control" id="cleaningDate" name="cleaningDate" required min="{{ today|date:'Y-m-d' }}">
-                            <input type="hidden" id="businessTimezone" value="{{ request.user.customer.timezone }}">
+                            <input type="hidden" id="businessTimezone" value="{{ business.timezone }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="startTime" class="form-label">Start Time <small class="text-muted">
-                                {% if request.user.customer %}
-                                ({{ request.user.customer.timezone }})
-                                {% else %}
-                                ({{ request.user.business_set.first.timezone }})
-                                {% endif %}
+                                ({{ business.timezone }})
                             </small></label>
                             <select class="form-control form-select" id="startTime" name="startTime" required>
                                 <option value="">Select Time</option>

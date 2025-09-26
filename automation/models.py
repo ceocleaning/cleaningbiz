@@ -208,8 +208,6 @@ class OpenJob(models.Model):
     assignment_type = models.CharField(max_length=255, choices=OPEN_JOB_ASSIGNMENT_TYPE, default='all_available')
 
     
-
-
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
     
@@ -226,7 +224,16 @@ class OpenJob(models.Model):
         id = ''.join(random.choices(string.digits, k=5))
         return f"{prefix}{id}"
     
-   
-        
+
+class BookingNotificationTracker(models.Model):
+    """Track which bookings have been processed for notifications"""
+    booking = models.ForeignKey('bookings.Booking', on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=50, default='cleaner_assignment_check')
+    processed_at = models.DateTimeField(auto_now_add=True)
     
+    class Meta:
+        unique_together = ('booking', 'notification_type')
+        
+    def __str__(self):
+        return f"{self.booking.bookingId} - {self.notification_type} - {self.processed_at.strftime('%Y-%m-%d %H:%M')}"
     

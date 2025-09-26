@@ -112,7 +112,7 @@
                                         <div class="row align-items-center">
                                             <div class="col-md-8">
                                                 <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle bg-white p-2 d-flex justify-content-center align-items-center shadow-sm me-4"
+                                                    <div class="rounded-circle bg-white p-2 d-flex justify-content-center align-items-center border border-1 me-4"
                                                     style="width: 50px; height: 50px;">
                                                         <i class="fas fa-building text-primary fs-2"></i>
                                                     </div>
@@ -123,7 +123,7 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                                <a href="{% url 'accounts:edit_business' %}" class="btn btn-light d-inline-flex align-items-center rounded-3 shadow-sm px-4 py-2">
+                                                <a href="{% url 'accounts:edit_business' %}" class="btn btn-light d-inline-flex align-items-center rounded-3 border border-1 px-4 py-2">
                                                     <i class="fas fa-pen-to-square me-2 text-primary"></i> 
                                                     <span>Edit Profile</span>
                                                 </a>
@@ -246,13 +246,13 @@
                                 </div>
                                 <h4 class="text-white">Business Settings</h4>
                               </div>
-                            <button id="saveSettingsBtn" class="btn btn-light d-flex align-items-center rounded-3 shadow-sm px-4 py-2">
+                            <button id="saveSettingsBtn" class="btn btn-light d-flex align-items-center rounded-3 border border-1 px-4 py-2">
                               <i class="fas fa-save me-2 text-primary"></i> 
                               <span>Save Settings</span>
                             </button>
                           </div>
 
-                          <div class="card border-0 shadow-sm overflow-hidden">
+                          <div class=" border border-1 overflow-hidden">
                             <div class="card-body p-4">
                               <form id="businessSettingsForm" method="post">
                                 {% csrf_token %}
@@ -323,7 +323,7 @@
                                 </div>
                                 <h4 class="text-white">Business Pricing</h4>
                             </div>
-                            <a href="{% url 'accounts:edit_business_settings' %}" class="btn btn-light d-flex align-items-center rounded-3 shadow-sm px-4 py-2">
+                            <a href="{% url 'accounts:edit_business_settings' %}" class="btn btn-light d-flex align-items-center rounded-3 border border-1 px-4 py-2">
                               <i class="fas fa-pen-to-square me-2 text-primary"></i> 
                               <span>Edit Pricing</span>
                             </a>
@@ -333,7 +333,7 @@
                           <div class="row g-4">
                             <!-- Base Pricing Card -->
                             <div class="col-md-6">
-                              <div class="card border-0 rounded-4 shadow-sm h-100">
+                              <div class=" rounded-4 border border-1 h-100">
                                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                   <div class="d-flex align-items-center mb-2">
                                     <div class="rounded-2 bg-primary px-3 py-2 me-3 d-flex justify-content-center align-items-center">
@@ -381,7 +381,7 @@
                             
                             <!-- Service Multipliers Card -->
                             <div class="col-md-6">
-                              <div class="card border-0 rounded-4 shadow-sm h-100">
+                              <div class=" rounded-4 border border-1 h-100">
                                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                   <div class="d-flex align-items-center mb-2">
                                     <div class="bg-primary rounded-3 px-3 py-2 me-3">
@@ -423,7 +423,7 @@
                             
                             <!-- Add-on Prices Card -->
                             <div class="col-12">
-                              <div class="card border-0 rounded-4 shadow-sm">
+                              <div class=" rounded-4 border border-1">
                                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                   <div class="d-flex align-items-center mb-2">
                                     <div class="bg-primary rounded-3 px-3 py-2 me-3">
@@ -604,14 +604,14 @@
                                         </div>
                                         <h4 class="text-white">Integration Settings</h4>
                                     </div>
-                                    <a href="{% url 'accounts:edit_credentials' %}" class="btn btn-light d-flex align-items-center rounded-3 shadow-sm px-4 py-2">
+                                    <a href="{% url 'accounts:edit_credentials' %}" class="btn btn-light d-flex align-items-center rounded-3 border border-1 px-4 py-2">
                                         <i class="fas fa-pen-to-square me-2 text-primary"></i>
                                         <span>Edit Settings</span>
                                     </a>
                                 </div>
 
                                 <!-- Introduction Card -->
-                                <div class="card border-0 shadow-sm mb-4 bg-light">
+                                <div class=" border border-1 mb-4 bg-light">
                                     <div class="card-body p-4">
                                         <div class="d-flex">
                                             <div class="me-3">
@@ -637,7 +637,7 @@
                                 <div class="row g-4 mb-4">
                                     <!-- Secret Key Card -->
                                     <div class="col-md-6">
-                                        <div class="card border-0 shadow-sm h-100 credential-card">
+                                        <div class=" border border-1 h-100 credential-card">
                                             <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                                 <div class="d-flex align-items-center mb-2">
                                                     <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
@@ -699,7 +699,7 @@
                                 </div>
 
                                
-                                <div class="card border-0 rounded-4 shadow-sm mb-4 credential-card">
+                                <div class=" rounded-4 border border-1 mb-4 credential-card">
                                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                         <div class="d-flex align-items-center mb-2">
                                             <div class="rounded-circle bg-info p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
@@ -752,7 +752,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100 credential-card">
+                                <div class=" border border-1 h-100 credential-card">
                                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                                         <div class="d-flex align-items-center mb-2">
                                             <div class="rounded-circle bg-primary p-2 me-2 d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
@@ -796,7 +796,7 @@
                 </div>
          
                 <!-- Twilio Integration Section -->
-                <div class="card border-0 rounded-4 shadow-sm mb-4 credential-card">
+                <div class=" rounded-4 border border-1 mb-4 credential-card">
                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                         <div class="d-flex align-items-center mb-2">
                             <div class="rounded-circle bg-danger p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
@@ -878,7 +878,7 @@
                 </div>
 
                 <!-- Webhook Integration Section -->
-                <div class="card border-0 rounded-4 shadow-sm credential-card">
+                <div class=" rounded-4 border border-1 credential-card">
                     <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                         <div class="d-flex align-items-center mb-2">
                             <div class="rounded-circle bg-warning p-2 me-2 d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;">
@@ -995,7 +995,7 @@
                 </div>
                 <h4 class="text-white">Custom Addons</h4>
             </div>
-            <button type="button" class="btn btn-light d-flex align-items-center rounded-3 shadow-sm px-4 py-2" 
+            <button type="button" class="btn btn-light d-flex align-items-center rounded-3 border border-1 px-4 py-2" 
                     data-bs-toggle="modal" data-bs-target="#addCustomAddonModal">
               <i class="fas fa-plus-circle me-2 text-primary"></i> 
               <span>Add New Addon</span>
@@ -1023,7 +1023,7 @@
           <div class="row g-4" id="addonsGrid">
             {% for addon in business.business_custom_addons.all %}
             <div class="col-lg-4 col-md-6">
-              <div class="card h-100 rounded-4 border-0 shadow-sm hover-shadow transition-300">
+              <div class="card h-100 rounded-4 border-0 border border-1 hover-shadow transition-300">
                 <!-- Card Header -->
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                   <div class="d-flex justify-content-between align-items-start">
@@ -1088,7 +1088,7 @@
             </div>
             {% empty %}
             <div class="col-12">
-              <div class="card text-center py-5 border-0 rounded-4 shadow-sm">
+              <div class="card text-center py-5 border-0 rounded-4 border border-1">
                 <div class="card-body py-5">
                   <div class="bg-primary rounded-circle p-4 d-inline-flex mb-4">
                     <i class="fas fa-puzzle-piece text-primary fs-1"></i>
@@ -1097,7 +1097,7 @@
                   <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
                     Create your first custom addon to offer additional services to your customers and increase your revenue potential.
                   </p>
-                  <button class="btn btn-primary rounded-3 px-4 py-2 shadow-sm" 
+                  <button class="btn btn-primary rounded-3 px-4 py-2 border border-1" 
                           data-bs-toggle="modal" data-bs-target="#addCustomAddonModal">
                     <i class="fas fa-plus-circle me-2"></i> Add Your First Addon
                   </button>
@@ -2202,7 +2202,7 @@
             if (filteredAddons.length === 0) {
                 addonsGrid.innerHTML = `
                     <div class="col-12">
-                        <div class="card text-center py-5 border-0 rounded-4 shadow-sm">
+                        <div class="card text-center py-5 border-0 rounded-4 border border-1">
                             <div class="card-body py-5">
                                 <div class="bg-primary rounded-circle p-3 d-inline-flex mb-4">
                                     <i class="fas fa-search text-primary fs-4"></i>

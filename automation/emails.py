@@ -3,8 +3,9 @@ from django.utils import timezone
 import datetime
 from leadsAutomation.utils import send_email
 from notification.services import NotificationService
-from accounts.timezone_utils import convert_from_utc
-from datetime import datetime
+from accounts.timezone_utils import convert_from_utc, convert_to_utc
+from datetime import datetime, timedelta
+
 
 
 def send_arrival_confirmation_email(booking):
@@ -15,30 +16,22 @@ def send_arrival_confirmation_email(booking):
   
     
     # Get customer's full name
-    customer_name = f"{booking.customer.first_name} {booking.customer.last_name}" if booking.customer and booking.customer.last_name else (booking.customer.first_name if booking.customer else "Customer")
+    customer_name = booking.customer.get_full_name()
     
     # Format date and time
     booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
     booking_time = f"{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}" if booking.startTime and booking.endTime else "N/A"
     
-    # Format address
-    address_parts = []
-    if booking.customer.address:
-        address_parts.append(booking.customer.address)
-   
-    if booking.customer.city and booking.customer.state_or_province:
-        address_parts.append(f"{booking.customer.city}, {booking.customer.state_or_province}")
-    if booking.customer.zip_code:
-        address_parts.append(booking.customer.zip_code)
     
-    full_address = ", ".join(address_parts) if address_parts else "N/A"
+    full_address = booking.customer.get_address()
     
     # Get cleaner name
     cleaner_name = booking.cleaner.name if booking.cleaner else "Your cleaner"
     
     # Calculate estimated arrival time (current time + 15 minutes)
     now = timezone.now()
-    arrival_time = now + datetime.timedelta(minutes=15)
+    local_now = convert_from_utc(now, booking.customer.timezone)
+    arrival_time = local_now + timedelta(minutes=15)
     arrival_time_str = arrival_time.strftime("%I:%M %p")
     
     # Email subject
@@ -63,7 +56,7 @@ def send_arrival_confirmation_email(booking):
     
     Thank you for choosing {business.businessName}!
     
-    {timezone.now().year} {business.businessName}. All rights reserved.
+    {now.year} {business.businessName}. All rights reserved.
     This is an automated message, please do not reply directly to this email.
     """
     
@@ -106,12 +99,6 @@ def send_completion_notification_emails(booking):
     business_booking_time = f"{business_start_time.strftime('%I:%M %p')} - {business_end_time.strftime('%I:%M %p')}" if business_start_time and business_end_time else "N/A"
 
     
-
-
-
-    
-    
-    
     full_address = booking.customer.get_address()
     
     # Get cleaner name and email
@@ -132,27 +119,27 @@ def send_completion_notification_emails(booking):
         
         
         customer_text_body = f"""
-        Hello {customer_name},
+Hello {customer_name},
 
-        Your Cleaning Service with {booking.business.businessName} has completed
-        
-        Thank you for chosing {booking.business.businessName} for your cleaning service.
-        
-        JOB DETAILS:
-        Client: {customer_name}
-        Service: {booking.serviceType}
-        Bedrooms: {booking.bedrooms}
-        Bathrooms: {booking.bathrooms}
-        Service Area: {booking.squareFeet}
-        Date: {booking_date}
-        Time: {customer_booking_time}
-        Address: {full_address}
-        Booking ID: {booking.bookingId}
-        
+Your Cleaning Service with {booking.business.businessName} has completed
 
-        
-        {timezone.now().year} {business.businessName}. All rights reserved.
-        This is an automated message, please do not reply directly to this email.
+Thank you for chosing {booking.business.businessName} for your cleaning service.
+
+JOB DETAILS:
+Client: {customer_name}
+Service: {booking.serviceType}
+Bedrooms: {booking.bedrooms}
+Bathrooms: {booking.bathrooms}
+Service Area: {booking.squareFeet}
+Date: {booking_date}
+Time: {customer_booking_time}
+Address: {full_address}
+Booking ID: {booking.bookingId}
+
+
+
+{timezone.now().year} {business.businessName}. All rights reserved.
+This is an automated message, please do not reply directly to this email.
         """
         
         try:
@@ -176,23 +163,23 @@ def send_completion_notification_emails(booking):
 
         
         owner_text_body = f"""
-        Hello,
-        
-        A booking has been marked as completed by {cleaner_name}.
-        
-        BOOKING DETAILS:
-        Client: {customer_name}
-        Cleaner: {cleaner_name}
-        Service: {booking.serviceType}
-        Date: {booking_date}
-        Time: {business_booking_time}
-        Address: {full_address}
-        Booking ID: {booking.bookingId}
-        
-        The booking has been successfully completed and marked as such in the system.
-        
-        {timezone.now().year} {business.businessName}. All rights reserved.
-        This is an automated message, please do not reply directly to this email.
+Hello,
+
+A booking has been marked as completed by {cleaner_name}.
+
+BOOKING DETAILS:
+Client: {customer_name}
+Cleaner: {cleaner_name}
+Service: {booking.serviceType}
+Date: {booking_date}
+Time: {business_booking_time}
+Address: {full_address}
+Booking ID: {booking.bookingId}
+
+The booking has been successfully completed and marked as such in the system.
+
+{timezone.now().year} {business.businessName}. All rights reserved.
+This is an automated message, please do not reply directly to this email.
         """
         
         try:
@@ -243,23 +230,23 @@ def send_cleaner_arrived_notification(booking):
     
     # Create message content
     message_content = f"""
-    Hello {customer_name},
-    
-    {cleaner_name} has arrived at your location at {arrival_time_str} and is ready to begin the cleaning service.
-    
-    BOOKING DETAILS:
-    Service: {booking.serviceType}
-    Date: {booking_date}
-    Time: {customer_booking_time}
-    Address: {full_address}
-    Booking ID: {booking.bookingId}
-    
-    If you have any questions or need to provide additional instructions, please contact our customer service.
-    
-    Thank you for choosing {business.businessName}!
-    
-    {timezone.now().year} {business.businessName}. All rights reserved.
-    This is an automated message, please do not reply directly to this email.
+Hello {customer_name},
+
+{cleaner_name} has arrived at your location at {arrival_time_str} and is ready to begin the cleaning service.
+
+BOOKING DETAILS:
+Service: {booking.serviceType}
+Date: {booking_date}
+Time: {customer_booking_time}
+Address: {full_address}
+Booking ID: {booking.bookingId}
+
+If you have any questions or need to provide additional instructions, please contact our customer service.
+
+Thank you for choosing {business.businessName}!
+
+{timezone.now().year} {business.businessName}. All rights reserved.
+This is an automated message, please do not reply directly to this email.
     """
     
     # Set the from email address

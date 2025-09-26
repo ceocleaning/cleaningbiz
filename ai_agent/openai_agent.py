@@ -112,6 +112,10 @@ openai_tools = [
                     "new_date_time": {
                         "type": "string",
                         "description": "The new date and time for the appointment (e.g., 'Tomorrow at 2 PM', 'March 15, 2025 at 10 AM')"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "The reason for rescheduling the appointment"
                     }
                 },
                 "required": ["booking_id", "new_date_time"]
@@ -129,9 +133,13 @@ openai_tools = [
                     "booking_id": {
                         "type": "string",
                         "description": "The booking ID of the appointment to cancel"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "The reason for canceling the appointment"
                     }
                 },
-                "required": ["booking_id"]
+                "required": ["booking_id", "reason"]
             }
         }
     }
@@ -752,6 +760,7 @@ class OpenAIAgent:
                 print(f"[DEBUG] Executing rescheduleAppointment tool with args: {tool_args}")
                 booking_id = tool_args.get('booking_id')
                 new_date_time = tool_args.get('new_date_time')
+                reason = tool_args.get('reason') or None
                 
                 if not booking_id or not new_date_time:
                     print("[DEBUG] Missing required parameters in rescheduleAppointment")
@@ -763,7 +772,7 @@ class OpenAIAgent:
                 try:
                     # Call the reschedule_appointment function from api_views.py
                     print(f"[DEBUG] Calling reschedule_appointment function with business ID={business.businessId}, booking_id={booking_id}, new_date_time={new_date_time}")
-                    result = reschedule_appointment(business, booking_id, new_date_time)
+                    result = reschedule_appointment(booking_id, new_date_time, reason)
                     print(f"[DEBUG] reschedule_appointment returned: {result}")
                     return json.dumps(result)
                 except Exception as e:
@@ -778,6 +787,7 @@ class OpenAIAgent:
             elif tool_name == 'cancelAppointment':
                 print(f"[DEBUG] Executing cancelAppointment tool with args: {tool_args}")
                 booking_id = tool_args.get('booking_id')
+                reason = tool_args.get('reason') or None
                 
                 if not booking_id:
                     print("[DEBUG] Missing booking_id parameter in cancelAppointment")
@@ -788,8 +798,8 @@ class OpenAIAgent:
                     
                 try:
                     # Call the cancel_appointment function from api_views.py
-                    print(f"[DEBUG] Calling cancel_appointment function with business ID={business.businessId}, booking_id={booking_id}")
-                    result = cancel_appointment(business, booking_id)
+                    print(f"[DEBUG] Calling cancel_appointment function with booking_id={booking_id}")
+                    result = cancel_appointment(booking_id, reason)
                     print(f"[DEBUG] cancel_appointment returned: {result}")
                     return json.dumps(result)
                 except Exception as e:

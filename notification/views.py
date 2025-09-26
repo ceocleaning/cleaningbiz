@@ -20,8 +20,7 @@ def notification_list(request):
     """View to display user's notifications"""
     
     # Base query - filter by recipient
-    notifications = Notification.objects.filter(Q(recipient=request.user) | Q(email_to=request.user.email))
-    
+    notifications = Notification.objects.filter(Q(recipient=request.user) & Q(email_to=request.user.email))    
 
     
     # Paginate results

@@ -48,7 +48,7 @@ def format_datetime(dt, target_timezone=None, format_str=None):
     return dt.strftime(format_str or "%B %d, %Y, %I:%M %p")
 
 
-def parse_business_datetime(date_str, business, to_utc=True, duration_hours=1):
+def parse_business_datetime(date_str, business, to_utc=True, duration_hours=1, need_conversion=True):
     """
     Parse a datetime string, apply the business timezone, and optionally convert to UTC.
     
@@ -57,6 +57,7 @@ def parse_business_datetime(date_str, business, to_utc=True, duration_hours=1):
         business (object): Business object with .get_timezone().
         to_utc (bool): Whether to convert to UTC for storage.
         duration_hours (int|None): If provided, calculate an end datetime after this many hours.
+        need_conversion (bool): Whether to convert to date from string.
     
     Returns:
         dict: {
@@ -74,8 +75,10 @@ def parse_business_datetime(date_str, business, to_utc=True, duration_hours=1):
     """
     try:
         # Normalize string
-        converted_str = convert_date_str_to_date(date_str, business).strip()
-        print("to UTC: ", to_utc)
+        if need_conversion:
+            converted_str = convert_date_str_to_date(date_str, business).strip()
+        else:
+            converted_str = date_str.strip()
         # Parse datetime
         parsed_dt = datetime.fromisoformat(converted_str)
 

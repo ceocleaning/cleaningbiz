@@ -255,14 +255,12 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         return {"success": False, "error": str(e)}
 
 
-def reschedule_appointment(business, booking_id, new_date_time):
+def reschedule_appointment(booking_id, new_date_time, reason=None):
     try:
-        booking = Booking.objects.get(bookingId=booking_id, business=business)
-        cleaners = get_cleaners_for_business(business)
+        booking = Booking.objects.get(bookingId=booking_id)
+        cleaners = get_cleaners_for_business(booking.business)
 
-
-        
-        res = parse_business_datetime(new_date_time, business)
+        res = parse_business_datetime(new_date_time, booking.business)
     
         # Check availability using UTC datetime
         is_available, _ = is_slot_available(cleaners, res['data']['utc_datetime'])
@@ -282,6 +280,9 @@ def reschedule_appointment(business, booking_id, new_date_time):
         booking.cleaningDate = res['data']['utc_date']
         booking.startTime = res['data']['utc_start_time']
         booking.endTime = res['data']['utc_end_time']
+        if reason:
+            booking.rescheduled_reason = reason
+        booking.rescheduled_at = timezone.now()
         booking.save()
         
        
@@ -300,16 +301,18 @@ def reschedule_appointment(business, booking_id, new_date_time):
 
 
 
-def cancel_appointment(business, booking_id):
+def cancel_appointment(booking_id, reason=None):
     try:
         
-        booking = Booking.objects.get(bookingId=booking_id, business=business)
+        booking = Booking.objects.get(bookingId=booking_id)
         
         # Store booking details before cancellation for email
         booking_copy = booking
         
         # Mark as cancelled
         booking.cancelled_at = timezone.now()
+        if reason:
+            booking.cancelled_reason = reason
         booking.save()
         
         

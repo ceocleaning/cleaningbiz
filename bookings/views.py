@@ -4,17 +4,23 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+
+from bookings.utils import send_jobs_to_cleaners
 from .models import Booking, BookingCustomAddons
 from invoice.models import Invoice, Payment
 from accounts.models import Business, BusinessSettings, CustomAddons
 from automation.models import CleanerAvailability, Cleaners, OpenJob
+from accounts.models import CleanerProfile
 from customer.models import Customer
+from customer.utils import create_customer
 from decimal import Decimal
 import json
 from django.db.models import Min, Count
 from django.http import JsonResponse
 from automation.utils import format_phone_number
+from accounts.timezone_utils import parse_business_datetime
 from django.utils import timezone
+from automation.utils import getServiceType, calculateAmount
 import pytz
 
 @login_required
@@ -65,7 +71,8 @@ def all_bookings(request):
     pending_bookings = all_bookings.filter(
         isCompleted=False,
         invoice__isnull=False,
-        invoice__isPaid=False
+        invoice__isPaid=False,
+        cancelled_at__isnull=True
     ).order_by('cleaningDate', 'startTime')
     
     # Counts for the dashboard cards
@@ -274,17 +281,11 @@ def create_booking(request):
             cleaningDate = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
 
+            datetime_res = parse_business_datetime(f"{cleaningDate} {start_time}", business, need_conversion=False)
 
-
-            # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_to_utc(
-                cleaningDate + ' ' + start_time,
-                business_timezone
-            ).time()
-
-            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
-
-
+            if not datetime_res:
+                messages.error(request, 'Invalid cleaning date or time.')
+                return redirect('bookings:create_booking')
 
             # Check customer type selection
             customer_type = request.POST.get('customerType')
@@ -308,22 +309,7 @@ def create_booking(request):
                     messages.error(request, 'Please enter a valid US phone number.')
                     return redirect('bookings:create_booking')
                 
-                try:
-                    customer = Customer.objects.get(email=customer_email)
-                except Customer.DoesNotExist:
-                    customer = None
-                
-                if not customer:
-                    customer = Customer.objects.create(
-                        first_name=request.POST.get('firstName'),
-                        last_name=request.POST.get('lastName'),
-                        email=customer_email,
-                        phone_number=request.POST.get('phoneNumber'),
-                        address=request.POST.get('address1'),
-                        city=request.POST.get('city'),
-                        state_or_province=request.POST.get('stateOrProvince'),
-                        zip_code=request.POST.get('zipCode'),
-                    )
+                customer = create_customer(request.POST)
             
             # Create the booking
             booking = Booking.objects.create(
@@ -335,9 +321,9 @@ def create_booking(request):
 
                 serviceType=request.POST.get('serviceType'),
                 # Convert cleaning date and time from business timezone to UTC
-                cleaningDate=cleaningDate,
-                startTime=start_time_utc,
-                endTime=end_time_utc,
+                cleaningDate=datetime_res['data']['utc_date'],
+                startTime=datetime_res['data']['utc_start_time'],
+                endTime=datetime_res['data']['utc_end_time'],
               
                 recurring=request.POST.get('recurring'),
                 paymentMethod=request.POST.get('paymentMethod', 'creditcard'),
@@ -395,6 +381,7 @@ def create_booking(request):
             return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
             
         except Exception as e:
+            print(e)
             messages.error(request, f'Error creating booking: {str(e)}')
             return redirect(redirect_url if redirect_url else 'bookings:all_bookings')
     
@@ -431,7 +418,8 @@ def create_booking(request):
         'prices': json.dumps(prices),
         'business_timezone': business_timezone,
         'customers': customers,
-        'today': date.today()
+        'today': date.today(),
+        'business': business
     }
 
     return render(request, 'bookings/create_booking.html', context)
@@ -454,6 +442,7 @@ def edit_booking(request, bookingId):
     
     if request.method == "POST":
         try:
+            
             # Get price details from form
             totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
@@ -490,15 +479,7 @@ def edit_booking(request, bookingId):
             booking.tax = tax
             booking.totalPrice = totalPrice
 
-            # Assign cleaner if selected
-            cleaner_id = request.POST.get('selectedCleaner')
-            if cleaner_id:
-                try:
-                    cleaner = Cleaners.objects.get(id=cleaner_id)
-                    booking.cleaner = cleaner
-                    booking.save()
-                except Cleaners.DoesNotExist:
-                    pass  # Silently ignore if cleaner doesn't exist
+          
 
             # Handle standard add-ons with proper default values
             addon_fields = [
@@ -570,10 +551,12 @@ def edit_booking(request, bookingId):
         'customAddons': customAddons,
         'prices': json.dumps(prices),
         'today': timezone.now().date(),
-        'business_timezone': business_timezone
+        'business_timezone': business.timezone,
+        'business': business,
+        'booking': booking,
     }
 
-    return render(request, 'bookings/create_booking.html', context)
+    return render(request, 'bookings/edit_booking.html', context)
 
 # ... (rest of the code remains the same)
 def mark_completed(request, bookingId):
@@ -608,8 +591,17 @@ def delete_booking(request, bookingId):
 @login_required
 def booking_detail(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
+    show_reopen_jobs_button = False
+    open_jobs = booking.openjob_set.all()
+    rejected_jobs = open_jobs.filter(status='rejected')
+    
+    if rejected_jobs.count() >= open_jobs.count():
+        show_reopen_jobs_button = True
+
     context = {
-        'booking': booking
+        'booking': booking,
+        'open_jobs': open_jobs,
+        'show_reopen_jobs_button': show_reopen_jobs_button
     }
     return render(request, 'bookings/booking_detail.html', context)
 
@@ -888,3 +880,215 @@ def booking_history_data(request):
         'bookingCounts': booking_counts_data,
         'paymentAmounts': payment_amounts_data
     })
+
+
+
+def reschedule_booking(request):
+    try:
+        data = json.loads(request.body)
+        booking_id = data.get('booking_id')
+        new_date_time = data.get('new_date_time')
+        reason = data.get('reason')
+        
+        booking = Booking.objects.get(bookingId=booking_id)
+
+        from ai_agent.api_views import reschedule_appointment
+        reschedule_response = reschedule_appointment(booking_id, new_date_time, reason)
+
+        if reschedule_response['success']:
+            return JsonResponse({'success': True, 'message': 'Booking rescheduled successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': reschedule_response['error']}, status=500)
+    
+    except Exception as e:
+        print(f"Error rescheduling booking: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Error rescheduling booking: {str(e)}'}, status=500)
+
+
+def cancel_booking(request):
+    try:
+        data = json.loads(request.body)
+        booking_id = data.get('booking_id')
+        reason = data.get('reason')
+        
+        if not booking_id:
+            return JsonResponse({'success': False, 'message': 'Booking ID is required'}, status=400)
+            
+        if not reason:
+            return JsonResponse({'success': False, 'message': 'Cancellation reason is required'}, status=400)
+        
+        try:
+            booking = Booking.objects.get(bookingId=booking_id)
+        except Booking.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Booking not found'}, status=404)
+        
+        # Check if booking is already cancelled
+        if booking.cancelled_at:
+            return JsonResponse({'success': False, 'message': 'Booking is already cancelled'}, status=400)
+            
+        # Check if booking is already completed
+        if booking.isCompleted:
+            return JsonResponse({'success': False, 'message': 'Cannot cancel a completed booking'}, status=400)
+        
+        # Call the cancel_appointment function from ai_agent
+        from ai_agent.api_views import cancel_appointment
+        
+
+        cancel_response = cancel_appointment(booking_id, reason)
+        
+        if cancel_response['success']:
+            return JsonResponse({
+                'success': True, 
+                'message': 'Booking cancelled successfully',
+                'email_sent': cancel_response.get('email_sent', False)
+            })
+        else:
+            return JsonResponse({'success': False, 'message': cancel_response.get('error', 'Failed to cancel booking')}, status=500)
+    
+    except Exception as e:
+        print(f"Error cancelling booking: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Error cancelling booking: {str(e)}'}, status=500)
+
+
+@login_required
+def reopen_job_for_cleaner(request, booking_id):
+    """
+    Reopen a job for specific cleaners selected by the business owner.
+    """
+    from automation.models import OpenJob
+    from accounts.models import CleanerProfile
+    
+    booking = get_object_or_404(Booking, bookingId=booking_id)
+    
+    # Verify the user is the business owner
+    if booking.business.user != request.user:
+        messages.error(request, 'You do not have permission to reopen jobs.')
+        return redirect('bookings:booking_detail', bookingId=booking_id)
+    
+    if request.method == 'POST':
+        # Get selected cleaner IDs from form
+        cleaner_ids = request.POST.getlist('cleaner_ids')
+        
+        if not cleaner_ids:
+            messages.error(request, 'Please select at least one cleaner.')
+            return redirect('bookings:booking_detail', bookingId=booking_id)
+        
+        # Get cleaner profiles for selected cleaners
+        cleaner_profiles = CleanerProfile.objects.filter(cleaner__id__in=cleaner_ids)
+        
+        # Create or update job offers
+        count = 0
+        for profile in cleaner_profiles:
+            # Check if job already exists
+            job, created = OpenJob.objects.get_or_create(
+                booking=booking,
+                cleaner=profile,
+                defaults={'status': 'pending'}
+            )
+            
+            # If job exists but was rejected, update status
+            if not created and job.status == 'rejected':
+                job.status = 'pending'
+                job.save()
+                count += 1
+            elif created:
+                count += 1
+        
+        if count > 0:
+            messages.success(request, f'Successfully reopened job for {count} cleaner(s).')
+        else:
+            messages.info(request, 'No jobs were reopened.')
+    
+    # Get all active cleaners for this business
+    cleaners = Cleaners.objects.filter(business=booking.business, isActive=True)
+    
+    # Get all open jobs for this booking
+    open_jobs = OpenJob.objects.filter(booking=booking)
+    
+    # Create a dictionary of cleaner statuses
+    cleaner_statuses = {}
+    for job in open_jobs:
+        cleaner_statuses[job.cleaner.cleaner.id] = job.status
+    
+    context = {
+        'booking': booking,
+        'cleaners': cleaners,
+        'cleaner_statuses': cleaner_statuses
+    }
+    
+    return render(request, 'bookings/reopen_job.html', context)
+
+
+@login_required
+def force_assign_booking(request, booking_id, cleaner_id):
+    """
+    Force assign a booking to a specific cleaner, even if they previously rejected it.
+    """
+    from automation.models import OpenJob
+    from notification.services import NotificationService
+    
+    booking = get_object_or_404(Booking, bookingId=booking_id)
+    cleaner = get_object_or_404(Cleaners, id=cleaner_id)
+    
+    # Verify the user is the business owner
+    if booking.business.user != request.user:
+        messages.error(request, 'You do not have permission to force assign bookings.')
+        return redirect('bookings:booking_detail', bookingId=booking_id)
+    
+    # Assign the booking to the cleaner
+    booking.cleaner = cleaner
+    booking.save()
+    
+    # Update any open jobs for this booking
+    OpenJob.objects.filter(booking=booking).update(status='closed')
+    
+    # Send notification to the cleaner
+    cleaner_profile = CleanerProfile.objects.filter(cleaner=cleaner).first()
+    if cleaner_profile and cleaner_profile.user:
+        cleaner_user = cleaner_profile.user
+        
+        # Format the booking date and time for the notification
+        booking_date = booking.cleaningDate.strftime('%A, %B %d, %Y')
+        booking_time = f"{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}"
+        customer_name = booking.customer.get_full_name()
+        
+        subject = f"New booking assigned: #{booking.bookingId}"
+        content = f"""
+Hello {cleaner.name},
+
+A booking has been assigned to you by {booking.business.businessName}.
+
+Booking Details:
+- Date: {booking_date}
+- Time: {booking_time}
+- Customer: {customer_name}
+- Address: {booking.customer.get_address()}
+
+Please check your dashboard for more details.
+"""
+        
+        NotificationService.send_notification(
+            recipient=cleaner_user,
+            from_email=f"{booking.business.businessName} <noreply@cleaningbizai.com>",
+            notification_type=['email', 'sms'],
+            subject=subject,
+            to_email=cleaner_user.email,
+            to_sms=cleaner.phoneNumber,
+            content=content,
+            sender=booking.business
+        )
+    
+    messages.success(request, f'Booking has been force-assigned to {cleaner.name}.')
+    return redirect('bookings:booking_detail', bookingId=booking_id)
+
+
+
+
+@login_required
+def reset_open_jobs(request, booking_id):
+    booking = get_object_or_404(Booking, bookingId=booking_id)
+    booking.cleaner = None
+    booking.save()
+    OpenJob.objects.filter(booking=booking).update(status='pending')
+    messages.success(request, 'Open jobs have been reset.')
+    return redirect('bookings:booking_detail', bookingId=booking_id)

@@ -36,7 +36,7 @@
 
     {% if subscription %}
     <!-- Current Plan Card -->
-    <div class="card shadow-sm mb-4">
+    <div class="card border border-1 mb-4">
         <div class="card-header bg-white">
             <h5 class="m-0 fw-bold">Current Plan</h5>
         </div>
@@ -269,7 +269,7 @@
     {% endif %}
 
     <!-- Available Plans -->
-    <div class="card shadow-sm mb-4">
+    <div class="card border border-1 mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="m-0 fw-bold">Available Plans</h5>
             <div class="form-check form-switch">
@@ -608,7 +608,7 @@
             <div class="modal-body">
                 <!-- Card Information -->
                 <h6 class="mb-3">Card Information</h6>
-                <div class="card border-0 bg-light p-4 mb-4">
+                <div class=" bg-light p-4 mb-4">
                     <div class="d-flex align-items-center">
                         <div class="card-brand-icon text-primary me-4">
                             {% if card_details.card_brand == 'VISA' %}
@@ -633,7 +633,7 @@
                 <!-- Customer Information -->
                 {% if customer_details %}
                 <h6 class="mb-3">Billing Information</h6>
-                <div class="card border-0 bg-light p-4">
+                <div class=" bg-light p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="d-flex align-items-center">

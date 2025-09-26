@@ -1,4 +1,5 @@
 {% load static %}
+{% load notification_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -125,11 +126,11 @@
             width: var(--sidebar-width);
             background-color: white;
             border-right: 1px solid var(--gray-light);
-            height: 100vh;
+            height: calc(100vh - var(--header-height));
             position: fixed;
-            top: 0;
+            top: var(--header-height);
             left: 0;
-            z-index: 1030;
+            z-index: 1020;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             overflow-y: auto;
@@ -254,6 +255,7 @@
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
+            padding-top: var(--header-height);
             transition: margin-left 0.3s ease;
             min-height: 100vh;
             display: flex;
@@ -281,31 +283,52 @@
             margin-left: var(--sidebar-collapsed-width);
         }
 
-        /* Header Styles */
-        .customer-header {
+        /* Top Navbar Styles */
+        .top-navbar {
             background-color: white;
             border-bottom: 1px solid var(--gray-light);
             padding: 0 1.5rem;
             height: var(--header-height);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 1020;
+            left: 0;
+            right: 0;
+            z-index: 1031;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
-        .header-title {
-            font-weight: 600;
-            font-size: 1.25rem;
-            color: var(--dark-color);
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
         }
 
-        .header-actions {
+        .navbar-left, .navbar-right {
             display: flex;
             align-items: center;
             gap: 1rem;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+        }
+
+        .navbar-brand span {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .navbar-brand span {
+                display: inline;
+            }
         }
 
         .user-dropdown {
@@ -375,6 +398,9 @@
             .sidebar {
                 transform: translateX(-100%);
                 width: var(--sidebar-width);
+                top: 0;
+                height: 100vh;
+                z-index: 1040;
             }
 
             .sidebar.show {
@@ -383,6 +409,7 @@
 
             .main-content {
                 margin-left: 0;
+                padding-top: var(--header-height);
             }
 
             .main-content.expanded {
@@ -480,20 +507,14 @@
         }
 
         /* Mobile menu toggle button */
-        .mobile-menu-toggle {
+        .sidebar-toggle {
             background: none;
             border: none;
             color: var(--dark-color);
             font-size: 1.25rem;
             cursor: pointer;
-            display: none;
         }
 
-        @media (max-width: 991px) {
-            .mobile-menu-toggle {
-                display: block;
-            }
-        }
 
         /* Toast notifications */
         .toast-container {
@@ -507,46 +528,78 @@
     {% endblock %}
 </head>
 <body data-customer-timezone="{% if user.is_authenticated %}{{ user.customer.timezone|default:'UTC' }}{% else %}UTC{% endif %}">
+    <header class="top-navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="{% url 'customer:dashboard' %}" class="navbar-brand">
+                    <img src="{% static 'img/logo_dark.png' %}" alt="CleaningBiz AI" class="logo">
+                </a>
+            </div>
+            <div class="navbar-right">
+                {% if user.is_authenticated %}
+                <a href="{% url 'notification:notification_list' %}" class="position-relative" title="Notifications">
+                    <i class="fas fa-bell h4"></i>
+                  
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"
+                    >
+                        {% unread_notification_count request.user %}
+                    </span>
+                
+                </a>
+                <div class="user-dropdown">
+                    <div class="user-menu" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-circle">
+                            <span class="avatar-initials">{{ user.first_name|make_list|first|upper }}</span>
+                        </div>
+                        <div class="user-info d-none d-md-flex">
+                            <span class="user-name">{{ user.get_full_name }}</span>
+                            <span class="user-role">Customer</span>
+                        </div>
+                        <i class="fas fa-chevron-down ms-2"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li><a class="dropdown-item" href="{% url 'customer:profile' %}"><i class="fas fa-user me-2"></i> My Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'customer:logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <div class="d-flex">
+                    <a href="{% url 'customer:login' %}" class="btn btn-outline-primary me-2">Login</a>
+                    <a href="{% url 'customer:signup' %}" class="btn btn-primary">Sign Up</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
     <div class="customer-layout">
 
        
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{% url 'customer:dashboard' %}" class="sidebar-brand">
-                    <img src="{% static 'img/logo_dark.png' %}" alt="" class="logo">
-                   
-                </a>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
             <div class="sidebar-nav">
                 <ul class="list-unstyled">
                     {% if user.is_authenticated %}
                     <!-- Authenticated User Menu -->
                     <!-- Bookings Section -->
+
                     <li class="sidebar-nav-item">
-                        <a href="#bookingsSubmenu" data-bs-toggle="collapse" class="sidebar-link">
-                            <i class="fas fa-calendar-check sidebar-icon"></i>
-                            <span class="sidebar-text">Bookings</span>
-                            <i class="fas fa-chevron-down ms-auto sidebar-text"></i>
+                        <a href="{% url 'customer:businesses_list' %}" class="sidebar-link">
+                            <i class="fas fa-plus sidebar-icon"></i>
+                            <span class="sidebar-text">Book Cleaning Service</span>
                         </a>
-                        <ul class="collapse list-unstyled sidebar-dropdown" id="bookingsSubmenu">
-                            <li class="sidebar-nav-item">
-                                <a href="{% url 'customer:businesses_list' %}" class="sidebar-link">
-                                    <i class="fas fa-plus sidebar-icon"></i>
-                                    <span class="sidebar-text">Book Cleaning Service</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-nav-item">
-                                <a href="{% url 'customer:bookings' %}" class="sidebar-link">
-                                    <i class="fas fa-list sidebar-icon"></i>
-                                    <span class="sidebar-text">View All Bookings</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-                    
+                    <li class="sidebar-nav-item">
+                        <a href="{% url 'customer:bookings' %}" class="sidebar-link">
+                            <i class="fas fa-list sidebar-icon"></i>
+                            <span class="sidebar-text">View All Bookings</span>
+                        </a>
+                    </li>
                     <!-- Invoices -->
                     <li class="sidebar-nav-item">
                         <a href="{% url 'invoice:all_invoices' %}" class="sidebar-link">
@@ -603,42 +656,6 @@
 
         <!-- Main Content -->
         <div class="main-content" id="mainContent">
-            <!-- Header -->
-            <header class="customer-header">
-                <div class="d-flex align-items-center">
-                    <button class="mobile-menu-toggle me-3" id="mobileMenuToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h1 class="header-title mb-0">{% block header_title %}Customer Dashboard{% endblock %}</h1>
-                </div>
-                <div class="header-actions">
-                    {% if user.is_authenticated %}
-                    <div class="user-dropdown">
-                        <div class="user-menu" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="avatar-circle">
-                                <span class="avatar-initials">{{ user.first_name|make_list|first|upper }}</span>
-                            </div>
-                            <div class="user-info d-none d-md-flex">
-                                <span class="user-name">{{ user.get_full_name }}</span>
-                                <span class="user-role">Customer</span>
-                            </div>
-                            <i class="fas fa-chevron-down ms-2"></i>
-                        </div>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                            <li><a class="dropdown-item" href="{% url 'customer:profile' %}"><i class="fas fa-user me-2"></i> My Profile</a></li>
-                            <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'customer:logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
-                        </ul>
-                    </div>
-                    {% else %}
-                    <div class="d-flex">
-                        <a href="{% url 'customer:login' %}" class="btn btn-outline-primary me-2">Login</a>
-                        <a href="{% url 'customer:signup' %}" class="btn btn-primary">Sign Up</a>
-                    </div>
-                    {% endif %}
-                </div>
-            </header>
 
             <!-- Content Container -->
             <div class="content-container">
@@ -683,76 +700,112 @@
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
             const sidebarToggle = document.getElementById('sidebarToggle');
-            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const mobileOverlay = document.getElementById('mobileOverlay');
             
-            // Function to check if we're on mobile
             const isMobile = () => window.innerWidth < 992;
-            
-            // Toggle sidebar
+
+            // Function to apply sidebar state from localStorage
+            function applySidebarState() {
+                if (!isMobile()) {
+                    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                    if (isCollapsed) {
+                        sidebar.classList.add('sidebar-collapsed');
+                        mainContent.classList.add('expanded');
+                    } else {
+                        sidebar.classList.remove('sidebar-collapsed');
+                        mainContent.classList.remove('expanded');
+                    }
+                }
+            }
+
+            // Toggle sidebar for both desktop and mobile
             sidebarToggle.addEventListener('click', function() {
                 if (isMobile()) {
                     sidebar.classList.toggle('show');
                     mobileOverlay.classList.toggle('show');
                 } else {
-                    sidebar.classList.toggle('sidebar-collapsed');
+                    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
                     mainContent.classList.toggle('expanded');
+                    localStorage.setItem('sidebarCollapsed', isCollapsed);
                 }
             });
-            
-            // Mobile menu toggle
-            mobileMenuToggle.addEventListener('click', function() {
-                sidebar.classList.add('show');
-                mobileOverlay.classList.add('show');
-            });
-            
-            // Close sidebar when clicking on overlay
+
+            // Close mobile sidebar when overlay is clicked
             mobileOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('show');
                 mobileOverlay.classList.remove('show');
             });
-            
+
             // Handle window resize
             window.addEventListener('resize', function() {
                 if (!isMobile()) {
                     sidebar.classList.remove('show');
                     mobileOverlay.classList.remove('show');
                 }
+                applySidebarState(); // Re-apply state on resize
             });
+
+            // Apply initial state on page load
+            applySidebarState();
             
-            // Dropdown functionality for sidebar
-            const dropdownToggles = document.querySelectorAll('[data-bs-toggle="collapse"]');
+            // --- Sidebar Dropdown Logic with Session Storage ---
+            const dropdownToggles = document.querySelectorAll('.sidebar-link[data-bs-toggle="collapse"]');
+
+            // 1. Restore dropdown states on page load
             dropdownToggles.forEach(toggle => {
-                toggle.addEventListener('click', function() {
+                const submenuId = toggle.getAttribute('href');
+                const submenu = document.querySelector(submenuId);
+                if (submenu) {
+                    const storedState = sessionStorage.getItem(submenu.id);
+                    if (storedState === 'true') {
+                        submenu.classList.add('show');
+                        const chevron = toggle.querySelector('.fa-chevron-down, .fa-chevron-up');
+                        if (chevron) {
+                            chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                        }
+                    }
+                }
+            });
+
+            // 2. Handle clicks to toggle and save state
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const submenu = document.querySelector(this.getAttribute('href'));
-                    submenu.classList.toggle('show');
-                    
-                    // Toggle the chevron icon
-                    const chevron = this.querySelector('.fa-chevron-down');
-                    if (chevron) {
-                        chevron.classList.toggle('fa-chevron-down');
-                        chevron.classList.toggle('fa-chevron-up');
+                    if (submenu) {
+                        const isOpening = !submenu.classList.contains('show');
+                        submenu.classList.toggle('show');
+                        sessionStorage.setItem(submenu.id, isOpening);
+
+                        const chevron = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+                        if (chevron) {
+                            chevron.classList.toggle('fa-chevron-down');
+                            chevron.classList.toggle('fa-chevron-up');
+                        }
                     }
                 });
             });
-            
-            // Set active link based on current URL
+
+            // 3. Set active link and expand parent dropdown IF no state is stored
             const currentLocation = window.location.pathname;
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
             sidebarLinks.forEach(link => {
                 if (link.getAttribute('href') === currentLocation) {
                     link.classList.add('active');
                     
-                    // If it's in a dropdown, expand the dropdown
                     const parentDropdown = link.closest('.sidebar-dropdown');
                     if (parentDropdown) {
-                        parentDropdown.classList.add('show');
-                        const parentToggle = document.querySelector(`[href="#${parentDropdown.id}"]`);
-                        if (parentToggle) {
-                            const chevron = parentToggle.querySelector('.fa-chevron-down');
-                            if (chevron) {
-                                chevron.classList.remove('fa-chevron-down');
-                                chevron.classList.add('fa-chevron-up');
+                        // Only expand if no state is saved in sessionStorage
+                        const storedState = sessionStorage.getItem(parentDropdown.id);
+                        if (storedState === null) {
+                            parentDropdown.classList.add('show');
+                            sessionStorage.setItem(parentDropdown.id, 'true'); // Save the default open state
+                            const parentToggle = document.querySelector(`[href="#${parentDropdown.id}"]`);
+                            if (parentToggle) {
+                                const chevron = parentToggle.querySelector('.fa-chevron-down');
+                                if (chevron) {
+                                    chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                                }
                             }
                         }
                     }

@@ -35,24 +35,12 @@ def get_unread_notification_count(user):
     """
     Get count of unread notifications for a user, filtered by user type
     """
-    user_type = get_user_type(user)
     
     # Base query - filter by recipient and status
     query = Notification.objects.filter(
         recipient=user,
-        notification_type='in_app'
+        notification_type='in_app',
+        read_at__isnull=True
     )
-    
-    # If we can determine user type, filter by relevant categories
-    if user_type:
-        if user_type == 'business_owner':
-            # Business owners can see all notifications
-            pass
-        elif user_type == 'cleaner':
-            # Cleaners can only see cleaner-specific notifications
-            query = query.filter(recipient=user)
-        elif user_type == 'customer':
-            # Customers can only see customer-specific notifications
-            query = query.filter(recipient=user)
     
     return query.count()
