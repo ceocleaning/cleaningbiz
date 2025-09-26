@@ -5,6 +5,8 @@ from accounts.models import Business, ApiCredential, CustomAddons
 from bookings.models import BookingCustomAddons
 from django.conf import settings
 from leadsAutomation.utils import send_email
+from django.forms.models import model_to_dict
+
 from decimal import Decimal
 
 
@@ -95,7 +97,7 @@ def generateAppoitnmentId():
 
 def calculateAmount(business, summary):
     # Convert service type to match choices
-    serviceType = str(summary.get("serviceType") or summary.get("service_type") or "").lower().replace(" ", "")
+    serviceType = str(summary["serviceType"] or summary["service_type"] or "").lower().replace(" ", "")
     service_type = getServiceType(serviceType)
     businessSettingsObj = business.settings
     
@@ -110,9 +112,9 @@ def calculateAmount(business, summary):
     sqftAirbnb = businessSettingsObj.sqftMultiplierAirbnb
 
     try:
-        bedrooms = Decimal(summary.get("bedrooms", 0) or 0)
-        bathrooms = Decimal(summary.get("bathrooms", 0) or 0)
-        area = Decimal(summary.get("squareFeet", 0) or summary.get("area", 0))
+        bedrooms = Decimal(summary["bedrooms"] or 0)
+        bathrooms = Decimal(summary["bathrooms"] or 0)
+        area = Decimal(summary["squareFeet"] or summary["area"] or 0)
     except ValueError:
         error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
         return {"success": False, "error": error_msg}

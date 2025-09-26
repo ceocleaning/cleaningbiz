@@ -158,8 +158,6 @@ class ApiCredential(models.Model):
 
 
 
-
-
 class BusinessSettings(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='settings')
     
@@ -170,6 +168,11 @@ class BusinessSettings(models.Model):
     bathroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Price per bathroom")
     depositFee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Deposit fee")
     taxPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Tax percentage")
+
+    # Recurring Discount
+    weeklyDiscount = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Weekly discount")
+    monthlyDiscount = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Monthly discount")
+    biweeklyDiscount = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Bi-weekly discount")
     
     # Square Feet Multipliers
     sqftMultiplierStandard = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Square feet multiplier for standard cleaning")

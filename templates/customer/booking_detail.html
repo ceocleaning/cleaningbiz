@@ -142,10 +142,28 @@
                                 <span>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }}</span> to 
                                 <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
                             </p>
-                            <p class="mb-2">
-                                <i class="fas fa-credit-card text-muted me-2"></i>
-                                {{ booking.get_paymentMethod_display|default:"Payment method not specified" }}
-                            </p>
+                            {% if booking.appliedDiscountPercent > 0 %}
+                            <div class="card bg-light mb-2 p-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Subtotal:</span>
+                                    <span>${{ booking.totalPrice|add:booking.discountAmount|floatformat:2 }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1 text-success">
+                                    <span>{{ booking.get_recurring_display }} Discount ({{ booking.appliedDiscountPercent }}%):</span>
+                                    <span>-${{ booking.discountAmount|floatformat:2 }}</span>
+                                </div>
+                                {% if booking.tax %}
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Tax:</span>
+                                    <span>+${{ booking.tax|floatformat:2 }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="d-flex justify-content-between fw-bold pt-1 border-top">
+                                    <span>Total:</span>
+                                    <span>${{ booking.totalPrice|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            {% else %}
                             <p class="mb-2">
                                 <i class="fas fa-dollar-sign text-muted me-2"></i>
                                 <span class="h5 text-success mb-0">${{ booking.totalPrice }}</span>
@@ -153,6 +171,7 @@
                                 <small class="text-muted">(+${{ booking.tax }} tax)</small>
                                 {% endif %}
                             </p>
+                            {% endif %}
                             {% if booking.tip and booking.tip > 0 %}
                             <p class="mb-2">
                                 <i class="fas fa-hand-holding-usd text-muted me-2"></i>

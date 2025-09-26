@@ -276,6 +276,8 @@ def create_booking(request):
             # Get price details from form
             totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             tax = Decimal(request.POST.get('tax', '0'))
+            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
+            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
             
             
             cleaningDate = request.POST.get('cleaningDate')
@@ -330,7 +332,9 @@ def create_booking(request):
 
                 otherRequests=request.POST.get('otherRequests', ''),
                 tax=tax,
-                totalPrice=totalPrice
+                totalPrice=totalPrice,
+                appliedDiscountPercent=appliedDiscountPercent,
+                discountAmount=discountAmount
             )
             
             
@@ -407,7 +411,12 @@ def create_booking(request):
         'addonPriceCabinets': float(business_settings.addonPriceCabinets),
         'addonPricePatio': float(business_settings.addonPricePatio),
         'addonPriceGarage': float(business_settings.addonPriceGarage),
-        'tax': float(business_settings.taxPercent)
+        'tax': float(business_settings.taxPercent),
+        
+        # Recurring discounts
+        'weeklyDiscount': float(business_settings.weeklyDiscount),
+        'biweeklyDiscount': float(business_settings.biweeklyDiscount),
+        'monthlyDiscount': float(business_settings.monthlyDiscount)
     }
 
     # Get all customers for this business
@@ -525,6 +534,7 @@ def edit_booking(request, bookingId):
 
     # For GET request, prepare the context
     prices = {
+        'base_price': float(business_settings.base_price),
         'bedrooms': float(business_settings.bedroomPrice),
         'bathrooms': float(business_settings.bathroomPrice),
         'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
@@ -544,7 +554,12 @@ def edit_booking(request, bookingId):
         'addonPriceCabinets': float(business_settings.addonPriceCabinets),
         'addonPricePatio': float(business_settings.addonPricePatio),
         'addonPriceGarage': float(business_settings.addonPriceGarage),
-        'tax': float(business_settings.taxPercent)
+        'tax': float(business_settings.taxPercent),
+
+        # Recurring discounts
+        'weeklyDiscount': float(business_settings.weeklyDiscount),
+        'biweeklyDiscount': float(business_settings.biweeklyDiscount),
+        'monthlyDiscount': float(business_settings.monthlyDiscount)
     }
 
     context = {

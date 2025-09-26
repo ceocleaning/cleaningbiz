@@ -103,6 +103,10 @@ class Booking(models.Model):
     rescheduled_at = models.DateTimeField(null=True, blank=True)
     rescheduled_reason = models.CharField(max_length=1000, null=True, blank=True)
     
+    # Discount Information
+    appliedDiscountPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Applied discount percentage for recurring bookings")
+    discountAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discount amount in dollars")
+    
     # Status Fields
     isCompleted = models.BooleanField(default=False)
     createdAt = models.DateTimeField(auto_now_add=True)

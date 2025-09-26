@@ -14,8 +14,10 @@ from django.conf import settings
 from leadsAutomation.utils import send_email
 from customer.models import Customer
 import threading
-from accounts.timezone_utils import parse_business_datetime
+from accounts.timezone_utils import parse_business_datetime, convert_from_utc
 from customer.utils import create_customer
+from decimal import Decimal
+from django.forms.models import model_to_dict
 
 
 from .utils import calculateAmount, getServiceType
@@ -225,7 +227,8 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     Note: datetimeToCheck should already be in the business's timezone.
     """
     logs = []
-    logs.append(f"\nLooking for alternate slots after {datetimeToCheck.strftime('%Y-%m-%d %H:%M')}")
+    
+    business = cleaners.first().business
     
     alternate_slots = []
     time_increment = timedelta(hours=1)
@@ -265,13 +268,13 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
             
         # Check if this slot is available
         is_available, slot_logs = is_slot_available(cleaners, next_time, available_cleaners)
-        logs.extend(slot_logs)
         
         # Add the date to checked days
         checked_days.add(date_str)
         
         if is_available and len(available_cleaners) > 0:
             # Format the datetime in ISO format for consistency
+            next_time = convert_from_utc(next_time, business.get_timezone())
             alternate_slots.append(next_time.strftime("%Y-%m-%d %I:%M %p"))
             logs.append(f"✅ Found alternate slot at {next_time.strftime('%Y-%m-%d %I:%M %p')} with {len(available_cleaners)} cleaner(s)")
         
@@ -279,10 +282,6 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
         next_time += time_increment
         max_attempts -= 1
 
-    if len(alternate_slots) == 0:
-        logs.append("❌ No alternate slots found within the search period")
-    else:
-        logs.append(f"✨ Found {len(alternate_slots)} alternate slot(s)")
 
     return alternate_slots, logs
 
@@ -319,10 +318,6 @@ def check_availability_retell(request, secretKey):
         # Extract timezone if provided, default to UTC
         timezone_str = args.get('timezone', 'UTC')
         
-        # Parse the date
-        time_to_check = datetime.fromisoformat(cleaningDateTime)
-        current_year = datetime.now().year
-        time_to_check = time_to_check.replace(year=current_year)
         
         res = parse_business_datetime(cleaningDateTime, business)
         
@@ -337,7 +332,7 @@ def check_availability_retell(request, secretKey):
         response = {
             "status": "success",
             "available": is_available,
-            "timeslot": res['data']['utc_datetime'].strftime("%Y-%m-%d %H:%M:%S")
+            "timeslot": res['data']['local_datetime'].strftime("%Y-%m-%d %H:%M:%S")
         }
 
         # If not available, find alternate slots
@@ -618,7 +613,7 @@ def create_booking(request):
         # Calculate base price
         amount_calculation = calculateAmount(
              business,
-             booking,             
+             model_to_dict(booking)          
         )
         
       

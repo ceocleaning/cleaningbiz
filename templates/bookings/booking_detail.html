@@ -94,7 +94,7 @@
                                 <i class="fas fa-tag text-muted me-2"></i>
                                 <span class="text-capitalize">{{ booking.get_serviceType_display }}</span>
                             </p>
-                            {% if booking.recurring != 'one-time' %}
+                       
                             <p class="mb-2">
                                 <i class="fas fa-sync-alt text-muted me-2"></i>
                                 <span class="text-capitalize">{{ booking.get_recurring_display }} Service</span>
@@ -102,6 +102,13 @@
                                 <span class="badge bg-info ms-2">Next: {{ booking.next_recurring_date|date:"M d, Y" }}</span>
                                 {% endif %}
                             </p>
+                            {% if booking.appliedDiscountPercent > 0 %}
+                            <p class="mb-2">
+                                <i class="fas fa-percentage text-success me-2"></i>
+                                <span class="text-success">{{ booking.appliedDiscountPercent }}% Discount Applied</span>
+                                <span class="text-muted ms-2">(-${{ booking.discountAmount|floatformat:2 }})</span>
+                            </p>
+                            {% endif %}
                             {% if booking.parent_booking %}
                             <p class="mb-2">
                                 <i class="fas fa-project-diagram text-muted me-2"></i>
@@ -133,7 +140,7 @@
                                 </div>
                             </div>
                             {% endif %}
-                            {% endif %}
+                
                             <p class="mb-2">
                                 <i class="fas fa-calendar text-muted me-2"></i>
                                 <span>{{ booking.cleaningDate|date:"F d, Y" }}</span>
@@ -143,10 +150,29 @@
                                 <span>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }}</span> to 
                                 <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
                             </p>
-                            <p class="mb-2">
-                                <i class="fas fa-credit-card text-muted me-2"></i>
-                                {{ booking.get_paymentMethod_display|default:"Payment method not specified" }}
-                            </p>
+                           
+                            {% if booking.appliedDiscountPercent > 0 %}
+                            <div class="card bg-light mb-2 p-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Subtotal:</span>
+                                    <span>${{ booking.totalPrice|add:booking.discountAmount|floatformat:2 }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1 text-success">
+                                    <span>{{ booking.get_recurring_display }} Discount ({{ booking.appliedDiscountPercent }}%):</span>
+                                    <span>-${{ booking.discountAmount|floatformat:2 }}</span>
+                                </div>
+                                {% if booking.tax %}
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Tax:</span>
+                                    <span>+${{ booking.tax|floatformat:2 }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="d-flex justify-content-between fw-bold pt-1 border-top">
+                                    <span>Total:</span>
+                                    <span>${{ booking.totalPrice|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            {% else %}
                             <p class="mb-2">
                                 <i class="fas fa-dollar-sign text-muted me-2"></i>
                                 <span class="h5 text-success mb-0">${{ booking.totalPrice }}</span>
@@ -154,6 +180,7 @@
                                 <small class="text-muted">(+${{ booking.tax }} tax)</small>
                                 {% endif %}
                             </p>
+                            {% endif %}
                             {% if booking.tip and booking.tip > 0 %}
                             <p class="mb-2">
                                 <i class="fas fa-hand-holding-usd text-muted me-2"></i>
@@ -436,13 +463,13 @@
                                 </div>
                                 <h5 class="card-title mb-0">Open Jobs Status</h5>
                             </div>
-                            {% if show_reopen_jobs_button %}
+                            {% if show_reopen_jobs_button and booking.invoice.isPaid %}
                             <a href="{% url 'bookings:reopen_job_for_cleaner' booking.bookingId %}" 
                             itle="Click here if you want to reopen the jobs, this will reopen the jobs and any previous job will be deleted."
                                class="btn btn-outline-primary px-3 px-md-4">
                                 <i class="fas fa-redo-alt me-2"></i>Reopen Jobs
                             </a>
-                            {% else %}
+                            {% elif booking.invoice.isPaid %}
                             <a href="{% url 'bookings:reset_open_jobs' booking.bookingId %}"
                             title="Click here if you want to reset the open jobs, this will reset the open jobs and any job accepted or rejected will be reset to pending."
                                class="btn btn-outline-danger px-3 px-md-4">
@@ -615,7 +642,7 @@
         </div>
         
         <!-- Reviews -->
-        {% if booking.isCompleted %}
+
         <div class="card border border-1 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex align-items-center mb-3 mb-md-4">
@@ -652,7 +679,7 @@
                 {% endif %}
             </div>
         </div>
-        {% endif %}
+    
 
         <!-- Invoice -->
         <div class="card border border-1 mb-4">

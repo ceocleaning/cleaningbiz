@@ -273,6 +273,8 @@ def add_booking(request, business_id):
             # Get price details from form
             total_price = float(request.POST.get('totalAmount', '0'))
             tax = float(request.POST.get('tax', '0'))
+            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
+            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
             
             # Format phone number
             phone_number = request.POST.get('phoneNumber')
@@ -314,7 +316,9 @@ def add_booking(request, business_id):
                 paymentMethod='creditcard',  # Default payment method
                 otherRequests=request.POST.get('otherRequests', ''),
                 tax=tax,
-                totalPrice=total_price
+                totalPrice=total_price,
+                appliedDiscountPercent=appliedDiscountPercent,
+                discountAmount=discountAmount
             )
             
             # Handle standard add-ons
@@ -371,7 +375,12 @@ def add_booking(request, business_id):
         'addonPriceOven': float(business_settings.addonPriceOven),
         'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
         'addonPriceBlinds': float(business_settings.addonPriceBlinds),
-        'tax': float(business_settings.taxPercent)
+        'tax': float(business_settings.taxPercent),
+
+        # Recurring discounts
+        'weeklyDiscount': float(business_settings.weeklyDiscount),
+        'biweeklyDiscount': float(business_settings.biweeklyDiscount),
+        'monthlyDiscount': float(business_settings.monthlyDiscount)
     }
     
     context = {
@@ -464,6 +473,10 @@ def edit_booking(request, bookingId):
             booking.tax = tax
             booking.totalPrice = total_price
             booking.updatedAt = timezone.now()
+            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
+            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
+            booking.appliedDiscountPercent = appliedDiscountPercent
+            booking.discountAmount = discountAmount
             
             # Handle standard add-ons
             addon_fields = [
@@ -517,7 +530,12 @@ def edit_booking(request, bookingId):
         'addonPriceOven': float(business_settings.addonPriceOven),
         'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
         'addonPriceBlinds': float(business_settings.addonPriceBlinds),
-        'tax': float(business_settings.taxPercent)
+        'tax': float(business_settings.taxPercent),
+
+        # Recurring discounts
+        'weeklyDiscount': float(business_settings.weeklyDiscount),
+        'biweeklyDiscount': float(business_settings.biweeklyDiscount),
+        'monthlyDiscount': float(business_settings.monthlyDiscount)
     }
     
     # Get booking's custom addons
