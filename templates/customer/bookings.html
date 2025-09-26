@@ -86,7 +86,7 @@
 </div>
 
 <!-- Tabs for different booking categories -->
-<div class="card shadow-sm">
+<div class="card border border-1">
     <div class="card-body p-0 pb-3">
         <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
             <li class="nav-item" role="presentation">
@@ -133,6 +133,7 @@
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Payment Status</th>
+                                <th class="d-none d-md-table-cell">Recurring</th>
                                 <th class="text-end text-md-start">Actions</th>
                             </tr>
                         </thead>
@@ -174,6 +175,14 @@
                                     <span class="badge bg-secondary">{{ status }}</span>
                                     {% endif %}
                                     {% endwith %}
+                                </td>
+                                <td class="d-flex flex-wrap flex-column">
+                                    {% if booking.recurring %}
+                                    <span class="badge bg-primary ms-2 mb-2" style="width: fit-content;">{{ booking.get_recurring_display }}</span> 
+                                    {% if booking.parent_booking %}
+                                    <span class="badge bg-primary ms-2 mb-2" style="width: fit-content;">Part of recurring series</span>
+                                    {% endif %}
+                                    {% endif %}
                                 </td>
                                 <td class="text-end text-md-start">
                                     <div class="d-flex flex-wrap justify-content-end justify-content-md-start gap-2">

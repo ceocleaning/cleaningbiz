@@ -6,9 +6,7 @@ from invoice.models import Invoice
 from django_q.tasks import schedule, Schedule
 from datetime import datetime, timedelta
 from django.utils import timezone
-import logging
 
-logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Booking)
 def create_invoice_for_booking(sender, instance, created, **kwargs):
@@ -42,7 +40,7 @@ def create_invoice_for_booking(sender, instance, created, **kwargs):
             schedule_post_service_followup()
                 
         except Exception as e:
-            logger.error(f"Error creating invoice for booking {instance.bookingId}: {str(e)}")
+            print(f"Error creating invoice for booking {instance.bookingId}: {str(e)}")
 
 
 def schedule_delete_unpaid_bookings():
@@ -66,7 +64,7 @@ def schedule_delete_unpaid_bookings():
             )
             
     except Exception as e:
-        logger.error(f"Failed to schedule delete_unpaid_bookings task: {str(e)}")
+        print(f"Failed to schedule delete_unpaid_bookings task: {str(e)}")
 
 
 def schedule_day_before_reminder():
@@ -88,7 +86,7 @@ def schedule_day_before_reminder():
             )
             
     except Exception as e:
-        logger.error(f"Failed to schedule send_day_before_reminder task: {str(e)}")
+        print(f"Failed to schedule send_day_before_reminder task: {str(e)}")
 
 
 def schedule_hour_before_reminder():
@@ -106,7 +104,7 @@ def schedule_hour_before_reminder():
             )
             
     except Exception as e:
-        logger.error(f"Failed to schedule send_hour_before_reminder task: {str(e)}")
+        print(f"Failed to schedule send_hour_before_reminder task: {str(e)}")
 
 
 def schedule_post_service_followup():
@@ -130,8 +128,7 @@ def schedule_post_service_followup():
             )
             
     except Exception as e:
-        logger.error(f"Failed to schedule send_post_service_followup task: {str(e)}")
+        print(f"Failed to schedule send_post_service_followup task: {str(e)}")
 
 
 # Connect the signal
-post_save.connect(create_invoice_for_booking, sender=Booking)

@@ -25,7 +25,7 @@ from django.conf import settings
 from openai import OpenAI
 from .utils import format_phone_number
 from ai_agent.utils import convert_date_str_to_date
-from bookings.timezone_utils import convert_to_utc
+from accounts.timezone_utils import convert_to_utc
 
 @csrf_exempt
 def thumbtack_webhook(request, secretKey):

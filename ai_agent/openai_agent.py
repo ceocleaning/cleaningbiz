@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytz
 import traceback
 from openai import OpenAI
+from decimal import Decimal
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -15,7 +16,7 @@ from django.shortcuts import render, get_object_or_404
 from accounts.models import Business, CustomAddons
 from bookings.models import Booking
 from .models import Chat, Messages, AgentConfiguration
-from .api_views import check_availability, book_appointment, get_current_time_in_chicago, calculate_total, reschedule_appointment, cancel_appointment
+from .api_views import check_availability, book_appointment, get_current_time, calculate_total, reschedule_appointment, cancel_appointment
 from .utils import convert_date_str_to_date
 import re
 
@@ -25,11 +26,17 @@ load_dotenv()
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return str(o)
+        return super(DecimalEncoder, self).default(o)
+
 # Define available tools
 tools = {
     'check_availability': check_availability,
     'bookAppointment': book_appointment,
-    'current_time': get_current_time_in_chicago,
+    'current_time': get_current_time,
     'calculateTotal': calculate_total,
     'reschedule_appointment': reschedule_appointment,
     'cancel_appointment': cancel_appointment
@@ -70,7 +77,7 @@ openai_tools = [
         "type": "function",
         "function": {
             "name": "current_time",
-            "description": "Get the current time in Chicago timezone",
+            "description": "Get the current time in business timezone",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -105,6 +112,10 @@ openai_tools = [
                     "new_date_time": {
                         "type": "string",
                         "description": "The new date and time for the appointment (e.g., 'Tomorrow at 2 PM', 'March 15, 2025 at 10 AM')"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "The reason for rescheduling the appointment"
                     }
                 },
                 "required": ["booking_id", "new_date_time"]
@@ -122,9 +133,13 @@ openai_tools = [
                     "booking_id": {
                         "type": "string",
                         "description": "The booking ID of the appointment to cancel"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "The reason for canceling the appointment"
                     }
                 },
-                "required": ["booking_id"]
+                "required": ["booking_id", "reason"]
             }
         }
     }
@@ -525,7 +540,7 @@ class OpenAIAgent:
             print("[ERROR] Missing client phone number and session key")
             return json.dumps({
                 "error": "Missing client identification"
-            })
+            }, cls=DecimalEncoder)
             
         # Parse the tool arguments
         try:
@@ -538,10 +553,10 @@ class OpenAIAgent:
             traceback.print_exc()
             return json.dumps({
                 "error": f"Error parsing tool arguments: {str(e)}"
-            })
+            }, cls=DecimalEncoder)
             
         # Import tools from api_views.py
-        from .api_views import calculate_total, check_availability, book_appointment, get_current_time_in_chicago, reschedule_appointment, cancel_appointment
+        from .api_views import calculate_total, check_availability, book_appointment, get_current_time, reschedule_appointment, cancel_appointment
 
         # Handle tool calls
         try:
@@ -556,20 +571,20 @@ class OpenAIAgent:
                     print("[DEBUG] Missing date parameter in checkAvailability")
                     return json.dumps({
                         "error": "Missing date parameter"
-                    })
+                    }, cls=DecimalEncoder)
                 
                 try:    
                     # Call the check_availability function from api_views.py
                     print(f"[DEBUG] Calling check_availability function with business ID={business.businessId} and date={date_str}")
                     result = check_availability(business, date_str)
                     print(f"[DEBUG] check_availability returned: {result}")
-                    return json.dumps(result)
+                    return json.dumps(result, cls=DecimalEncoder)
                 except Exception as e:
                     print(f"[ERROR] Error in checkAvailability: {str(e)}")
                     traceback.print_exc()
                     return json.dumps({
                         "error": f"Error checking availability: {str(e)}"
-                    })
+                    }, cls=DecimalEncoder)
                 
             # calculateTotal tool
             elif tool_name == 'calculateTotal':
@@ -586,7 +601,7 @@ class OpenAIAgent:
                             return json.dumps({
                                 "success": False,
                                 "message": "No chat found for this phone number. Please try again."
-                            })
+                            }, cls=DecimalEncoder)
                         else:
                             chat = chats.first()
                     elif session_key:
@@ -598,14 +613,14 @@ class OpenAIAgent:
                             return json.dumps({
                                 "success": False,
                                 "message": "No chat found for this session. Please try again."
-                            })
+                            }, cls=DecimalEncoder)
                         else:
                             chat = chats.first()
                     else:
                         return json.dumps({
                             "success": False,
                             "message": "No client identifier found. Please try again."
-                        })
+                        }, cls=DecimalEncoder)
                     
                     # Get chat messages and format for summary extraction
                     messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key)
@@ -638,13 +653,13 @@ class OpenAIAgent:
                         # For session-based chats, we need to retrieve the chat and then call calculate_total
                         result = calculate_total(business, session_key=session_key)
                     
-                    return json.dumps(result)
+                    return json.dumps(result, cls=DecimalEncoder)
                 except Exception as e:
                     print(f"[ERROR] Error in calculateTotal: {str(e)}")
                     traceback.print_exc()
                     return json.dumps({
                         "error": f"Error executing calculateTotal tool: {str(e)}"
-                    })
+                    }, cls=DecimalEncoder)
                 
             # bookAppointment tool
             elif tool_name == 'bookAppointment':
@@ -734,8 +749,8 @@ class OpenAIAgent:
                     
             # getCurrentTime tool
             elif tool_name == 'getCurrentTime':
-                # Call the get_current_time_in_chicago function with business parameter
-                result = get_current_time_in_chicago(business)
+                # Call the get_current_time function with business parameter
+                result = get_current_time(business)
                 return json.dumps({
                     "current_time": result
                 })
@@ -745,6 +760,7 @@ class OpenAIAgent:
                 print(f"[DEBUG] Executing rescheduleAppointment tool with args: {tool_args}")
                 booking_id = tool_args.get('booking_id')
                 new_date_time = tool_args.get('new_date_time')
+                reason = tool_args.get('reason') or None
                 
                 if not booking_id or not new_date_time:
                     print("[DEBUG] Missing required parameters in rescheduleAppointment")
@@ -756,7 +772,7 @@ class OpenAIAgent:
                 try:
                     # Call the reschedule_appointment function from api_views.py
                     print(f"[DEBUG] Calling reschedule_appointment function with business ID={business.businessId}, booking_id={booking_id}, new_date_time={new_date_time}")
-                    result = reschedule_appointment(business, booking_id, new_date_time)
+                    result = reschedule_appointment(booking_id, new_date_time, reason)
                     print(f"[DEBUG] reschedule_appointment returned: {result}")
                     return json.dumps(result)
                 except Exception as e:
@@ -771,6 +787,7 @@ class OpenAIAgent:
             elif tool_name == 'cancelAppointment':
                 print(f"[DEBUG] Executing cancelAppointment tool with args: {tool_args}")
                 booking_id = tool_args.get('booking_id')
+                reason = tool_args.get('reason') or None
                 
                 if not booking_id:
                     print("[DEBUG] Missing booking_id parameter in cancelAppointment")
@@ -781,8 +798,8 @@ class OpenAIAgent:
                     
                 try:
                     # Call the cancel_appointment function from api_views.py
-                    print(f"[DEBUG] Calling cancel_appointment function with business ID={business.businessId}, booking_id={booking_id}")
-                    result = cancel_appointment(business, booking_id)
+                    print(f"[DEBUG] Calling cancel_appointment function with booking_id={booking_id}")
+                    result = cancel_appointment(booking_id, reason)
                     print(f"[DEBUG] cancel_appointment returned: {result}")
                     return json.dumps(result)
                 except Exception as e:
@@ -1105,7 +1122,6 @@ class OpenAIAgent:
                         model="gpt-4o",
                         messages=messages,
                         temperature=0.5,
-                        max_tokens=1000
                     )
                     
                     # Extract the follow-up response content
@@ -1248,7 +1264,7 @@ class OpenAIAgent:
             - bathrooms: Number of bathrooms as a Decimal string
             - serviceType: Type of service requested (e.g., "regular cleaning", "deep cleaning", "move-in")
             - appointmentDateTime: Appointment date and time in ANY format mentioned in the conversation
-            - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time_in_chicago()}
+            - convertedDateTime: Convert Appointment date and time to a standard format (YYYY-MM-DD HH:MM) Current Time is: {get_current_time()}
             - otherRequests: Any special requests or notes
             - detailSummary: Summary of the Whole conversation
             - addonDishes: Quantity of Dishes Addon
@@ -1282,7 +1298,7 @@ class OpenAIAgent:
                     {"role": "user", "content": conversation_text}
                 ],
                 temperature=0.1,  # Low temperature for more deterministic extraction
-                max_tokens=1000,  # Using full token allocation for comprehensive extraction
+             
                 response_format={"type": "json_object"}
             )
             
@@ -1457,7 +1473,6 @@ def chat_api(request):
                 model="gpt-4o",
                 messages=formatted_messages,
                 temperature=0.5,
-                max_tokens=5000,
                 tools=OpenAIAgent.get_openai_tools()
             )
             

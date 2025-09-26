@@ -106,7 +106,8 @@ class CleanerAccessMiddleware:
             'TermsOfServicePage', 'sitemap',
             'update_cleaner_profile',
             'update_cleaner_schedule', 'add_specific_date', 'delete_specific_date',
-            'accept_open_job', 'reject_open_job'
+            'accept_open_job', 'reject_open_job', 'notification_list', 'notification_detail', 'mark_on_the_way', 'confirm_arrival', 'confirm_completed', 'booking_detail'
+
         ]
         
         # Public paths always accessible
@@ -121,9 +122,11 @@ class CleanerAccessMiddleware:
         
         try:
             current_url = resolve(request.path_info).url_name
-            
+
+
             # If on exempt URL, allow access
             if current_url in exempt_urls:
+                print("ALLOWED: Cleaner accessed exempt URL")
                 return self.get_response(request)
             
             # Check for cleaner detail pages - cleaner can only see their own page
@@ -142,6 +145,11 @@ class CleanerAccessMiddleware:
             if request.path.startswith(path):
                 return self.get_response(request)
         
+        # Allow access to booking detail URLs
+        if '/cleaner/booking/' in request.path:
+            print("ALLOWED: Cleaner accessed booking detail URL")
+            return self.get_response(request)
+            
         # Allow access to cleaner's own URLs
         if '/cleaners/' in request.path and cleaner_id in request.path:
             return self.get_response(request)
@@ -155,7 +163,7 @@ class CleanerAccessMiddleware:
             return self.get_response(request)
         
         # Allow access to confirmation URLs
-        if '/confirm-arrival/' in request.path or '/confirm-completed/' in request.path:
+        if '/confirm-arrival/' in request.path or '/confirm-completed/' in request.path or '/on_the_way/' in request.path:
             return self.get_response(request)
         
         if '/saas/' in request.path:
@@ -166,6 +174,7 @@ class CleanerAccessMiddleware:
             return self.get_response(request)
         # Not allowed - redirect to appropriate cleaner detail page
         # Always redirect to cleaner detail page for any unauthorized access
+        print(current_url)
         try:
             # Use the cleaner detail page URL as the default redirect
             cleaner_url = f'/cleaners/{cleaner_id}/'

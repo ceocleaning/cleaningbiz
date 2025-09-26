@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.core.mail import EmailMessage
-from .models import Lead
+from .models import Lead, OpenJob
 from django.conf import settings
 from retell import Retell
 import os
@@ -20,6 +20,19 @@ from twilio.base.exceptions import TwilioRestException
 
 from retell_agent.models import RetellAgent
 
+# Schedule the booking cleaner assignment check task to run hourly
+def schedule_booking_cleaner_assignment_check():
+    # Check if the schedule already exists
+    if not Schedule.objects.filter(func="automation.tasks.check_booking_cleaner_assignment").exists():
+        # Schedule the function to run every hour
+        schedule(
+            "automation.tasks.check_booking_cleaner_assignment",
+            schedule_type=Schedule.HOURLY,
+            repeats=-1,  # Run indefinitely
+        )
+        print("Scheduled check_booking_cleaner_assignment task to run hourly")
+
+# Call the function to ensure the schedule is created
 
 
 
@@ -132,3 +145,10 @@ def set_status_and_send_email(sender, instance, created, **kwargs):
                 
         except Exception as e:
             print(f"Error sending message: {e}")
+
+
+
+
+@receiver(post_save, sender=OpenJob)
+def schedule_open_job_task(sender, instance, created, **kwargs):
+    schedule_booking_cleaner_assignment_check()

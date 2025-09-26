@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Notification Detail{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">{{ notification.subject }}</h5>
+               
+            </div>
+            <div>
+               
+                <a href="{% url 'notification:notification_list' %}" class="btn btn-sm btn-outline-secondary ms-2">Back to List</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <small class="text-muted">
+                    <strong>Created:</strong> {{ notification.created_at|date:"M d, Y H:i" }} |
+                    {% if notification.sent_at %}
+                        <strong>Sent:</strong> {{ notification.sent_at|date:"M d, Y H:i" }} |
+                    {% endif %}
+                    {% if notification.read_at %}
+                        <strong>Read:</strong> {{ notification.read_at|date:"M d, Y H:i" }}
+                    {% endif %}
+                </small>
+            </div>
+            
+            {% if notification.content %}
+                <div class="notification-content mb-4">
+                    {% if notification.notification_type == 'email' %}
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <strong>Email Content</strong>
+                            </div>
+                            <div class="card-body">
+                                <pre class="notification-email-content">{{ notification.content }}</pre>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p>{{ notification.content }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+
+            
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-email-content {
+        white-space: pre-wrap;
+        font-family: inherit;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+    
+    .notification-context {
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 0.875rem;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+</style>
+{% endblock %}

@@ -45,6 +45,8 @@
                 <input type="hidden" id="subtotal" name="subtotal" value="0" />
                 <input type="hidden" id="tax" name="tax" value="0" />
                 <input type="hidden" id="totalAmount" name="totalAmount" value="0" />
+                <input type="hidden" id="appliedDiscountPercent" name="appliedDiscountPercent" value="0" />
+                <input type="hidden" id="discountAmount" name="discountAmount" value="0" />
                    
                   
                 <!-- Step 1: Customer Information -->
@@ -101,12 +103,7 @@
                                         <span class="input-group-text">+</span>
                                         <select class="form-select" id="countryCode" name="countryCode">
                                             <option value="1" selected>1</option>
-                                            <option value="44">44</option>
-                                            <option value="49">49</option>
-                                            <option value="61">61</option>
-                                            <option value="86">86</option>
-                                            <option value="91">91</option>
-                                            <option value="92">92</option>
+                                          
                                         </select>
                                     </div>
                                     <input type="tel" 
@@ -164,12 +161,17 @@
                     <h5 class="mb-4"><i class="fas fa-broom me-2"></i>Service Details</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="cleaningDate" class="form-label">Cleaning Date <small class="text-muted">({{ request.user.customer.timezone }})</small></label>
+                            <label for="cleaningDate" class="form-label">Cleaning Date <small class="text-muted">
+                                ({{ business.timezone }})
+                            
+                            </small></label>
                             <input type="date" class="form-control" id="cleaningDate" name="cleaningDate" required min="{{ today|date:'Y-m-d' }}">
-                            <input type="hidden" id="businessTimezone" value="{{ request.user.customer.timezone }}">
+                            <input type="hidden" id="businessTimezone" value="{{ business.timezone }}">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="startTime" class="form-label">Start Time <small class="text-muted">({{ request.user.customer.timezone }})</small></label>
+                            <label for="startTime" class="form-label">Start Time <small class="text-muted">
+                                ({{ business.timezone }})
+                            </small></label>
                             <select class="form-control form-select" id="startTime" name="startTime" required>
                                 <option value="">Select Time</option>
                                 <option value="06:00">6:00 AM</option>
@@ -401,6 +403,10 @@
                         <span>Subtotal:</span>
                         <span class="fw-medium">$<span id="overview-subtotal">0.00</span></span>
                     </div>
+                    <div id="discount-row" class="d-flex justify-content-between mb-2" style="display: none;">
+                        <span>Discount (<span id="overview-discount-percent">0</span>%):</span>
+                        <span class="fw-medium text-success">-$<span id="overview-discount">0.00</span></span>
+                    </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tax ({{ business.settings.taxPercent }}%):</span>
                         <span class="fw-medium">$<span id="overview-tax">0.00</span></span>
@@ -512,6 +518,14 @@
         };
         
         const TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0;
+        
+        // Recurring discounts
+        const RECURRING_DISCOUNTS = {
+            'one-time': 0,
+            'weekly': pricingData.weeklyDiscount || 0,
+            'biweekly': pricingData.biweeklyDiscount || 0,
+            'monthly': pricingData.monthlyDiscount || 0
+        };
         
         // Form steps navigation
         const formSteps = document.querySelectorAll('.form-step');
@@ -693,8 +707,18 @@
                 addonsPrice += quantity * price;
             });
             
-            // Calculate subtotal, tax and total
-            const subtotal = basePrice + propertyPrice + addonsPrice;
+            // Calculate subtotal before discount
+            const subtotalBeforeDiscount = basePrice + propertyPrice + addonsPrice;
+            
+            // Calculate discount based on recurring option
+            const recurringType = document.getElementById('recurring').value;
+            const discountPercent = RECURRING_DISCOUNTS[recurringType] || 0;
+            const discountAmount = subtotalBeforeDiscount * (discountPercent / 100);
+            
+            // Apply discount to get final subtotal
+            const subtotal = subtotalBeforeDiscount - discountAmount;
+            
+            // Calculate tax and total
             const tax = subtotal * TAX_RATE;
             const total = subtotal + tax;
             
@@ -702,6 +726,8 @@
             document.getElementById('subtotal').value = subtotal.toFixed(2);
             document.getElementById('tax').value = tax.toFixed(2);
             document.getElementById('totalAmount').value = total.toFixed(2);
+            document.getElementById('appliedDiscountPercent').value = discountPercent.toFixed(2);
+            document.getElementById('discountAmount').value = discountAmount.toFixed(2);
             
             // Update overview section
             document.getElementById('overview-service').textContent = document.getElementById('serviceType').options[document.getElementById('serviceType').selectedIndex].text;
@@ -768,7 +794,18 @@
             // Update price overview
             document.getElementById('overview-base-price').textContent = (basePrice + propertyPrice).toFixed(2);
             document.getElementById('overview-addons-price').textContent = addonsPrice.toFixed(2);
-            document.getElementById('overview-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('overview-subtotal').textContent = subtotalBeforeDiscount.toFixed(2);
+            
+            // Show/hide discount row based on whether a discount is applied
+            const discountRow = document.getElementById('discount-row');
+            if (discountPercent > 0) {
+                discountRow.style.display = 'flex';
+                document.getElementById('overview-discount-percent').textContent = discountPercent;
+                document.getElementById('overview-discount').textContent = discountAmount.toFixed(2);
+            } else {
+                discountRow.style.display = 'none';
+            }
+            
             document.getElementById('overview-tax').textContent = tax.toFixed(2);
             document.getElementById('overview-total').textContent = total.toFixed(2);
             
@@ -829,6 +866,7 @@
         
         // Attach event listeners for real-time calculation
         document.getElementById('serviceType').addEventListener('change', calculatePrices);
+        document.getElementById('recurring').addEventListener('change', calculatePrices);
         document.getElementById('bedrooms').addEventListener('input', calculatePrices);
         document.getElementById('bathrooms').addEventListener('input', calculatePrices);
         document.getElementById('squareFeet').addEventListener('input', calculatePrices);

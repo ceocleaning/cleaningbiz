@@ -22,7 +22,8 @@ from django.views.decorators.http import require_POST, require_http_methods
 from usage_analytics.services.usage_service import UsageService
 import json
 from automation.utils import format_phone_number
-import decimal
+from decimal import Decimal
+from notification.services import NotificationService
 logger = logging.getLogger(__name__)
 
 
@@ -183,7 +184,10 @@ def home(request):
     bookings = Booking.objects.filter(business=business)
     active_bookings = bookings.filter(
         isCompleted=False,
-        cleaningDate__gte=now.date()
+        cleaningDate__gte=now.date(),
+        cancelled_at__isnull=True,
+        invoice__isnull=True,
+        invoice__isPaid=False
     ).count()
     completed_bookings = bookings.filter(isCompleted=True).count()
 
@@ -1570,79 +1574,6 @@ def verify_recaptcha_token(token):
             'message': f'Error verifying reCAPTCHA: {str(e)}'
         }
 
-@csrf_exempt
-@require_POST
-def book_demo(request):
-    """
-    Process demo booking form submissions and send email notifications
-    """
-    # Check if it's an AJAX request
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    if is_ajax:
-        try:
-            # Get form data
-            name = request.POST.get('name', '')
-            email = request.POST.get('email', '')
-            phone = request.POST.get('phone', '')
-            company = request.POST.get('company', '')
-            
-            # Validate required fields
-            if not all([name, email, phone]):
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Please fill in all required fields.'
-                })
-                
-            # Prepare email content
-            email_subject = f"Demo Request: {name} from {company or 'N/A'}"
-            email_message = f"""
-            New demo request:
-            
-            Name: {name}
-            Email: {email}
-            Phone: {phone}
-            Company: {company or 'Not provided'}
-            
-            Date Requested: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} UTC
-            """
-            
-            # Send email using EmailMessage for more control
-            from_email = 'noreply@cleaningbizai.com'  # Use a consistent from address
-            recipient_list = ['kashifmehmood926@gmail.com', 'ceocleaningacademy@gmail.com']
-            
-            # Send email notification
-            email = EmailMessage(
-                subject=email_subject,
-                body=email_message,
-                from_email=from_email,
-                to=recipient_list,
-                reply_to=[email],  # Set reply-to as the user's email
-            )
-            email.send(fail_silently=False)
-            
-            logger.info(f"Demo request sent successfully from {email}")
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Your demo request has been sent successfully! We will get back to you soon.'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error in demo booking form: {str(e)}", exc_info=True)
-            return JsonResponse({
-                'success': False,
-                'message': f'An error occurred: {str(e)}'
-            })
-    
-    # If not an AJAX request, return an error
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request'
-    })
-
-
-
 
 
 
@@ -1793,6 +1724,95 @@ def accept_open_job(request, job_id):
     return redirect('cleaner_detail', cleaner_id=job.cleaner.cleaner.id)
 
 
+def check_all_cleaners_rejected_booking(booking):
+    """
+    Check if all cleaners have rejected a booking and notify the business owner if so.
+    
+    Parameters:
+    - booking: The booking object to check
+    
+    Returns:
+    - Boolean: True if all cleaners have rejected the booking, False otherwise
+    """
+    from automation.models import OpenJob
+    from accounts.models import CleanerProfile
+    
+    # Get all active cleaners for this business
+    active_cleaners = Cleaners.objects.filter(business=booking.business, isActive=True)
+    active_cleaner_profiles = CleanerProfile.objects.filter(cleaner__in=active_cleaners)
+    total_active_cleaners = active_cleaner_profiles.count()
+    
+    # Get all rejected jobs for this booking
+    open_jobs = OpenJob.objects.filter(
+        booking=booking
+    )
+
+    rejected_jobs = open_jobs.filter(
+        status='rejected'
+    )
+    
+    # Get pending jobs for this booking
+    pending_jobs = open_jobs.filter(
+        status='pending'
+    )
+    
+    # If there are still pending jobs, not all cleaners have rejected
+    if pending_jobs.exists():
+        return False
+    
+    # If the number of rejected jobs equals the number of active cleaners,
+    # or if we've tried all available cleaners, then all cleaners have rejected
+    if rejected_jobs.count() >= open_jobs.count():
+        # Send notification to business owner
+        business = booking.business
+        business_owner = business.user
+        
+        # Format the booking date and time for the notification
+        booking_date = booking.cleaningDate.strftime('%A, %B %d, %Y')
+        booking_time = f"{booking.startTime.strftime('%I:%M %p')} - {booking.endTime.strftime('%I:%M %p')}"
+        customer_name = booking.customer.get_full_name()
+        
+        # Create notification content
+        subject = f"URGENT: All cleaners rejected booking #{booking.bookingId}"
+        content = f"""
+Hello {business_owner.first_name or 'Business Owner'},
+
+This is an urgent notification that all available cleaners have rejected booking #{booking.bookingId}.
+
+Booking Details:
+- Customer: {customer_name}
+- Date: {booking_date}
+- Time: {booking_time}
+- Service: {booking.get_serviceType_display()}
+- Address: {booking.customer.get_address()}
+
+Please take immediate action to either:
+1. Manually assign a cleaner to this booking
+2. Contact the customer to reschedule
+3. Cancel the booking if necessary
+
+You can view the full booking details in your dashboard.
+
+This is an automated notification from your CleaningBiz AI system.
+        """
+        
+        # Send notification to business owner
+        from_email = f"{business.businessName} <noreply@cleaningbizai.com>"
+        NotificationService.send_notification(
+            recipient=business_owner,
+            from_email=from_email,
+            notification_type=['email', 'sms'],
+            subject=subject,
+            to_email=business_owner.email,
+            to_sms=business.phone,
+            content=content,
+            sender=business
+        )
+        
+        return True
+    
+    return False
+
 @login_required
 @require_POST
 @transaction.atomic
@@ -1802,7 +1822,6 @@ def reject_open_job(request, job_id):
     """
     from automation.models import OpenJob
     from bookings.utils import send_jobs_to_cleaners
-    
     
     # Get the open job
     job = get_object_or_404(OpenJob, id=job_id)
@@ -1816,17 +1835,15 @@ def reject_open_job(request, job_id):
     job.save()
 
     booking = job.booking
+    # Check if all cleaners have rejected this booking after sending to remaining cleaners
+    # This will also send notification to business owner if all cleaners have rejected
+    all_rejected = check_all_cleaners_rejected_booking(booking)
     if booking.business.job_assignment == 'high_rated':
         cleaner_id_to_exclude = job.cleaner.cleaner.id
 
-        # Get all pending jobs for this booking (regardless of assignment type)
         other_job_objs = OpenJob.objects.filter(booking=booking, status='pending').exclude(id=job.id)
         
-        # If no other pending jobs exist, send this job to all other available cleaners
         if other_job_objs.count() == 0:
-          
-            
-            # Get all previously rejected cleaners for this booking to exclude them too
             rejected_cleaner_ids = list(OpenJob.objects.filter(
                 booking=booking, 
                 status='rejected'
@@ -1835,12 +1852,12 @@ def reject_open_job(request, job_id):
             # Make sure the current cleaner is in the exclude list
             if cleaner_id_to_exclude not in rejected_cleaner_ids:
                 rejected_cleaner_ids.append(cleaner_id_to_exclude)
-                
             
             # Send jobs to all available cleaners except those who already rejected
             send_jobs_to_cleaners(booking.business, booking, exclude_ids=rejected_cleaner_ids, assignment_check_null=True)
-        else:
-            pass
+            
+            
+           
     
     # Add success message
     messages.success(request, f'Job {job.id} has been rejected successfully!')
@@ -1848,7 +1865,7 @@ def reject_open_job(request, job_id):
 
 
 
-def confirm_arrival(request, booking_id):
+def mark_on_the_way(request, booking_id):
     booking = Booking.objects.get(bookingId=booking_id)
     
     from .emails import send_arrival_confirmation_email
@@ -1857,6 +1874,24 @@ def confirm_arrival(request, booking_id):
     
     # Update Booking Status
     booking.arrival_confirmed_at = timezone.now()
+    booking.save()
+    
+    # Add success message
+    messages.success(request, 'On the way notifcation sent successfully!')
+    
+    # Redirect back to the cleaner detail page
+    return redirect('cleaner_detail', cleaner_id=booking.cleaner.id)
+
+
+def confirm_arrival(request, booking_id):
+    booking = Booking.objects.get(bookingId=booking_id)
+    
+    from .emails import send_cleaner_arrived_notification
+    # Send Email to Client
+    send_cleaner_arrived_notification(booking)
+    
+    # Update Booking Status
+    booking.arrived_at = timezone.now()
     booking.save()
     
     # Add success message
@@ -1898,7 +1933,7 @@ def confirm_completed(request, booking_id):
             existing_payout.bookings.add(booking)
             
             # Update the payout amount
-            existing_payout.amount += amount
+            existing_payout.amount += Decimal(amount)
             existing_payout.save()
             
             # Add success message about adding to existing payout
@@ -1908,7 +1943,7 @@ def confirm_completed(request, booking_id):
             payout = CleanerPayout.objects.create(
                 business=booking.business,
                 cleaner_profile=cleaner_profile,
-                amount=amount,
+                amount=Decimal(amount),
                 status='pending',
                 notes=f"Automatically created when booking {booking.bookingId} was completed"
             )
@@ -1919,7 +1954,7 @@ def confirm_completed(request, booking_id):
             # Add success message about new payout
             messages.success(request, f"Booking marked as completed and new payout of ${amount:.2f} has been created.")
     except Exception as e:
-        logger.error(f"Error creating automatic payout: {str(e)}")
+        print(f"Error creating automatic payout: {str(e)}")
         messages.success(request, 'Booking marked as completed successfully!')
         messages.warning(request, 'There was an issue creating the automatic payout. Please contact your administrator.')
     
@@ -1956,3 +1991,12 @@ def update_cleaner_login(request, cleaner_id):
     
     messages.error(request, 'Invalid request method.')
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
+
+
+@login_required
+def booking_detail(request, bookingId):
+    booking = get_object_or_404(Booking, bookingId=bookingId)
+    context = {
+        'booking': booking
+    }
+    return render(request, 'automation/booking_detail.html', context)

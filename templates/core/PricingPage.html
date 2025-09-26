@@ -50,7 +50,7 @@
         <div class="row g-4 justify-content-center">
             {% for plan in plans %}
             <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100" data-plan-type="{{ plan.billing_cycle }}">
-                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient {% if plan.plan_tier == 'professional' %}featured{% endif %}">
+                <div class="card h-100 border-0 rounded-4 border border-1 pricing-card bg-dark-surface-2 border-gradient {% if plan.plan_tier == 'professional' %}featured{% endif %}">
                     {% if plan.plan_tier == 'professional' %}
                     <div class="position-absolute" style="top: 0; left: 0; right: 0; overflow: visible; text-align: center; z-index: 5;">
                         <div style="background-color: var(--bs-accent); color: white; display: inline-block; padding: 8px 16px; border-radius: 0 0 12px 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -342,7 +342,7 @@
             <div class="col-lg-8">
                 <div class="accordion" id="pricingFAQ">
                     <!-- Question 1 -->
-                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="100">
+                    <div class="accordion-item border-0 mb-4 border border-1 rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="100">
                         <h2 class="accordion-header">
                             <button class="accordion-button fw-medium py-4 px-4 bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="true" aria-controls="faqOne">
                                 What is an AI Voice Agent?
@@ -356,7 +356,7 @@
                     </div>
                     
                     <!-- Question 2 -->
-                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="200">
+                    <div class="accordion-item border-0 mb-4 border border-1 rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="200">
                         <h2 class="accordion-header">
                             <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwo" aria-expanded="false" aria-controls="faqTwo">
                                 How do the voice minutes work?
@@ -370,7 +370,7 @@
                     </div>
                     
                     <!-- Question 3 -->
-                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="300">
+                    <div class="accordion-item border-0 mb-4 border border-1 rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="300">
                         <h2 class="accordion-header">
                             <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree" aria-expanded="false" aria-controls="faqThree">
                                 Can I customize what the AI Voice Agent says?
@@ -384,7 +384,7 @@
                     </div>
                     
                     <!-- Question 4 -->
-                    <div class="accordion-item border-0 mb-4 shadow-sm rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="400">
+                    <div class="accordion-item border-0 mb-4 border border-1 rounded-4 overflow-hidden bg-dark-surface-2" data-aos="fade-up" data-aos-delay="400">
                         <h2 class="accordion-header">
                             <button class="accordion-button fw-medium py-4 px-4 collapsed bg-dark-surface-2 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour" aria-expanded="false" aria-controls="faqFour">
                                 Do you offer a free trial?

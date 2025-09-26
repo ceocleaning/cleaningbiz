@@ -173,6 +173,7 @@ def get_twilio_numbers(request):
         
         # Get all phone numbers
         incoming_numbers = client.incoming_phone_numbers.list()
+
         
         # Format the results
         numbers = []
@@ -189,10 +190,10 @@ def get_twilio_numbers(request):
         return JsonResponse({'numbers': numbers})
     
     except TwilioRestException as e:
-      
+        print(e)
         return JsonResponse({'error': f"Twilio error: {str(e)}"}, status=400)
     except Exception as e:
-      
+        print(e)
         return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
 @login_required

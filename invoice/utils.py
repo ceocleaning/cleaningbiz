@@ -1,7 +1,8 @@
 
 from django.utils import timezone
-from leadsAutomation.utils import send_email
 import threading
+
+from notification.services import NotificationService
 
 
 def create_and_start_thread(fn, args):
@@ -45,47 +46,53 @@ def notify_business_owner_payment_completed(business, payment, invoice, booking)
     try:
         # Get business owner's email
         owner_email = business.user.email
+
+        from_email = f"{business.businessName} <{owner_email}>"
         
         # Create email subject
         subject = f"New Payment Received - {business.businessName}"
         
         # Create email body
         body = f"""
-        Hello {business.user.first_name if business.user.first_name else business.businessName},
-        
-        A new payment of {payment.amount} has been {payment.status} for booking #{booking.bookingId}.
-        
-        Payment Details:
-        - Invoice ID: {invoice.invoiceId}
-        - Payment ID: {payment.paymentId}
-        - Amount: ${invoice.amount:.2f}
-        - Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
-        
-        Customer Details:
-        - Name: {booking.customer.get_full_name()}
-        - Email: {booking.customer.email}
-        - Phone: {booking.customer.phone_number}
-        
-        Booking Details:
-        - Service: {booking.serviceType}
-        - Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {booking.squareFeet}
-        - Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
-        - Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
-        - Address: {booking.customer.get_address() or 'N/A'}
-        
-        You can view the full booking details in your dashboard.
-        
-        Thank you,
-        CleaningBiz AI
+Hello {business.user.first_name if business.user.first_name else business.businessName},
+
+A new payment of {payment.amount} has been {payment.status} for booking #{booking.bookingId}.
+
+Payment Details:
+- Invoice ID: {invoice.invoiceId}
+- Payment ID: {payment.paymentId}
+- Amount: ${invoice.amount:.2f}
+- Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
+
+Customer Details:
+- Name: {booking.customer.get_full_name()}
+- Email: {booking.customer.email}
+- Phone: {booking.customer.phone_number}
+
+Booking Details:
+- Service: {booking.serviceType}
+- Service: Bedrooms: {booking.bedrooms} , Bathroom: {booking.bathrooms} , Area: {booking.squareFeet}
+- Date: {booking.cleaningDate.strftime('%Y-%m-%d')}
+- Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}
+- Address: {booking.customer.get_address() or 'N/A'}
+
+You can view the full booking details in your dashboard.
+
+Thank you,
+CleaningBiz AI
         """
         
         # Send email using Django's built-in email function
-        send_email(
+        NotificationService.send_notification(
+            recipient=business.user,
+            notification_type=['email', 'sms'],
+            from_email=from_email,
             subject=subject,
-            text_content=body,
-            from_email=f"{business.businessName} <{business.user.email}>",
-            to_email=owner_email,
-            reply_to=business.user.email
+            content=body,
+            
+            sender=business,
+            email_to=owner_email,
+            sms_to=business.phone,
         )
         
         print(f"Payment notification email sent to business owner: {owner_email}")
@@ -114,31 +121,32 @@ def send_email_payment_completed(instance):
 
             
             # Create plain text version
-            text_body = f"""Payment Confirmation - {business.businessName}
-            
-                Hello {booking.customer.get_full_name()},
+            text_body = f"""
+Payment Confirmation - {business.businessName}
 
-                We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}.
+Hello {booking.customer.get_full_name()},
 
-                Payment Details:
-                - Invoice ID: {invoice.invoiceId}
-                - Square Payment ID: {instance.squarePaymentId}
-                - Amount Paid: ${invoice.amount:.2f}
-                - Payment Date: {format_date(instance.paidAt)}
-                - Payment Method: Card
+We're pleased to confirm that your payment for the cleaning service with {business.businessName} has been successfully processed and is {instance.status}.
 
-                Appointment Details:
-                - Date: {format_date(booking.cleaningDate)}
-                - Time: {format_time(booking.startTime)} - {format_time(booking.endTime)}
-                - Service: {booking.serviceType.title()} Cleaning
+Payment Details:
+- Invoice ID: {invoice.invoiceId}
+- Square Payment ID: {instance.squarePaymentId}
+- Amount Paid: ${invoice.amount:.2f}
+- Payment Date: {format_date(instance.paidAt)}
+- Payment Method: Card
 
-                Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!
+Appointment Details:
+- Date: {format_date(booking.cleaningDate)}
+- Time: {format_time(booking.startTime)} - {format_time(booking.endTime)}
+- Service: {booking.serviceType.title()} Cleaning
 
-                If you have any questions or need to make changes to your appointment, please contact us.
+Thank you for choosing {business.businessName}. We look forward to providing you with excellent service!
 
-                {business.businessName}
-                {business.address}
-                Phone: {business.phone} | Email: {business.user.email}
+If you have any questions or need to make changes to your appointment, please contact us.
+
+{business.businessName}
+{business.address}
+Phone: {business.phone} | Email: {business.user.email}
             """
             
             # Set up email parameters
@@ -147,12 +155,16 @@ def send_email_payment_completed(instance):
             recipient_email = booking.customer.email
             
             # Send email based on available configuration
-            send_email(
-                subject=subject,
-                text_content=text_body,
+            NotificationService.send_notification(
+                recipient=booking.customer.user if booking.customer.user else None,
+                notification_type=['email', 'sms'],
                 from_email=from_email,
-                to_email=recipient_email,
-                reply_to=reply_to_email
+                subject=subject,
+                content=text_body,
+              
+                sender=business,
+                email_to=recipient_email,
+                sms_to=booking.customer.phone_number,
             )
         
    

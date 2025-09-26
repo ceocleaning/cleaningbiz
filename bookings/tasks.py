@@ -5,7 +5,7 @@ import datetime
 from django.conf import settings
 from django.utils import timezone
 from twilio.rest import Client
-from leadsAutomation.utils import send_email
+from notification.services import NotificationService
 
 
 from .email_template import get_email_template
@@ -54,48 +54,28 @@ This is an automated message from {business.businessName}.
               
                 # Set up email parameters
                 from_email = f"{business.businessName} <{business.user.email}>"
-                recipient_email = booking.customer.email
                 
                 # Send email based on available configuration
-                send_email(
+                NotificationService.send_notification(
+                    recipient=booking.customer.user if booking.customer.user else None,
+                    notification_type=['email', 'sms'],
                     from_email=from_email,
-                    to_email=recipient_email,
-                    reply_to=business.user.email,
                     subject=email_subject,
-                    text_content=text_body
+                    content=text_body,
+                
+                    sender=business,
+                    email_to=booking.customer.email,
+                    sms_to=booking.customer.phone_number,
                 )
+
+
                     
                 print(f"[INFO] Payment reminder email sent to {booking.customer.email} using default SMTP settings")
                 
             except Exception as e:
                 print(f"[ERROR] Failed to send payment reminder email: {str(e)}")
                 
-            # Send SMS reminder
-            try:
-                # Check if business has Twilio credentials
-                if hasattr(business, 'apicredentials') and business.apicredentials:
-                    api_cred = business.apicredentials
-                    
-                    if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-                        # Initialize Twilio client
-                        client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
-                        
-                        # SMS message content
-                        sms_message = f"REMINDER from {business.businessName}: Your booking payment is pending. Your slot will be released in 1 hour if payment is not received. Complete payment here: {settings.BASE_URL}/invoice/invoices/{booking.invoice.invoiceId}/preview/"
-                        
-                        # Send SMS
-                        message = client.messages.create(
-                            body=sms_message,
-                            from_=api_cred.twilioSmsNumber,
-                            to=booking.customer.phone_number
-                        )
-                        
-                        print(f"[INFO] Payment reminder SMS sent to {booking.customer.phone_number}, SID: {message.sid}")
-                    else:
-                        print("[INFO] No Twilio credentials found for business, skipping SMS reminder")
-            except Exception as e:
-                print(f"[ERROR] Failed to send payment reminder SMS: {str(e)}")
-            
+           
             # Update the booking to record when the payment reminder was sent
             booking.paymentReminderSentAt = timezone.now()
             booking.save() 
@@ -162,12 +142,16 @@ Thank you,
                     # Send email
                     from_email = f"{business.businessName} <{business.user.email}>" 
 
-                    send_email(
+                    NotificationService.send_notification(
+                        recipient=booking.customer.user if booking.customer.user else None,
+                        notification_type=['email', 'sms'],
                         from_email=from_email,
-                        to_email=booking.customer.email,
-                        reply_to=business.email,
                         subject=subject,
-                        text_content=message
+                        content=message,
+                       
+                        sender=business,
+                        email_to=booking.customer.email,
+                        sms_to=booking.customer.phone_number,
                     )
                 except Exception as e:
                     print(f"[ERROR] Failed to send cancellation email: {str(e)}")
@@ -224,42 +208,32 @@ def send_day_before_reminder():
                 from_email = f"{business.businessName} <{business.user.email}>"
 
                 # Send email using the new utility
-                send_email(
-                    from_email=from_email,
-                    to_email=recipient_email,
-                    reply_to=business.user.email,
-                    subject=email_subject,
-                    text_content=email_text,
-                )
 
-            # Send SMS (unchanged)
-            try:
-                if hasattr(business, 'apicredentials') and business.apicredentials:
-                    api_cred = business.apicredentials
-                    if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-                        client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
-                        # Convert UTC date and time to business timezone for display
-                        business_timezone = business.get_timezone()
-                        
-                        # Create datetime objects in UTC
-                        utc_datetime = datetime.datetime.combine(booking.cleaningDate, booking.startTime)
-                        utc_datetime = pytz.utc.localize(utc_datetime) if utc_datetime.tzinfo is None else utc_datetime
-                        
-                        # Convert to business timezone
-                        local_datetime = utc_datetime.astimezone(business_timezone)
-                        
-                        # Format the local date and time for display
-                        local_date = local_datetime.strftime('%A, %B %d')
-                        local_time = local_datetime.strftime('%I:%M %p')
-                        
-                        sms_message = f"Reminder from {business.businessName}: Your cleaning service is scheduled for tomorrow, {local_date} at {local_time}. Please ensure access to your property. Questions? Call {business.phone}."
-                        client.messages.create(
-                            body=sms_message,
-                            from_=api_cred.twilioSmsNumber,
-                            to=booking.customer.phone_number
-                        )
-            except Exception as e:
-                print(f"[ERROR] Failed to send day-before reminder SMS: {str(e)}")
+                if to == 'client':
+                    NotificationService.send_notification(
+                        recipient=booking.customer.user if booking.customer.user else None,
+                        notification_type=['email', 'sms'],
+                        from_email=from_email,
+                        subject=email_subject,
+                        content=email_text,
+                      
+                        sender=business,
+                        email_to=recipient_email,
+                        sms_to=booking.customer.phone_number,
+                    )
+                
+                if to == 'cleaner':
+                    NotificationService.send_notification(
+                        recipient=booking.cleaner.user if booking.cleaner.user else None,
+                        notification_type=['email', 'sms'],
+                        from_email=from_email,
+                        subject=email_subject,
+                        content=email_text,
+                      
+                        sender=business,
+                        email_to=recipient_email,
+                        sms_to=booking.cleaner.phone_number,
+                    )
 
             booking.dayBeforeReminderSentAt = timezone.now()
             booking.save()
@@ -294,7 +268,6 @@ def send_hour_before_reminder():
             hourBeforeReminderSentAt__isnull=True
         )
 
-        print(f"[INFO] Found {bookings.count()} bookings for hour-before reminder")
         
         reminder_count = 0
         for booking in bookings:
@@ -318,55 +291,32 @@ def send_hour_before_reminder():
 
                 from_email = f"{business.businessName} <{business.user.email}>"
 
-                # Send email using the new utility
-                send_email(
-                    from_email=from_email,
-                    to_email=recipient_email,
-                    reply_to=business.user.email,
-                    subject=email_subject,
-                    email_text=email_text
-                )
-
-            
-            # Send SMS reminder
-            try:
-                # Check if business has Twilio credentials
-                if hasattr(business, 'apicredentials') and business.apicredentials:
-                    api_cred = business.apicredentials
-                    
-                    if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-                        # Initialize Twilio client
-                        client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
-                        
-                        # Convert UTC date and time to business timezone for display
-                        business_timezone = business.get_timezone()
-                        
-                        # Create datetime objects in UTC
-                        utc_datetime = datetime.datetime.combine(booking.cleaningDate, booking.startTime)
-                        utc_datetime = pytz.utc.localize(utc_datetime) if utc_datetime.tzinfo is None else utc_datetime
-                        
-                        # Convert to business timezone
-                        local_datetime = utc_datetime.astimezone(business_timezone)
-                        
-                        # Format the local time for display
-                        local_time = local_datetime.strftime('%I:%M %p')
-                        
-                        # SMS message content
-                        sms_message = f"REMINDER: Your {business.businessName} cleaning service begins in 1 hour at {local_time}. Please ensure property access. Questions? Call {business.phone}."
-                        
-                        # Send SMS
-                        message = client.messages.create(
-                            body=sms_message,
-                            from_=api_cred.twilioSmsNumber,
-                            to=booking.customer.phone_number
-                        )
-                        
+                if to == 'client':
+                    NotificationService.send_notification(
+                        recipient=booking.customer.user if booking.customer.user else None,
+                        notification_type=['email', 'sms'],
+                        from_email=from_email,
+                        subject=email_subject,
+                        content=email_text,
                        
-                        
-            except Exception as e:
-                print(f"[ERROR] Failed to send hour-before reminder SMS: {str(e)}")
-            
-            # Update the booking to record that the hour-before reminder was sent
+                        sender=business,
+                        email_to=recipient_email,
+                        sms_to=booking.customer.phone_number,
+                    )
+                
+                if to == 'cleaner':
+                    NotificationService.send_notification(
+                        recipient=booking.cleaner.user if booking.cleaner.user else None,
+                        notification_type=['email', 'sms'],
+                        from_email=from_email,
+                        subject=email_subject,
+                        content=email_text,
+                      
+                        sender=business,
+                        email_to=recipient_email,
+                        sms_to=booking.cleaner.phone_number,
+                    )
+
             booking.hourBeforeReminderSentAt = timezone.now()
             booking.save()
             
@@ -421,11 +371,11 @@ YOUR RECENT SERVICE:
 
 WE'D LOVE YOUR FEEDBACK
 Your feedback is important to us and helps us improve our service. Could you take a moment to let us know how we did?
-{settings.BASE_URL}/feedback/{booking.bookingId}/
+{settings.BASE_URL}/customer/booking/review/{booking.bookingId}/
 
 SCHEDULE YOUR NEXT CLEANING
 Would you like to schedule your next cleaning service? Visit the link below to book your preferred date and time.
-{settings.BASE_URL}/book/{business.businessId}/
+{settings.BASE_URL}/customer/booking/add/{business.businessId}/
 
 If you have any questions or special requests for future services, please don't hesitate to contact us at {business.phone or business.user.email}.
 
@@ -437,46 +387,25 @@ This is an automated message from {business.businessName}.
                 from_email = f"{business.businessName} <{business.user.email}>"
                 recipient_email = booking.customer.email
 
-                send_email(
+                NotificationService.send_notification(
+                    recipient=booking.customer.user if booking.customer.user else None,
+                    notification_type=['email', 'sms'],
                     from_email=from_email,
-                    to_email=recipient_email,
-                    reply_to=business.user.email,
                     subject=email_subject,
-                    text_content=text_body
+                    content=text_body,
+                 
+                    sender=business,
+                    email_to=recipient_email,
+                    sms_to=booking.customer.phone_number,
                 )
 
             except Exception as e:
                 print(f"[ERROR] Failed to send post-service followup email: {str(e)}")
             
-            # Send SMS reminder
-            try:
-                # Check if business has Twilio credentials
-                if hasattr(business, 'apicredentials') and business.apicredentials:
-                    api_cred = business.apicredentials
-                    
-                    if api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber:
-                        # Initialize Twilio client
-                        client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
-                        
-                        # SMS message content
-                        sms_message = f"Thank you for choosing {business.businessName}! How was your cleaning experience? Share feedback: {settings.BASE_URL}/feedback/{booking.bookingId}/ or book again: {settings.BASE_URL}/book/{business.businessId}/"
-                        
-                        # Send SMS
-                        message = client.messages.create(
-                            body=sms_message,
-                            from_=api_cred.twilioSmsNumber,
-                            to=booking.customer.phone_number
-                        )
-                        
-                        print(f"[INFO] Post-service followup SMS sent to {booking.customer.phone_number}, SID: {message.sid}")
-                    else:
-                        print("[INFO] No Twilio credentials found for business, skipping SMS followup")
-                        
-            except Exception as e:
-                print(f"[ERROR] Failed to send post-service followup SMS: {str(e)}")
+   
             
             # Update the booking to record that the post-service followup was sent
-            booking.postServiceFollowupSent = True
+            booking.postServiceFollowupSentAt = timezone.now()
             booking.save()
             
             followup_count += 1
@@ -487,4 +416,131 @@ This is an automated message from {business.businessName}.
     except Exception as e:
         print(f"[ERROR] Error in send_post_service_followup: {str(e)}")
         return 0
-   
+
+
+def process_recurring_bookings():
+    """
+    Process recurring bookings by creating new bookings based on the recurring pattern.
+    This task is scheduled to run daily at midnight.
+    
+    For each recurring booking that has a next_recurring_date of today or earlier,
+    create a new booking with the same details but updated dates.
+    """
+    try:
+        from datetime import datetime, timedelta
+        from django.db import transaction
+        from django.db.models import Q
+        from .models import Booking, BookingCustomAddons
+        from invoice.models import Invoice
+        
+        today = timezone.now().date()
+        print(f"[INFO] Processing recurring bookings for {today}")
+        
+        # Find all recurring bookings that need to be processed
+        # We want to create bookings 2 days before the actual cleaning date
+        # So we look for bookings where next_recurring_date is 2 days from today
+        two_days_from_now = today + timedelta(days=2)
+        
+        recurring_bookings = Booking.objects.filter(
+            Q(recurring__in=['weekly', 'biweekly', 'monthly']),
+            Q(next_recurring_date__lte=two_days_from_now),
+            cancelled_at__isnull=True,
+            parent_booking__isnull=True
+        )
+        
+        bookings_created = 0
+        
+        for booking in recurring_bookings:
+            try:
+                with transaction.atomic():
+                    # Calculate the new cleaning date
+                    new_cleaning_date = booking.next_recurring_date
+                    
+                    # Create a new booking based on the recurring booking
+                    new_booking = Booking.objects.create(
+                        business=booking.business,
+                        customer=booking.customer,
+                        bedrooms=booking.bedrooms,
+                        bathrooms=booking.bathrooms,
+                        squareFeet=booking.squareFeet,
+                        cleaningDate=new_cleaning_date,
+                        startTime=booking.startTime,
+                        endTime=booking.endTime,
+                        serviceType=booking.serviceType,
+                        parent_booking=booking,
+                        addonDishes=booking.addonDishes,
+                        addonLaundryLoads=booking.addonLaundryLoads,
+                        addonWindowCleaning=booking.addonWindowCleaning,
+                        addonPetsCleaning=booking.addonPetsCleaning,
+                        addonFridgeCleaning=booking.addonFridgeCleaning,
+                        addonOvenCleaning=booking.addonOvenCleaning,
+                        addonBaseboard=booking.addonBaseboard,
+                        addonBlinds=booking.addonBlinds,
+                        addonGreenCleaning=booking.addonGreenCleaning,
+                        addonCabinetsCleaning=booking.addonCabinetsCleaning,
+                        addonPatioSweeping=booking.addonPatioSweeping,
+                        addonGarageSweeping=booking.addonGarageSweeping,
+                        otherRequests=booking.otherRequests,
+                        totalPrice=booking.totalPrice,
+                        tax=booking.tax
+                    )
+                    
+                    # Copy custom addons
+                    for custom_addon in booking.customAddons.all():
+                        new_booking.customAddons.add(custom_addon)
+                    
+                  
+                    # Update the next recurring date for the original booking
+                    booking.next_recurring_date = booking.calculate_next_recurring_date()
+                    booking.last_recurring_created_at = timezone.now()
+                    booking.save()
+                    
+                    # Set the next recurring date for the new booking
+                    new_booking.next_recurring_date = new_booking.calculate_next_recurring_date()
+                    new_booking.save()
+                    
+                    print(f"[INFO] Created recurring booking {new_booking.bookingId} from {booking.bookingId}")
+                    bookings_created += 1
+                    
+                    # Send notification to customer about the new booking
+                    business = booking.business
+                    customer = booking.customer
+                    
+                    if customer and customer.email:
+                        subject = f"Your recurring cleaning with {business.businessName} has been scheduled"
+                        
+                        text_body = f"""Hello {customer.first_name},
+
+Your upcoming recurring cleaning service with {business.businessName} has been scheduled for {new_cleaning_date.strftime('%A, %B %d, %Y')} at {new_booking.startTime.strftime('%I:%M %p')} (in 2 days).
+
+Service: {new_booking.serviceType} Cleaning
+Address: {customer.get_address()}
+Total Amount: ${new_booking.totalPrice:.2f}
+
+If you need to make any changes to this booking, please contact us within the next 24 hours.
+
+Thank you for choosing {business.businessName}!
+"""
+                        
+                        from_email = f"{business.businessName} <{business.user.email}>"
+                        
+                        NotificationService.send_notification(
+                            recipient=customer.user if hasattr(customer, 'user') else None,
+                            notification_type=['email', 'sms'],
+                            from_email=from_email,
+                            subject=subject,
+                            content=text_body,
+                            sender=business,
+                            email_to=customer.email,
+                            sms_to=customer.phone_number
+                        )
+                    
+            except Exception as e:
+                print(f"[ERROR] Failed to process recurring booking {booking.bookingId}: {str(e)}")
+        
+        print(f"[INFO] Created {bookings_created} recurring bookings")
+        return bookings_created
+        
+    except Exception as e:
+        print(f"[ERROR] Error in process_recurring_bookings: {str(e)}")
+        return 0

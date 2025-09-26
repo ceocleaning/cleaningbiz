@@ -24,7 +24,7 @@
         <div class="row align-items-center py-5">
             <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                 <!-- Badge -->
-                <div class="d-inline-block bg-dark-surface-2 rounded-pill px-3 py-2 shadow-sm mb-4 border-gradient">
+                <div class="d-inline-block bg-dark-surface-2 rounded-pill px-3 py-2 border border-1 mb-4 border-gradient">
                     <span class="badge bg-primary rounded-pill px-3 py-2 me-2">New</span>
                     <span class="text-gradient fw-medium">AI Voice Agent Technology</span>
                 </div>
@@ -538,7 +538,7 @@
         <div class="row g-4 justify-content-center">
             {% for plan in plans %}
             <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100" data-plan-type="{{ plan.billing_cycle }}">
-                <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card bg-dark-surface-2 border-gradient {% if plan.plan_tier == 'professional' %}featured{% endif %}">
+                <div class="card h-100 border-0 rounded-4 border border-1 pricing-card bg-dark-surface-2 border-gradient {% if plan.plan_tier == 'professional' %}featured{% endif %}">
                     {% if plan.plan_tier == 'professional' %}
                     <div class="position-absolute" style="top: 0; left: 0; right: 0; overflow: visible; text-align: center; z-index: 5;">
                         <div style="background-color: var(--bs-accent); color: white; display: inline-block; padding: 8px 16px; border-radius: 0 0 12px 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">

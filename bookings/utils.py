@@ -6,6 +6,8 @@ from django.shortcuts import redirect
 from datetime import datetime
 from automation.models import OpenJob
 
+from notification.services import NotificationService
+
 
 def send_jobs_to_cleaners(business, booking, exclude_ids=None, assignment_check_null=False):
 
@@ -47,6 +49,29 @@ def send_jobs_to_cleaners(business, booking, exclude_ids=None, assignment_check_
                     cleaner=cleaner,
                     status='pending',
                     assignment_type=assignment_type
+                )
+
+                from_email = f"{business.businessName} <{business.user.email}>"
+                subject = f"New Job available"
+                text_body = f"Hello {cleaner.cleaner.name},\n\n"
+                text_body += f"You have a new job available for {booking.bookingId}.\n\n"
+                text_body += f"Booking Details:\n"
+                text_body += f"- Date: {booking.cleaningDate.strftime('%Y-%m-%d')}\n"
+                text_body += f"- Time: {booking.startTime.strftime('%H:%M')} - {booking.endTime.strftime('%H:%M')}\n"
+                text_body += f"- Service: {booking.serviceType}\n"
+                text_body += f"- Address: {booking.customer.get_address() or 'N/A'}\n\n"
+                text_body += f"You can view the full booking details in your dashboard.\n\n"
+                text_body += f"Thank you,\nCleaningBiz AI"
+
+                NotificationService.send_notification(
+                    recipient=cleaner.user,
+                    notification_type=['email', 'sms'],
+                    from_email=from_email,
+                    subject=subject,
+                    content=text_body,
+                    sender=business,
+                    email_to=cleaner.cleaner.email,
+                    sms_to=cleaner.cleaner.phoneNumber,
                 )
                 jobs_created += 1
             else:

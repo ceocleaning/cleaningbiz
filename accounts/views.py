@@ -340,6 +340,11 @@ def edit_business_settings(request):
             settings.depositFee = request.POST.get('depositFee', 0)
             settings.taxPercent = request.POST.get('taxPercent', 0)
             settings.base_price = request.POST.get('base_price', 0)
+
+            settings.weeklyDiscount = request.POST.get('weeklyDiscount', 0)
+            settings.biweeklyDiscount = request.POST.get('biweeklyDiscount', 0)
+            settings.monthlyDiscount = request.POST.get('monthlyDiscount', 0)
+
             
             # Square Feet Multipliers
             settings.sqftMultiplierStandard = request.POST.get('sqftMultiplierStandard', 0)

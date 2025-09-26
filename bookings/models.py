@@ -66,6 +66,11 @@ class Booking(models.Model):
     serviceType = models.CharField(max_length=50, choices=serviceTypes, null=True, blank=True)
     recurring = models.CharField(max_length=20, choices=recurringOptions, default='one-time')
     
+    # Recurring booking fields
+    parent_booking = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='recurring_bookings')
+    next_recurring_date = models.DateField(null=True, blank=True)
+    last_recurring_created_at = models.DateTimeField(null=True, blank=True)
+    
     # Add-ons (Optional Services)
     addonDishes = models.IntegerField(null=True, blank=True)
     addonLaundryLoads = models.IntegerField(null=True, blank=True)
@@ -91,10 +96,16 @@ class Booking(models.Model):
     tip = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
 
-    
-
     # cancelled
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_reason = models.CharField(max_length=1000, null=True, blank=True)
+
+    rescheduled_at = models.DateTimeField(null=True, blank=True)
+    rescheduled_reason = models.CharField(max_length=1000, null=True, blank=True)
+    
+    # Discount Information
+    appliedDiscountPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Applied discount percentage for recurring bookings")
+    discountAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discount amount in dollars")
     
     # Status Fields
     isCompleted = models.BooleanField(default=False)
@@ -104,8 +115,10 @@ class Booking(models.Model):
     paymentReminderSentAt = models.DateTimeField(null=True, blank=True)
     dayBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
     hourBeforeReminderSentAt = models.DateTimeField(null=True, blank=True)
+    postServiceFollowupSentAt = models.DateTimeField(null=True, blank=True)
 
     arrival_confirmed_at = models.DateTimeField(null=True, blank=True)
+    arrived_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
@@ -140,6 +153,11 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         if not self.bookingId:
             self.bookingId = self.generateBookingId()
+        
+        # Calculate next recurring date if this is a recurring booking
+        if self.recurring != 'one-time' and not self.next_recurring_date and self.cleaningDate:
+            self.next_recurring_date = self.calculate_next_recurring_date()
+            
         super().save(*args, **kwargs)
         
     def get_all_addons(self):
@@ -176,8 +194,29 @@ class Booking(models.Model):
 
     def get_cleaner_payout(self):
         payout = float(self.totalPrice * self.business.cleaner_payout_percentage / 100)
-
         return payout
-
-
         
+    def calculate_next_recurring_date(self):
+        """Calculate the next date for a recurring booking based on the recurring option."""
+        if not self.cleaningDate or self.recurring == 'one-time':
+            return None
+            
+        import datetime
+        
+        if self.recurring == 'weekly':
+            return self.cleaningDate + datetime.timedelta(days=7)
+        elif self.recurring == 'biweekly':
+            return self.cleaningDate + datetime.timedelta(days=14)
+        elif self.recurring == 'monthly':
+            # Calculate next month's date
+            next_month = self.cleaningDate.replace(day=1) + datetime.timedelta(days=32)
+            # Try to use the same day of month, but adjust for months with fewer days
+            try:
+                return next_month.replace(day=self.cleaningDate.day)
+            except ValueError:
+                # If the day doesn't exist in the next month (e.g., Jan 31 -> Feb 28/29)
+                # Use the last day of the next month
+                last_day = (next_month.replace(day=1) + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1)
+                return last_day
+        
+        return None

@@ -582,11 +582,7 @@
                             <a href="{% url 'customer:booking_detail' booking.bookingId %}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-eye me-1"></i> View Details
                             </a>
-                            {% if not booking.isCompleted %}
-                            <button class="btn btn-sm btn-outline-secondary" onclick="showRescheduleModal('{{ booking.bookingId }}')">
-                                <i class="fas fa-calendar-alt me-1"></i> Reschedule
-                            </button>
-                            {% endif %}
+                          
                         </div>
                     </div>
                     {% endwith %}

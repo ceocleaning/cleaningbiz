@@ -34,3 +34,14 @@ def get_day_name(day_names, day_index):
         return day_names[day_index]
     except (IndexError, TypeError, KeyError):
         return '' 
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    Returns the value for a given key in a dictionary.
+    Usage: {{ my_dict|get_item:key_variable }}
+    """
+    try:
+        return dictionary.get(key, '')
+    except (AttributeError, TypeError, KeyError):
+        return ''

@@ -17,6 +17,14 @@ urlpatterns = [
     path('calendar/', views.booking_calendar, name='booking_calendar'),
     path('embed-widget/', views.embed_booking_widget, name='embed_booking_widget'),
     path('api/booking-history-data/', views.booking_history_data, name='booking_history_data'),
+
+    path('api/reschedule-booking/', views.reschedule_booking, name='reschedule_booking'),
+    path('api/cancel-booking/', views.cancel_booking, name='cancel_booking'),
+    
+    # Job Management URLs
+    path('reopen-job/<str:booking_id>/', views.reopen_job_for_cleaner, name='reopen_job_for_cleaner'),
+    path('force-assign/<str:booking_id>/<str:cleaner_id>/', views.force_assign_booking, name='force_assign_booking'),
+    path('reset-open-jobs/<str:booking_id>/', views.reset_open_jobs, name='reset_open_jobs'),
     
     # Payout URLs
     path('', include(payout_urls)),
