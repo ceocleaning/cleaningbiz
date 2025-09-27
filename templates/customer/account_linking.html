@@ -1,0 +1,172 @@
+{% extends 'customer/base.html' %}
+{% load static %}
+
+{% block title %}Link Your Account - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-link me-2"></i>Link Your Account</h4>
+                </div>
+                <div class="card-body">
+                    {% if request.session.unlinked_customers_found %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Records found!</strong> We found {{ request.session.unlinked_customers_count }} existing customer record(s) that match your email. Please confirm your details below to link them to your account.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Already a customer?</strong> If a business has already created a customer record for you, you can link it to your account.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'customer:link_account' %}" id="linkAccountForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5>Find Your Customer Record</h5>
+                            <p class="text-muted">Enter the email or phone number that the business used to create your customer record.</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" value="{{ email|default:'' }}" {% if email_readonly %}readonly{% endif %}>
+                            {% if email_readonly %}
+                            <div class="form-text">We're using the email address from your account.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control phone-input" id="phone_number" name="phone_number" placeholder="Enter your phone number">
+                            <div class="form-text">Format: XXX XXX XXXX</div>
+                        </div>
+                        
+                        <div id="checkResult" class="mb-3 d-none">
+                            <!-- Results will be shown here via JavaScript -->
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" id="checkButton">
+                                <i class="fas fa-search me-1"></i>Check for Records
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="linkButton" {% if not request.session.unlinked_customers_found %}disabled{% endif %}>
+                                <i class="fas fa-link me-1"></i>Link Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <p class="mb-0 text-muted small">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Linking your account will give you access to your booking history and allow you to manage your bookings online.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <p>Don't have a customer record yet?</p>
+                <a href="{% url 'customer:businesses_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-broom me-1"></i>Book a Cleaning Service
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format phone numbers
+        const phoneInput = document.getElementById('phone_number');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function() {
+                // Remove all non-digit characters
+                let value = this.value.replace(/\D/g, '');
+                
+                // Limit to 10 digits
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                
+                // Format with spaces (XXX XXX XXXX)
+                let formattedNumber = '';
+                
+                // Area code (first 3 digits)
+                formattedNumber = value.substring(0, Math.min(3, value.length));
+                
+                // First part of local number (next 3 digits)
+                if (value.length > 3) {
+                    formattedNumber += ' ' + value.substring(3, Math.min(6, value.length));
+                }
+                
+                // Second part of local number (next 4 digits)
+                if (value.length > 6) {
+                    formattedNumber += ' ' + value.substring(6, Math.min(10, value.length));
+                }
+                
+                // Update the input value
+                this.value = formattedNumber;
+            });
+        }
+        
+        // Check for existing customer records
+        const checkButton = document.getElementById('checkButton');
+        const linkButton = document.getElementById('linkButton');
+        const resultDiv = document.getElementById('checkResult');
+        const emailInput = document.getElementById('email');
+        
+        // If email is readonly, we already found unlinked customers during login
+        const emailReadonly = emailInput.hasAttribute('readonly');
+        
+        if (!emailReadonly) {
+            checkButton.addEventListener('click', function() {
+                const email = emailInput.value.trim();
+                const phone = document.getElementById('phone_number').value.trim();
+                
+                if (!email && !phone) {
+                    resultDiv.innerHTML = '<div class="alert alert-warning">Please enter an email or phone number.</div>';
+                    resultDiv.classList.remove('d-none');
+                    return;
+                }
+                
+                // Show loading state
+                checkButton.disabled = true;
+                checkButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Checking...';
+                
+                // Make AJAX request to check for existing customer
+                fetch(`{% url 'customer:check_existing_customer' %}?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+                            linkButton.disabled = false;
+                        } else {
+                            resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>${data.message}</div>`;
+                            linkButton.disabled = true;
+                        }
+                        resultDiv.classList.remove('d-none');
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>An error occurred. Please try again.</div>';
+                        resultDiv.classList.remove('d-none');
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        checkButton.disabled = false;
+                        checkButton.innerHTML = '<i class="fas fa-search me-1"></i>Check for Records';
+                    });
+            });
+        } else {
+            // If email is readonly, hide the check button since we already know there are matches
+            checkButton.style.display = 'none';
+        }
+    
+    });
+</script>
+{% endblock %}

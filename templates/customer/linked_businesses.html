@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Linked Businesses - CleaningBiz AI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><i class="fas fa-building me-2"></i>Your Linked Businesses</h1>
+            
+            {% if request.GET.from_signup or request.GET.from_login %}
+            <div class="alert alert-success mb-4">
+                <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Account Successfully Linked!</h4>
+                <p>Your account has been successfully linked to existing customer records. You can now access all your booking history and manage your bookings online.</p>
+            </div>
+            {% endif %}
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <p>These are the businesses that have created customer records for you. You can view your booking history and manage your bookings with these businesses.</p>
+                </div>
+            </div>
+            
+            {% if businesses %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for business in businesses %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ business.businessName }}</h5>
+                                    <p class="card-text text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ business.address }}, {{ business.city }}, {{ business.state }}
+                                    </p>
+                                    <p class="card-text">
+                                        <i class="fas fa-phone me-1"></i>{{ business.phoneNumber }}
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0">
+                                    <a href="{% url 'customer:add_booking' business.businessId %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-calendar-plus me-1"></i>Book Again
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>No linked businesses found.</strong> When you book a service with a business, they will create a customer record for you.
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{% url 'customer:businesses_list' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Find Cleaning Services
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

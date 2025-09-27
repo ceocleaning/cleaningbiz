@@ -19,9 +19,15 @@ from django.db.models import Min, Count
 from django.http import JsonResponse
 from automation.utils import format_phone_number
 from accounts.timezone_utils import parse_business_datetime
+from automation.utils import format_phone_number
 from django.utils import timezone
 from automation.utils import getServiceType, calculateAmount
 import pytz
+# No longer using Django forms
+# from customer.forms import CustomerForm
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
 
 @login_required
 def all_bookings(request):
@@ -114,15 +120,124 @@ def customers(request):
     # Get the business for the current user
     business = request.user.business_set.first()
     
-    # Get all unique customers who have bookings with this business
-    customers_with_bookings = Customer.objects.filter(
-        booking__business=business
-    ).distinct()
+    # Handle form submissions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add':
+            # Get form data
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            email = request.POST.get('email')
+            phone_number = request.POST.get('phone_number')
+            address = request.POST.get('address')
+            city = request.POST.get('city')
+            state_or_province = request.POST.get('state_or_province')
+            zip_code = request.POST.get('zip_code')
+            
+            # Validate required fields
+            if not all([first_name, last_name, email, phone_number]):
+                messages.error(request, 'Please fill in all required fields.')
+                return redirect('bookings:customers')
+            
+            phone_number = format_phone_number(phone_number)
+            if phone_number == None:
+                messages.error(request, 'Please enter a valid phone number.')
+                return redirect('bookings:customers')
+            
+        
+            
+            # Create new customer
+            try:
+                if Customer.objects.filter(business=business, email=email).exists():
+                    messages.error(request, 'Customer with this email already exists.')
+                    return redirect('bookings:customers')
+                
+                customer = Customer.objects.create(
+                    business=business,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone_number=phone_number,
+                    address=address,
+                    city=city,
+                    state_or_province=state_or_province,
+                    zip_code=zip_code
+                )
+                messages.success(request, f'Customer {customer.get_full_name()} added successfully!')
+                return redirect('bookings:customers')
+            except Exception as e:
+                messages.error(request, f'Error adding customer: {str(e)}')
+                return redirect('bookings:customers')
+        
+        elif action == 'edit':
+            customer_id = request.POST.get('customer_id')
+            try:
+                customer = Customer.objects.get(id=customer_id, business=business)
+
+                if Customer.objects.exclude(id=customer_id).filter(business=business, email=request.POST.get('email')).exists():
+                    messages.error(request, 'Customer with this email already exists.')
+                    return redirect('bookings:customers')
+                
+                # Get form data
+                first_name = request.POST.get('first_name')
+                last_name = request.POST.get('last_name')
+                email = request.POST.get('email')
+                phone_number = request.POST.get('phone_number')
+                address = request.POST.get('address')
+                city = request.POST.get('city')
+                state_or_province = request.POST.get('state_or_province')
+                zip_code = request.POST.get('zip_code')
+                
+                # Validate required fields
+                if not all([first_name, last_name, email, phone_number]):
+                    messages.error(request, 'Please fill in all required fields.')
+                    return redirect('bookings:customers')
+                
+                # Clean phone number (remove non-digits)
+                phone_number = ''.join(filter(str.isdigit, phone_number))
+                if phone_number.startswith('1') and len(phone_number) > 10:
+                    phone_number = phone_number[1:]
+                
+                # Validate phone number length
+                if len(phone_number) != 10:
+                    messages.error(request, 'Please enter a valid 10-digit US phone number.')
+                    return redirect('bookings:customers')
+                
+                # Update customer
+                customer.first_name = first_name
+                customer.last_name = last_name
+                customer.email = email
+                customer.phone_number = phone_number
+                customer.address = address
+                customer.city = city
+                customer.state_or_province = state_or_province
+                customer.zip_code = zip_code
+                customer.save()
+                
+                messages.success(request, f'Customer {customer.get_full_name()} updated successfully!')
+                return redirect('bookings:customers')
+            except Customer.DoesNotExist:
+                messages.error(request, 'Customer not found.')
+        
+        elif action == 'delete':
+            customer_id = request.POST.get('customer_id')
+            try:
+                customer = Customer.objects.get(id=customer_id, business=business)
+                customer_name = customer.get_full_name()
+                customer.delete()
+                messages.success(request, f'Customer {customer_name} deleted successfully!')
+                return redirect('bookings:customers')
+            except Customer.DoesNotExist:
+                messages.error(request, 'Customer not found.')
+    
+    # Get all customers for this business
+    all_customers = Customer.objects.filter(business=business)
     
     # Create a list to store customer data with booking statistics
     customers_list = []
     
-    for customer in customers_with_bookings:
+    for customer in all_customers:
         # Get all bookings for this customer with this business
         customer_bookings = Booking.objects.filter(
             business=business,
@@ -142,6 +257,7 @@ def customers(request):
         
         # Add customer to the list
         customers_list.append({
+            'id': customer.id,
             'firstName': customer.first_name,
             'lastName': customer.last_name,
             'email': customer.email,
@@ -150,7 +266,11 @@ def customers(request):
             'bookingCount': booking_count,
             'totalSpent': total_spent,
             'identifier': identifier,
-            'customer_id': customer.id  # Include customer ID for direct reference
+            'customer_id': customer.id,
+            'address': customer.address,
+            'city': customer.city,
+            'state_or_province': customer.state_or_province,
+            'zip_code': customer.zip_code
         })
     
     # Sort customers by joined date (newest first)
@@ -164,30 +284,14 @@ def customers(request):
     return render(request, 'bookings/customers.html', context)
 
 @login_required
-def customer_detail(request, identifier):
+def customer_detail(request, id):
     """View for displaying a specific customer's details and booking history."""
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
     
     business = request.user.business_set.first()
     
-    # Determine if identifier is an email or phone
-    if '@' in identifier:
-        # It's an email
-        try:
-            customer = Customer.objects.get(email=identifier)
-            identifier_type = 'email'
-        except Customer.DoesNotExist:
-            messages.error(request, 'Customer not found.')
-            return redirect('bookings:customers')
-    else:
-        # It's a phone number
-        try:
-            customer = Customer.objects.get(phone_number=identifier)
-            identifier_type = 'phone'
-        except Customer.DoesNotExist:
-            messages.error(request, 'Customer not found.')
-            return redirect('bookings:customers')
+    customer = Customer.objects.get(id=id, business=business)
     
     # Get all bookings for this customer with this business
     bookings = Booking.objects.filter(
@@ -195,9 +299,7 @@ def customer_detail(request, identifier):
         customer=customer
     ).order_by('-createdAt')
     
-    if not bookings.exists():
-        messages.error(request, 'No bookings found for this customer with your business.')
-        return redirect('bookings:customers')
+ 
     
     # Calculate statistics
     total_spent = sum(booking.totalPrice for booking in bookings)
@@ -229,8 +331,7 @@ def customer_detail(request, identifier):
             'phoneNumber': customer.phone_number,
             'companyName': company_name,
             'joinDate': join_date,
-            'identifier': identifier,
-            'identifier_type': identifier_type,
+       
             'address': customer.address,
             'city': customer.city,
             'state': customer.state_or_province,
@@ -256,10 +357,6 @@ def customer_detail(request, identifier):
 @login_required
 @transaction.atomic
 def create_booking(request):
-    from datetime import datetime, timedelta
-    import pytz
-    from accounts.timezone_utils import convert_to_utc
-
     redirect_url = request.GET.get('next')
 
   
@@ -311,7 +408,7 @@ def create_booking(request):
                     messages.error(request, 'Please enter a valid US phone number.')
                     return redirect('bookings:create_booking')
                 
-                customer = create_customer(request.POST)
+                customer = create_customer(request.POST, business)
             
             # Create the booking
             booking = Booking.objects.create(
@@ -420,7 +517,7 @@ def create_booking(request):
     }
 
     # Get all customers for this business
-    customers = Customer.objects.filter(booking__business=business).distinct()
+    customers = Customer.objects.filter(business=business).distinct()
     
     context = {
         'customAddons': customAddons,

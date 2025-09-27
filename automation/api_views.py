@@ -578,7 +578,7 @@ def create_booking(request):
         service_type = getServiceType(service_type)
         
 
-        customer = create_customer(data)
+        customer = create_customer(data, business)
 
         # Create booking object with mapped fields
         booking = Booking(

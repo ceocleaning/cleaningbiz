@@ -6,14 +6,15 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from decimal import Decimal
 # Create your models here.
 
 
 class Invoice(models.Model):
     invoiceId = models.CharField(max_length=11, unique=True, null=True, blank=True)
     booking = models.OneToOneField('bookings.Booking', on_delete=models.SET_NULL, null=True, blank=True)
-    amount = models.IntegerField(default=0)
-    total_paid_amount = models.IntegerField(default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     isPaid = models.BooleanField(default=False)
 
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -38,6 +39,8 @@ class Invoice(models.Model):
         total_paid = sum(payment.amount for payment in completed_payments)
         
         self.total_paid_amount = total_paid
+
+        print("Condition: Total Paid >= Invoice Amount: ",total_paid >= self.amount)
         if total_paid >= self.amount:
             self.isPaid = True
         else:
@@ -56,6 +59,11 @@ class Invoice(models.Model):
     def save(self, *args, **kwargs):
         if not self.invoiceId:
             self.invoiceId = self.generateInvoiceId()
+        
+        self.amount = Decimal(self.amount)
+        self.total_paid_amount = Decimal(self.total_paid_amount)
+        
+
         super().save(*args, **kwargs)
     
 
@@ -88,7 +96,7 @@ class Payment(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, null=True, blank=True)
     paymentId = models.CharField(max_length=11, unique=True, null=True, blank=True)  # Our Own ID
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
-    amount = models.IntegerField(default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     paymentMethod = models.CharField(max_length=50, null=True, blank=True, choices=PAYMENT_METHOD_CHOICES)
     squarePaymentId = models.CharField(max_length=100, null=True, blank=True)  # Square's payment ID
     transactionId = models.CharField(max_length=100, null=True, blank=True)  # For bank transfers
@@ -153,6 +161,8 @@ class Payment(models.Model):
             
         if not self.paymentId:
             self.paymentId = self.generatePaymentId()
+        
+        self.amount = Decimal(self.amount)
             
         super().save(*args, **kwargs)
         

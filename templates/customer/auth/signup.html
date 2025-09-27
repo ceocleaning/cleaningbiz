@@ -121,7 +121,16 @@
 
 {% block auth_alternate_action %}
 <a href="{% url 'customer:login' %}" 
-   class="w-full flex justify-center py-3 px-4 border border-primary-500 text-sm font-medium rounded-md text-primary-500 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ease-in-out">
+   class="w-full flex justify-center py-3 px-4 border border-primary-500 text-sm font-medium rounded-md text-primary-500 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ease-in-out mb-3">
     Sign in to your account
+</a>
+
+<div class="text-center text-sm text-gray-500 mt-2 mb-3">
+    <span>- OR -</span>
+</div>
+
+<a href="{% url 'customer:link_account' %}" 
+   class="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ease-in-out">
+    <i class="fas fa-link mr-2"></i> Link existing customer record
 </a>
 {% endblock %}

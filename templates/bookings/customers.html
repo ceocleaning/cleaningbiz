@@ -6,8 +6,13 @@
 <!-- Page header with title and stats -->
 <div class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 p-3 p-md-4">
     <h1 class="h2"><i class="fas fa-users me-2"></i>Customers</h1>
-    <div class="bg-primary text-white rounded-3 py-2 px-3">
-        <strong>{{ total_customers }}</strong> Total Customers
+    <div class="d-flex align-items-center gap-3">
+        <div class="bg-primary text-white rounded-3 py-2 px-3">
+            <strong>{{ total_customers }}</strong> Total Customers
+        </div>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="fas fa-plus me-1"></i> Add Customer
+        </button>
     </div>
 </div>
 
@@ -120,18 +125,33 @@
             
             <!-- Card footer -->
             <div class="card-footer bg-transparent border-top-0 p-3">
-                <a href="{% url 'bookings:customer_detail' customer.identifier %}" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="fas fa-eye me-1"></i> View Details
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'bookings:customer_detail' customer.id %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i> View
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary edit-customer-btn" 
+                            data-customer-id="{{ customer.customer_id }}" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editCustomerModal">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-customer-btn" 
+                            data-customer-id="{{ customer.customer_id }}" 
+                            data-customer-name="{{ customer.firstName }} {{ customer.lastName }}" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteCustomerModal">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     {% empty %}
-    <div class="col-12 text-center py-5">
+    <div class="col-6 text-center py-5">
         <div class="empty-state">
             <i class="fas fa-users text-muted fa-4x mb-3"></i>
             <h4>No Customers Found</h4>
-            <p class="text-muted">When you create bookings, customer information will appear here.</p>
+            <p class="text-muted">When you create bookings or add customer, customer information will appear here.</p>
         </div>
     </div>
     {% endfor %}
@@ -179,12 +199,202 @@
         }
     }
 </style>
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addCustomerModalLabel"><i class="fas fa-user-plus me-2"></i>Add New Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'bookings:customers' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Personal Information -->
+                        <div class="col-md-6">
+                            <label for="add_first_name" class="form-label">First Name*</label>
+                            <input type="text" class="form-control" id="add_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_last_name" class="form-label">Last Name*</label>
+                            <input type="text" class="form-control" id="add_last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_email" class="form-label">Email*</label>
+                            <input type="email" class="form-control" id="add_email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_phone_number" class="form-label">Phone Number*</label>
+                            <input type="tel" class="form-control phone-input" id="add_phone_number" name="phone_number" placeholder="XXX XXX XXXX" required>
+                        </div>
+                        
+                        <!-- Address Information -->
+                        <div class="col-12">
+                            <label for="add_address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="add_address" name="address">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="add_city" name="city">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="add_state_or_province" class="form-label">State/Province</label>
+                            <input type="text" class="form-control" id="add_state_or_province" name="state_or_province">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="add_zip_code" class="form-label">Zip Code</label>
+                            <input type="text" class="form-control" id="add_zip_code" name="zip_code">
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="editCustomerModalLabel"><i class="fas fa-user-edit me-2"></i>Edit Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'bookings:customers' %}" id="editCustomerForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="customer_id" id="edit_customer_id">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Personal Information -->
+                        <div class="col-md-6">
+                            <label for="edit_first_name" class="form-label">First Name*</label>
+                            <input type="text" class="form-control" id="edit_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_last_name" class="form-label">Last Name*</label>
+                            <input type="text" class="form-control" id="edit_last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_email" class="form-label">Email*</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_phone_number" class="form-label">Phone Number*</label>
+                            <input type="tel" class="form-control phone-input" id="edit_phone_number" name="phone_number" placeholder="XXX XXX XXXX" required>
+                        </div>
+                        
+                        <!-- Address Information -->
+                        <div class="col-12">
+                            <label for="edit_address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="edit_address" name="address">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="edit_city" name="city">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_state_or_province" class="form-label">State/Province</label>
+                            <input type="text" class="form-control" id="edit_state_or_province" name="state_or_province">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="edit_zip_code" class="form-label">Zip Code</label>
+                            <input type="text" class="form-control" id="edit_zip_code" name="zip_code">
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Update Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Customer Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-labelledby="deleteCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteCustomerModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Delete Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'bookings:customers' %}" id="deleteCustomerForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="customer_id" id="delete_customer_id">
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-times text-danger fa-4x mb-3"></i>
+                        <h5>Are you sure you want to delete this customer?</h5>
+                        <p class="text-muted" id="delete_customer_name"></p>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone. All data associated with this customer will be permanently removed.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt me-1"></i>Delete Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Format phone numbers
+        // Phone number formatting function
+        function formatPhoneNumber(input) {
+            // Remove all non-digit characters
+            let value = input.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            
+            // Format with spaces (North American format: XXX XXX XXXX)
+            let formattedNumber = '';
+            
+            // Area code (first 3 digits)
+            formattedNumber = value.substring(0, Math.min(3, value.length));
+            
+            // First part of local number (next 3 digits)
+            if (value.length > 3) {
+                formattedNumber += ' ' + value.substring(3, Math.min(6, value.length));
+            }
+            
+            // Second part of local number (next 4 digits)
+            if (value.length > 6) {
+                formattedNumber += ' ' + value.substring(6, Math.min(10, value.length));
+            }
+            
+            // Update the input value
+            input.value = formattedNumber;
+        }
+        
+        // Apply phone formatting to all phone inputs
+        const phoneInputs = document.querySelectorAll('.phone-input, #add_phone_number, #edit_phone_number');
+        phoneInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                formatPhoneNumber(this);
+            });
+        });
+        
+        // Format displayed phone numbers
         const phoneElements = document.querySelectorAll('.customer-phone');
         phoneElements.forEach(function(element) {
             const phoneNumber = element.textContent.trim();
@@ -194,11 +404,15 @@
                 if (cleanNumber.startsWith('1')) {
                     cleanNumber = cleanNumber.substring(1);
                 }
-                // Format as +1 (555) 555-5555
-                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
-                                      cleanNumber.substring(3, 6) + '-' + 
-                                      cleanNumber.substring(6, 10);
-                element.textContent = formattedNumber;
+                
+                // Ensure we have 10 digits for formatting
+                if (cleanNumber.length === 10) {
+                    // Format as XXX XXX XXXX
+                    const formattedNumber = cleanNumber.substring(0, 3) + ' ' + 
+                                          cleanNumber.substring(3, 6) + ' ' + 
+                                          cleanNumber.substring(6, 10);
+                    element.textContent = formattedNumber;
+                }
             }
         });
 
@@ -254,6 +468,91 @@
                 customersContainer.appendChild(card);
             });
         });
+        
+        // Edit Customer Modal Functionality
+        const editButtons = document.querySelectorAll('.edit-customer-btn');
+        const editCustomerModal = document.getElementById('editCustomerModal');
+        
+        editButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const customerId = this.getAttribute('data-customer-id');
+                const card = this.closest('.customer-card');
+                
+                // Set customer ID in the form
+                document.getElementById('edit_customer_id').value = customerId;
+                
+                // Get customer data from the card and dataset attributes
+                const firstName = card.dataset.name.split(' ')[0];
+                const lastName = card.dataset.name.split(' ').slice(1).join(' ');
+                const email = card.dataset.email;
+                let phoneNumber = card.dataset.phone;
+                
+                // Find the customer in the customers_list by ID
+                const customerData = customersData.find(customer => customer.customer_id === customerId);
+                
+                // Format phone number for display (remove any formatting and apply our format)
+                if (phoneNumber) {
+                    // Remove all non-digit characters
+                    let cleanNumber = phoneNumber.replace(/\D/g, '');
+                    
+                    // If it starts with 1 (country code), remove it
+                    if (cleanNumber.startsWith('1')) {
+                        cleanNumber = cleanNumber.substring(1);
+                    }
+                    
+                    // Format as XXX XXX XXXX
+                    if (cleanNumber.length >= 10) {
+                        phoneNumber = cleanNumber.substring(0, 3) + ' ' + 
+                                     cleanNumber.substring(3, 6) + ' ' + 
+                                     cleanNumber.substring(6, 10);
+                    }
+                }
+                
+                // Set form field values
+                document.getElementById('edit_first_name').value = firstName;
+                document.getElementById('edit_last_name').value = lastName;
+                document.getElementById('edit_email').value = email;
+                document.getElementById('edit_phone_number').value = phoneNumber;
+                
+                if (customerData) {
+                    document.getElementById('edit_address').value = customerData.address || '';
+                    document.getElementById('edit_city').value = customerData.city || '';
+                    document.getElementById('edit_state_or_province').value = customerData.state_or_province || '';
+                    document.getElementById('edit_zip_code').value = customerData.zip_code || '';
+                }
+            });
+        });
+        
+        // Delete Customer Modal Functionality
+        const deleteButtons = document.querySelectorAll('.delete-customer-btn');
+        
+        deleteButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const customerId = this.getAttribute('data-customer-id');
+                const customerName = this.getAttribute('data-customer-name');
+                
+                // Set customer ID and name in the form
+                document.getElementById('delete_customer_id').value = customerId;
+                document.getElementById('delete_customer_name').textContent = customerName;
+            });
+        });
+        
+        // Initialize customersData array from the server-side data
+        const customersData = [
+            {% for customer in customers %}
+            {
+                customer_id: "{{ customer.customer_id }}",
+                firstName: "{{ customer.firstName }}",
+                lastName: "{{ customer.lastName }}",
+                email: "{{ customer.email }}",
+                phoneNumber: "{{ customer.phoneNumber }}",
+                address: "{{ customer.address|default:'' }}",
+                city: "{{ customer.city|default:'' }}",
+                state_or_province: "{{ customer.state_or_province|default:'' }}",
+                zip_code: "{{ customer.zip_code|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
     });
 </script>
 {% endblock %} 

@@ -1,80 +1,198 @@
 {% extends "base.html" %}
 
-{% block title %}Notifications{% endblock %}
+{% block extra_css %}
+<style>
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .notification-item {
+        display: block;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--gray-light);
+        color: var(--dark-color);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+    
+    .notification-item:hover {
+        background-color: rgba(37, 99, 235, 0.05);
+    }
+    
+    .notification-unread {
+        background-color: rgba(37, 99, 235, 0.08);
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        font-size: 1rem;
+    }
+    
+    .notification-time {
+        font-size: 0.8rem;
+        color: var(--gray-color);
+        white-space: nowrap;
+    }
+    
+    .notification-body {
+        margin-left: 1rem;
+    }
+    
+    .notification-text {
+        color: var(--gray-color);
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .notification-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        margin-right: 0.75rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .notification-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .notification-time {
+            margin-top: 0.25rem;
+            margin-left: 1rem;
+        }
+        
+        .notification-title {
+            font-size: 0.95rem;
+        }
+        
+        .notification-text {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active">Notifications</li>
+                    </ol>
+                </nav>
+              
+            </div>
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="mb-0">Notifications</h5>
-                      
+                        <h5 class="mb-0"><i class="fas fa-bell me-2 text-primary"></i>Notifications</h5>
                     </div>
+                   
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if page_obj %}
-                        <div class="list-group">
+                        <div class="notification-list">
                             {% for notification in page_obj %}
-                                <a href="{% url 'notification:notification_detail' notification.id %}" class="list-group-item list-group-item-action {% if notification.read_at %}list-group-item-light{% endif %}">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h5 class="mb-1">{{ notification.subject }} - ({{ notification.read_at }})</h5>
-                                        <small>{{ notification.created_at|date:"M d, Y" }}</small>
+                                <a href="{% url 'notification:notification_detail' notification.id %}" class="notification-item {% if not notification.read_at %}notification-unread{% endif %}">
+                                    <div class="notification-content">
+                                        <div class="notification-header">
+                                            <div class="d-flex align-items-center">
+                                                {% if not notification.read_at %}
+                                                <span class="notification-indicator"></span>
+                                                {% endif %}
+                                                <h6 class="notification-title mb-0">{{ notification.subject }}</h6>
+                                            </div>
+                                            <div class="notification-time">
+                                                <i class="far fa-clock me-1"></i>{{ notification.created_at|date:"M d, Y" }}
+                                            </div>
+                                        </div>
+                                        <div class="notification-body">
+                                            <p class="notification-text">
+                                                {% if notification.content %}
+                                                    {{ notification.content|truncatechars:100 }}
+                                                {% else %}
+                                                    <em>No content</em>
+                                                {% endif %}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <p class="mb-1 text-truncate">
-                                            {% if notification.content %}
-                                                {{ notification.content|truncatechars:100 }}
-                                            {% else %}
-                                                <em>No content</em>
-                                            {% endif %}
-                                        </p>
-                                       
-                                    </div>
-                                 
                                 </a>
                             {% endfor %}
                         </div>
                         
                         {% if page_obj.has_other_pages %}
-                            <nav aria-label="Notification pagination" class="mt-4">
-                                <ul class="pagination justify-content-center">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page=1{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">&laquo; First</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Previous</a>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    {% for num in page_obj.paginator.page_range %}
-                                        {% if page_obj.number == num %}
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ num }}</span>
-                                            </li>
-                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <div class="card-footer bg-white py-3">
+                                <nav aria-label="Notification pagination">
+                                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                                        {% if page_obj.has_previous %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ num }}</a>
+                                                <a class="page-link" href="?page=1{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" aria-label="First">
+                                                    <span aria-hidden="true">&laquo;</span>
+                                                </a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </a>
                                             </li>
                                         {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Last &raquo;</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
+                                        
+                                        {% for num in page_obj.paginator.page_range %}
+                                            {% if page_obj.number == num %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ num }}</span>
+                                                </li>
+                                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ num }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if page_obj.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" aria-label="Last">
+                                                    <span aria-hidden="true">&raquo;</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
                         {% endif %}
                     {% else %}
-                        <div class="alert alert-info">
-                            You don't have any notifications yet.
+                        <div class="p-5 text-center">
+                            <div class="py-4">
+                                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                                <h5 class="mb-2">No Notifications</h5>
+                                <p class="text-muted">You don't have any notifications yet.</p>
+                            </div>
                         </div>
                     {% endif %}
                 </div>

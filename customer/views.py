@@ -299,7 +299,7 @@ def add_booking(request, business_id):
                 # Use the logged-in customer
                 customer = request.user.customer
             else:
-                customer = create_customer(request.POST)
+                customer = create_customer(request.POST, business)
             
             # Create the booking
             booking = Booking.objects.create(

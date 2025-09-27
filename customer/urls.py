@@ -2,6 +2,7 @@ from django.urls import path
 from .views import dashboard, businesses_list, add_booking, customer_bookings, booking_detail, edit_booking, submit_review, edit_review, delete_review, customer_reviews
 from .auth_views import customer_signup, customer_login, customer_logout, profile, change_password
 from .api_views import booking_api
+from .account_linking import link_customer_account, check_existing_customer, view_linked_businesses
 
 
 app_name = 'customer'
@@ -25,4 +26,9 @@ urlpatterns = [
     
     # API endpoints
     path('api/booking/<str:business_id>/', booking_api, name='booking_api'),
+    
+    # Account linking
+    path('link-account/', link_customer_account, name='link_account'),
+    path('check-existing-customer/', check_existing_customer, name='check_existing_customer'),
+    path('linked-businesses/', view_linked_businesses, name='linked_businesses'),
 ]

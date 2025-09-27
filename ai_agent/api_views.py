@@ -176,7 +176,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             error_msg = "No cleaners available for the requested time"
             return {"success": False, "error": error_msg}
         
-        customer = create_customer(data)
+        customer = create_customer(data, business)
         
         # Create booking with customer reference
         newBooking = Booking(

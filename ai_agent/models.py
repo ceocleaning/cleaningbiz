@@ -36,7 +36,7 @@ class Messages(models.Model):
 
 class Chat(models.Model):
     lead = models.ForeignKey('automation.Lead', on_delete=models.CASCADE, null=True, blank=True)
-    clientPhoneNumber = models.CharField(max_length=15, null=True, blank=True, unique=True) #If chat is initiated from lead
+    clientPhoneNumber = models.CharField(max_length=15, null=True, blank=True) #If chat is initiated from lead
     sessionKey = models.CharField(max_length=255, null=True, blank=True, unique=True) #If chat is initiated from session
     business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE)
 

@@ -10,6 +10,7 @@ from .models import Invoice, Payment
 from accounts.models import Business, SquareCredentials, PayPalCredentials
 from .utils import handle_payment_completed
 import threading
+from decimal import Decimal
 
 
 
@@ -283,6 +284,7 @@ def process_manual_payment(request):
 @require_http_methods(["POST"])
 def process_stripe_payment(request):
     """Process a Stripe payment for an invoice with option to authorize only or make partial payment"""
+    from decimal import Decimal
     try:
         # Parse the request body
         data = json.loads(request.body)
@@ -290,8 +292,8 @@ def process_stripe_payment(request):
         invoice_id = data.get('invoice_id')
         auto_complete = data.get('auto_complete', True)
         payment_type = data.get('payment_type', 'full')  # 'full' or 'partial'
-        amount = float(data.get('amount', 0))  # Amount for partial payment
-        tip_amount = float(data.get('tip_amount', 0))  # Tip amount
+        amount = Decimal(data.get('amount', 0))  # Amount for partial payment
+        tip_amount = Decimal(data.get('tip_amount', 0))  # Tip amount
 
         print("Tip amount:", tip_amount)
         # Get the invoice

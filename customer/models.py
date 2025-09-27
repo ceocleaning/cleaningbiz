@@ -6,10 +6,11 @@ import uuid
 
 class Customer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE, null=True, blank=True, related_name='customers')
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='customer')
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(null=True, blank=True)
     phone_number = models.CharField(max_length=15)
 
     address = models.CharField(max_length=255, null=True, blank=True)

@@ -692,5 +692,13 @@ def integration_logs(request, platform_id=None):
 @register.filter
 def pprint(data):
     if isinstance(data, dict) or isinstance(data, list):
-        return json.dumps(data, indent=2)
+        # Create a custom JSON encoder that can handle PosixPath objects
+        class CustomJSONEncoder(json.JSONEncoder):
+            def default(self, obj):
+                import pathlib
+                if isinstance(obj, pathlib.PosixPath):
+                    return str(obj)
+                return super().default(obj)
+        
+        return json.dumps(data, indent=2, cls=CustomJSONEncoder)
     return data

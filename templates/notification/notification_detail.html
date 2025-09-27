@@ -4,50 +4,92 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-0">{{ notification.subject }}</h5>
-               
-            </div>
-            <div>
-               
-                <a href="{% url 'notification:notification_list' %}" class="btn btn-sm btn-outline-secondary ms-2">Back to List</a>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="mb-4">
-                <small class="text-muted">
-                    <strong>Created:</strong> {{ notification.created_at|date:"M d, Y H:i" }} |
-                    {% if notification.sent_at %}
-                        <strong>Sent:</strong> {{ notification.sent_at|date:"M d, Y H:i" }} |
-                    {% endif %}
-                    {% if notification.read_at %}
-                        <strong>Read:</strong> {{ notification.read_at|date:"M d, Y H:i" }}
-                    {% endif %}
-                </small>
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'notification:notification_list' %}" class="text-decoration-none">Notifications</a></li>
+                        <li class="breadcrumb-item active">Detail</li>
+                    </ol>
+                </nav>
+                <a href="{% url 'notification:notification_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                </a>
             </div>
             
-            {% if notification.content %}
-                <div class="notification-content mb-4">
-                    {% if notification.notification_type == 'email' %}
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <strong>Email Content</strong>
+            <div class="card notification-detail-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="notification-icon-wrapper me-3">
+                            <i class="fas fa-bell notification-icon"></i>
+                        </div>
+                        <h5 class="mb-0">{{ notification.subject }}</h5>
+                    </div>
+                    <div class="notification-status">
+                        {% if notification.read_at %}
+                            <span class="badge bg-light text-dark"><i class="fas fa-check-circle me-1"></i> Read</span>
+                        {% else %}
+                            <span class="badge bg-primary"><i class="fas fa-envelope me-1"></i> Unread</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="notification-meta mb-4">
+                        <div class="row">
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <div class="notification-meta-item">
+                                    <i class="far fa-calendar-alt text-primary me-2"></i>
+                                    <span class="notification-meta-label">Created:</span>
+                                    <span class="notification-meta-value">{{ notification.created_at|date:"M d, Y H:i" }}</span>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <pre class="notification-email-content">{{ notification.content }}</pre>
+                            {% if notification.sent_at %}
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <div class="notification-meta-item">
+                                    <i class="far fa-paper-plane text-primary me-2"></i>
+                                    <span class="notification-meta-label">Sent:</span>
+                                    <span class="notification-meta-value">{{ notification.sent_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if notification.read_at %}
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <div class="notification-meta-item">
+                                    <i class="far fa-eye text-primary me-2"></i>
+                                    <span class="notification-meta-label">Read:</span>
+                                    <span class="notification-meta-value">{{ notification.read_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if notification.content %}
+                        <div class="notification-content-wrapper">
+                            <h6 class="notification-section-title">Content</h6>
+                            <div class="notification-content">
+                                {% if notification.notification_type == 'email' %}
+                                    <div class="email-content-card">
+                                        <div class="email-content-header">
+                                            <i class="far fa-envelope me-2"></i>
+                                            <span>Email Content</span>
+                                        </div>
+                                        <div class="email-content-body">
+                                            <pre class="notification-email-content">{{ notification.content }}</pre>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="standard-content-card">
+                                        <p>{{ notification.content }}</p>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
-                    {% else %}
-                        <p>{{ notification.content }}</p>
                     {% endif %}
                 </div>
-            {% endif %}
-            
-
-            
-
+            </div>
         </div>
     </div>
 </div>
@@ -55,21 +97,154 @@
 
 {% block extra_css %}
 <style>
+    /* Notification Detail Card */
+    .notification-detail-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    /* Notification Icon */
+    .notification-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(37, 99, 235, 0.1);
+        border-radius: 50%;
+    }
+    
+    .notification-icon {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+    
+    /* Notification Meta */
+    .notification-meta {
+        background-color: rgba(37, 99, 235, 0.03);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .notification-meta-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    .notification-meta-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+        color: var(--dark-color);
+    }
+    
+    .notification-meta-value {
+        color: var(--gray-color);
+    }
+    
+    /* Notification Content */
+    .notification-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--dark-color);
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .notification-content-wrapper {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Email Content */
+    .email-content-card {
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .email-content-header {
+        background-color: rgba(37, 99, 235, 0.05);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .email-content-body {
+        padding: 0;
+    }
+    
     .notification-email-content {
         white-space: pre-wrap;
         font-family: inherit;
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.25rem;
+        background-color: white;
+        padding: 1.25rem;
+        border-radius: 0;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--dark-color);
+        border: none;
     }
     
-    .notification-context {
-        white-space: pre-wrap;
-        font-family: monospace;
-        font-size: 0.875rem;
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.25rem;
+    .standard-content-card {
+        background-color: white;
+        padding: 1.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--gray-light);
+    }
+    
+    .standard-content-card p {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--dark-color);
+    }
+    
+    /* Breadcrumb */
+    .breadcrumb {
+        padding: 0;
+        margin-bottom: 0;
+        background-color: transparent;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: var(--gray-color);
+    }
+    
+    .breadcrumb-item a {
+        color: var(--primary-color);
+    }
+    
+    .breadcrumb-item.active {
+        color: var(--gray-color);
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .notification-meta {
+            padding: 0.75rem;
+        }
+        
+        .notification-meta-item {
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .notification-status {
+            margin-top: 0.5rem;
+            margin-left: 3.5rem;
+        }
     }
 </style>
 {% endblock %}
