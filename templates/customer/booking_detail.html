@@ -139,8 +139,8 @@
                             </p>
                             <p class="mb-2">
                                 <i class="fas fa-clock text-muted me-2"></i>
-                                <span>{{ booking.startTime|to_timezone:user_timezone|date:"h:i A" }}</span> to 
-                                <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
+                                <span>{{ booking.startTime|to_timezone:booking.customer.timezone|date:"h:i A" }}</span> to 
+                                <span>{{ booking.endTime|to_timezone:booking.customer.timezone|date:"h:i A" }}</span>
                             </p>
                             {% if booking.appliedDiscountPercent > 0 %}
                             <div class="card bg-light mb-2 p-2">

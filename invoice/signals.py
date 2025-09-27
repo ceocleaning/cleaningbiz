@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from bookings.models import Booking
 from accounts.models import ApiCredential, Business
+from bookings.utils import get_service_details
 from datetime import datetime, timedelta
 from twilio.rest import Client
 from django.conf import settings
@@ -22,6 +23,7 @@ def send_booking_confirmation_notification(sender, instance, created, **kwargs):
         try:
 
             invoice_link = f"{settings.BASE_URL}/invoice/invoices/{instance.invoiceId}/preview/"
+            details = get_service_details(instance.booking, 'customer')
           
 
             # Create plain text email content with invoice details
@@ -31,21 +33,7 @@ Hello {instance.booking.customer.get_full_name()},
 
 Your appointment with {instance.booking.business.businessName} is Pending. Please Pay to confirm your appointment. Thank you for choosing our services!
 
-APPOINTMENT DETAILS:
-- Date: {format_date(instance.booking.cleaningDate)}
-- Time: {format_time(instance.booking.startTime)} - {format_time(instance.booking.endTime)}
-- Service Type: {instance.booking.serviceType.title()} Cleaning
-- Address: {instance.booking.customer.get_address() or 'N/A'}
-- Bedrooms: {instance.booking.bedrooms}
-- Bathrooms: {instance.booking.bathrooms}
-- Square Feet: {instance.booking.squareFeet}
-- Additional Requests: {instance.booking.otherRequests}
-- Addons: {instance.booking.get_all_addons()}
-
-PRICING:
-- Subtotal: ${instance.booking.totalPrice - instance.booking.tax}
-- Tax: ${instance.booking.tax:.2f}
-- Total Amount: ${instance.amount:.2f}
+{details}
 
 Please note that your slot is not confirmed until you make the payment.
 

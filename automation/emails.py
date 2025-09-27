@@ -5,6 +5,7 @@ from leadsAutomation.utils import send_email
 from notification.services import NotificationService
 from accounts.timezone_utils import convert_from_utc, convert_to_utc
 from datetime import datetime, timedelta
+from bookings.utils import get_service_details
 
 
 
@@ -85,18 +86,7 @@ def send_completion_notification_emails(booking):
     business = booking.business
     customer_name = booking.customer.get_full_name()
     
-    # Format date and time
-    booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
-
-    business_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), business.timezone)
-    business_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), business.timezone)
-
-    customer_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), booking.customer.timezone)
-    customer_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), booking.customer.timezone)
-
-    customer_booking_time = f"{customer_start_time.strftime('%I:%M %p')} - {customer_end_time.strftime('%I:%M %p')}" if customer_start_time and customer_end_time else "N/A"
-
-    business_booking_time = f"{business_start_time.strftime('%I:%M %p')} - {business_end_time.strftime('%I:%M %p')}" if business_start_time and business_end_time else "N/A"
+    
 
     
     full_address = booking.customer.get_address()
@@ -116,7 +106,7 @@ def send_completion_notification_emails(booking):
     # 1. Send email to customer
     if booking.customer.email:
         customer_subject = f"Cleaning Service Completed - {business.businessName}"
-        
+        details = get_service_details(booking, 'customer')
         
         customer_text_body = f"""
 Hello {customer_name},
@@ -125,16 +115,7 @@ Your Cleaning Service with {booking.business.businessName} has completed
 
 Thank you for chosing {booking.business.businessName} for your cleaning service.
 
-JOB DETAILS:
-Client: {customer_name}
-Service: {booking.serviceType}
-Bedrooms: {booking.bedrooms}
-Bathrooms: {booking.bathrooms}
-Service Area: {booking.squareFeet}
-Date: {booking_date}
-Time: {customer_booking_time}
-Address: {full_address}
-Booking ID: {booking.bookingId}
+{details}
 
 
 
@@ -160,6 +141,7 @@ This is an automated message, please do not reply directly to this email.
     # 3. Send email to business owner
     if business_owner_email:
         owner_subject = f"Booking Completed: {booking.bookingId}"
+        details = get_service_details(booking, 'owner')
 
         
         owner_text_body = f"""
@@ -167,14 +149,7 @@ Hello,
 
 A booking has been marked as completed by {cleaner_name}.
 
-BOOKING DETAILS:
-Client: {customer_name}
-Cleaner: {cleaner_name}
-Service: {booking.serviceType}
-Date: {booking_date}
-Time: {business_booking_time}
-Address: {full_address}
-Booking ID: {booking.bookingId}
+{details}
 
 The booking has been successfully completed and marked as such in the system.
 
@@ -205,15 +180,7 @@ def send_cleaner_arrived_notification(booking):
     """
     business = booking.business
     customer_name = booking.customer.get_full_name()
-    
-    # Format date and time
-    booking_date = booking.cleaningDate.strftime("%A, %B %d, %Y") if booking.cleaningDate else "N/A"
-
-    # Convert booking times to customer timezone
-    customer_start_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.startTime), booking.customer.timezone)
-    customer_end_time = convert_from_utc(datetime.combine(booking.cleaningDate, booking.endTime), booking.customer.timezone)
-    customer_booking_time = f"{customer_start_time.strftime('%I:%M %p')} - {customer_end_time.strftime('%I:%M %p')}" if customer_start_time and customer_end_time else "N/A"
-    
+     
 
     full_address = booking.customer.get_address()
     
@@ -227,6 +194,8 @@ def send_cleaner_arrived_notification(booking):
     
     # Email subject
     subject = f"Cleaner Has Arrived - {business.businessName}"
+
+    details = get_service_details(booking, 'customer')
     
     # Create message content
     message_content = f"""
@@ -234,12 +203,7 @@ Hello {customer_name},
 
 {cleaner_name} has arrived at your location at {arrival_time_str} and is ready to begin the cleaning service.
 
-BOOKING DETAILS:
-Service: {booking.serviceType}
-Date: {booking_date}
-Time: {customer_booking_time}
-Address: {full_address}
-Booking ID: {booking.bookingId}
+{details}
 
 If you have any questions or need to provide additional instructions, please contact our customer service.
 

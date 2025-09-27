@@ -10,6 +10,7 @@ import pytz
 from .models import Chat
 from accounts.timezone_utils import parse_business_datetime, convert_from_utc
 from customer.utils import create_customer
+from bookings.utils import get_service_details
 from decimal import Decimal
 
 from notification.services import NotificationService
@@ -361,6 +362,8 @@ def send_reschedule_email(booking, new_date_time):
         # Format the local date and time for display
         appointment_date = local_datetime.strftime("%A, %B %d, %Y")
         appointment_time = local_datetime.strftime("%I:%M %p")
+
+        details = get_service_details(booking, 'customer')
         
 
         
@@ -369,11 +372,8 @@ def send_reschedule_email(booking, new_date_time):
         Dear {booking.customer.first_name},
         Your appointment with {business.businessName} has been successfully rescheduled.
 
-        Service Details:
-        Service Type: {booking.serviceType}
-        Date: {appointment_date}
-        Time: {appointment_time}
-        Location: {booking.customer.get_address()}
+        {details}
+        
 
         New Date and Time: {new_date_time.strftime('%A, %B %d, %Y %I:%M %p')}
 
@@ -435,6 +435,9 @@ def send_cancel_email(booking):
         # Format the local date and time for display
         appointment_date = local_datetime.strftime("%A, %B %d, %Y")
         appointment_time = local_datetime.strftime("%I:%M %p")
+
+
+        details = get_service_details(booking, 'customer')
         
 
         
@@ -443,11 +446,7 @@ def send_cancel_email(booking):
         Dear {booking.customer.get_full_name()},
         Your appointment with {business.businessName} has been canceled.
         
-        Service Details:
-        Service Type: {booking.serviceType}
-        Date: {appointment_date}
-        Time: {appointment_time}
-        Location: {booking.customer.get_address()}
+        {details}
         
         Thank you for choosing {business.businessName}!
         """

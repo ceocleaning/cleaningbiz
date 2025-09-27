@@ -7,6 +7,7 @@ from django.conf import settings
 from leadsAutomation.utils import send_email
 from django.forms.models import model_to_dict
 
+
 from decimal import Decimal
 
 
@@ -57,19 +58,19 @@ def sendEmailtoClientInvoice(invoice, business):
         # Create email subject and HTML body
         subject = f"Appointment Confirmation - {business.businessName}"
 
+        from bookings.utils import get_service_details
+        details = get_service_details(booking, 'customer')
         
         # Plain text alternative
         text_body = f"""Hello {booking.customer.first_name},
 
-            Your appointment with {business.businessName} has been confirmed for {booking.cleaningDate.strftime('%A, %B %d, %Y')} at {booking.startTime.strftime('%I:%M %p')}.
+Your appointment with {business.businessName} has been confirmed.
 
-            Service: {booking.serviceType.title()} Cleaning
-            Address: {booking.customer.get_address()}
-            Total Amount: ${invoice.amount:.2f}
+{details}
 
-            To view your invoice and make a payment, please visit: {invoice_link}
+To view your invoice and make a payment, please visit: {invoice_link}
 
-            Thank you for choosing {business.businessName}!
+Thank you for choosing {business.businessName}!
             """
         
         # Determine which email configuration to use

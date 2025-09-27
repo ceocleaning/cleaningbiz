@@ -10,6 +10,7 @@ from notification.services import NotificationService
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
+from bookings.utils import get_service_details
 
 
 def send_call_to_lead(lead_id):
@@ -129,13 +130,12 @@ def check_booking_cleaner_assignment():
             business = booking.business
             
             subject = f"ACTION REQUIRED: No cleaner assigned for booking {booking.bookingId}"
+            details = get_service_details(booking, 'owner')
             
             text_body = f"""Hello {business.businessName},
 This is an important notification regarding booking {booking.bookingId}.
-The booking is scheduled for today at {booking.startTime.strftime('%I:%M %p')} ({timezone.now().strft('%Y-%m-%d')}) - approximately 12 hours from now.
-Customer: {booking.customer.first_name} {booking.customer.last_name}
-Service: {booking.serviceType}
-Address: {booking.customer.get_address() or 'N/A'}
+
+{details}
 
 This booking has been paid or authorized, but no cleaner has accepted the job yet.
 Please take immediate action to assign a cleaner or contact the customer.
