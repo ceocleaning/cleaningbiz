@@ -1,0 +1,595 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Modern Dashboard Layout -->
+<div class="dashboard-wrapper">
+    <!-- Mobile Navigation Toggle -->
+    <button class="mobile-nav-toggle d-lg-none" id="sidebarToggleBtn" type="button">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar" id="dashboardSidebar">
+        <!-- Business Profile Section -->
+        <div class="sidebar-profile">
+            <div class="business-avatar">
+                {% if business.logo %}
+                <img src="{{ business.logo.url }}" alt="{{ business.businessName }}" class="img-fluid">
+                {% else %}
+                <div class="business-avatar-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="business-info">
+                <h5 class="business-name">{{ business.businessName }}</h5>
+                <span class="business-status">
+                    <i class="fas fa-circle status-indicator"></i>
+                    Active Account
+                </span>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <h6 class="nav-section-title">MAIN</h6>
+                <div class="nav-menu">
+                    <li class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                        <a href="{% url 'home' %}" class="nav-link">
+                            <i class="fas fa-building nav-icon"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                </div>
+                <h6 class="nav-section-title">BUSINESS</h6>
+                <ul class="nav-menu">
+                    <li class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                        <a href="{% url 'accounts:profile' %}" class="nav-link">
+                            <i class="fas fa-building nav-icon"></i>
+                            <span>Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'manage_cleaners' %}active{% endif %}">
+                        <a href="{% url 'accounts:manage_cleaners' %}" class="nav-link">
+                            <i class="fas fa-users nav-icon"></i>
+                            <span>Team Members</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'profile_pricing' %}active{% endif %}">
+                        <a href="{% url 'accounts:profile_pricing' %}" class="nav-link">
+                            <i class="fas fa-dollar-sign nav-icon"></i>
+                            <span>Pricing</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'integrations' %}active{% endif %}">
+                        <a href="{% url 'accounts:integrations' %}" class="nav-link">
+                            <i class="fas fa-plug nav-icon"></i>
+                            <span>Integrations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'custom_addons' %}active{% endif %}">
+                        <a href="{% url 'accounts:custom_addons' %}" class="nav-link">
+                            <i class="fas fa-puzzle-piece nav-icon"></i>
+                            <span>Custom Addons</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                        <a href="{% url 'accounts:settings' %}" class="nav-link">
+                            <i class="fas fa-cog nav-icon"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div class="upgrade-plan">
+                <div class="upgrade-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                {% if business.active_subscription %}
+                <div class="upgrade-text">
+                    <h6>{{ business.active_subscription.plan.name }}</h6>
+                    <p>Current subscription</p>
+                </div>
+                {% else %}
+                <div class="upgrade-text">
+                    <h6>Free Plan</h6>
+                    <p>Current subscription</p>
+                </div>
+                {% endif %}
+        </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="dashboard-content">
+        <!-- Page Header -->
+        <header class="content-header">
+            <div class="container-fluid">
+                <div class="header-wrapper">
+                    <div class="header-left">
+                        <h1 class="page-title">{% block page_title %}Business Dashboard{% endblock %}</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Home</a></li>
+                                {% block breadcrumbs %}{% endblock %}
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="header-right">
+                        {% block header_actions %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="content-body">
+            <div class="container">
+              
+                
+                {% block main_content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+
+<style>
+    /* Modern Dashboard Layout Styles */
+    :root {
+        --primary-color: #1aad8c;
+        --primary-light: #eafaf5;
+        --primary-dark: #138a70;
+        --secondary-color: #4a6cf7;
+        --text-color: #202224;
+        --text-light: #6e6e6e;
+        --border-color: #d6d6d6;
+        --bg-color: #ffffff;
+        --white: #ffffff;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+        --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.08);
+        --transition: all 0.3s ease;
+        --border-radius: 10px;
+    }
+    
+    /* Main Dashboard Layout */
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background-color: var(--bg-color);
+        position: relative;
+    }
+    
+    /* Sidebar Styles */
+    .dashboard-sidebar {
+        width: var(--sidebar-width);
+        background: var(--white);
+        height: auto;
+        position: fixed;
+        left: 0;
+        top: 56px; /* Adjust based on navbar height */
+        bottom: 0;
+        z-index: 999;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        transition: var(--transition);
+    }
+    
+    /* Sidebar Profile Section */
+    .sidebar-profile {
+        padding: 24px 20px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .business-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-right: 12px;
+        background-color: var(--primary-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .business-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .business-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+        font-size: 24px;
+    }
+    
+    .business-info {
+        flex: 1;
+    }
+    
+    .business-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .business-status {
+        font-size: 12px;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+    }
+    
+    .status-indicator {
+        font-size: 8px;
+        color: #22c55e; /* Success green */
+        margin-right: 6px;
+    }
+    
+    /* Navigation Menu */
+    .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+    
+    .nav-section {
+        margin-bottom: 24px;
+    }
+    
+    .nav-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-light);
+        letter-spacing: 1px;
+        padding: 0 24px;
+        margin-bottom: 12px;
+    }
+    
+    .nav-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .nav-item {
+        position: relative;
+    }
+    
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 10px 24px;
+        color: var(--text-color);
+        font-size: 14px;
+        font-weight: 500;
+        transition: var(--transition);
+        position: relative;
+        text-decoration: none;
+    }
+    
+    .nav-link:hover {
+        color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    
+    .nav-item.active .nav-link {
+        color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    
+    .nav-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background-color: var(--primary-color);
+    }
+    
+    .nav-icon {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Sidebar Footer */
+    .sidebar-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-color);
+      
+    }
+    
+    .upgrade-plan {
+        display: flex;
+        align-items: center;
+        background-color: var(--primary-light);
+        border-radius: var(--border-radius);
+        padding: 12px;
+    }
+    
+    .upgrade-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background-color: var(--primary-color);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 16px;
+    }
+    
+    .upgrade-text h6 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        color: var(--primary-color);
+    }
+    
+    .upgrade-text p {
+        font-size: 12px;
+        color: var(--text-light);
+        margin-bottom: 0;
+    }
+    
+    /* Main Content Area */
+    .dashboard-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        background-color: #ffffff;
+        transition: var(--transition);
+    }
+    
+    /* Page Header */
+    .content-header {
+        background-color: transparent;
+        height: auto;
+        display: flex;
+        align-items: center;
+        padding: 24px 0 16px;
+        margin-bottom: 8px;
+    }
+    
+    .header-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0 24px;
+    }
+    
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-color);
+    }
+    
+    .breadcrumb {
+        margin-bottom: 0;
+        padding: 0;
+        background-color: transparent;
+        font-size: 14px;
+    }
+    
+    .breadcrumb-item a {
+        color: var(--text-light);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .breadcrumb-item a:hover {
+        color: var(--primary-color);
+    }
+    
+    .breadcrumb-item.active {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: var(--border-color);
+    }
+    
+    /* Content Body */
+    .content-body {
+        padding: 0 24px 32px;
+    }
+    
+    /* Messages Container */
+    .messages-container {
+        margin-bottom: 24px;
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: var(--shadow-sm);
+        padding: 16px 20px;
+        font-size: 14px;
+    }
+    
+    .alert i {
+        font-size: 18px;
+    }
+    
+    /* Mobile Navigation Toggle */
+    .mobile-nav-toggle {
+        position: fixed;
+        top: 70px;
+        left: 16px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: var(--white);
+        border: none;
+        box-shadow: 0 4px 12px rgba(26, 173, 140, 0.3);
+        display: none;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-nav-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(26, 173, 140, 0.4);
+    }
+    
+    .mobile-nav-toggle:active {
+        transform: translateY(0);
+    }
+    
+    /* Sidebar Overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 991.98px) {
+        .dashboard-sidebar {
+            transform: translateX(-100%);
+        }
+        
+        .dashboard-content {
+            margin-left: 0;
+        }
+        
+        .mobile-nav-toggle {
+            display: flex;
+        }
+        
+        body.sidebar-active .dashboard-sidebar {
+            transform: translateX(0);
+        }
+        
+        body.sidebar-active .sidebar-overlay {
+            display: block;
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .dashboard-sidebar {
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .header-wrapper {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .header-left {
+            margin-bottom: 12px;
+        }
+        
+        .content-body {
+            padding: 0 20px 24px;
+        }
+        
+        .page-title {
+            font-size: 22px;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .page-title {
+            font-size: 20px;
+        }
+        
+        .content-body {
+            padding: 0 16px 20px;
+        }
+        
+        .breadcrumb {
+            font-size: 13px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile sidebar toggle functionality
+        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+        const dashboardSidebar = document.getElementById('dashboardSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', function() {
+                document.body.classList.toggle('sidebar-active');
+            });
+        }
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                document.body.classList.remove('sidebar-active');
+            });
+        }
+        
+        // Close sidebar when clicking on a link (mobile only)
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    document.body.classList.remove('sidebar-active');
+                }
+            });
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                document.body.classList.remove('sidebar-active');
+            }
+        });
+    });
+</script>
+
+{% block js %}{% endblock %}
+
+{% endblock %}
+

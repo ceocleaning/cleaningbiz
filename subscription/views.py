@@ -966,6 +966,7 @@ def validate_coupon(request):
         return JsonResponse({
             'valid': True,
             'message': 'Coupon applied successfully!',
+            'original_price': round(original_price, 2),
             'discount_amount': round(discount_amount, 2),
             'discount_type': coupon.discount_type,
             'discount_value': coupon.discount_value,
@@ -983,6 +984,70 @@ def validate_coupon(request):
     except Exception as e:
         print(f"Error: {str(e)}")
         return JsonResponse({'valid': False, 'message': f'An error occurred: {str(e)}'})
+
+@login_required
+def apply_coupon_to_subscription(request):
+    """API view to apply a coupon to the user's subscription."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+    
+    try:
+        business = request.user.business_set.first()
+        if not business:
+            return JsonResponse({'success': False, 'message': 'Business not found'}, status=404)
+        
+        # Get the active subscription
+        subscription = business.subscriptions.filter(is_active=True).first()
+        if not subscription:
+            return JsonResponse({'success': False, 'message': 'No active subscription found'}, status=404)
+        
+        coupon_code = request.POST.get('coupon_code', '').strip().upper()
+        
+        if not coupon_code:
+            return JsonResponse({'success': False, 'message': 'Coupon code is required'}, status=400)
+        
+        # Validate the coupon with comprehensive checks (same as validate_coupon)
+        try:
+            coupon = Coupon.objects.get(code=coupon_code, is_active=True)
+            plan = subscription.plan
+            user = request.user
+            
+            # Check if the coupon is valid (using the model's is_valid method)
+            if not coupon.is_valid():
+                return JsonResponse({'success': False, 'message': 'This coupon is no longer valid'}, status=400)
+            
+            # Check if the coupon is valid for this user (using the model's is_valid_for_user method)
+            if not coupon.is_valid_for_user(user):
+                return JsonResponse({'success': False, 'message': 'You have already used this coupon the maximum number of times'}, status=400)
+            
+            # Check if the coupon is applicable to this plan
+            if coupon.applicable_plans.exists() and not coupon.applicable_plans.filter(id=plan.id).exists():
+                return JsonResponse({'success': False, 'message': 'This coupon is not valid for your current plan'}, status=400)
+            
+            # Check if user has already applied this coupon to current subscription
+            if subscription.coupon_used == coupon:
+                return JsonResponse({'success': False, 'message': 'This coupon is already applied to your subscription'}, status=400)
+            
+            # Check if user has already scheduled this coupon for next billing
+            if subscription.new_coupon == coupon:
+                return JsonResponse({'success': False, 'message': 'This coupon is already scheduled for your next billing cycle'}, status=400)
+            
+            # Apply the coupon to the subscription
+            subscription.new_coupon = coupon
+            subscription.save()
+            
+            # Return simple success response
+            return JsonResponse({
+                'success': True,
+                'message': 'Coupon applied successfully! It will be used in your next billing cycle.'
+            })
+            
+        except Coupon.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Invalid coupon code'}, status=400)
+        
+    except Exception as e:
+        print(f"Error applying coupon: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
 
 @login_required
 def manage_card(request):

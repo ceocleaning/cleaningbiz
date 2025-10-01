@@ -1,0 +1,958 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Team Members{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Team Members</li>
+{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex gap-2 align-items-center">
+    <!-- View Toggle -->
+    <div class="btn-group view-toggle" role="group">
+        <button type="button" class="btn btn-outline-secondary" id="cardViewBtn" onclick="switchView('card')">
+            <i class="fas fa-th-large"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary active" id="listViewBtn" onclick="switchView('list')">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
+    
+    <!-- Add Button -->
+    <a href="{% url 'add_cleaner' %}" class="btn btn-primary d-flex align-items-center">
+        <i class="fas fa-plus-circle me-2"></i>
+        <span>Add Team Member</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block main_content %}
+
+{% if cleaners %}
+<!-- List View -->
+<div id="listView" class="view-container">
+    <div class="team-list-container">
+        {% for cleaner in cleaners %}
+        <div class="team-member-list-item">
+            <div class="team-member-list-avatar">
+                <div class="avatar-circle">
+                    {{ cleaner.name|make_list|first|upper }}
+                </div>
+            </div>
+            
+            <div class="team-member-list-info">
+                <h6 class="team-member-name">{{ cleaner.name }}</h6>
+                <div class="team-member-contact">
+                    <span class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        {{ cleaner.phoneNumber }}
+                    </span>
+                    <span class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        {{ cleaner.email|default:"Not provided" }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="team-member-list-rating">
+                <div class="rating-stars">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= cleaner.rating %}
+                        <i class="fas fa-star"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <span class="rating-text">{{ cleaner.rating }}.0</span>
+            </div>
+            
+            <div class="team-member-list-badges">
+                {% if cleaner.isActive %}
+                <span class="status-badge status-active">
+                    <i class="fas fa-circle"></i>
+                    Active
+                </span>
+                {% else %}
+                <span class="status-badge status-inactive">
+                    <i class="fas fa-circle"></i>
+                    Inactive
+                </span>
+                {% endif %}
+                
+                {% if cleaner.user_profile %}
+                <span class="account-badge account-created">
+                    <i class="fas fa-user-check"></i>
+                    Account
+                </span>
+                {% else %}
+                <span class="account-badge account-none">
+                    <i class="fas fa-user-times"></i>
+                    No Account
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="team-member-list-actions">
+                {% if not cleaner.user_profile %}
+                <a href="{% url 'accounts:register_cleaner_user' cleaner.id %}" 
+                   class="action-btn action-btn-primary" 
+                   data-bs-toggle="tooltip" 
+                   title="Create user account">
+                    <i class="fas fa-user-plus"></i>
+                </a>
+                {% else %}
+                <button type="button" 
+                        class="action-btn action-btn-primary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#viewLoginModal" 
+                        data-cleaner-id="{{ cleaner.id }}"
+                        data-cleaner-name="{{ cleaner.name }}"
+                        data-username="{{ cleaner.user_profile.user.username }}"
+                        data-email="{{ cleaner.user_profile.user.email }}"
+                        data-first-name="{{ cleaner.user_profile.user.first_name }}"
+                        data-last-name="{{ cleaner.user_profile.user.last_name }}"
+                        data-bs-toggle-tooltip="tooltip" 
+                        title="Manage account">
+                    <i class="fas fa-key"></i>
+                </button>
+                {% endif %}
+                <a href="{% url 'cleaner_detail' cleaner.id %}" class="action-btn action-btn-info" title="View Profile">
+                    <i class="fas fa-user"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Card View -->
+<div id="cardView" class="view-container" style="display: none;">
+    <div class="team-cards-grid">
+        {% for cleaner in cleaners %}
+        <div class="team-member-card">
+            <!-- Card Header with Status -->
+            <div class="team-card-header">
+                {% if cleaner.isActive %}
+                <span class="card-status-badge status-active">
+                    <i class="fas fa-circle"></i>
+                    Active
+                </span>
+                {% else %}
+                <span class="card-status-badge status-inactive">
+                    <i class="fas fa-circle"></i>
+                    Inactive
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Card Body -->
+            <div class="team-card-body">
+                <!-- Avatar -->
+                <div class="team-card-avatar">
+                    <div class="avatar-circle-large">
+                        {{ cleaner.name|make_list|first|upper }}
+                    </div>
+                </div>
+                
+                <!-- Name -->
+                <h5 class="team-card-name">{{ cleaner.name }}</h5>
+                
+                <!-- Rating -->
+                <div class="team-card-rating">
+                    <div class="rating-stars-large">
+                        {% for i in "12345"|make_list %}
+                            {% if forloop.counter <= cleaner.rating %}
+                            <i class="fas fa-star"></i>
+                            {% else %}
+                            <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="rating-value">{{ cleaner.rating }}.0</span>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="team-card-contact">
+                    <div class="contact-row">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ cleaner.phoneNumber }}</span>
+                    </div>
+                    <div class="contact-row">
+                        <i class="fas fa-envelope"></i>
+                        <span>{{ cleaner.email|default:"Not provided" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Account Badge -->
+                <div class="team-card-account">
+                    {% if cleaner.user_profile %}
+                    <span class="account-badge-large account-created">
+                        <i class="fas fa-user-check"></i>
+                        Account Created
+                    </span>
+                    {% else %}
+                    <span class="account-badge-large account-none">
+                        <i class="fas fa-user-times"></i>
+                        No Account
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Card Footer -->
+            <div class="team-card-footer">
+                {% if not cleaner.user_profile %}
+                <a href="{% url 'accounts:register_cleaner_user' cleaner.id %}" 
+                   class="card-action-btn btn-create-account" 
+                   data-bs-toggle="tooltip" 
+                   title="Create user account">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </a>
+                {% else %}
+                <button type="button" 
+                        class="card-action-btn btn-manage-account" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#viewLoginModal" 
+                        data-cleaner-id="{{ cleaner.id }}"
+                        data-cleaner-name="{{ cleaner.name }}"
+                        data-username="{{ cleaner.user_profile.user.username }}"
+                        data-email="{{ cleaner.user_profile.user.email }}"
+                        data-first-name="{{ cleaner.user_profile.user.first_name }}"
+                        data-last-name="{{ cleaner.user_profile.user.last_name }}"
+                        data-bs-toggle-tooltip="tooltip" 
+                        title="Manage account">
+                    <i class="fas fa-key"></i>
+                    Manage Account
+                </button>
+                {% endif %}
+                <a href="{% url 'cleaner_detail' cleaner.id %}" class="card-action-btn btn-edit" title="View cleaner profile">
+                    <i class="fas fa-eye"></i>
+                    View Profile
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-users"></i>
+    </div>
+    <h3 class="empty-state-title">No Team Members Yet</h3>
+    <p class="empty-state-text">You haven't added any team members to your business yet.</p>
+    <a href="{% url 'add_cleaner' %}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus-circle me-2"></i>Add Your First Team Member
+    </a>
+</div>
+{% endif %}
+       
+
+
+<!-- Login Details Modal -->
+<div class="modal fade" id="viewLoginModal" tabindex="-1" aria-labelledby="viewLoginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="viewLoginModalLabel">
+            <i class="fas fa-user-shield me-2"></i>Team Member Account
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <!-- User Info Section -->
+          <div class="bg-light p-4">
+            <div class="d-flex align-items-center">
+              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-weight: 600;">
+                <span id="modal-initials">CN</span>
+              </div>
+              <div class="ms-3">
+                <h4 id="modal-cleaner-name" class="mb-1 fw-bold">Cleaner Name</h4>
+                <p class="text-muted mb-0" id="modal-email">email@example.com</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Account Details Section -->
+          <div class="p-4">
+            <h6 class="text-uppercase text-muted fw-bold mb-3 small">
+              <i class="fas fa-id-card me-2"></i>Account Information
+            </h6>
+            
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="text-muted small">Username</label>
+                <div class="fw-bold" id="modal-username">username</div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted small">Email</label>
+                <div class="fw-bold" id="modal-email-info">email@example.com</div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted small">First Name</label>
+                <div class="fw-bold" id="modal-first-name">John</div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted small">Last Name</label>
+                <div class="fw-bold" id="modal-last-name">Doe</div>
+              </div>
+            </div>
+            
+            <!-- Password Reset Form -->
+            <div class="mt-4 pt-3 border-top">
+              <h6 class="text-uppercase text-muted fw-bold mb-3 small">
+                <i class="fas fa-lock me-2"></i>Change Password
+              </h6>
+              <form id="resetPasswordForm" action="{% url 'accounts:reset_cleaner_password' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="cleaner_id" id="reset-cleaner-id">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="password" class="form-control" id="new_password" name="new_password" placeholder="New Password" required>
+                      <label for="new_password">New Password</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                      <label for="confirm_password">Confirm Password</label>
+                    </div>
+                    <div class="invalid-feedback" id="password-match-error">
+                      Passwords do not match.
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button type="submit" class="btn btn-primary" id="reset-password-btn">
+                    <i class="fas fa-key me-2"></i>Update Password
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Close
+          </button>
+          <a href="#" id="edit-user-link" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Edit Account
+          </a>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<style>
+/* View Toggle Buttons */
+.view-toggle .btn {
+    padding: 8px 16px;
+    border-color: #e5e7eb;
+    color: #6e6e6e;
+    transition: all 0.3s ease;
+}
+
+.view-toggle .btn.active {
+    background: #1aad8c;
+    border-color: #1aad8c;
+    color: white;
+}
+
+.view-toggle .btn:hover:not(.active) {
+    background: #f3f4f6;
+    border-color: #1aad8c;
+    color: #1aad8c;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.empty-state-icon {
+    font-size: 80px;
+    color: #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.empty-state-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 12px;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    color: #6e6e6e;
+    margin-bottom: 32px;
+}
+
+/* ========== LIST VIEW STYLES ========== */
+.team-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.team-member-list-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.team-member-list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-color: #1aad8c;
+}
+
+.team-member-list-avatar .avatar-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.team-member-list-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.team-member-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 6px;
+}
+
+.team-member-contact {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #6e6e6e;
+}
+
+.contact-item i {
+    color: #1aad8c;
+    font-size: 14px;
+}
+
+.team-member-list-rating {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0 20px;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 4px;
+    color: #fbbf24;
+    font-size: 16px;
+}
+
+.rating-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #202224;
+}
+
+.team-member-list-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.status-badge,
+.account-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge i {
+    font-size: 8px;
+}
+
+.status-active {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.status-inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.account-created {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.account-none {
+    background: rgba(251, 191, 36, 0.1);
+    color: #d97706;
+}
+
+.team-member-list-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn-primary {
+    color: #1aad8c;
+    border-color: #1aad8c;
+}
+
+.action-btn-primary:hover {
+    background: #1aad8c;
+    color: white;
+}
+
+.action-btn-info {
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.action-btn-info:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+/* ========== CARD VIEW STYLES ========== */
+.team-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.team-member-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.team-member-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: #1aad8c;
+}
+
+.team-card-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.card-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.card-status-badge i {
+    font-size: 8px;
+}
+
+.team-card-body {
+    padding: 32px 24px;
+    text-align: center;
+    flex: 1;
+}
+
+.team-card-avatar {
+    margin-bottom: 20px;
+}
+
+.avatar-circle-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.3);
+}
+
+.team-card-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 16px;
+}
+
+.team-card-rating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.rating-stars-large {
+    display: flex;
+    gap: 4px;
+    color: #fbbf24;
+    font-size: 18px;
+}
+
+.rating-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202224;
+}
+
+.team-card-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.contact-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #6e6e6e;
+}
+
+.contact-row i {
+    color: #1aad8c;
+    font-size: 16px;
+    width: 20px;
+}
+
+.team-card-account {
+    margin-top: 16px;
+}
+
+.account-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.team-card-footer {
+    padding: 20px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+}
+
+.card-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-create-account,
+.btn-manage-account {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(26, 173, 140, 0.3);
+}
+
+.btn-create-account:hover,
+.btn-manage-account:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.4);
+    color: white;
+}
+
+.btn-edit {
+    background: #f3f4f6;
+    color: #6e6e6e;
+}
+
+.btn-edit:hover {
+    background: #e5e7eb;
+    color: #202224;
+    transform: translateY(-2px);
+}
+
+/* Modal Styles */
+#viewLoginModal .modal-content {
+    border-radius: 16px;
+    border: none;
+    overflow: hidden;
+}
+
+#viewLoginModal .modal-header {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    padding: 24px 32px;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .team-member-list-item {
+        flex-wrap: wrap;
+    }
+    
+    .team-member-list-rating {
+        border: none;
+        padding: 0;
+        flex-direction: row;
+    }
+    
+    .team-member-list-badges {
+        width: 100%;
+        flex-direction: row;
+    }
+    
+    .team-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .team-member-list-item {
+        padding: 16px;
+    }
+    
+    .team-member-contact {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .team-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-card-footer {
+        flex-direction: column;
+    }
+    
+    .card-action-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// View Switching Function
+function switchView(view) {
+    const listView = document.getElementById('listView');
+    const cardView = document.getElementById('cardView');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const cardViewBtn = document.getElementById('cardViewBtn');
+    
+    if (view === 'card') {
+        listView.style.display = 'none';
+        cardView.style.display = 'block';
+        listViewBtn.classList.remove('active');
+        cardViewBtn.classList.add('active');
+        localStorage.setItem('teamViewPreference', 'card');
+    } else {
+        listView.style.display = 'block';
+        cardView.style.display = 'none';
+        cardViewBtn.classList.remove('active');
+        listViewBtn.classList.add('active');
+        localStorage.setItem('teamViewPreference', 'list');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore view preference
+    const savedView = localStorage.getItem('teamViewPreference') || 'list';
+    switchView(savedView);
+    
+    // Initialize all tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover',
+            container: 'body'
+        });
+    });
+    
+    // For buttons that have both modal and tooltip (data-bs-toggle already used for modal)
+    const tooltipModalBtnList = [].slice.call(document.querySelectorAll('[data-bs-toggle-tooltip="tooltip"]'));
+    tooltipModalBtnList.forEach(function(element) {
+        new bootstrap.Tooltip(element, {
+            trigger: 'hover',
+            container: 'body'
+        });
+    });
+    
+    // Login Details Modal
+    const viewLoginModal = document.getElementById('viewLoginModal');
+    if (viewLoginModal) {
+        viewLoginModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            
+            // Extract data from button attributes
+            const cleanerId = button.getAttribute('data-cleaner-id');
+            const cleanerName = button.getAttribute('data-cleaner-name');
+            const username = button.getAttribute('data-username');
+            const email = button.getAttribute('data-email');
+            const firstName = button.getAttribute('data-first-name');
+            const lastName = button.getAttribute('data-last-name');
+            
+            // Create initials for avatar
+            const initials = (firstName && firstName.charAt(0) || '') + (lastName && lastName.charAt(0) || '');
+            
+            // Update modal with data
+            document.getElementById('modal-cleaner-name').textContent = cleanerName || 'Cleaner';
+            document.getElementById('modal-username').textContent = username || 'Not available';
+            document.getElementById('modal-email').textContent = email || 'Not available';
+            document.getElementById('modal-email-info').textContent = email || 'Not available';
+            document.getElementById('modal-first-name').textContent = firstName || 'Not available';
+            document.getElementById('modal-last-name').textContent = lastName || 'Not available';
+            document.getElementById('modal-initials').textContent = initials || 'CN';
+            document.getElementById('reset-cleaner-id').value = cleanerId;
+            
+            // Update edit link to use the specific edit_cleaner_account URL
+            document.getElementById('edit-user-link').href = "{% url 'accounts:edit_cleaner_account' 0 %}".replace("0", cleanerId);
+            
+            // For debugging
+            console.log("Modal data:", {cleanerId, cleanerName, username, email, firstName, lastName});
+        });
+    }
+    
+    // Password validation for reset form
+    const newPasswordInput = document.getElementById('new_password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const resetPasswordBtn = document.getElementById('reset-password-btn');
+    const passwordMatchError = document.getElementById('password-match-error');
+    
+    if (confirmPasswordInput && newPasswordInput) {
+        function validatePasswords() {
+            if (newPasswordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.classList.add('is-invalid');
+                passwordMatchError.style.display = 'block';
+                resetPasswordBtn.disabled = true;
+                return false;
+            } else {
+                confirmPasswordInput.classList.remove('is-invalid');
+                passwordMatchError.style.display = 'none';
+                resetPasswordBtn.disabled = false;
+                return true;
+            }
+        }
+        
+        newPasswordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+        
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        resetPasswordForm.addEventListener('submit', function(e) {
+            if (!validatePasswords()) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Sidebar toggle functionality
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const body = document.querySelector('body');
+    
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', function() {
+            body.classList.toggle('sidebar-visible');
+        });
+    }
+    
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', function() {
+            body.classList.remove('sidebar-visible');
+        });
+    }
+    
+    // Handle responsive layout
+    function handleResize() {
+        if (window.innerWidth > 991.98) {
+            body.classList.remove('sidebar-visible');
+        }
+    }
+    
+    window.addEventListener('resize', handleResize);
+    handleResize();
+});
+</script>
+{% endblock %} 

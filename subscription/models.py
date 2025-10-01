@@ -280,6 +280,7 @@ class BusinessSubscription(models.Model):
     next_billing_date = models.DateTimeField(null=True, blank=True)
     next_plan_id = models.IntegerField(null=True, blank=True, help_text="ID of the plan to change to at next billing date")
     coupon_used = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='subscriptions')
+    new_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='new_subscriptions')
     
     # Payment provider fields
     square_subscription_id = models.CharField(max_length=100, blank=True, null=True)

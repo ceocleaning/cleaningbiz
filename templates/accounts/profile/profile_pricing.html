@@ -1,0 +1,861 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Business Pricing{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Pricing</li>
+{% endblock %}
+
+{% block header_actions %}
+<div id="viewModeActions">
+    <button type="button" id="toggleEditMode" class="btn btn-primary d-flex align-items-center">
+        <i class="fas fa-pen-to-square me-2"></i>
+        <span>Edit Pricing</span>
+    </button>
+</div>
+<div id="editModeActions" style="display: none;">
+    <button type="button" id="savePricing" class="btn btn-success d-flex align-items-center">
+        <i class="fas fa-check me-2"></i>
+        <span>Save Changes</span>
+    </button>
+    <button type="button" id="cancelEdit" class="btn btn-secondary d-flex align-items-center ms-2">
+        <i class="fas fa-times me-2"></i>
+        <span>Cancel</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<style>
+    /* Pricing page specific styles */
+    .pricing-card {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .pricing-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.25rem;
+    }
+    
+    .pricing-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .price-item {
+        background-color: #f8f9fa;
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        height: 100%;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+    }
+    
+    .price-item:hover {
+        background-color: #fff;
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-2px);
+    }
+    
+    .price-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+    
+    .price-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+    
+    .addon-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .addon-item:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .addon-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        margin-right: 0.75rem;
+    }
+    
+    .addon-name {
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+    
+    .addon-price {
+        font-weight: 600;
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+    
+    .section-divider {
+        margin: 2rem 0;
+        border-top: 1px solid var(--border-color);
+        position: relative;
+    }
+</style>
+
+<!-- Introduction Card -->
+<div class="card border border-1 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="icon-wrapper">
+                <i class="fas fa-dollar-sign fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1">Business Pricing Configuration</h5>
+                <p class="mb-0 text-secondary">Manage your service pricing, add-ons, and discount structure for your cleaning business.</p>
+            </div>
+        </div>
+    </div>
+</div>
+            
+<!-- Main Pricing Sections -->
+<div class="row g-4">
+    <!-- Base Pricing Section -->
+    <div class="col-12 mb-2">
+        <h6 class="section-title">
+            <i class="fas fa-dollar-sign"></i> Base Pricing
+        </h6>
+    </div>
+    
+    <!-- Base Price Card -->
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="addon-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div>
+                        <div class="price-label">Base Price</div>
+                        <div class="price-value" data-field="base_price">${{ settings.base_price }}</div>
+                    </div>
+                </div>
+                <p class="text-secondary small mb-0">Starting price for all cleaning services</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bedroom Price Card -->
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="addon-icon">
+                        <i class="fas fa-bed"></i>
+                    </div>
+                    <div>
+                        <div class="price-label">Bedroom Price</div>
+                        <div class="price-value" data-field="bedroomPrice">${{ settings.bedroomPrice }}</div>
+                    </div>
+                </div>
+                <p class="text-secondary small mb-0">Additional cost per bedroom</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bathroom Price Card -->
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="addon-icon">
+                        <i class="fas fa-bath"></i>
+                    </div>
+                    <div>
+                        <div class="price-label">Bathroom Price</div>
+                        <div class="price-value" data-field="bathroomPrice">${{ settings.bathroomPrice }}</div>
+                    </div>
+                </div>
+                <p class="text-secondary small mb-0">Additional cost per bathroom</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deposit Fee Card -->
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="addon-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div>
+                        <div class="price-label">Deposit Fee</div>
+                        <div class="price-value" data-field="depositFee">${{ settings.depositFee }}</div>
+                    </div>
+                </div>
+                <p class="text-secondary small mb-0">Required deposit for bookings</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tax Percent Card -->
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="addon-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div>
+                        <div class="price-label">Tax Percent</div>
+                        <div class="price-value" data-field="taxPercent">{{ settings.taxPercent }}%</div>
+                    </div>
+                </div>
+                <p class="text-secondary small mb-0">Tax applied to all services</p>
+            </div>
+        </div>
+    </div>
+            
+    <!-- Service Multipliers Section -->    
+    <div class="col-12">
+        <div class="section-divider"></div>
+    </div>
+    
+    <div class="col-12 mb-2">
+        <h6 class="section-title">
+            <i class="fas fa-calculator"></i> Service Multipliers
+        </h6>
+    </div>
+    
+    <div class="col-12 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="row g-4">
+                    <!-- Standard Cleaning -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-broom"></i>
+                                </div>
+                                <div class="price-label">Standard</div>
+                            </div>
+                            <div class="price-value" data-field="sqftMultiplierStandard">{{ settings.sqftMultiplierStandard }}x</div>
+                            <p class="text-secondary small mt-2 mb-0">Regular cleaning service</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Deep Clean -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-spray-can"></i>
+                                </div>
+                                <div class="price-label">Deep Clean</div>
+                            </div>
+                            <div class="price-value" data-field="sqftMultiplierDeep">{{ settings.sqftMultiplierDeep }}x</div>
+                            <p class="text-secondary small mt-2 mb-0">Thorough deep cleaning</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Move In/Out -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-truck-loading"></i>
+                                </div>
+                                <div class="price-label">Move In/Out</div>
+                            </div>
+                            <div class="price-value" data-field="sqftMultiplierMoveinout">{{ settings.sqftMultiplierMoveinout }}x</div>
+                            <p class="text-secondary small mt-2 mb-0">For property transitions</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Airbnb -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <div class="price-label">Airbnb</div>
+                            </div>
+                            <div class="price-value" data-field="sqftMultiplierAirbnb">{{ settings.sqftMultiplierAirbnb }}x</div>
+                            <p class="text-secondary small mt-2 mb-0">For rental properties</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <!-- Recurring Discounts Section -->    
+    <div class="col-12">
+        <div class="section-divider"></div>
+    </div>
+    
+    <div class="col-12 mb-2">
+        <h6 class="section-title">
+            <i class="fas fa-percentage"></i> Recurring Discounts
+        </h6>
+    </div>
+    
+    <div class="col-12 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="row g-4">
+                    <!-- Weekly Discount -->                    
+                    <div class="col-md-4">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-calendar-week"></i>
+                                </div>
+                                <div class="price-label">Weekly</div>
+                            </div>
+                            <div class="price-value" data-field="weeklyDiscount">{{ settings.weeklyDiscount }}%</div>
+                            <div class="progress mt-3" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ settings.weeklyDiscount }}%;" aria-valuenow="{{ settings.weeklyDiscount }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-secondary small mt-2 mb-0">For weekly recurring service</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Bi-weekly Discount -->                    
+                    <div class="col-md-4">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="price-label">Bi-weekly</div>
+                            </div>
+                            <div class="price-value" data-field="biweeklyDiscount">{{ settings.biweeklyDiscount }}%</div>
+                            <div class="progress mt-3" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ settings.biweeklyDiscount }}%;" aria-valuenow="{{ settings.biweeklyDiscount }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-secondary small mt-2 mb-0">For bi-weekly recurring service</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Discount -->                    
+                    <div class="col-md-4">
+                        <div class="price-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="addon-icon me-2" style="width: 36px; height: 36px;">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="price-label">Monthly</div>
+                            </div>
+                            <div class="price-value" data-field="monthlyDiscount">{{ settings.monthlyDiscount }}%</div>
+                            <div class="progress mt-3" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ settings.monthlyDiscount }}%;" aria-valuenow="{{ settings.monthlyDiscount }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-secondary small mt-2 mb-0">For monthly recurring service</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <!-- Add-on Pricing Section -->    
+    <div class="col-12">
+        <div class="section-divider"></div>
+    </div>
+    
+    <div class="col-12 mb-2">
+        <h6 class="section-title">
+            <i class="fas fa-puzzle-piece"></i> Add-on Services
+        </h6>
+    </div>
+    
+    <div class="col-12 mb-4">
+        <div class="pricing-card">
+            <div class="card-body">
+                <div class="row g-4">
+                    <!-- Dishes -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div class="addon-name">Dishes</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceDishes">${{ settings.addonPriceDishes }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Laundry -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-tshirt"></i>
+                                </div>
+                                <div class="addon-name">Laundry</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceLaundry">${{ settings.addonPriceLaundry }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Windows -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-window-maximize"></i>
+                                </div>
+                                <div class="addon-name">Windows</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceWindow">${{ settings.addonPriceWindow }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pets -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-paw"></i>
+                                </div>
+                                <div class="addon-name">Pets</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPricePets">${{ settings.addonPricePets }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fridge -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-snowflake"></i>
+                                </div>
+                                <div class="addon-name">Fridge</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceFridge">${{ settings.addonPriceFridge }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Oven -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="addon-name">Oven</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceOven">${{ settings.addonPriceOven }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Baseboard -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-grip-lines"></i>
+                                </div>
+                                <div class="addon-name">Baseboard</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceBaseboard">${{ settings.addonPriceBaseboard }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Blinds -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-sliders-h"></i>
+                                </div>
+                                <div class="addon-name">Blinds</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceBlinds">${{ settings.addonPriceBlinds }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Green Cleaning -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-leaf"></i>
+                                </div>
+                                <div class="addon-name">Green Cleaning</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceGreen">${{ settings.addonPriceGreen }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cabinets -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="addon-name">Cabinets</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceCabinets">${{ settings.addonPriceCabinets }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Patio -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-umbrella-beach"></i>
+                                </div>
+                                <div class="addon-name">Patio</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPricePatio">${{ settings.addonPricePatio }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Garage -->                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="addon-item p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="addon-icon">
+                                    <i class="fas fa-warehouse"></i>
+                                </div>
+                                <div class="addon-name">Garage</div>
+                            </div>
+                            <div class="addon-price price-value" data-field="addonPriceGarage">${{ settings.addonPriceGarage }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Section    
+    <div class="col-12">
+        <div class="section-divider"></div>
+    </div>
+    
+    <div class="col-12 mb-4">
+        <div class="card border border-1 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-start">
+                    <div class="icon-wrapper" style="background-color: #e8f4ff; color: #0d6efd;">
+                        <i class="fas fa-info-circle fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-2">Need Help with Pricing?</h5>
+                        <p class="mb-3 text-secondary">Your pricing structure directly impacts your business profitability. If you need assistance optimizing your pricing strategy, our support team can help analyze your market and suggest competitive rates.</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-calculator me-2"></i>Pricing Calculator
+                            </a>
+                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-headset me-2"></i>Contact Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+<!-- Hidden Form for Editing -->
+<form id="pricingForm" method="post" action="{% url 'accounts:edit_business_settings' %}" style="display: none;">
+    {% csrf_token %}
+</form>
+
+<style>
+/* Edit Mode Styles */
+.price-value.editable {
+    cursor: pointer;
+    position: relative;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.price-value.editable:hover {
+    background: rgba(26, 173, 140, 0.1);
+}
+
+.price-value.editing {
+    display: none;
+}
+
+.price-input {
+    display: none;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.price-input.active {
+    display: block;
+}
+
+.price-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(26, 173, 140, 0.2);
+}
+
+.edit-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: none;
+    animation: pulse 2s infinite;
+}
+
+.pricing-card.edit-mode .edit-indicator {
+    display: block;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.addon-item.edit-mode {
+    border-color: var(--primary-color);
+    background: rgba(26, 173, 140, 0.05);
+}
+
+.price-item.edit-mode {
+    border-color: var(--primary-color);
+    background: rgba(26, 173, 140, 0.05);
+}
+
+/* Header Actions Styling */
+#viewModeActions,
+#editModeActions {
+    display: flex;
+    gap: 8px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleEditBtn = document.getElementById('toggleEditMode');
+    const savePricingBtn = document.getElementById('savePricing');
+    const cancelEditBtn = document.getElementById('cancelEdit');
+    const pricingForm = document.getElementById('pricingForm');
+    const viewModeActions = document.getElementById('viewModeActions');
+    const editModeActions = document.getElementById('editModeActions');
+    
+    let editMode = false;
+    let originalValues = {};
+    
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentMode = urlParams.get('mode');
+    
+    // Store all price elements
+    const priceElements = [
+        // Base Pricing
+        { id: 'base_price', element: document.querySelector('[data-field="base_price"]'), prefix: '$' },
+        { id: 'bedroomPrice', element: document.querySelector('[data-field="bedroomPrice"]'), prefix: '$' },
+        { id: 'bathroomPrice', element: document.querySelector('[data-field="bathroomPrice"]'), prefix: '$' },
+        { id: 'depositFee', element: document.querySelector('[data-field="depositFee"]'), prefix: '$' },
+        { id: 'taxPercent', element: document.querySelector('[data-field="taxPercent"]'), suffix: '%' },
+        
+        // Service Multipliers
+        { id: 'sqftMultiplierStandard', element: document.querySelector('[data-field="sqftMultiplierStandard"]'), suffix: 'x' },
+        { id: 'sqftMultiplierDeep', element: document.querySelector('[data-field="sqftMultiplierDeep"]'), suffix: 'x' },
+        { id: 'sqftMultiplierMoveinout', element: document.querySelector('[data-field="sqftMultiplierMoveinout"]'), suffix: 'x' },
+        { id: 'sqftMultiplierAirbnb', element: document.querySelector('[data-field="sqftMultiplierAirbnb"]'), suffix: 'x' },
+        
+        // Recurring Discounts
+        { id: 'weeklyDiscount', element: document.querySelector('[data-field="weeklyDiscount"]'), suffix: '%' },
+        { id: 'biweeklyDiscount', element: document.querySelector('[data-field="biweeklyDiscount"]'), suffix: '%' },
+        { id: 'monthlyDiscount', element: document.querySelector('[data-field="monthlyDiscount"]'), suffix: '%' },
+        
+        // Add-ons
+        { id: 'addonPriceDishes', element: document.querySelector('[data-field="addonPriceDishes"]'), prefix: '$' },
+        { id: 'addonPriceLaundry', element: document.querySelector('[data-field="addonPriceLaundry"]'), prefix: '$' },
+        { id: 'addonPriceWindow', element: document.querySelector('[data-field="addonPriceWindow"]'), prefix: '$' },
+        { id: 'addonPricePets', element: document.querySelector('[data-field="addonPricePets"]'), prefix: '$' },
+        { id: 'addonPriceFridge', element: document.querySelector('[data-field="addonPriceFridge"]'), prefix: '$' },
+        { id: 'addonPriceOven', element: document.querySelector('[data-field="addonPriceOven"]'), prefix: '$' },
+        { id: 'addonPriceBaseboard', element: document.querySelector('[data-field="addonPriceBaseboard"]'), prefix: '$' },
+        { id: 'addonPriceBlinds', element: document.querySelector('[data-field="addonPriceBlinds"]'), prefix: '$' },
+        { id: 'addonPriceGreen', element: document.querySelector('[data-field="addonPriceGreen"]'), prefix: '$' },
+        { id: 'addonPriceCabinets', element: document.querySelector('[data-field="addonPriceCabinets"]'), prefix: '$' },
+        { id: 'addonPricePatio', element: document.querySelector('[data-field="addonPricePatio"]'), prefix: '$' },
+        { id: 'addonPriceGarage', element: document.querySelector('[data-field="addonPriceGarage"]'), prefix: '$' }
+    ];
+    
+    // Check if we should auto-enter edit mode from URL
+    if (currentMode === 'edit') {
+        setTimeout(() => enterEditMode(), 100);
+    }
+    
+    // Toggle edit mode
+    toggleEditBtn.addEventListener('click', function() {
+        enterEditMode();
+        updateURL('edit');
+    });
+    
+    // Cancel edit mode
+    cancelEditBtn.addEventListener('click', function() {
+        exitEditMode();
+        updateURL('view');
+    });
+    
+    // Save pricing
+    savePricingBtn.addEventListener('click', function() {
+        // Disable button
+        savePricingBtn.disabled = true;
+        savePricingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i><span>Saving...</span>';
+        
+        // Collect all values and add to form
+        priceElements.forEach(item => {
+            const input = document.querySelector(`input[data-field="${item.id}"]`);
+            if (input) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = item.id;
+                hiddenInput.value = input.value;
+                pricingForm.appendChild(hiddenInput);
+            }
+        });
+        
+        // Submit form
+        pricingForm.submit();
+    });
+    
+    function enterEditMode() {
+        editMode = true;
+        
+        // Toggle button visibility
+        viewModeActions.style.display = 'none';
+        editModeActions.style.display = 'flex';
+        
+        // Add edit mode class to cards
+        document.querySelectorAll('.pricing-card, .addon-item, .price-item').forEach(card => {
+            card.classList.add('edit-mode');
+        });
+        
+        // Make all price values editable
+        priceElements.forEach(item => {
+            if (item.element) {
+                const currentValue = item.element.textContent.replace(/[$%x]/g, '').trim();
+                originalValues[item.id] = currentValue;
+                
+                // Create input element
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.className = 'price-input active';
+                input.value = currentValue;
+                input.dataset.field = item.id;
+                
+                // Hide original value
+                item.element.classList.add('editing');
+                
+                // Insert input after the price value
+                item.element.parentNode.insertBefore(input, item.element.nextSibling);
+                
+                // Focus first input
+                if (item.id === 'base_price') {
+                    setTimeout(() => input.focus(), 100);
+                }
+            }
+        });
+    }
+    
+    function exitEditMode() {
+        editMode = false;
+        
+        // Toggle button visibility
+        viewModeActions.style.display = 'flex';
+        editModeActions.style.display = 'none';
+        
+        // Remove edit mode class
+        document.querySelectorAll('.pricing-card, .addon-item, .price-item').forEach(card => {
+            card.classList.remove('edit-mode');
+        });
+        
+        // Remove all input fields and restore original values
+        document.querySelectorAll('.price-input').forEach(input => input.remove());
+        document.querySelectorAll('.price-value.editing').forEach(el => {
+            el.classList.remove('editing');
+        });
+    }
+    
+    function updateURL(mode) {
+        const url = new URL(window.location);
+        url.searchParams.set('mode', mode);
+        window.history.pushState({}, '', url);
+    }
+});
+</script>
+
+{% endblock main_content %}

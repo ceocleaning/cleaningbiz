@@ -141,8 +141,17 @@ def _process_renewal_payment(business, subscription, plan, square_client):
         if plan.billing_cycle == 'yearly':
             final_price = original_price * 0.8
         
-        # Check if there's a coupon associated with the subscription
-        coupon = subscription.coupon_used
+        # Check for coupon - prioritize new_coupon over coupon_used
+        coupon = None
+        if subscription.new_coupon:
+            # Use new_coupon if available (scheduled for this billing cycle)
+            coupon = subscription.new_coupon
+            print(f"Using new_coupon: {coupon.code} for {business.businessName}")
+        elif subscription.coupon_used:
+            # Fall back to coupon_used if no new_coupon is scheduled
+            coupon = subscription.coupon_used
+            print(f"Using coupon_used: {coupon.code} for {business.businessName}")
+        
         discount_applied = False
         original_price = final_price  # Store original price before any coupon discount
         coupon_code = None
@@ -158,6 +167,13 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 discount_amount = float(original_price) - float(final_price)
                 discount_applied = True
                 print(f"Applied coupon {coupon.code} for user {business.user.username}, discount amount: {discount_amount}")
+                
+                # If we used new_coupon, move it to coupon_used and clear new_coupon
+                if subscription.new_coupon == coupon:
+                    subscription.coupon_used = coupon
+                    subscription.new_coupon = None
+                    subscription.save()
+                    print(f"Moved new_coupon to coupon_used for {business.businessName}")
 
         if final_price <= 0:
             print(f"Final price is zero for {business.businessName} after coupon {coupon.code}. Skipping payment.")

@@ -19,11 +19,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 
 from leadsAutomation.utils import send_email
+from notification.services import NotificationService
 
 # Python utilities
 import random
 import re
 import string
+import threading
 from datetime import timedelta
 
 # Local apps: models
@@ -166,15 +168,19 @@ def profile_view(request):
     business_settings = business.settings
     api_credentials = business.apicredential
     
+    # Import required options for the edit modal
+    from .models import JOB_ASSIGNMENT_OPTIONS
+    from .timezone_utils import get_timezone_choices
     
     context = {
         'business': business,
         'settings': business_settings,
         'credentials': api_credentials,
-        
+        'job_assignment_options': JOB_ASSIGNMENT_OPTIONS,
+        'timezone_choices': get_timezone_choices()
     }
     
-    return render(request, 'accounts/profile.html', context)
+    return render(request, 'accounts/profile/profile.html', context)
 
 
 @login_required
@@ -321,7 +327,31 @@ def edit_business(request):
         'timezone_choices': get_timezone_choices()
     }
     
-    return render(request, 'accounts/edit_business.html', context)
+    return render(request, 'accounts/profile/edit_business.html', context)
+
+
+
+def profile_pricing_page(request):
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get related models
+    business_settings = business.settings
+    
+    
+    context = {
+        'business': business,
+        'settings': business_settings,
+        
+    }
+    return render(request, 'accounts/profile/profile_pricing.html', context)
 
 
 @login_required
@@ -369,14 +399,35 @@ def edit_business_settings(request):
             
             settings.save()
             messages.success(request, 'Business settings updated successfully!')
-            return redirect('accounts:profile')
+            return redirect('accounts:profile_pricing')
             
         except Exception as e:
             messages.error(request, f'Error updating settings: {str(e)}')
             raise Exception(str(e))
     
-    return render(request, 'accounts/edit_business_settings.html', {'settings': settings, 'business': business})
+    return render(request, 'accounts/profile/edit_business_settings.html', {'settings': settings, 'business': business})
 
+def integrations_page(request):
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Get related models
+    api_credentials = business.apicredential
+    
+    
+    context = {
+        'business': business,
+        'credentials': api_credentials,
+        
+    }
+    return render(request, 'accounts/profile/integrations.html', context)
 
 @login_required
 def edit_credentials(request):
@@ -396,13 +447,13 @@ def edit_credentials(request):
             credentials.save()
             
             messages.success(request, 'API credentials updated successfully!')
-            return redirect('accounts:profile')
+            return redirect('accounts:integrations')
             
         except Exception as e:
             messages.error(request, f'Error updating credentials: {str(e)}')
             raise Exception(str(e))
     
-    return render(request, 'accounts/edit_credentials.html', {'credentials': credentials, 'business': business})
+    return redirect('accounts:integrations')
 
 
 @login_required
@@ -422,7 +473,7 @@ def generate_secret_key(request):
         messages.error(request, f'Error generating secret key: {str(e)}')
         raise Exception(str(e))
     
-    return redirect('accounts:profile')
+    return redirect('accounts:integrations')
 
 
 @login_required
@@ -442,6 +493,21 @@ def regenerate_secret_key(request):
         return JsonResponse({'success': True, 'secret_key': new_secret_key})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def custom_addons_page(request):
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    addons = CustomAddons.objects.filter(business=business)
+
+    context = {
+        'business': business,
+        'addons': addons,
+    }
+    return render(request, 'accounts/profile/custom_addons.html', context)
 
 
 @login_required
@@ -464,9 +530,9 @@ def add_custom_addon(request):
         )
         
         messages.success(request, 'Custom addon added successfully!')
-        return redirect('accounts:profile')
+        return redirect('accounts:custom_addons')
     
-    return redirect('accounts:profile')
+    return redirect('accounts:custom_addons')
 
 
 @login_required
@@ -905,6 +971,25 @@ def approval_pending(request):
     return render(request, 'accounts/approval_pending.html', context)
 
 
+@login_required
+def settings_page(request):
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.warning(request, 'Please register your business first.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+
+    
+    context = {
+        'business': business,
+        
+    }
+    return render(request, 'accounts/profile/settings.html', context)
 
 @login_required
 def update_business_settings(request):
@@ -1382,7 +1467,77 @@ def manage_cleaners(request):
         'business': business
     }
     
-    return render(request, 'accounts/manage_cleaners.html', context)
+    return render(request, 'accounts/profile/manage_cleaners.html', context)
+
+
+def send_cleaner_account_notification(cleaner_name, cleaner_email, cleaner_phone, username, password, business_name, business, user):
+    """
+    Send account creation notification to cleaner via email and SMS in background thread.
+    
+    Args:
+        cleaner_name: Name of the cleaner
+        cleaner_email: Email address of the cleaner
+        cleaner_phone: Phone number of the cleaner
+        username: Created username
+        password: Created password (plain text)
+        business_name: Name of the business
+        business: Business object (sender)
+        user: User object (recipient)
+    """
+    try:
+        # Prepare email content
+        email_subject = f"Your Account Has Been Created - {business_name}"
+        email_content = f"""
+Hello {cleaner_name},
+
+Your account has been created by {business_name}!
+
+Here are your login credentials:
+
+Username: {username}
+Password: {password}
+
+You can now log in to access your account and manage your tasks.
+
+Login URL: {settings.SITE_URL}/accounts/login/
+
+Please keep your credentials secure and change your password after your first login.
+
+Best regards,
+{business_name} Team
+"""
+        
+       
+        
+        # Determine notification types based on available contact info
+        notification_types = []
+        
+        # Send email if email is available
+        if cleaner_email:
+            notification_types.append('email')
+        
+        # Send SMS if phone is available
+        if cleaner_phone:
+            notification_types.append('sms')
+        
+        # Send notifications if we have at least one method
+        if notification_types:
+            NotificationService.send_notification(
+                recipient=user,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                notification_type=notification_types,
+                subject=email_subject,
+                to_email=cleaner_email if cleaner_email else None,
+                to_sms=cleaner_phone if cleaner_phone else None,
+                content=email_content,
+                sender=business
+            )
+            print(f"Account creation notification sent to {cleaner_name}")
+        else:
+            print(f"No contact info available for {cleaner_name}, skipping notification")
+            
+    except Exception as e:
+        print(f"Error sending account creation notification: {str(e)}")
 
 
 @owner_required
@@ -1392,13 +1547,6 @@ def register_cleaner_user(request, cleaner_id):
     """
     # Get the user's business
     business = request.user.business_set.first()
-    if not business:
-        messages.warning(request, 'Please register your business first.')
-        return redirect('accounts:register_business')
-    
-    # Check if the business is approved
-    if not business.isApproved:
-        return redirect('accounts:approval_pending')
     
     # Get the cleaner
     cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
@@ -1437,49 +1585,29 @@ def register_cleaner_user(request, cleaner_id):
             cleaner=cleaner
         )
         
-        messages.success(request, f'User account created for {cleaner.name}')
+        # Send account creation notification in background thread
+        notification_thread = threading.Thread(
+            target=send_cleaner_account_notification,
+            args=(
+                cleaner.name,
+                email,
+                cleaner.phoneNumber,
+                username,
+                password,
+                business.businessName,
+                business,
+                user
+            )
+        )
+        notification_thread.daemon = True
+        notification_thread.start()
+        
+        messages.success(request, f'User account created for {cleaner.name}. Login credentials have been sent via email and SMS.')
         return redirect('accounts:manage_cleaners')
     
     return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
 
 
-@owner_or_cleaner
-def cleaner_detail(request, cleaner_id):
-    """
-    View for cleaner details
-    Accessible by both owners and the specific cleaner
-    """
-    # Check if user is cleaner
-    is_cleaner = hasattr(request.user, 'cleaner_profile')
-    
-    if is_cleaner:
-        # Cleaners can only access their own detail page
-        if str(request.user.cleaner_profile.cleaner.id) != str(cleaner_id):
-            messages.error(request, 'You can only view your own details.')
-            return redirect('accounts:cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
-        
-        cleaner = request.user.cleaner_profile.cleaner
-        business = request.user.cleaner_profile.business
-    else:
-        # Owner accessing the page
-        business = request.user.business_set.first()
-        if not business:
-            messages.warning(request, 'Please register your business first.')
-            return redirect('accounts:register_business')
-        
-        cleaner = get_object_or_404(Cleaners, id=cleaner_id, business=business)
-    
-    # Get cleaner's bookings
-    bookings = cleaner.bookings.all().order_by('-createdAt')
-    
-    context = {
-        'cleaner': cleaner,
-        'business': business,
-        'bookings': bookings,
-        'is_cleaner': is_cleaner
-    }
-    
-    return render(request, 'accounts/cleaner_detail.html', context)
 
 
 @owner_required
@@ -1664,3 +1792,5 @@ def cleaner_change_password(request):
         return redirect('accounts:cleaner_detail', cleaner_id=request.user.cleaner_profile.cleaner.id)
     
     return render(request, 'accounts/cleaner_change_password.html')
+
+

@@ -1,64 +1,635 @@
-{% extends 'base.html' %}
+{% extends 'accounts/profile/base.html' %}
 {% load static %}
 
-{% block title %}Create Account for {{ cleaner.name }}{% endblock %}
+{% block page_title %}Create Account{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Create User Account for {{ cleaner.name }}</h4>
-                </div>
-                <div class="card-body">
-                    <p class="alert alert-info">
-                        Creating a user account will allow this team member to log in to the system and access their assigned bookings and information.
-                    </p>
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'accounts:manage_cleaners' %}">Team Members</a></li>
+<li class="breadcrumb-item active">Create Account</li>
+{% endblock %}
 
-                    <form method="post" class="needs-validation" novalidate>
-                        {% csrf_token %}
+{% block header_actions %}
+<a href="{% url 'accounts:manage_cleaners' %}" class="btn btn-outline-secondary d-flex align-items-center">
+    <i class="fas fa-arrow-left me-2"></i>
+    <span>Back to Team</span>
+</a>
+{% endblock %}
 
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                            <div class="form-text">
-                                This will be used to log in to the system.
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ cleaner.email|default:'' }}" required {% if cleaner.email %}readonly{% endif %}>
-                            <div class="form-text">
-                                {% if cleaner.email %}
-                                    Email is pre-filled from cleaner's information.
-                                {% else %}
-                                    Please provide an email address for this cleaner.
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <div class="form-text">
-                                Create a strong password for this user.
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'accounts:manage_cleaners' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Cleaners
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-user-plus me-2"></i>Create Account
-                            </button>
-                        </div>
-                    </form>
-                </div>
+{% block main_content %}
+<div class="create-account-container">
+    <!-- Team Member Info Card -->
+    <div class="team-member-preview">
+        <div class="member-avatar">
+            <div class="avatar-circle-xl">
+                {{ cleaner.name|make_list|first|upper }}
+            </div>
+        </div>
+        <div class="member-details">
+            <h3 class="member-name">{{ cleaner.name }}</h3>
+            <div class="member-contact">
+                <span class="contact-badge">
+                    <i class="fas fa-phone"></i>
+                    {{ cleaner.phoneNumber }}
+                </span>
+                {% if cleaner.email %}
+                <span class="contact-badge">
+                    <i class="fas fa-envelope"></i>
+                    {{ cleaner.email }}
+                </span>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Account Creation Form -->
+    <div class="account-form-card">
+
+        <div class="info-banner">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>What happens next?</strong>
+                <p>Once created, login credentials will be automatically sent to the team member via email and SMS. They can use these credentials to access their account immediately.</p>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'accounts:register_cleaner_user' cleaner.id %}" class="account-creation-form" id="accountForm">
+            {% csrf_token %}
+
+            <!-- Username Field -->
+            <div class="form-group-modern">
+                <label for="username" class="form-label-modern">
+                    <i class="fas fa-user"></i>
+                    Username
+                    <span class="required-badge">Required</span>
+                </label>
+                <div class="input-wrapper">
+                    <input type="text" 
+                           class="form-control-modern" 
+                           id="username" 
+                           name="username" 
+                           placeholder="Enter username (e.g., john.doe)"
+                           required
+                           autocomplete="off">
+                    <div class="input-icon">
+                        <i class="fas fa-at"></i>
+                    </div>
+                </div>
+                <small class="form-hint">
+                    <i class="fas fa-lightbulb"></i>
+                    This will be used to log in to the system. Choose something memorable.
+                </small>
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group-modern">
+                <label for="email" class="form-label-modern">
+                    <i class="fas fa-envelope"></i>
+                    Email Address
+                    <span class="required-badge">Required</span>
+                </label>
+                <div class="input-wrapper">
+                    <input type="email" 
+                           class="form-control-modern {% if cleaner.email %}readonly-input{% endif %}" 
+                           id="email" 
+                           name="email" 
+                           value="{{ cleaner.email|default:'' }}" 
+                           placeholder="Enter email address"
+                           required
+                           {% if cleaner.email %}readonly{% endif %}>
+                    <div class="input-icon">
+                        <i class="fas fa-envelope-open"></i>
+                    </div>
+                </div>
+                <small class="form-hint">
+                    {% if cleaner.email %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        Email is pre-filled from team member's profile
+                    {% else %}
+                        <i class="fas fa-lightbulb"></i>
+                        Login credentials will be sent to this email
+                    {% endif %}
+                </small>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group-modern">
+                <label for="password" class="form-label-modern">
+                    <i class="fas fa-lock"></i>
+                    Password
+                    <span class="required-badge">Required</span>
+                </label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                           class="form-control-modern" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Create a strong password"
+                           required
+                           minlength="8">
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
+                <div class="password-strength" id="passwordStrength" style="display: none;">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <span class="strength-text" id="strengthText"></span>
+                </div>
+                <small class="form-hint">
+                    <i class="fas fa-shield-alt"></i>
+                    Minimum 8 characters. Include numbers and special characters for better security.
+                </small>
+            </div>
+
+            <!-- Generate Password Button -->
+            <div class="password-generator">
+                <button type="button" class="btn-generate-password" onclick="generatePassword()">
+                    <i class="fas fa-magic"></i>
+                    Generate Strong Password
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <a href="{% url 'accounts:manage_cleaners' %}" class="btn-cancel">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn-create-account">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+/* Create Account Page Styles */
+.create-account-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Team Member Preview */
+.team-member-preview {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.2);
+    color: white;
+}
+
+.member-avatar .avatar-circle-xl {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+}
+
+.member-details {
+    flex: 1;
+}
+
+.member-name {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: white;
+}
+
+.member-contact {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.contact-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Account Form Card */
+.account-form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: 32px;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.3);
+}
+
+.header-content {
+    flex: 1;
+}
+
+.form-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 4px;
+}
+
+.form-subtitle {
+    font-size: 15px;
+    color: #6e6e6e;
+    margin: 0;
+}
+
+/* Info Banner */
+.info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 32px;
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    margin: 0;
+}
+
+.info-banner i {
+    font-size: 24px;
+    color: #3b82f6;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.info-banner strong {
+    display: block;
+    color: #1e40af;
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+.info-banner p {
+    color: #1e40af;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Form Styles */
+.account-creation-form {
+    padding: 32px;
+}
+
+.form-group-modern {
+    margin-bottom: 28px;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 10px;
+}
+
+.form-label-modern i {
+    color: #1aad8c;
+    font-size: 18px;
+}
+
+.required-badge {
+    margin-left: auto;
+    padding: 4px 10px;
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 14px 48px 14px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #202224;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #1aad8c;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(26, 173, 140, 0.1);
+}
+
+.form-control-modern::placeholder {
+    color: #9ca3af;
+}
+
+.form-control-modern.readonly-input {
+    background: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.input-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 18px;
+    pointer-events: none;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6e6e6e;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: #1aad8c;
+}
+
+.form-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6e6e6e;
+}
+
+.form-hint i {
+    font-size: 14px;
+}
+
+/* Password Strength */
+.password-strength {
+    margin-top: 12px;
+}
+
+.strength-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+.strength-text {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Password Generator */
+.password-generator {
+    margin-bottom: 28px;
+}
+
+.btn-generate-password {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #f3f4f6;
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    color: #6e6e6e;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-generate-password:hover {
+    background: #e5e7eb;
+    border-color: #1aad8c;
+    color: #1aad8c;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 2px solid #f3f4f6;
+}
+
+.btn-cancel,
+.btn-create-account {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: #f3f4f6;
+    color: #6e6e6e;
+}
+
+.btn-cancel:hover {
+    background: #e5e7eb;
+    color: #202224;
+    transform: translateY(-2px);
+}
+
+.btn-create-account {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.3);
+}
+
+.btn-create-account:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(26, 173, 140, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+    .team-member-preview {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+    
+    .member-name {
+        font-size: 24px;
+    }
+    
+    .member-contact {
+        justify-content: center;
+    }
+    
+    .form-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+    
+    .account-creation-form {
+        padding: 24px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-create-account {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Toggle password visibility
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+// Generate strong password
+function generatePassword() {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    
+    const passwordInput = document.getElementById('password');
+    passwordInput.value = password;
+    passwordInput.type = 'text';
+    document.getElementById('toggleIcon').classList.remove('fa-eye');
+    document.getElementById('toggleIcon').classList.add('fa-eye-slash');
+    
+    checkPasswordStrength(password);
+}
+
+// Check password strength
+function checkPasswordStrength(password) {
+    const strengthIndicator = document.getElementById('passwordStrength');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    
+    if (!password) {
+        strengthIndicator.style.display = 'none';
+        return;
+    }
+    
+    strengthIndicator.style.display = 'block';
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z\d]/.test(password)) strength++;
+    
+    const percentage = (strength / 5) * 100;
+    strengthFill.style.width = percentage + '%';
+    
+    if (strength <= 2) {
+        strengthFill.style.background = '#ef4444';
+        strengthText.textContent = 'Weak';
+        strengthText.style.color = '#ef4444';
+    } else if (strength <= 3) {
+        strengthFill.style.background = '#f59e0b';
+        strengthText.textContent = 'Medium';
+        strengthText.style.color = '#f59e0b';
+    } else {
+        strengthFill.style.background = '#10b981';
+        strengthText.textContent = 'Strong';
+        strengthText.style.color = '#10b981';
+    }
+}
+
+// Password strength checker on input
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+    }
+});
+</script>
 {% endblock %} 

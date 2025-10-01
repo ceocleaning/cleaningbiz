@@ -29,9 +29,9 @@
     
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-light: #dbeafe;
-            --primary-dark: #1e40af;
+            --primary-color: #1aad8c;
+            --primary-light: #eafaf5;
+            --primary-dark: #138a70;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
@@ -40,6 +40,20 @@
             --light-color: #f8fafc;
             --gray-color: #64748b;
             --gray-light: #e2e8f0;
+            --secondary-color: #4a6cf7;
+            --text-color: #202224;
+            --text-light: #6e6e6e;
+            --border-color: #d6d6d6;
+            --bg-color: #ffffff;
+            --white: #ffffff;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --border-radius: 10px;
+
+            
         }
 
         * {
@@ -742,7 +756,7 @@
                             <li>    
                                 <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:embed_booking_widget' %}">
-                                    Embed Booking Widget
+                                    Embed Booking Form
                                 </a>
                             </li>
                         </ul>
@@ -889,7 +903,7 @@
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
                         <a href="{% url 'notification:notification_list' %}" class="position-relative" title="Notifications">
-                            <i class="fa-regular fa-bell h4"></i>
+                            <i class="fa-regular fa-bell h4 text-dark"></i>
                           
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                             style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"
@@ -918,7 +932,7 @@
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>Profile Settings
+                                        <i class="fas fa-user-circle me-2 text-primary"></i>Profile
                                     </a>
                                 </li>
                               

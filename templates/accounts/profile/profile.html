@@ -1,0 +1,920 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Business Profile{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active" aria-current="page">Business Profile</li>
+{% endblock %}
+
+{% block main_content %}
+
+<!-- Profile Hero Section -->
+<div class="profile-hero-section">
+    <div class="profile-hero-card">
+        <div class="profile-hero-gradient">
+            <div class="hero-pattern"></div>
+        </div>
+        <div class="profile-hero-content">
+            <div class="profile-avatar-wrapper">
+                {% if business.logo %}
+                <img src="{{ business.logo.url }}" alt="{{ business.businessName }}" class="profile-avatar">
+                {% else %}
+                <div class="profile-avatar profile-avatar-placeholder">
+                    <i class="fas fa-building"></i>
+                </div>
+                {% endif %}
+                <div class="profile-status-badge">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="profile-hero-info">
+                <h2 class="profile-business-name">{{ business.businessName }}</h2>
+                <p class="profile-member-since">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Member since {{ business.createdAt|date:"F d, Y" }}
+                </p>
+            </div>
+            <div class="profile-hero-actions">
+                <button type="button" class="btn-profile-edit" id="openEditModal">
+                    <i class="fas fa-pen"></i>
+                    <span>Edit Profile</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Information Grid -->
+<div class="profile-info-grid">
+    <!-- Business Identity Section -->
+    <div class="profile-section border border-1">
+        <div class="profile-section-header">
+            <h3 class="profile-section-title">
+                <i class="fas fa-id-card"></i>
+                Business Identity
+            </h3>
+        </div>
+        <div class="profile-cards-row">
+            <div class="profile-info-card">
+                <div class="info-card-icon">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Business ID</span>
+                    <h4 class="info-card-value">{{ business.businessId }}</h4>
+                </div>
+            </div>
+            
+            <div class="profile-info-card">
+                <div class="info-card-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Business Name</span>
+                    <h4 class="info-card-value">{{ business.businessName }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Information Section -->
+    <div class="profile-section border border-1">
+        <div class="profile-section-header">
+            <h3 class="profile-section-title">
+                <i class="fas fa-address-book"></i>
+                Contact Information
+            </h3>
+        </div>
+        <div class="profile-cards-row">
+            <div class="profile-info-card profile-info-card-clickable">
+                <div class="info-card-icon">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Phone Number</span>
+                    <h4 class="info-card-value">
+                        <a href="tel:{{ business.phone }}" class="info-card-link">{{ business.phone }}</a>
+                    </h4>
+                </div>
+                <div class="info-card-action">
+                    <i class="fas fa-external-link-alt"></i>
+                </div>
+            </div>
+            
+            <div class="profile-info-card profile-info-card-clickable">
+                <div class="info-card-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Email Address</span>
+                    <h4 class="info-card-value">
+                        <a href="mailto:{{ request.user.email }}" class="info-card-link">{{ request.user.email }}</a>
+                    </h4>
+                </div>
+                <div class="info-card-action">
+                    <i class="fas fa-external-link-alt"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-info-card profile-info-card-full">
+            <div class="info-card-icon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="info-card-content">
+                <span class="info-card-label">Business Address</span>
+                <h4 class="info-card-value">{{ business.address }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Settings Section -->
+    <div class="profile-section border border-1">
+        <div class="profile-section-header">
+            <h3 class="profile-section-title">
+                <i class="fas fa-cogs"></i>
+                Business Configuration
+            </h3>
+        </div>
+        <div class="profile-cards-row">
+            <div class="profile-info-card">
+                <div class="info-card-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Job Assignment Method</span>
+                    <h4 class="info-card-value">{{ business.get_job_assignment_display }}</h4>
+                </div>
+            </div>
+            
+            <div class="profile-info-card profile-info-card-highlight">
+                <div class="info-card-icon">
+                    <i class="fas fa-percent"></i>
+                </div>
+                <div class="info-card-content">
+                    <span class="info-card-label">Cleaner Payout</span>
+                    <h4 class="info-card-value">{{ business.cleaner_payout_percentage }}%</h4>
+                </div>
+                <div class="info-card-badge">
+                    <span>Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+
+/* Profile Hero Section */
+.profile-hero-section {
+    margin-bottom: 32px;
+}
+
+.profile-hero-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    position: relative;
+}
+
+.profile-hero-gradient {
+    height: 180px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+}
+
+.profile-hero-content {
+    padding: 0 32px 32px;
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    margin-top: -60px;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 20px;
+    border: 5px solid white;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    object-fit: cover;
+    background: white;
+}
+
+.profile-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    font-size: 48px;
+}
+
+.profile-status-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.profile-hero-info {
+    margin-top: 80px !important;
+    flex: 1;
+    padding-bottom: 8px;
+}
+
+.profile-business-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.profile-member-since {
+    font-size: 14px;
+    color: #6e6e6e;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.profile-hero-actions {
+    padding-bottom: 8px;
+}
+
+.btn-profile-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #1aad8c;
+    border-radius: 10px;
+    color: #1aad8c;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-profile-edit:hover {
+    background: #1aad8c;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.3);
+}
+
+/* Profile Information Grid */
+.profile-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.profile-section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.profile-section-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.profile-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #202224;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-section-title i {
+    color: #1aad8c;
+    font-size: 20px;
+}
+
+.profile-cards-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.profile-cards-row:last-child {
+    margin-bottom: 0;
+}
+
+.profile-info-card {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.profile-info-card:hover {
+    border-color: #1aad8c;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.1);
+}
+
+.profile-info-card-full {
+    grid-column: 1 / -1;
+}
+
+.profile-info-card-clickable {
+    cursor: pointer;
+}
+
+.profile-info-card-clickable:hover {
+    transform: translateY(-2px);
+}
+
+.profile-info-card-highlight {
+    background: linear-gradient(135deg, #eafaf5 0%, #d4f4ec 100%);
+    border-color: #1aad8c;
+}
+
+.info-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.2);
+}
+
+.info-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.info-card-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6e6e6e;
+    margin-bottom: 6px;
+}
+
+.info-card-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #202224;
+    margin: 0;
+    word-break: break-word;
+}
+
+.info-card-link {
+    color: #202224;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.info-card-link:hover {
+    color: #1aad8c;
+}
+
+.info-card-action {
+    color: #9ca3af;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.profile-info-card-clickable:hover .info-card-action {
+    opacity: 1;
+}
+
+.info-card-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.info-card-badge span {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #1aad8c;
+    color: white;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .profile-hero-content {
+        flex-wrap: wrap;
+        padding: 0 24px 24px;
+    }
+    
+    .profile-hero-actions {
+        width: 100%;
+        padding-bottom: 0;
+    }
+    
+    .btn-profile-edit {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .profile-hero-gradient {
+        height: 140px;
+    }
+    
+    .profile-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0 20px 20px;
+        margin-top: -50px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-avatar-placeholder {
+        font-size: 40px;
+    }
+    
+    .profile-business-name {
+        font-size: 24px;
+    }
+    
+    .profile-member-since {
+        justify-content: center;
+    }
+    
+    .profile-section {
+        padding: 20px;
+    }
+    
+    .profile-cards-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .info-card-value {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .profile-hero-section {
+        margin-bottom: 24px;
+    }
+    
+    .profile-info-grid {
+        gap: 20px;
+    }
+    
+    .profile-section {
+        padding: 16px;
+    }
+    
+    .profile-info-card {
+        padding: 16px;
+    }
+    
+    .info-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+}
+</style>
+
+<!-- Edit Business Modal -->
+<div class="modal fade" id="editBusinessModal" tabindex="-1" aria-labelledby="editBusinessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content edit-modal">
+            <div class="modal-header edit-modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="edit-modal-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title edit-modal-title" id="editBusinessModalLabel">Edit Business Profile</h5>
+                        <p class="edit-modal-subtitle">Update your business information</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body edit-modal-body">
+                <form id="editBusinessForm" method="post" action="{% url 'accounts:edit_business' %}">
+                    {% csrf_token %}
+                    
+                    <!-- Business Name -->
+                    <div class="form-group-modern">
+                        <label for="editBusinessName" class="form-label-modern">
+                            <i class="fas fa-store"></i>
+                            Business Name
+                        </label>
+                        <input type="text" class="form-control-modern" id="editBusinessName" name="businessName" value="{{ business.businessName }}" required>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="editPhone" class="form-label-modern">
+                                    <i class="fas fa-phone-alt"></i>
+                                    Phone Number
+                                </label>
+                                <input type="tel" class="form-control-modern" id="editPhone" name="phone" value="{{ business.phone }}" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="editEmail" class="form-label-modern">
+                                    <i class="fas fa-envelope"></i>
+                                    Email Address
+                                </label>
+                                <input type="email" class="form-control-modern" id="editEmail" name="email" value="{{ business.user.email|default:'' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Address -->
+                    <div class="form-group-modern">
+                        <label for="editAddress" class="form-label-modern">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Business Address
+                        </label>
+                        <input type="text" class="form-control-modern" id="editAddress" name="address" value="{{ business.address }}" required>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- Cleaner Payout Percentage -->
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="editPayoutPercentage" class="form-label-modern">
+                                    <i class="fas fa-percent"></i>
+                                    Cleaner Payout Percentage
+                                </label>
+                                <div class="input-with-suffix">
+                                    <input type="number" class="form-control-modern" id="editPayoutPercentage" name="cleaner_payout_percentage" value="{{ business.cleaner_payout_percentage }}" min="0" max="100" required>
+                                    <span class="input-suffix">%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Job Assignment -->
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label for="editJobAssignment" class="form-label-modern">
+                                    <i class="fas fa-tasks"></i>
+                                    Job Assignment Method
+                                </label>
+                                <select class="form-control-modern" id="editJobAssignment" name="job_assignment" required>
+                                    {% for value, display in job_assignment_options %}
+                                        <option value="{{ value }}" {% if business.job_assignment == value %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Timezone -->
+                    <div class="form-group-modern">
+                        <label for="editTimezone" class="form-label-modern">
+                            <i class="fas fa-clock"></i>
+                            Business Timezone
+                        </label>
+                        <select class="form-control-modern" id="editTimezone" name="timezone" required>
+                            {% for tz in timezone_choices %}
+                                <option value="{{ tz.0 }}" {% if business.timezone == tz.0 %}selected{% endif %}>
+                                    {{ tz.1 }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text-modern">All dates and times will be displayed in this timezone.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer edit-modal-footer">
+                <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn-modal-save" id="saveBusinessBtn">
+                    <i class="fas fa-check"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Edit Modal Styles */
+.edit-modal {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.edit-modal-header {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    padding: 24px 32px;
+    border-radius: 16px 16px 0 0;
+    border: none;
+}
+
+.edit-modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.edit-modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.edit-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.edit-modal-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: white;
+}
+
+.edit-modal-subtitle {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.edit-modal-body {
+    padding: 32px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.edit-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.edit-modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.edit-modal-body::-webkit-scrollbar-thumb {
+    background: #1aad8c;
+    border-radius: 10px;
+}
+
+.edit-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #138a70;
+}
+
+.form-group-modern {
+    margin-bottom: 24px;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 8px;
+}
+
+.form-label-modern i {
+    color: #1aad8c;
+    font-size: 16px;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #202224;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #1aad8c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(26, 173, 140, 0.1);
+}
+
+.form-control-modern:hover {
+    border-color: #1aad8c;
+}
+
+.input-with-suffix {
+    position: relative;
+}
+
+.input-with-suffix .form-control-modern {
+    padding-right: 50px;
+}
+
+.input-suffix {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    font-weight: 600;
+    color: #6e6e6e;
+}
+
+.form-text-modern {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6e6e6e;
+    font-style: italic;
+}
+
+.edit-modal-footer {
+    padding: 20px 32px;
+    border-top: 2px solid #f3f4f6;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-modal-cancel,
+.btn-modal-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-modal-cancel {
+    background: #f3f4f6;
+    color: #6e6e6e;
+}
+
+.btn-modal-cancel:hover {
+    background: #e5e7eb;
+    color: #202224;
+}
+
+.btn-modal-save {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(26, 173, 140, 0.3);
+}
+
+.btn-modal-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.4);
+}
+
+.btn-modal-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive Modal */
+@media (max-width: 767.98px) {
+    .edit-modal-header {
+        padding: 20px;
+    }
+    
+    .edit-modal-body {
+        padding: 24px 20px;
+    }
+    
+    .edit-modal-footer {
+        padding: 16px 20px;
+        flex-direction: column;
+    }
+    
+    .btn-modal-cancel,
+    .btn-modal-save {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .edit-modal-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .edit-modal-title {
+        font-size: 18px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Open edit modal
+    const openEditModalBtn = document.getElementById('openEditModal');
+    const editBusinessModal = new bootstrap.Modal(document.getElementById('editBusinessModal'));
+    
+    if (openEditModalBtn) {
+        openEditModalBtn.addEventListener('click', function() {
+            editBusinessModal.show();
+        });
+    }
+    
+    // Handle form submission
+    const saveBusinessBtn = document.getElementById('saveBusinessBtn');
+    const editBusinessForm = document.getElementById('editBusinessForm');
+    
+    if (saveBusinessBtn && editBusinessForm) {
+        saveBusinessBtn.addEventListener('click', function() {
+            // Disable button and show loading state
+            saveBusinessBtn.disabled = true;
+            saveBusinessBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            
+            // Submit the form
+            editBusinessForm.submit();
+        });
+    }
+});
+</script>
+
+{% endblock main_content %}

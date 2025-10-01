@@ -1,0 +1,774 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Business Settings{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active" aria-current="page">Settings</li>
+{% endblock %}
+
+{% block header_actions %}
+<button id="saveSettingsBtn" class="btn-settings-save">
+    <i class="fas fa-save"></i>
+    <span>Save Changes</span>
+</button>
+{% endblock %}
+
+{% block main_content %}
+
+
+<!-- Settings Form -->
+<div class="settings-container">
+    <form id="businessSettingsForm" method="post">
+        {% csrf_token %}
+        
+        <!-- AI Voice Agent Section -->
+        <div class="settings-section border border-1">
+            <div class="settings-section-header">
+                <div class="settings-section-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="settings-section-info">
+                    <h3 class="settings-section-title">AI Voice Agent</h3>
+                    <p class="settings-section-description">Automate customer interactions with AI-powered voice calls</p>
+                </div>
+            </div>
+            
+            <div class="settings-section-body">
+                <!-- Enable AI Voice Agent -->
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-header">
+                            <div class="settings-item-icon">
+                                <i class="fas fa-phone-volume"></i>
+                            </div>
+                            <div class="settings-item-info">
+                                <h4 class="settings-item-title">Enable AI Voice Agent</h4>
+                                <p class="settings-item-description">Allow AI to make automated voice calls to customers</p>
+                            </div>
+                        </div>
+                        <div class="settings-item-badge">
+                            {% if business.useCall %}
+                            <span class="badge-active">Active</span>
+                            {% else %}
+                            <span class="badge-inactive">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="settings-item-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="useCallToggle" name="useCall" {% if business.useCall %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Call Delay Settings (Conditional) -->
+                <div id="callDelaySettings" class="settings-item settings-item-nested" {% if not business.useCall %}style="display: none;"{% endif %}>
+                    <div class="settings-item-content">
+                        <div class="settings-item-header">
+                            <div class="settings-item-icon settings-item-icon-secondary">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="settings-item-info">
+                                <h4 class="settings-item-title">Automated Call Delay</h4>
+                                <p class="settings-item-description">Time to wait before making an automated call if customer doesn't respond</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-item-control">
+                        <div class="input-group-modern">
+                            <input type="number" class="form-control-modern" id="callDelayMinutes" name="callDelayMinutes" 
+                                   value="{{ business.timeToWait|default:10 }}" min="1" max="60">
+                            <span class="input-group-suffix">minutes</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>How it works:</strong> When enabled, the AI voice agent will automatically call customers who haven't responded to initial messages after the specified delay period.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Future Settings Placeholder -->
+        <div class="settings-section settings-section-placeholder border border-1">
+            <div class="settings-placeholder-content">
+                <div class="settings-placeholder-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <h4 class="settings-placeholder-title">More Settings Coming Soon</h4>
+                <p class="settings-placeholder-text">We're working on adding more customization options for your business</p>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Settings Loader -->
+<div id="settingsLoader" class="settings-loader" style="display: none;">
+    <div class="loader-content">
+        <div class="spinner-modern"></div>
+        <p class="loader-text">Saving your settings...</p>
+    </div>
+</div>
+
+<style>
+/* Settings Hero Section */
+.settings-hero {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.settings-hero-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.settings-hero-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.3);
+}
+
+.settings-hero-text {
+    flex: 1;
+}
+
+.settings-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 4px;
+}
+
+.settings-subtitle {
+    font-size: 15px;
+    color: #6e6e6e;
+    margin: 0;
+}
+
+/* Save Button in Header */
+.btn-settings-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(26, 173, 140, 0.3);
+}
+
+.btn-settings-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.4);
+}
+
+.btn-settings-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Settings Container */
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Settings Section */
+.settings-section {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.settings-section-header {
+    padding: 24px;
+    border-bottom: 2px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.settings-section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.settings-section-info {
+    flex: 1;
+}
+
+.settings-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #202224;
+    margin-bottom: 4px;
+}
+
+.settings-section-description {
+    font-size: 14px;
+    color: #6e6e6e;
+    margin: 0;
+}
+
+.settings-section-body {
+    padding: 24px;
+}
+
+/* Settings Item */
+.settings-item {
+    padding: 20px;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.settings-item:last-child {
+    margin-bottom: 0;
+}
+
+.settings-item:hover {
+    border-color: #1aad8c;
+    box-shadow: 0 4px 12px rgba(26, 173, 140, 0.1);
+}
+
+.settings-item-nested {
+    background: white;
+    border-left: 4px solid #1aad8c;
+    margin-left: 20px;
+    margin-top: 16px;
+}
+
+.settings-item-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.settings-item-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.settings-item-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.settings-item-icon-secondary {
+    background: linear-gradient(135deg, #4a6cf7 0%, #3b5ac7 100%);
+}
+
+.settings-item-info {
+    flex: 1;
+}
+
+.settings-item-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 4px;
+}
+
+.settings-item-description {
+    font-size: 13px;
+    color: #6e6e6e;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.settings-item-badge {
+    margin-left: 12px;
+}
+
+.settings-item-badge span {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-active {
+    background: #d4f4ec;
+    color: #1aad8c;
+}
+
+.badge-inactive {
+    background: #f3f4f6;
+    color: #6e6e6e;
+}
+
+.settings-item-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.3s;
+    border-radius: 30px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Modern Input Group */
+.input-group-modern {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    min-width: 180px;
+}
+
+.input-group-modern:focus-within {
+    border-color: #1aad8c;
+    box-shadow: 0 0 0 3px rgba(26, 173, 140, 0.1);
+}
+
+.form-control-modern {
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #202224;
+    width: 60px;
+    text-align: center;
+    background: transparent;
+}
+
+.form-control-modern::-webkit-inner-spin-button,
+.form-control-modern::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.input-group-suffix {
+    font-size: 14px;
+    color: #6e6e6e;
+    font-weight: 500;
+}
+
+/* Settings Info Box */
+.settings-info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.6;
+}
+
+.settings-info-box i {
+    font-size: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* Placeholder Section */
+.settings-section-placeholder {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.settings-placeholder-content {
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.settings-placeholder-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: white;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 20px;
+    border: 3px dashed #d1d5db;
+}
+
+.settings-placeholder-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #6e6e6e;
+    margin-bottom: 8px;
+}
+
+.settings-placeholder-text {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* Settings Loader */
+.settings-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loader-content {
+    background: white;
+    padding: 40px 60px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.spinner-modern {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #1aad8c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202224;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .settings-hero {
+        padding: 24px;
+    }
+    
+    .settings-hero-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+    
+    .settings-title {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .settings-hero {
+        padding: 20px;
+    }
+    
+    .settings-hero-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .settings-title {
+        font-size: 22px;
+    }
+    
+    .settings-section-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .settings-item-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .settings-item-badge {
+        margin-left: 0;
+    }
+    
+    .settings-item-control {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .settings-item-nested {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .settings-hero {
+        padding: 16px;
+    }
+    
+    .settings-hero-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+    
+    .settings-title {
+        font-size: 20px;
+    }
+    
+    .settings-section-header,
+    .settings-section-body {
+        padding: 20px;
+    }
+    
+    .settings-item {
+        padding: 16px;
+    }
+    
+    .btn-settings-save {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+{% block scripts %}
+
+<script>
+    // Wait for DOM to be loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle settings save button
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const businessSettingsForm = document.getElementById('businessSettingsForm');
+        const settingsLoader = document.getElementById('settingsLoader');
+        
+        // Toggle call delay settings based on Retell AI toggle
+        const useCallToggle = document.getElementById('useCallToggle');
+        const callDelaySettings = document.getElementById('callDelaySettings');
+        
+        if (useCallToggle && callDelaySettings) {
+            useCallToggle.addEventListener('change', function() {
+                callDelaySettings.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        if (saveSettingsBtn && businessSettingsForm) {
+            saveSettingsBtn.addEventListener('click', function() {
+                // Show loader
+                if (settingsLoader) {
+                    settingsLoader.style.display = 'block';
+                }
+                
+                // Disable save button
+                saveSettingsBtn.disabled = true;
+                saveSettingsBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i><span>Saving...</span>';
+                
+                const formData = new FormData(businessSettingsForm);
+                
+                // Add CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                
+                // Add useCall value
+                formData.append('useCall', useCallToggle.checked);
+                
+                // Add callDelayMinutes value if Retell AI is enabled
+                if (useCallToggle.checked) {
+                    const callDelayMinutes = document.getElementById('callDelayMinutes').value;
+                    formData.append('callDelayMinutes', callDelayMinutes);
+                }
+                
+                fetch('{% url "accounts:update_business_settings" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loader
+                    if (settingsLoader) {
+                        settingsLoader.style.display = 'none';
+                    }
+                    
+                    // Reset save button
+                    saveSettingsBtn.disabled = false;
+                    saveSettingsBtn.innerHTML = '<i class="fas fa-save me-2"></i><span>Save Settings</span>';
+                    
+                    if (data.success) {
+                        // Show success toast
+                        const toast = document.getElementById('copyToast');
+                        const toastMessage = toast.querySelector('span');
+                        const toastIcon = toast.querySelector('i');
+                        toastMessage.textContent = 'Settings saved successfully!';
+                        toastIcon.className = 'fas fa-check-circle me-2 text-white';
+                        
+                        toast.style.display = 'block';
+                        toast.style.opacity = '1';
+                        
+                        setTimeout(function() {
+                            toast.style.opacity = '0';
+                            setTimeout(function() {
+                                toast.style.display = 'none';
+                            }, 300);
+                        }, 3000);
+                        
+                        // Reload the page to reflect changes
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Show error toast
+                        const toast = document.getElementById('copyToast');
+                        const toastMessage = toast.querySelector('span');
+                        const toastIcon = toast.querySelector('i');
+                        toastMessage.textContent = data.message || 'Error saving settings';
+                        toastIcon.className = 'fas fa-exclamation-circle me-2 text-white';
+                        toast.classList.add('error-toast');
+                        
+                        toast.style.display = 'block';
+                        toast.style.opacity = '1';
+                        
+                        setTimeout(function() {
+                            toast.style.opacity = '0';
+                            toast.classList.remove('error-toast');
+                            setTimeout(function() {
+                                toast.style.display = 'none';
+                            }, 300);
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    // Hide loader
+                    if (settingsLoader) {
+                        settingsLoader.style.display = 'none';
+                    }
+                    
+                    // Reset save button
+                    saveSettingsBtn.disabled = false;
+                    saveSettingsBtn.innerHTML = '<i class="fas fa-save me-2"></i><span>Save Settings</span>';
+                    
+                    console.error('Error:', error);
+                    // Show error toast
+                    const toast = document.getElementById('copyToast');
+                    const toastMessage = toast.querySelector('span');
+                    const toastIcon = toast.querySelector('i');
+                    toastMessage.textContent = 'Error saving settings';
+                    toastIcon.className = 'fas fa-exclamation-circle me-2 text-white';
+                    toast.classList.add('error-toast');
+                    
+                    toast.style.display = 'block';
+                    toast.style.opacity = '1';
+                    
+                    setTimeout(function() {
+                        toast.style.opacity = '0';
+                        toast.classList.remove('error-toast');
+                        setTimeout(function() {
+                            toast.style.display = 'none';
+                        }, 300);
+                    }, 3000);
+                });
+            });
+        }
+    });
+</script>
+
+{% endblock %}
+{% endblock main_content %}

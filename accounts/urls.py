@@ -14,10 +14,14 @@ urlpatterns = [
 
     path('register-business/', views.register_business, name='register_business'),
     path('business/edit/', views.edit_business, name='edit_business'),
+    path('business/pricing/', views.profile_pricing_page, name='profile_pricing'),
     path('business/settings/edit/', views.edit_business_settings, name='edit_business_settings'),
+
+    path('custom-addon/', views.custom_addons_page, name='custom_addons'),
     path('custom-addon/add/', views.add_custom_addon, name='add_custom_addon'),
     path('custom-addon/<int:addon_id>/edit/', views.edit_custom_addon, name='edit_custom_addon'),
     path('custom-addon/<int:addon_id>/delete/', views.delete_custom_addon, name='delete_custom_addon'),
+    path('business/integrations/', views.integrations_page, name='integrations'),
     path('business/credentials/edit/', views.edit_credentials, name='edit_credentials'),
     path('business/credentials/generate-secret/', views.generate_secret_key, name='generate_secret_key'),
     path('business/credentials/regenerate-secret/', views.regenerate_secret_key, name='regenerate_secret_key'),
@@ -35,7 +39,7 @@ urlpatterns = [
     
 
 
-
+    path('settings/', views.settings_page, name='settings'),
     path('update-business-settings/', views.update_business_settings, name='update_business_settings'),
     
    
@@ -62,7 +66,6 @@ urlpatterns = [
     # Cleaner Management URLs
     path('cleaners/', views.manage_cleaners, name='manage_cleaners'),
     path('cleaners/<int:cleaner_id>/register/', views.register_cleaner_user, name='register_cleaner_user'),
-    path('cleaners/<int:cleaner_id>/', views.cleaner_detail, name='cleaner_detail'),
     path('cleaners/<int:cleaner_id>/edit-account/', views.edit_cleaner_account, name='edit_cleaner_account'),
     path('cleaners/reset-password/', views.reset_cleaner_password, name='reset_cleaner_password'),
     path('cleaners/change-password/', views.cleaner_change_password, name='cleaner_change_password'),

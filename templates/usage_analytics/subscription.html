@@ -5,35 +5,73 @@
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-0">Subscription & Plans</h1>
-            <p class="text-muted">Manage your subscription and usage limits</p>
-        </div>
-        <div class="d-flex gap-2">
-            {% if business.square_card_id %}
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#cardDetailsModal">
-                <i class="fas fa-credit-card me-2"></i> View Card Details
-            </button>
-            {% else %}
-            <a href="{% url 'subscription:manage_card' %}" class="btn btn-outline-primary">
-                <i class="fas fa-plus-circle me-2"></i> Add Card
-            </a>
-            {% endif %}
-            <a href="{% url 'subscription:billing_history' %}" class="btn btn-outline-primary">
-                <i class="fas fa-history me-2"></i> Billing History
-            </a>
+    <div class="subscription-header">
+        <div class="header-content">
+            <div class="header-title-section">
+                <h1 class="page-title">Subscription & Plans</h1>
+                <p class="page-subtitle">Manage your subscription and usage limits</p>
+            </div>
+            <div class="header-actions">
+                {% if business.square_card_id %}
+                <button type="button" class="action-btn action-btn-outline" data-bs-toggle="modal" data-bs-target="#cardDetailsModal">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Card Details</span>
+                </button>
+                {% else %}
+                <a href="{% url 'subscription:manage_card' %}" class="action-btn action-btn-outline">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Card</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'subscription:billing_history' %}" class="action-btn action-btn-outline">
+                    <i class="fas fa-history"></i>
+                    <span>Billing History</span>
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Subscription & Plans</li>
-        </ol>
-    </nav>
+    <!-- Tabs Navigation -->
+    <div class="subscription-tabs">
+        <ul class="nav nav-tabs custom-tabs" id="subscriptionTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="fas fa-home"></i>
+                    <span>Overview</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
+                    <i class="fas fa-box"></i>
+                    <span>Available Plans</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage" type="button" role="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Usage & Limits</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="faq-tab" data-bs-toggle="tab" data-bs-target="#faq" type="button" role="tab">
+                    <i class="fas fa-question-circle"></i>
+                    <span>FAQ</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </button>
+            </li>
+        </ul>
+    </div>
 
+    <!-- Tabs Content -->
+    <div class="tab-content custom-tab-content" id="subscriptionTabsContent">
+        
+        <!-- OVERVIEW TAB -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
     {% if subscription %}
     <!-- Current Plan Card -->
     <div class="card border border-1 mb-4">
@@ -140,134 +178,134 @@
         </div>
     </div>
     {% endif %}
+        </div>
+        <!-- END OVERVIEW TAB -->
 
-    <!-- Usage Status -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Current Usage</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Voice Minutes Usage -->
-                        <div class="col-md-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>Voice Minutes</span>
-                                <span class="fw-bold">{{ usage_summary.total.voice_minutes }} / {{ subscription.plan.voice_minutes }}</span>
-                            </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                {% if usage_summary.usage_percentage.voice_minutes >= 80 %}
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% elif usage_summary.usage_percentage.voice_minutes >= 50 %}
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% else %}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% endif %}
-                            </div>
+        <!-- USAGE TAB -->
+        <div class="tab-pane fade" id="usage" role="tabpanel">
+            <!-- Usage Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Current Usage</h5>
                         </div>
-                        
-                        <!-- SMS Usage -->
-                        <div class="col-md-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>SMS</span>
-                                <span class="fw-bold">{{ usage_summary.total.sms_messages }} / {{ subscription.plan.sms_messages }}</span>
-                            </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                {% if usage_summary.usage_percentage.sms_messages >= 80 %}
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% elif usage_summary.usage_percentage.sms_messages >= 50 %}
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% else %}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- SMS Messages Usage -->
-                        <div class="col-md-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>Leads</span>
-                                <span class="fw-bold">{{ usage_summary.total.leads_generated }} / {{ subscription.plan.leads }}</span>
-                            </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                {% if usage_summary.usage_percentage.leads_generated >= 80 %}
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% elif usage_summary.usage_percentage.leads_generated >= 50 %}
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% else %}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% endif %}
-                            </div>
-                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Voice Minutes Usage -->
+                                <div class="col-md-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>Voice Minutes</span>
+                                        <span class="fw-bold">{{ usage_summary.total.voice_minutes }} / {{ subscription.plan.voice_minutes }}</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 10px;">
+                                        {% if usage_summary.usage_percentage.voice_minutes >= 80 %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% elif usage_summary.usage_percentage.voice_minutes >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.voice_minutes }}%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- SMS Usage -->
+                                <div class="col-md-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>SMS</span>
+                                        <span class="fw-bold">{{ usage_summary.total.sms_messages }} / {{ subscription.plan.sms_messages }}</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 10px;">
+                                        {% if usage_summary.usage_percentage.sms_messages >= 80 %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% elif usage_summary.usage_percentage.sms_messages >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.sms_messages }}%;" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- SMS Messages Usage -->
+                                <div class="col-md-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>Leads</span>
+                                        <span class="fw-bold">{{ usage_summary.total.leads_generated }} / {{ subscription.plan.leads }}</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 10px;">
+                                        {% if usage_summary.usage_percentage.leads_generated >= 80 %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% elif usage_summary.usage_percentage.leads_generated >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.leads_generated }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
 
-                        <div class="col-md-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>Active Agents</span>
-                                <span class="fw-bold">{{usage_summary.total.active_agents}} / {{subscription.plan.agents}}</span>
+                                <div class="col-md-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>Active Agents</span>
+                                        <span class="fw-bold">{{usage_summary.total.active_agents}} / {{subscription.plan.agents}}</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 10px;">
+                                        {% if usage_summary.usage_percentage.active_agents >= 80 %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% elif usage_summary.usage_percentage.active_agents >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Cleaners Usage -->
+                                <div class="col-md-3 mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>Cleaners</span>
+                                        <span class="fw-bold">{{ usage_summary.total.cleaners }} / {{ subscription.plan.cleaners }}</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 10px;">
+                                        {% if usage_summary.usage_percentage.cleaners >= 80 %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% elif usage_summary.usage_percentage.cleaners >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                {% if usage_summary.usage_percentage.active_agents >= 80 %}
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% elif usage_summary.usage_percentage.active_agents >= 50 %}
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% else %}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.active_agents }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Cleaners Usage -->
-                        <div class="col-md-3 mt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>Cleaners</span>
-                                <span class="fw-bold">{{ usage_summary.total.cleaners }} / {{ subscription.plan.cleaners }}</span>
-                            </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                {% if usage_summary.usage_percentage.cleaners >= 80 %}
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% elif usage_summary.usage_percentage.cleaners >= 50 %}
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% else %}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ usage_summary.usage_percentage.cleaners }}%;" aria-valuenow="43" aria-valuemin="0" aria-valuemax="100"></div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-info mb-0">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-info-circle fa-lg me-3"></i>
-                            <div>
-                                <p class="mb-0">Your current usage is within plan limits. You can view detailed analytics in the <a href="#" class="alert-link">Analytics Dashboard</a>.</p>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="auto-upgrade"
-                                    {% if business.auto_upgrade %}checked{% endif %}
-                                    >
-                                    <label class="form-check-label" for="auto-upgrade">
-                                        Auto-upgrade to the next plan when usage exceeds limits
-                                    </label>
+                            <div class="alert alert-info mb-0">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-info-circle fa-lg me-3"></i>
+                                    <div>
+                                        <p class="mb-0">Your current usage is within plan limits. You can view detailed analytics in the <a href="#" class="alert-link">Analytics Dashboard</a>.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {% else %}
-    <!-- No Active Subscription Alert -->
-    <div class="alert alert-warning mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-exclamation-circle fa-2x me-3"></i>
-            <div>
-                <h5 class="alert-heading">No Active Subscription</h5>
-                <p class="mb-0">You don't currently have an active subscription. Select a plan below to access all features of the AI Voice Agent and other premium services.</p>
+            {% else %}
+            <!-- No Active Subscription Alert -->
+            <div class="alert alert-warning mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="alert-heading">No Active Subscription</h5>
+                        <p class="mb-0">You don't currently have an active subscription. Select a plan below to access all features of the AI Voice Agent and other premium services.</p>
+                    </div>
+                </div>
             </div>
+            {% endif %}
         </div>
-    </div>
-    {% endif %}
+        <!-- END USAGE TAB -->
 
+        <!-- PLANS TAB -->
+        <div class="tab-pane fade" id="plans" role="tabpanel">
     <!-- Available Plans -->
     <div class="card border border-1 mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -524,11 +562,16 @@
             {% endif %}
         </div>
     </div>
+        </div>
+        <!-- END PLANS TAB -->
 
+        <!-- FAQ TAB -->
+        <div class="tab-pane fade" id="faq" role="tabpanel">
     <!-- FAQ Section -->
     <div class="row">
-        <div class="col-12 mb-3">
+        <div class="col-12 mb-4">
             <h2 class="h3">Frequently Asked Questions</h2>
+            <p class="text-muted">Find answers to common questions about subscriptions and billing</p>
         </div>
         <div class="col-12">
             <div class="accordion" id="subscriptionFAQ">
@@ -595,7 +638,230 @@
             </div>
         </div>
     </div>
+        </div>
+        <!-- END FAQ TAB -->
+
+        <!-- SETTINGS TAB -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <!-- Auto-Upgrade Settings Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-rocket text-primary me-2"></i>
+                                <h5 class="mb-0">Auto-Upgrade Settings</h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="settings-item">
+                                <div class="d-flex align-items-start justify-content-between">
+                                    <div class="flex-grow-1 me-3">
+                                        <h6 class="mb-2">Automatic Plan Upgrade</h6>
+                                        <p class="text-muted mb-0">
+                                            Automatically upgrade to the next plan when your usage exceeds current limits. 
+                                            This ensures uninterrupted service and prevents overage charges.
+                                        </p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="auto-upgrade" 
+                                               {% if business.auto_upgrade %}checked{% endif %}
+                                               style="width: 3.5em; height: 1.75em;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <div class="d-flex">
+                                    <i class="fas fa-info-circle me-2 mt-1"></i>
+                                    <small>
+                                        When enabled, your plan will automatically upgrade when you reach 90% of any resource limit. 
+                                        You'll be notified via email before the upgrade occurs.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coupon Settings Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-ticket-alt text-primary me-2"></i>
+                                <h5 class="mb-0">Apply Coupon</h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="couponCode" class="form-label fw-semibold">Coupon Code</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="couponCode" 
+                                           name="coupon_code" 
+                                           placeholder="Enter your coupon code">
+                                    <button class="btn btn-outline-primary" type="button" id="checkCouponBtn">
+                                        <i class="fas fa-search me-2"></i>Check Coupon
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Enter a valid coupon code to receive a discount on your subscription
+                                </small>
+                            </div>
+
+                            <!-- Coupon Validation Result -->
+                            <div id="couponValidationResult" style="display: none;">
+                                <!-- Success State -->
+                                <div id="couponValidSuccess" class="coupon-validation-box success" style="display: none;">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-2">Valid Coupon!</h6>
+                                            <p class="mb-2"><strong id="validCouponCode"></strong> - <span id="validCouponDiscount"></span></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pricing-breakdown">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Original Price:</span>
+                                            <strong>$<span id="originalPrice">0.00</span></strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2 text-success">
+                                            <span>Discount:</span>
+                                            <strong>-$<span id="discountAmount">0.00</span></strong>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="fw-bold">New Price:</span>
+                                            <strong class="text-primary fs-5">$<span id="discountedPrice">0.00</span></strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-success w-100" id="applyCouponBtn">
+                                        <i class="fas fa-check me-2"></i>Apply This Coupon
+                                    </button>
+                                </div>
+
+                                <!-- Error State -->
+                                <div id="couponValidError" class="coupon-validation-box error" style="display: none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-times-circle fa-2x text-danger me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1 text-danger">Invalid Coupon</h6>
+                                            <p class="mb-0" id="couponErrorMessage"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if subscription.new_coupon %}
+                            <div class="alert alert-success mt-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-lg me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Coupon Applied!</h6>
+                                        <p class="mb-0">
+                                            <strong>{{ subscription.new_coupon.code }}</strong> - 
+                                            {% if subscription.new_coupon.discount_type == 'percentage' %}
+                                                {{ subscription.new_coupon.discount_value }}% off
+                                            {% else %}
+                                                ${{ subscription.new_coupon.discount_value }} off
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">
+                                            Will be applied on your next billing cycle
+                                            {% if subscription.new_coupon.valid_until %}
+                                                • Valid until {{ subscription.new_coupon.valid_until|date:"F d, Y" }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif subscription.coupon_used %}
+                            <div class="alert alert-success">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-lg me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Active Coupon</h6>
+                                        <p class="mb-0">
+                                            <strong>{{ subscription.coupon_used.code }}</strong> - 
+                                            {{ subscription.coupon_used.discount_percentage }}% off
+                                        </p>
+                                        <small class="text-muted">
+                                            Valid until {{ subscription.coupon_used.valid_until|date:"F d, Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="coupon-info-box">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-lightbulb text-warning me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="mb-2">No Active Coupon</h6>
+                                        <p class="text-muted small mb-0">
+                                            You don't have any active coupons. Enter a valid coupon code above to get a discount on your subscription.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Billing Preferences Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-credit-card text-primary me-2"></i>
+                                <h5 class="mb-0">Billing Preferences</h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="settings-item mb-3">
+                                <h6 class="mb-2">Payment Method</h6>
+                                {% if business.square_card_id %}
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="mb-1">
+                                            <i class="fas fa-credit-card text-primary me-2"></i>
+                                            Card ending in •••• {{ card_details.last4|default:"****" }}
+                                        </p>
+                                        <small class="text-muted">Primary payment method</small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#cardDetailsModal">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    No payment method on file. 
+                                    <a href="{% url 'subscription:manage_card' %}" class="alert-link">Add a card</a>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <hr>
+
+                            <div class="settings-item">
+                                <h6 class="mb-2">Billing History</h6>
+                                <p class="text-muted mb-2">View your past invoices and payment history</p>
+                                <a href="{% url 'subscription:billing_history' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-history me-2"></i>View Billing History
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END SETTINGS TAB -->
+        
+    </div>
+    <!-- END TAB CONTENT -->
 </div>
+<!-- END CONTAINER -->
 
 <!-- Card Details Modal -->
 <div class="modal fade" id="cardDetailsModal" tabindex="-1" aria-labelledby="cardDetailsModalLabel" aria-hidden="true">
@@ -716,6 +982,480 @@
         </div>
     </div>
 </div>
+
+<style>
+/* ========== SUBSCRIPTION PAGE STYLES ========== */
+
+/* Header Section */
+.subscription-header {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    color: white;
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.2);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.header-title-section {
+    flex: 1;
+    min-width: 250px;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.page-subtitle {
+    font-size: 16px;
+    margin: 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.action-btn-outline {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn-outline:hover {
+    background: white;
+    color: #1aad8c;
+    border-color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Tabs Styling */
+.subscription-tabs {
+    margin-bottom: 32px;
+}
+
+.custom-tabs {
+    border: none;
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 4px;
+}
+
+.custom-tabs .nav-item {
+    flex: 1;
+}
+
+.custom-tabs .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    color: #6e6e6e;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.custom-tabs .nav-link i {
+    font-size: 18px;
+}
+
+.custom-tabs .nav-link:hover {
+    background: #f3f4f6;
+    color: #1aad8c;
+}
+
+.custom-tabs .nav-link.active {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white !important;
+    border: none !important;
+}
+
+/* Tab Content */
+.custom-tab-content {
+    min-height: 400px;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card Enhancements */
+.card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 20px 24px;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* Plan Cards */
+.plan-card .card {
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.plan-card .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.plan-card .card.border-primary {
+    border-color: #1aad8c;
+    border-width: 2px;
+}
+
+.price-tag {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #202224;
+    margin: 20px 0;
+}
+
+.price-tag .currency {
+    font-size: 1.5rem;
+    vertical-align: super;
+    font-weight: 600;
+}
+
+.price-tag .period {
+    font-size: 1.2rem;
+    color: #6e6e6e;
+    font-weight: 400;
+}
+
+/* List Group */
+.list-group-item {
+    border: none;
+    padding: 12px 0;
+    background: transparent;
+}
+
+.list-group-item i {
+    font-size: 16px;
+}
+
+/* Progress Bars */
+.progress {
+    border-radius: 10px;
+    background: #f3f4f6;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 20px;
+}
+
+.alert-info {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Accordion */
+.accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px !important;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.accordion-button {
+    font-weight: 600;
+    color: #202224;
+    background: white;
+    padding: 18px 24px;
+}
+
+.accordion-button:not(.collapsed) {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    color: #1aad8c;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: #e5e7eb;
+}
+
+.accordion-body {
+    padding: 20px 24px;
+    color: #6e6e6e;
+    line-height: 1.6;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(26, 173, 140, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.4);
+}
+
+.btn-outline-primary {
+    border: 2px solid #1aad8c;
+    color: #1aad8c;
+}
+
+.btn-outline-primary:hover {
+    background: #1aad8c;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Form Controls */
+.form-check-input:checked {
+    background-color: #1aad8c;
+    border-color: #1aad8c;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+/* Settings Tab Styles */
+.settings-item {
+    padding: 16px 0;
+}
+
+.settings-item h6 {
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 8px;
+}
+
+.coupon-info-box {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.coupon-info-box h6 {
+    color: #92400e;
+    font-weight: 600;
+}
+
+.input-group .form-control-lg {
+    border-radius: 10px 0 0 10px;
+    border: 2px solid #e5e7eb;
+    padding: 12px 16px;
+}
+
+.input-group .form-control-lg:focus {
+    border-color: #1aad8c;
+    box-shadow: 0 0 0 3px rgba(26, 173, 140, 0.1);
+}
+
+.input-group .btn {
+    border-radius: 0 10px 10px 0;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.alert-success h6 {
+    color: #065f46;
+}
+
+/* Coupon Validation Boxes */
+.coupon-validation-box {
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.coupon-validation-box.success {
+    background: #d1fae5;
+    border: 2px solid #6ee7b7;
+}
+
+.coupon-validation-box.error {
+    background: #fee2e2;
+    border: 2px solid #fca5a5;
+}
+
+.pricing-breakdown {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.pricing-breakdown hr {
+    margin: 12px 0;
+    border-color: #e5e7eb;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .subscription-header {
+        padding: 24px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .page-title {
+        font-size: 28px;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .action-btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .custom-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .custom-tabs .nav-link span {
+        display: none;
+    }
+    
+    .custom-tabs .nav-link {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .subscription-header {
+        padding: 20px;
+    }
+    
+    .page-title {
+        font-size: 24px;
+    }
+    
+    .page-subtitle {
+        font-size: 14px;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        width: 100%;
+    }
+    
+    .custom-tabs .nav-item {
+        flex: 0 0 50%;
+    }
+}
+</style>
 
 {% endblock %}
 {% block extra_js %}
@@ -1129,6 +1869,137 @@
                         errorMessage.remove();
                     }, 3000);
                 });
+            });
+        }
+
+        // Coupon Validation and Application Flow
+        const checkCouponBtn = document.getElementById('checkCouponBtn');
+        const applyCouponBtn = document.getElementById('applyCouponBtn');
+        const couponCodeInput = document.getElementById('couponCode');
+        const couponValidationResult = document.getElementById('couponValidationResult');
+        const couponValidSuccess = document.getElementById('couponValidSuccess');
+        const couponValidError = document.getElementById('couponValidError');
+
+        if (checkCouponBtn) {
+            checkCouponBtn.addEventListener('click', function() {
+                const couponCode = couponCodeInput.value.trim();
+                
+                if (!couponCode) {
+                    alert('Please enter a coupon code');
+                    return;
+                }
+
+                // Show loading state
+                checkCouponBtn.disabled = true;
+                checkCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking...';
+
+                // Hide previous results
+                couponValidationResult.style.display = 'none';
+                couponValidSuccess.style.display = 'none';
+                couponValidError.style.display = 'none';
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Validate coupon
+                fetch('{% url "subscription:validate_coupon" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        coupon_code: couponCode,
+                        plan_id: {{subscription.plan.id}}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    checkCouponBtn.disabled = false;
+                    checkCouponBtn.innerHTML = '<i class="fas fa-search me-2"></i>Check Coupon';
+                    
+                    couponValidationResult.style.display = 'block';
+                    
+                    if (data.valid) {
+                        // Show success state
+                        couponValidSuccess.style.display = 'block';
+                        document.getElementById('validCouponCode').textContent = data.coupon_code;
+                        document.getElementById('validCouponDiscount').textContent = data.discount_description;
+                        document.getElementById('originalPrice').textContent = data.original_price.toFixed(2);
+                        document.getElementById('discountAmount').textContent = data.discount_amount.toFixed(2);
+                        document.getElementById('discountedPrice').textContent = data.discounted_price.toFixed(2);
+                    } else {
+                        // Show error state
+                        couponValidError.style.display = 'block';
+                        document.getElementById('couponErrorMessage').textContent = data.message;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    checkCouponBtn.disabled = false;
+                    checkCouponBtn.innerHTML = '<i class="fas fa-search me-2"></i>Check Coupon';
+                    
+                    couponValidationResult.style.display = 'block';
+                    couponValidError.style.display = 'block';
+                    document.getElementById('couponErrorMessage').textContent = 'An error occurred. Please try again.';
+                });
+            });
+        }
+
+        if (applyCouponBtn) {
+            applyCouponBtn.addEventListener('click', function() {
+                const couponCode = couponCodeInput.value.trim();
+                
+                if (!couponCode) {
+                    alert('Please enter a coupon code');
+                    return;
+                }
+
+                // Show loading state
+                applyCouponBtn.disabled = true;
+                applyCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Applying...';
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Apply coupon
+                fetch('{% url "subscription:apply_coupon" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: `coupon_code=${encodeURIComponent(couponCode)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message and reload page
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        // Show error message
+                        applyCouponBtn.disabled = false;
+                        applyCouponBtn.innerHTML = '<i class="fas fa-check me-2"></i>Apply This Coupon';
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    applyCouponBtn.disabled = false;
+                    applyCouponBtn.innerHTML = '<i class="fas fa-check me-2"></i>Apply This Coupon';
+                    alert('An error occurred. Please try again.');
+                });
+            });
+        }
+
+        // Allow Enter key to trigger check coupon
+        if (couponCodeInput) {
+            couponCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    checkCouponBtn.click();
+                }
             });
         }
     });

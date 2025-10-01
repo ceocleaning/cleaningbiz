@@ -1,0 +1,1431 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Integration Settings{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Integrations</li>
+{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editCredentialsModal">
+    <i class="fas fa-pen-to-square me-2"></i>
+    <span>Edit Settings</span>
+</button>
+{% endblock %}
+
+{% block main_content %}
+<style>
+    /* Integration page specific styles */
+    .integration-card {
+        border-radius: var(--border-radius);
+        border: none;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .integration-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .integration-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.25rem;
+    }
+    
+    .integration-card .card-body {
+        padding: 1.25rem;
+        flex: 1;
+    }
+    
+    .integration-card .card-footer {
+        background: transparent;
+        border-top: 1px solid var(--border-color);
+        padding: 1rem 1.25rem;
+    }
+    
+    .icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+    
+    .icon-wrapper.primary {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+    
+    .icon-wrapper.danger {
+        background-color: #fde8e8;
+        color: #dc3545;
+    }
+    
+    .icon-wrapper.warning {
+        background-color: #fff8e6;
+        color: #ffc107;
+    }
+    
+    .api-key-input {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+        background-color: #f9f9fb !important;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+    
+    .api-key-input:focus {
+        background-color: #fff !important;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.15rem rgba(26, 173, 140, 0.15);
+    }
+    
+    .api-key-input.masked {
+        letter-spacing: 4px;
+    }
+    
+    .key-action-btn {
+        transition: all 0.2s ease;
+        border-radius: 0.25rem;
+    }
+    
+    .key-action-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .key-action-btn:active {
+        transform: translateY(0);
+    }
+    
+    .copy-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        padding: 12px 20px;
+        border-radius: var(--border-radius);
+        display: none;
+        z-index: 1050;
+        box-shadow: var(--shadow-md);
+        animation: fadeInUp 0.3s ease-out;
+        font-weight: 500;
+        border-left: 4px solid var(--primary-dark);
+        min-width: 280px;
+    }
+    
+    .copy-toast.error {
+        background: linear-gradient(135deg, #dc3545, #e74c3c);
+        border-left: 4px solid #bd2130;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .badge-pill {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+        border-radius: 20px;
+    }
+    
+    .info-text {
+        color: var(--text-light);
+        font-size: 0.875rem;
+    }
+    
+    .section-divider {
+        margin: 2rem 0;
+        border-top: 1px solid var(--border-color);
+        position: relative;
+    }
+    
+    .section-divider-text {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--bg-color);
+        padding: 0 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-light);
+    }
+</style>
+
+<!-- Toast notification -->
+<div class="copy-toast" id="copyToast">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-check-circle me-2"></i>
+        <span>Copied to clipboard!</span>
+    </div>
+</div>
+
+<!-- Introduction Card -->
+<div class="card mb-4 border border-1">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="icon-wrapper primary">
+                <i class="fas fa-info-circle fs-4"></i>
+            </div>
+            <div>
+                <h5 class="mb-2 fw-bold">Managing Your Integration Settings</h5>
+                <p class="mb-0 text-secondary">These settings are used to connect your application with various services. Keep them secure and never share them publicly. Required settings are marked with <span class="badge bg-danger">Required</span> tag.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Section -->
+<div class="row">
+    <!-- API Key Section -->
+    <div class="col-12 mb-2">
+        <h6 class="text-uppercase fw-bold text-secondary">API Authentication</h6>
+    </div>
+    
+    <!-- Secret Key Card -->
+    <div class="col-md-6 mb-4">
+        <div class="integration-card border border-1">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper primary">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Secret API Key</h6>
+                        <p class="text-secondary mb-0 small">Used for authenticating API requests</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if credentials.secretKey %}
+                <div class="input-group mb-3">
+                    <input type="password" 
+                            class="form-control api-key-input masked" 
+                            id="secretKey" 
+                            value="{{ credentials.secretKey|default:'' }}" 
+                            placeholder="Secret Key"
+                            readonly>
+                    <button class="btn btn-outline-secondary key-action-btn" 
+                            type="button" 
+                            onclick="toggleKey(this, 'secretKey')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Toggle visibility">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-primary key-action-btn" 
+                            type="button" 
+                            onclick="copyToClipboard('secretKey')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="alert alert-light border-start border-3" style="border-color: var(--primary-color) !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-shield-alt me-2 text-primary"></i>
+                        <small class="text-secondary">Keep this key secure. Never share it publicly or commit it to version control.</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-key text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <p class="text-secondary mb-3">No API key has been generated yet.</p>
+                    <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Generate Secret Key
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% if credentials.secretKey %}
+            <div class="card-footer">
+                <button class="btn btn-sm btn-outline-danger w-100" 
+                        type="button"
+                        onclick="regenerateSecretKey()">
+                    <i class="fas fa-sync-alt me-2"></i>Regenerate Key
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- SMS Agent Number Card -->
+    <div class="col-md-6 mb-4">
+        <div class="integration-card border border-1 shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper primary">
+                        <i class="fas fa-sms"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">SMS Agent Number</h6>
+                        <p class="text-secondary mb-0 small">Used for sending SMS notifications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if credentials.twilioSmsNumber %}
+                <div class="input-group mb-3">
+                    <input type="text" 
+                            class="form-control api-key-input" 
+                            id="smsAgentNumber" 
+                            value="{{ credentials.twilioSmsNumber|default:'' }}" 
+                            placeholder="SMS Agent Number"
+                            readonly>
+                    <button class="btn btn-outline-primary key-action-btn"
+                            type="button"
+                            onclick="copyToClipboard('smsAgentNumber')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Copy to Clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="alert alert-light border-start border-3" style="border-color: var(--primary-color) !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        <small class="text-secondary">This is the phone number that will be used to send SMS messages to your customers.</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-sms text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <p class="text-secondary mb-3">No SMS agent number has been configured yet.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'twilio_phone_numbers' %}" class="btn btn-sm btn-outline-primary w-100">
+                    {% if credentials.twilioSmsNumber %}
+                    <i class="fas fa-cog me-2"></i>Manage SMS Number
+                    {% else %}
+                    <i class="fas fa-plus me-2"></i>Add SMS Number
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Webhook Section -->
+    <div class="col-12 mt-4 mb-2">
+        <div class="section-divider">
+            <span class="section-divider-text">WEBHOOK ENDPOINTS</span>
+        </div>
+    </div>
+    
+    <!-- SMS Webhook URL Card -->
+    <div class="col-md-6 mb-4">
+        <div class="integration-card border border-1 shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper primary">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">SMS Webhook URL</h6>
+                        <p class="text-secondary mb-0 small">For Twilio SMS integration</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if credentials.secretKey %}
+                <div class="input-group mb-3">
+                    <input type="text" 
+                            class="form-control api-key-input" 
+                            id="twilioWebhookUrl" 
+                            value="{{ credentials.getTwilioWebhookUrl|default:'' }}" 
+                            placeholder="Twilio Webhook URL"
+                            readonly>
+                    <button class="btn btn-outline-primary key-action-btn" 
+                            type="button" 
+                            onclick="copyToClipboard('twilioWebhookUrl')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="alert alert-light border-start border-3" style="border-color: var(--primary-color) !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        <small class="text-secondary">Use this URL in your Twilio account settings for SMS webhook callbacks.</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-link text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <p class="text-secondary mb-3">Generate a secret key first to get your webhook URL.</p>
+                    <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i>Generate Secret Key
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    
+    </div>
+    
+    <!-- Third-Party Integrations Section -->
+    <div class="col-12 mt-4 mb-2">
+        <div class="section-divider">
+            <span class="section-divider-text">THIRD-PARTY INTEGRATIONS</span>
+        </div>
+    </div>
+    
+    <!-- Twilio Integration Card -->
+    <div class="col-12 mb-4">
+        <div class="integration-card border border-1 shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper danger">
+                        <i class="fab fa-twilio"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Twilio Integration</h6>
+                        <p class="text-secondary mb-0 small">Connect your Twilio account to enable SMS and voice capabilities</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pb-0">
+                <div class="row g-4">
+                    <!-- Twilio SID Card -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="icon-wrapper danger" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-id-card"></i>
+                                    </div>
+                                    <div class="ms-2">
+                                        <h6 class="mb-0 fw-bold">Account SID</h6>
+                                        <span class="badge bg-secondary badge-pill">Optional</span>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <input type="text" 
+                                            class="form-control api-key-input" 
+                                            id="twilioSid" 
+                                            value="{{ credentials.twilioAccountSid|default:'' }}" 
+                                            placeholder="Twilio Account SID"
+                                            readonly>
+                                    <button class="btn btn-outline-primary key-action-btn"
+                                            type="button"
+                                            onclick="copyToClipboard('twilioSid')"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Copy to Clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Twilio Auth Token Card -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="icon-wrapper danger" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-key"></i>
+                                    </div>
+                                    <div class="ms-2">
+                                        <h6 class="mb-0 fw-bold">Auth Token</h6>
+                                        <span class="badge bg-secondary badge-pill">Optional</span>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <input type="password" 
+                                            class="form-control api-key-input masked" 
+                                            id="twilioAuthToken" 
+                                            value="{{ credentials.twilioAuthToken|default:'' }}" 
+                                            placeholder="Twilio Auth Token"
+                                            readonly>
+                                    <button class="btn btn-outline-secondary key-action-btn" 
+                                            type="button" 
+                                            onclick="toggleKey(this, 'twilioAuthToken')"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Show/Hide Key">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary key-action-btn"
+                                            type="button"
+                                            onclick="copyToClipboard('twilioAuthToken')"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Copy to Clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-light border-start border-3 mt-4" style="border-color: #dc3545 !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-info-circle me-2 text-danger"></i>
+                        <small class="text-secondary">These credentials are used to connect to your Twilio account. You can find them in your Twilio dashboard.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <a href="https://www.twilio.com/console" target="_blank" class="btn btn-sm btn-outline-danger w-100">
+                    <i class="fas fa-external-link-alt me-2"></i>Visit Twilio Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+        
+    <!-- External Webhooks Section -->
+    <div class="col-12 mt-4 mb-2">
+        <div class="section-divider">
+            <span class="section-divider-text">EXTERNAL WEBHOOKS</span>
+        </div>
+    </div>
+    
+    <!-- Thumbtack Webhook URL Card -->
+    <div class="col-md-6 mb-4">
+        <div class="integration-card border border-1 shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper warning">
+                        <i class="fas fa-thumbtack"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Thumbtack Webhook</h6>
+                        <p class="text-secondary mb-0 small">For Thumbtack integration</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if credentials.secretKey %}
+                <div class="input-group mb-3">
+                    <input type="text" 
+                            class="form-control api-key-input" 
+                            id="ThumbtackWebhookUrl" 
+                            value="{{ credentials.getThumbtackUrl }}" 
+                            placeholder="Thumbtack Webhook URL"
+                            readonly>
+                    <button class="btn btn-outline-primary key-action-btn"
+                            type="button"
+                            onclick="copyToClipboard('ThumbtackWebhookUrl')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Copy to Clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="alert alert-light border-start border-3" style="border-color: #ffc107 !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-info-circle me-2 text-warning"></i>
+                        <small class="text-secondary">This URL will receive webhook events from Thumbtack. Configure this in your Thumbtack settings.</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-thumbtack text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <p class="text-secondary mb-3">Generate a secret key first to get your webhook URL.</p>
+                    <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-warning text-dark">
+                        <i class="fas fa-key me-2"></i>Generate Secret Key
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leads API Card -->
+    <div class="col-md-6 mb-4">
+        <div class="integration-card border border-1 shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="icon-wrapper warning">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Leads API</h6>
+                        <p class="text-secondary mb-0 small">For external lead sources</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if credentials.secretKey %}
+                <div class="input-group mb-3">
+                    <input type="text" 
+                            class="form-control api-key-input" 
+                            id="LeadWebhookUrl" 
+                            value="{{ credentials.getLeadWebhookUrl }}" 
+                            placeholder="Lead Webhook URL"
+                            readonly>
+                    <button class="btn btn-outline-primary key-action-btn"
+                            type="button"
+                            onclick="copyToClipboard('LeadWebhookUrl')"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Copy to Clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="alert alert-light border-start border-3" style="border-color: #ffc107 !important;">
+                    <div class="d-flex">
+                        <i class="fas fa-info-circle me-2 text-warning"></i>
+                        <small class="text-secondary">This endpoint accepts POST requests with lead data from external sources.</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-bullhorn text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <p class="text-secondary mb-3">Generate a secret key first to get your API endpoint.</p>
+                    <a href="{% url 'accounts:generate_secret_key' %}" class="btn btn-warning text-dark">
+                        <i class="fas fa-key me-2"></i>Generate Secret Key
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Section -->
+    <!-- <div class="col-12 mt-4">
+        <div class="card border border-1 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-wrapper primary me-3">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Need Help?</h5>
+                </div>
+                <p class="text-secondary mb-3">If you need assistance setting up your integrations or have questions about API usage, our support team is here to help.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>View Documentation
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-headset me-2"></i>Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+<!-- Edit Credentials Modal -->
+<div class="modal fade" id="editCredentialsModal" tabindex="-1" aria-labelledby="editCredentialsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content credentials-modal">
+            <div class="modal-header credentials-modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="credentials-modal-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title credentials-modal-title" id="editCredentialsModalLabel">Edit Integration Credentials</h5>
+                        <p class="credentials-modal-subtitle">Update your Twilio integration settings</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editCredentialsForm" method="post" action="{% url 'accounts:edit_credentials' %}">
+                {% csrf_token %}
+                <div class="modal-body credentials-modal-body">
+                    <!-- SMS Number Field -->
+                    <div class="credentials-form-group">
+                        <label for="twilioSmsNumber" class="credentials-form-label">
+                            <i class="fas fa-sms"></i>
+                            Twilio SMS Number
+                        </label>
+                        <div class="credentials-input-wrapper">
+                            <div class="input-group credentials-input-group">
+                                <span class="input-group-text credentials-input-prefix">+1</span>
+                                <input type="tel" 
+                                       class="form-control credentials-form-control" 
+                                       id="twilioSmsNumber" 
+                                       name="twilioSmsNumber" 
+                                       value="{{ credentials.twilioSmsNumber|default:'' }}" 
+                                       placeholder="(555) 555-5555">
+                            </div>
+                            <small class="credentials-form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Enter the phone number without the country code
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Twilio SID Field -->
+                    <div class="credentials-form-group">
+                        <label for="newTwilioSid" class="credentials-form-label">
+                            <i class="fas fa-id-card"></i>
+                            Twilio Account SID
+                        </label>
+                        <div class="credentials-input-wrapper">
+                            <input type="text" 
+                                   class="form-control credentials-form-control" 
+                                   id="newTwilioSid" 
+                                   name="twilioSid" 
+                                   value="{{ credentials.twilioAccountSid|default:'' }}"
+                                   placeholder="Enter your Twilio Account SID">
+                            <small class="credentials-form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Find this in your Twilio Console dashboard
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Token Field -->
+                    <div class="credentials-form-group">
+                        <label for="newTwilioAuthToken" class="credentials-form-label">
+                            <i class="fas fa-key"></i>
+                            Twilio Auth Token
+                        </label>
+                        <div class="credentials-input-wrapper">
+                            <div class="input-group credentials-input-group">
+                                <input type="password" 
+                                       class="form-control credentials-form-control" 
+                                       id="newTwilioAuthToken" 
+                                       name="twilioAuthToken" 
+                                       value="{{ credentials.twilioAuthToken|default:'' }}"
+                                       placeholder="Enter your Twilio Auth Token">
+                                <button class="btn credentials-toggle-btn" 
+                                        type="button" 
+                                        onclick="togglePasswordVisibility('newTwilioAuthToken')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="credentials-form-text credentials-form-text-warning">
+                                <i class="fas fa-shield-alt"></i>
+                                Keep this secure and never share it publicly
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Box -->
+                    <div class="credentials-info-box">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Where to find these credentials?</strong>
+                            <p class="mb-0">Log in to your Twilio Console at <a href="https://www.twilio.com/console" target="_blank" rel="noopener">twilio.com/console</a> to find your Account SID and Auth Token.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer credentials-modal-footer">
+                    <button type="button" class="btn-credentials-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-credentials-save">
+                        <i class="fas fa-check"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Credentials Modal Styles */
+.credentials-modal {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.credentials-modal-header {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    padding: 24px 32px;
+    border-radius: 16px 16px 0 0;
+    border: none;
+}
+
+.credentials-modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.credentials-modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.credentials-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.credentials-modal-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: white;
+}
+
+.credentials-modal-subtitle {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9;
+    color: white;
+}
+
+.credentials-modal-body {
+    padding: 32px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.credentials-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.credentials-modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.credentials-modal-body::-webkit-scrollbar-thumb {
+    background: #1aad8c;
+    border-radius: 10px;
+}
+
+.credentials-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #138a70;
+}
+
+.credentials-form-group {
+    margin-bottom: 28px;
+}
+
+.credentials-form-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #202224;
+    margin-bottom: 10px;
+}
+
+.credentials-form-label i {
+    color: #1aad8c;
+    font-size: 18px;
+}
+
+.credentials-input-wrapper {
+    position: relative;
+}
+
+.credentials-form-control {
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #202224;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.credentials-form-control:focus {
+    outline: none;
+    border-color: #1aad8c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(26, 173, 140, 0.1);
+}
+
+.credentials-form-control:hover {
+    border-color: #1aad8c;
+}
+
+.credentials-form-control::placeholder {
+    color: #9ca3af;
+}
+
+.credentials-input-group {
+    display: flex;
+}
+
+.credentials-input-prefix {
+    background: #e5e7eb;
+    border: 2px solid #e5e7eb;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: #6e6e6e;
+    font-weight: 600;
+    padding: 12px 16px;
+}
+
+.credentials-input-group .credentials-form-control {
+    border-radius: 0 10px 10px 0;
+    border-left: none;
+}
+
+.credentials-input-group:focus-within .credentials-input-prefix {
+    border-color: #1aad8c;
+    background: rgba(26, 173, 140, 0.05);
+    color: #1aad8c;
+}
+
+.credentials-toggle-btn {
+    background: #e5e7eb;
+    border: 2px solid #e5e7eb;
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    color: #6e6e6e;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+
+.credentials-toggle-btn:hover {
+    background: #d1d5db;
+    color: #202224;
+}
+
+.credentials-input-group:focus-within .credentials-toggle-btn {
+    border-color: #1aad8c;
+    background: rgba(26, 173, 140, 0.1);
+    color: #1aad8c;
+}
+
+.credentials-form-text {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6e6e6e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.credentials-form-text i {
+    font-size: 14px;
+}
+
+.credentials-form-text-warning {
+    color: #dc3545;
+}
+
+.credentials-form-text-warning i {
+    color: #dc3545;
+}
+
+.credentials-info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    margin-top: 24px;
+    font-size: 14px;
+    color: #1e40af;
+    line-height: 1.6;
+}
+
+.credentials-info-box i {
+    font-size: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: #3b82f6;
+}
+
+.credentials-info-box strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #1e40af;
+}
+
+.credentials-info-box p {
+    font-size: 13px;
+}
+
+.credentials-info-box a {
+    color: #1e40af;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.credentials-info-box a:hover {
+    color: #1d4ed8;
+}
+
+.credentials-modal-footer {
+    padding: 20px 32px;
+    border-top: 2px solid #f3f4f6;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-credentials-cancel,
+.btn-credentials-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-credentials-cancel {
+    background: #f3f4f6;
+    color: #6e6e6e;
+}
+
+.btn-credentials-cancel:hover {
+    background: #e5e7eb;
+    color: #202224;
+}
+
+.btn-credentials-save {
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(26, 173, 140, 0.3);
+}
+
+.btn-credentials-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 173, 140, 0.4);
+}
+
+.btn-credentials-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive Modal */
+@media (max-width: 767.98px) {
+    .credentials-modal-header {
+        padding: 20px;
+    }
+    
+    .credentials-modal-body {
+        padding: 24px 20px;
+    }
+    
+    .credentials-modal-footer {
+        padding: 16px 20px;
+        flex-direction: column;
+    }
+    
+    .btn-credentials-cancel,
+    .btn-credentials-save {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .credentials-modal-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .credentials-modal-title {
+        font-size: 18px;
+    }
+    
+    .credentials-form-group {
+        margin-bottom: 24px;
+    }
+}
+</style>
+
+{% block scripts %}
+<script>
+    // Function to toggle password visibility in the modal
+    function togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Function to toggle key visibility
+    function toggleKey(button, inputId) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+            input.classList.remove('masked');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+            input.classList.add('masked');
+        }
+    }
+
+    // Function to copy webhook URL
+    function copyRetellWebhookUrl(button) {
+        const webhookUrl = document.getElementById('webhookUrl').value;
+        navigator.clipboard.writeText(webhookUrl).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        });
+    }
+
+    function copyThumbtackUrl(button) {
+      const thumtackWebhookUrl = document.getElementById('thumtackWebhookUrl').value;
+      navigator.clipboard.writeText(thumtackWebhookUrl).then(() => {
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 2000);
+      });
+    }
+
+
+
+    // Function to copy to clipboard
+    function copyToClipboard(inputId) {
+        const input = document.getElementById(inputId);
+        const toast = document.getElementById('copyToast');
+        const toastMessage = toast.querySelector('span');
+        const toastIcon = toast.querySelector('i');
+        
+        // Select the text
+        input.select();
+        input.setSelectionRange(0, 99999); // For mobile devices
+        
+        // Copy the text
+        navigator.clipboard.writeText(input.value).then(() => {
+            // Highlight the input field briefly
+            const originalBg = input.style.backgroundColor;
+            input.style.backgroundColor = '#d1e7dd';
+            setTimeout(() => {
+                input.style.backgroundColor = originalBg;
+            }, 300);
+            
+            // Update toast message based on the input placeholder
+            const credentialType = input.getAttribute('placeholder') || 'Credential';
+            toastMessage.textContent = `Copied ${credentialType} to clipboard!`;
+            toastIcon.className = 'fas fa-check-circle me-2 text-white';
+            
+            // Show toast
+            toast.style.display = 'block';
+            toast.style.opacity = '1';
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 300);
+            }, 3000);
+        });
+    }
+
+    // Phone number formatting for the modal
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        const phoneInput = document.getElementById('twilioSmsNumber');
+        
+        if (phoneInput) {
+            // Format initial value
+            if (phoneInput.value) {
+                let cleanNumber = phoneInput.value.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                if (cleanNumber.length === 10) {
+                    phoneInput.value = '(' + cleanNumber.substring(0, 3) + ') ' + 
+                                    cleanNumber.substring(3, 6) + '-' + 
+                                    cleanNumber.substring(6, 10);
+                }
+            }
+
+            // Format as user types
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.startsWith('1')) {
+                    value = value.substring(1);
+                }
+                if (value.length > 0) {
+                    if (value.length <= 3) {
+                        value = '(' + value;
+                    } else if (value.length <= 6) {
+                        value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
+                    } else {
+                        value = '(' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6, 10);
+                    }
+                }
+                e.target.value = value;
+            });
+        }
+
+        // Handle form submission for the modal
+       
+    });
+    
+    // Function to regenerate secret key
+    function regenerateSecretKey() {
+        // Create a custom confirmation dialog
+        const confirmDialog = document.createElement('div');
+        confirmDialog.className = 'modal fade';
+        confirmDialog.id = 'confirmRegenerateModal';
+        confirmDialog.setAttribute('tabindex', '-1');
+        confirmDialog.setAttribute('aria-labelledby', 'confirmRegenerateModalLabel');
+        confirmDialog.setAttribute('aria-hidden', 'true');
+        
+        confirmDialog.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="confirmRegenerateModalLabel">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Regenerate Secret Key
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Are you sure you want to regenerate your secret key?</p>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Important:</strong> This action cannot be undone and will invalidate your existing key. Any applications using the current key will stop working until updated with the new key.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" id="confirmRegenerateBtn">
+                            <i class="fas fa-sync-alt me-2"></i>Regenerate Key
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(confirmDialog);
+        
+        // Initialize the modal
+        const modal = new bootstrap.Modal(confirmDialog);
+        modal.show();
+        
+        // Handle confirm button click
+        const confirmBtn = document.getElementById('confirmRegenerateBtn');
+        confirmBtn.addEventListener('click', function() {
+            // Show loading state
+            const button = this;
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // Make AJAX request to regenerate key
+            fetch('{% url "accounts:regenerate_secret_key" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update the secret key input field
+                document.getElementById('secretKey').value = data.secret_key;
+                
+                // Show success message
+                const toast = document.getElementById('copyToast');
+                const toastMessage = toast.querySelector('span');
+                const toastIcon = toast.querySelector('i');
+                toastMessage.textContent = 'Secret key regenerated successfully!';
+                toastIcon.className = 'fas fa-sync-alt me-2 text-white';
+                
+                // Show toast
+                toast.style.display = 'block';
+                toast.style.opacity = '1';
+                
+                // Hide toast after 3 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                        toast.className = 'copy-toast'; // Reset class
+                        toastIcon.className = 'fas fa-check-circle me-2 text-white'; // Reset icon
+                    }, 300);
+                }, 3000);
+                
+                // Reset button state
+                button.innerHTML = originalContent;
+                button.disabled = false;
+                
+                // Hide the confirmation dialog
+                modal.hide();
+            })
+            .catch(error => {
+                console.error('Error regenerating secret key:', error);
+                
+                // Show error message
+                const toast = document.getElementById('copyToast');
+                const toastMessage = toast.querySelector('span');
+                const toastIcon = toast.querySelector('i');
+                toastMessage.textContent = 'Error regenerating secret key. Please try again.';
+                toastIcon.className = 'fas fa-exclamation-circle me-2 text-white';
+                toast.className = 'copy-toast error';
+                toast.style.display = 'block';
+                toast.style.opacity = '1';
+                
+                // Hide toast after 3 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.classList.remove('error-toast');
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 3000);
+                
+                // Reset button state
+                button.innerHTML = originalContent;
+                button.disabled = false;
+                
+                // Hide the confirmation dialog
+                modal.hide();
+            });
+        });
+    }
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Add animation class to credential cards on page load
+        setTimeout(() => {
+            document.querySelectorAll('.credential-card').forEach((card, index) => {
+                // Set initial state
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                
+                // Animate with staggered delay
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 150); // Staggered delay for each card
+            });
+            
+            // Add animation for inner credential cards with a slight delay
+            setTimeout(() => {
+                document.querySelectorAll('.inner-credential-card').forEach((card, index) => {
+                    // Set initial state
+                    card.style.opacity = '0.7';
+                    card.style.transform = 'translateY(10px)';
+                    card.style.transition = 'all 0.4s ease';
+                    
+                    // Animate with staggered delay
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100); // Shorter staggered delay for inner cards
+                });
+            }, 500); // Delay after main cards animation starts
+        }, 300);
+    });
+</script>
+
+<script>
+    // Function to copy webhook URL
+    function copyWebhookUrl(button) {
+        const webhookUrl = document.getElementById('webhookUrl').value;
+        navigator.clipboard.writeText(webhookUrl).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        });
+    }
+
+
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format SMS Agent Number
+        const smsElement = document.getElementById('smsAgentNumber');
+        if (smsElement) {
+            const phoneNumber = smsElement.value.trim();
+            if (phoneNumber) {
+                // Remove any existing formatting and +1 if present
+                let cleanNumber = phoneNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('1')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                // Format as +1 (555) 555-5555
+                const formattedNumber = '+1 (' + cleanNumber.substring(0, 3) + ') ' + 
+                                      cleanNumber.substring(3, 6) + '-' + 
+                                      cleanNumber.substring(6, 10);
+                smsElement.value = formattedNumber;
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock main_content %}

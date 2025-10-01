@@ -1,0 +1,696 @@
+{% extends 'accounts/profile/base.html' %}
+{% load static %}
+
+{% block page_title %}Custom Add-ons{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Custom Add-ons</li>
+{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addCustomAddonModal">
+    <i class="fas fa-plus-circle me-2"></i>
+    <span>Create Add-on</span>
+</button>
+{% endblock %}
+
+{% block main_content %}
+<!-- Introduction Card -->
+<div class="card border border-1 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2">
+            <div class="icon-wrapper primary">
+                <i class="fas fa-puzzle-piece fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1">Custom Add-on Services</h5>
+                <p class="mb-0 text-secondary">Create and manage additional services to offer your customers and increase your revenue potential.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container px-0">
+    <!-- Search and Filter Bar -->
+    <div class="card border border-1 mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <div class="search-box position-relative">
+                        <i class="fas fa-search position-absolute text-secondary" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
+                        <input type="text" class="form-control ps-4 border" id="addonSearch" placeholder="Search add-ons by name, price, or identifier..." style="padding-left: 40px; height: 48px; border-radius: 8px;">
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="d-flex justify-content-md-end">
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-sort me-2"></i>Sort
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                <li><a class="dropdown-item" href="#" data-sort="name-asc">Name (A-Z)</a></li>
+                                <li><a class="dropdown-item" href="#" data-sort="name-desc">Name (Z-A)</a></li>
+                                <li><a class="dropdown-item" href="#" data-sort="price-asc">Price (Low to High)</a></li>
+                                <li><a class="dropdown-item" href="#" data-sort="price-desc">Price (High to Low)</a></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-outline-primary" id="refreshAddons">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+    <!-- Add-ons Grid -->    
+    <div class="row g-4" id="addonsGrid">
+        {% for addon in business.business_custom_addons.all %}
+        <div class="col-lg-4 col-md-6 mb-4" data-addon-name="{{ addon.addonName }}" data-addon-price="{{ addon.addonPrice }}">
+            <div class="card h-100 border addon-card">
+                <div class="card-body p-0">
+                    <!-- Card Header with Badge -->                    
+                    <div class="position-relative">
+                        <div class="addon-card-header d-flex align-items-center p-4">
+                            <div class="addon-icon-wrapper me-3">
+                                <i class="fas fa-puzzle-piece"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-semibold">{{ addon.addonName }}</h5>
+                            </div>
+                        </div>
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle p-2 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li>
+                                        <a class="dropdown-item edit-addon" href="#"
+                                           data-addon-id="{{ addon.id }}"
+                                           data-addon-name="{{ addon.addonName }}"
+                                           data-addon-data-name="{{ addon.addonDataName }}"
+                                           data-addon-price="{{ addon.addonPrice }}"
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#editCustomAddonModal">
+                                            <i class="fas fa-edit me-2 text-primary"></i> Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item delete-addon" href="#" data-addon-id="{{ addon.id }}">
+                                            <i class="fas fa-trash-alt me-2 text-danger"></i> Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Content -->                    
+                    <div class="p-4 pt-0">
+                        <div class="addon-price-tag mb-4">
+                            <span class="price-value">${{ addon.addonPrice }}</span>
+                        </div>
+                        
+                        <div class="addon-details">
+                            <div class="addon-detail-item">
+                                <div class="addon-detail-label">
+                                    <i class="fas fa-tag me-2 text-secondary"></i>
+                                    <span>Identifier</span>
+                                </div>
+                                <div class="addon-detail-value">{{ addon.addonDataName }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Footer -->                    
+                    <div class="card-footer bg-light border-top p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary-subtle text-primary">
+                                <i class="fas fa-tag me-1"></i> Add-on Service
+                            </span>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary edit-addon"
+                                        data-addon-id="{{ addon.id }}"
+                                        data-addon-name="{{ addon.addonName }}"
+                                        data-addon-data-name="{{ addon.addonDataName }}"
+                                        data-addon-price="{{ addon.addonPrice }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editCustomAddonModal">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card border shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="empty-state-icon mb-4">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h4 class="mb-3">No Custom Add-ons Yet</h4>
+                    <p class="text-secondary mb-4 mx-auto" style="max-width: 500px;">
+                        Create your first custom add-on to offer additional services to your customers and increase your revenue potential.
+                    </p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomAddonModal">
+                        <i class="fas fa-plus-circle me-2"></i> Create Your First Add-on
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+          
+
+</div>
+
+<!-- Add Custom Addon Modal -->
+<div class="modal fade" id="addCustomAddonModal" tabindex="-1" aria-labelledby="addCustomAddonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addCustomAddonModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Add-on
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addCustomAddonForm" method="post" action="{% url 'accounts:add_custom_addon' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label for="addonName" class="form-label fw-medium">Add-on Name</label>
+                        <input type="text" class="form-control form-control-lg" id="addonName" name="addonName" placeholder="e.g. Window Cleaning" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="addonDataName" class="form-label fw-medium">Identifier</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg bg-light" id="addonDataName" name="addonDataName" readonly>
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This identifier is automatically generated from the name
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="addonPrice" class="form-label fw-medium">Price</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="addonPrice" name="addonPrice" placeholder="0.00" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Create Add-on
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Custom Addon Modal -->
+<div class="modal fade" id="editCustomAddonModal" tabindex="-1" aria-labelledby="editCustomAddonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editCustomAddonModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Add-on
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editAddonForm">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <input type="hidden" id="editAddonId">
+                    <div class="mb-4">
+                        <label for="editAddonName" class="form-label fw-medium">Add-on Name</label>
+                        <input type="text" class="form-control form-control-lg" id="editAddonName" name="addonName" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="editAddonDataName" class="form-label fw-medium">Identifier</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg bg-light" id="editAddonDataName" name="addonDataName" readonly>
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This identifier is automatically generated from the name
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAddonPrice" class="form-label fw-medium">Price</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="editAddonPrice" name="addonPrice" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    /* Custom Add-ons Page Styles */
+    .addon-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .addon-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .addon-card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .addon-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .addon-price-tag {
+        margin-top: 1rem;
+        display: inline-block;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    .price-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+    
+    .addon-details {
+        margin-top: 1rem;
+    }
+    
+    .addon-detail-item {
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .addon-detail-label {
+        font-size: 0.875rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+    }
+    
+    .addon-detail-value {
+        font-weight: 500;
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    
+    .search-box .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border-color: var(--primary-color);
+    }
+    
+    .dropdown-item:active {
+        background-color: var(--primary-color);
+    }
+</style>
+
+{% block scripts %}
+<script>
+    // Function to generate data name from addon name
+    function generateDataName(addonName) {
+        return addonName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+    
+    // Function to show toast notification
+    function showToast(message, type = 'success') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        const toastContent = document.createElement('div');
+        toastContent.className = 'd-flex';
+        
+        const toastBody = document.createElement('div');
+        toastBody.className = 'toast-body d-flex align-items-center';
+        
+        // Add icon based on type
+        const icon = document.createElement('i');
+        if (type === 'success') {
+            icon.className = 'fas fa-check-circle me-2';
+        } else if (type === 'danger') {
+            icon.className = 'fas fa-exclamation-circle me-2';
+        } else if (type === 'warning') {
+            icon.className = 'fas fa-exclamation-triangle me-2';
+        } else {
+            icon.className = 'fas fa-info-circle me-2';
+        }
+        
+        toastBody.appendChild(icon);
+        toastBody.appendChild(document.createTextNode(message));
+        
+        const closeButton = document.createElement('button');
+        closeButton.className = 'btn-close btn-close-white me-2 m-auto';
+        closeButton.setAttribute('type', 'button');
+        closeButton.setAttribute('data-bs-dismiss', 'toast');
+        closeButton.setAttribute('aria-label', 'Close');
+        
+        toastContent.appendChild(toastBody);
+        toastContent.appendChild(closeButton);
+        toast.appendChild(toastContent);
+        toastContainer.appendChild(toast);
+        
+        document.body.appendChild(toastContainer);
+        
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        
+        // Remove from DOM after hidden
+        toast.addEventListener('hidden.bs.toast', function () {
+            document.body.removeChild(toastContainer);
+        });
+    }
+
+    // Wait for DOM to be loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle addon name input for new addon
+        const addonNameInput = document.getElementById('addonName');
+        const addonDataNameInput = document.getElementById('addonDataName');
+        
+        if (addonNameInput && addonDataNameInput) {
+            addonNameInput.addEventListener('input', function() {
+                addonDataNameInput.value = generateDataName(this.value);
+            });
+        }
+        
+        // Handle addon name input for edit addon
+        const editAddonNameInput = document.getElementById('editAddonName');
+        const editAddonDataNameInput = document.getElementById('editAddonDataName');
+        
+        if (editAddonNameInput) {
+            editAddonNameInput.addEventListener('input', function() {
+                const dataName = generateDataName(this.value);
+                editAddonDataNameInput.value = dataName;
+            });
+        }
+
+        // Handle new addon form submission
+        const addCustomAddonForm = document.getElementById('addCustomAddonForm');
+        if (addCustomAddonForm) {
+            addCustomAddonForm.addEventListener('submit', function() {
+                const addonName = addonNameInput.value;
+                const dataName = generateDataName(addonName);
+                addonDataNameInput.value = dataName;
+            });
+        }
+
+        // Handle edit form submission
+        const editAddonForm = document.getElementById('editAddonForm');
+        if (editAddonForm) {
+            editAddonForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const addonId = document.getElementById('editAddonId').value;
+                const addonName = editAddonNameInput.value;
+                const dataName = generateDataName(addonName);
+                editAddonDataNameInput.value = dataName;
+
+                fetch(`/account/custom-addon/${addonId}/edit/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(new FormData(editAddonForm))
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Add-on updated successfully', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast('Failed to update add-on', 'danger');
+                    }
+                })
+                .catch(() => {
+                    showToast('Error updating add-on', 'danger');
+                });
+            });
+        }
+
+        // Handle delete buttons with confirmation modal
+        document.querySelectorAll('.delete-addon').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const addonId = this.dataset.addonId;
+                
+                // Create confirmation modal
+                const modalHtml = `
+                    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <p>Are you sure you want to delete this add-on? This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                                        <i class="fas fa-trash-alt me-2"></i>Delete Add-on
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add modal to DOM
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = modalHtml;
+                document.body.appendChild(modalContainer);
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                modal.show();
+                
+                // Handle confirm button
+                document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+                    fetch(`/account/custom-addon/${addonId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            modal.hide();
+                            showToast('Add-on deleted successfully', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            showToast('Failed to delete add-on', 'danger');
+                        }
+                    })
+                    .catch(() => {
+                        showToast('Error deleting add-on', 'danger');
+                    });
+                });
+                
+                // Clean up modal when hidden
+                document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
+                    document.body.removeChild(modalContainer);
+                });
+            });
+        });
+
+        // Handle edit buttons
+        document.querySelectorAll('.edit-addon').forEach(button => {
+            button.addEventListener('click', function() {
+                const addonId = this.dataset.addonId;
+                const addonName = this.dataset.addonName;
+                const addonDataName = this.dataset.addonDataName;
+                const addonPrice = this.dataset.addonPrice;
+
+                document.getElementById('editAddonId').value = addonId;
+                document.getElementById('editAddonName').value = addonName;
+                document.getElementById('editAddonDataName').value = addonDataName;
+                document.getElementById('editAddonPrice').value = addonPrice;
+            });
+        });
+        
+        // Search and sorting functionality
+        const searchInput = document.getElementById('addonSearch');
+        const addonsGrid = document.getElementById('addonsGrid');
+        const refreshBtn = document.getElementById('refreshAddons');
+        const sortDropdownItems = document.querySelectorAll('[data-sort]');
+        
+        // Store original addons for reset
+        const originalAddons = Array.from(addonsGrid.children);
+        
+        function searchAndSortAddons(searchTerm = '', sortBy = '') {
+            // Create a copy of the original addons
+            let filteredAddons = [...originalAddons];
+            
+            // Apply search filter if there's a search term
+            if (searchTerm) {
+                filteredAddons = filteredAddons.filter(addon => {
+                    const addonName = addon.dataset.addonName.toLowerCase();
+                    const addonPrice = addon.dataset.addonPrice.toString();
+                    const addonDataName = addon.querySelector('.addon-detail-value')?.textContent.toLowerCase() || '';
+                    return addonName.includes(searchTerm) || 
+                           addonPrice.includes(searchTerm) || 
+                           addonDataName.includes(searchTerm);
+                });
+            }
+            
+            // Apply sorting if specified
+            if (sortBy) {
+                filteredAddons.sort((a, b) => {
+                    if (sortBy === 'name-asc') {
+                        return a.dataset.addonName.localeCompare(b.dataset.addonName);
+                    } else if (sortBy === 'name-desc') {
+                        return b.dataset.addonName.localeCompare(a.dataset.addonName);
+                    } else if (sortBy === 'price-asc') {
+                        return parseFloat(a.dataset.addonPrice) - parseFloat(b.dataset.addonPrice);
+                    } else if (sortBy === 'price-desc') {
+                        return parseFloat(b.dataset.addonPrice) - parseFloat(a.dataset.addonPrice);
+                    }
+                    return 0;
+                });
+            }
+            
+            // Clear and repopulate the grid
+            addonsGrid.innerHTML = '';
+            if (filteredAddons.length === 0) {
+                addonsGrid.innerHTML = `
+                    <div class="col-12">
+                        <div class="card border shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <div class="empty-state-icon mb-4">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <h4 class="mb-3">No Add-ons Found</h4>
+                                <p class="text-secondary mb-4">Try adjusting your search criteria</p>
+                                <button class="btn btn-outline-primary" id="resetSearch">
+                                    <i class="fas fa-undo me-2"></i>Reset Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listener to reset button
+                document.getElementById('resetSearch').addEventListener('click', function() {
+                    searchInput.value = '';
+                    searchAndSortAddons();
+                });
+            } else {
+                filteredAddons.forEach(addon => addonsGrid.appendChild(addon));
+            }
+        }
+        
+        // Add event listener for search input
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                searchAndSortAddons(searchTerm);
+            });
+        }
+        
+        // Add event listener for refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchAndSortAddons();
+                showToast('Add-ons refreshed', 'info');
+            });
+        }
+        
+        // Add event listeners for sort dropdown items
+        sortDropdownItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortBy = this.dataset.sort;
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                searchAndSortAddons(searchTerm, sortBy);
+                
+                // Update dropdown button text
+                const sortText = this.textContent;
+                document.getElementById('sortDropdown').innerHTML = `<i class="fas fa-sort me-2"></i>${sortText}`;
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+
+{% endblock main_content %}

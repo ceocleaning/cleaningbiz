@@ -19,8 +19,9 @@ urlpatterns = [
     path('trial-success/<int:subscription_id>/', views.trial_success, name='trial_success'),
     path('onboarding-call-success/', views.onboarding_call_success, name='onboarding_call_success'),
     
-    # Coupon validation
+    # Coupon validation and application
     path('validate-coupon/', views.validate_coupon, name='validate_coupon'),
+    path('apply-coupon/', views.apply_coupon_to_subscription, name='apply_coupon'),
     path('update-auto-upgrade/', views.update_auto_upgrade, name='update_auto_upgrade'),
     path('manage-card/', views.manage_card, name='manage_card'),  # New URL for card management
     path('delete-card/', views.delete_card, name='delete_card'),

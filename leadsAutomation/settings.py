@@ -41,6 +41,7 @@ DEBUG = True if os.getenv('DJANGO_DEBUG') == 'True' else False
 
 
 BASE_URL = 'https://cleaningbizai.com'
+SITE_URL = 'https://cleaningbizai.com'
 ALLOWED_HOSTS = ['*']
 DEBUG_PROPAGATE_EXCEPTIONS = True
 # Trust Proxy Headers (Needed for Cloudflare)
