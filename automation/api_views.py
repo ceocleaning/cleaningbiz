@@ -102,22 +102,15 @@ def is_slot_available(cleaners, time_to_check, available_cleaners=None):
     available_cleaners.clear()
     
     logs = []
-    logs.append(f"Checking availability for {time_to_check.strftime('%Y-%m-%d %H:%M')}")
-    logs.append(f"Found {len(cleaners)} cleaners to check")
-    
-    for cleaner in cleaners:
-        logs.append(f"\nChecking cleaner: {cleaner.name}")
-        
+    for cleaner in cleaners:        
         # Get availability for this date/time
         cleaner_availability = get_cleaner_availabilities(cleaner, time_to_check)
         
         if cleaner_availability is None:
-            logs.append(f"❌ {cleaner.name} doesn't work on {time_to_check.strftime('%A')} {time_to_check.strftime('%Y-%m-%d')}")
             continue
 
         # Check if time is within cleaner's working hours
         if not (cleaner_availability.startTime <= time_to_check.time() <= cleaner_availability.endTime):
-            logs.append(f"❌ Time {time_to_check.strftime('%H:%M')} is outside {cleaner.name}'s working hours ({cleaner_availability.startTime.strftime('%H:%M')} - {cleaner_availability.endTime.strftime('%H:%M')})")
             continue
 
         # Check for conflicting bookings
@@ -129,17 +122,11 @@ def is_slot_available(cleaners, time_to_check, available_cleaners=None):
         ).exists()
 
         if conflicting_booking:
-            logs.append(f"❌ {cleaner.name} has a conflicting booking at this time")
             continue
 
         # If we get here, the cleaner is available
-        logs.append(f"✅ {cleaner.name} is available!")
         available_cleaners.append(cleaner)
 
-    if len(available_cleaners) > 0:
-        logs.append(f"\n✨ Found {len(available_cleaners)} available cleaner(s)!")
-    else:
-        logs.append("\n❌ No cleaners available for this time slot")
 
     # Return True if we found any available cleaners, along with the logs
     return len(available_cleaners) > 0, logs
@@ -368,7 +355,9 @@ def check_availability_for_booking(request):
         if not current_business:
             return JsonResponse({"error": "Business not found"}, status=404)
         
-        res = parse_business_datetime(date_str + ' ' + time_str, current_business)
+        res = parse_business_datetime(date_str + ' ' + time_str, current_business, need_conversion=False)
+        if not res['success']:
+            return JsonResponse({"error": res['error']}, status=400)
         
 
         cleaners = get_cleaners_for_business(current_business, assignment_check_null=True)
