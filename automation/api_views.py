@@ -154,9 +154,6 @@ def find_all_available_cleaners(cleaners, time_to_check):
     return available_cleaners
 
 
-
-
-
 # Function to find an available cleaner
 def find_available_cleaner(cleaners, time_to_check):
     """Find the best available cleaner for the given time slot based on rating."""
@@ -215,6 +212,8 @@ def find_alternate_slots(cleaners, datetimeToCheck, max_alternates=3):
     """
     logs = []
     
+    if not cleaners:
+        return [], []
     business = cleaners.first().business
     
     alternate_slots = []
