@@ -24,6 +24,10 @@ def subscription_management(request):
     """View for managing subscriptions."""
     business = request.user.business_set.first()
     
+    if not business:
+        messages.error(request, 'No business found for this user.')
+        return redirect('accounts:register_business')
+    
     # Get current subscription
     try:
         subscription = business.active_subscription()
@@ -133,6 +137,10 @@ def subscription_management(request):
 def billing_history(request):
     """View for billing history."""
     business = request.user.business_set.first()
+    
+    if not business:
+        messages.error(request, 'No business found for this user.')
+        return redirect('accounts:register_business')
     
     # Get all billing records
     billing_records = BillingHistory.objects.filter(
