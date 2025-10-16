@@ -22,16 +22,22 @@
                     <i class="fas fa-cog me-2"></i> Actions
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="subscriptionActions">
+                    {% if subscription.status == 'active' %}
                     <li>
                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePlanModal">
                             <i class="fas fa-exchange-alt me-2"></i> Change Plan
                         </button>
                     </li>
-                    {% if subscription.status == 'active' %}
                     <li>
                         <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#cancelPlanModal">
                             <i class="fas fa-ban me-2"></i> Cancel Subscription
                         </button>
+                    </li>
+                    {% else %}
+                    <li>
+                        <span class="dropdown-item text-muted disabled">
+                            <i class="fas fa-info-circle me-2"></i> No actions available (subscription not active)
+                        </span>
                     </li>
                     {% endif %}
                 </ul>
@@ -100,20 +106,20 @@
                             <div class="mb-3">
                                 <label class="form-label text-muted">Plan Name</label>
                                 <div class="fw-bold">
-                                    <a href="{% url 'admin_dashboard:subscription_plans' %}">{{ subscription.name }}</a>
+                                    <a href="{% url 'admin_dashboard:subscription_plans' %}">{{ subscription.plan.name }}</a>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted">Price</label>
-                                <div>${{ subscription.price }}/{{ subscription.billing_cycle }}</div>
+                                <div>${{ subscription.plan.price }}/{{ subscription.plan.billing_cycle }}</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted">Plan Tier</label>
-                                <div>{{ subscription.plan_tier|title }}</div>
+                                <div>{{ subscription.plan.plan_tier|title }}</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted">Plan Type</label>
-                                <div>{{ subscription.plan_type|title }}</div>
+                                <div>{{ subscription.plan.plan_type|title }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -150,15 +156,15 @@
                                 <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         Voice Minutes
-                                        <span class="badge bg-primary rounded-pill">{{ subscription.voice_minutes_limit }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ subscription.plan.voice_minutes }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         SMS Messages
-                                        <span class="badge bg-primary rounded-pill">{{ subscription.sms_messages_limit }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ subscription.plan.sms_messages }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         Agents
-                                        <span class="badge bg-primary rounded-pill">{{ subscription.agents_limit }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ subscription.plan.agents }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -166,22 +172,22 @@
                                 <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         Leads
-                                        <span class="badge bg-primary rounded-pill">{{ subscription.leads_limit }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ subscription.plan.leads }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         Cleaners
-                                        <span class="badge bg-primary rounded-pill">{{ subscription.cleaners_limit }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ subscription.plan.cleaners }}</span>
                                     </li>
                                 </ul>
                             </div>
                         </div>
                         
                         <!-- Additional Features -->
-                        {% if subscription.features %}
+                        {% if subscription.plan.features.all %}
                         <div class="mt-3">
                             <h6 class="mb-2">Additional Features</h6>
                             <div class="d-flex flex-wrap gap-2">
-                                {% for feature in subscription.features %}
+                                {% for feature in subscription.plan.features.all %}
                                 <span class="badge bg-light text-dark p-2">
                                     <i class="fas fa-check-circle text-success me-1"></i> {{ feature }}
                                 </span>
@@ -297,6 +303,133 @@
                                     <p class="text-muted small mb-0">{{ usage.usage_percentage.cleaners }}% of limit</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Coupon Management -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-ticket-alt text-primary me-2"></i>
+                        <h5 class="mb-0">Coupon Management</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="adminCouponCode" class="form-label fw-semibold">Assign Coupon to Subscription</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="adminCouponCode" 
+                                           name="coupon_code" 
+                                           placeholder="Enter coupon code">
+                                    <button class="btn btn-outline-primary" type="button" id="adminCheckCouponBtn">
+                                        <i class="fas fa-search me-2"></i>Check Coupon
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Enter a valid coupon code to apply a discount to this business's subscription
+                                </small>
+                            </div>
+
+                            <!-- Coupon Validation Result -->
+                            <div id="adminCouponValidationResult" style="display: none;">
+                                <!-- Success State -->
+                                <div id="adminCouponValidSuccess" class="alert alert-success" style="display: none;">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle fa-2x me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-2">Valid Coupon!</h6>
+                                            <p class="mb-2"><strong id="adminValidCouponCode"></strong> - <span id="adminValidCouponDiscount"></span></p>
+                                            <div class="row mt-3">
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Original Price</small>
+                                                    <div class="fw-bold">$<span id="adminOriginalPrice"></span></div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Discount</small>
+                                                    <div class="fw-bold text-success">-$<span id="adminDiscountAmount"></span></div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Final Price</small>
+                                                    <div class="fw-bold text-primary">$<span id="adminDiscountedPrice"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-success w-100" id="adminApplyCouponBtn">
+                                        <i class="fas fa-check me-2"></i>Apply This Coupon to Subscription
+                                    </button>
+                                </div>
+
+                                <!-- Error State -->
+                                <div id="adminCouponValidError" class="alert alert-danger" style="display: none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-times-circle fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">Invalid Coupon</h6>
+                                            <p class="mb-0" id="adminCouponErrorMessage"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Current Coupon Status -->
+                            {% if subscription.new_coupon %}
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock fa-lg me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Scheduled Coupon</h6>
+                                        <p class="mb-0">
+                                            <strong>{{ subscription.new_coupon.code }}</strong>
+                                        </p>
+                                        <small class="text-muted">
+                                            Will be applied on next billing cycle
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif subscription.coupon_used %}
+                            <div class="alert alert-success">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-lg me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Active Coupon</h6>
+                                        <p class="mb-0">
+                                            <strong>{{ subscription.coupon_used.code }}</strong>
+                                        </p>
+                                        <small class="text-muted">
+                                            Currently applied
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-info-circle me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="mb-2">No Active Coupon</h6>
+                                        <p class="text-muted small mb-0">
+                                            This subscription doesn't have any active coupons.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -472,21 +605,16 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="new_plan" class="form-label">Select New Plan</label>
-                        <select class="form-select" id="new_plan" name="new_plan" required>
+                        <select class="form-select" id="new_plan" name="new_plan_id" required>
                             <option value="" selected disabled>Choose a plan...</option>
                             <!-- Plans will be loaded dynamically -->
                         </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select a plan to change this subscription to
+                        </small>
                     </div>
-                    <div class="mb-3">
-                        <label for="change_reason" class="form-label">Reason for Change</label>
-                        <textarea class="form-control" id="change_reason" name="change_reason" rows="3" placeholder="Enter reason for changing the plan"></textarea>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="prorate" name="prorate" checked>
-                        <label class="form-check-label" for="prorate">
-                            Prorate charges for the remainder of the billing cycle
-                        </label>
-                    </div>
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -517,18 +645,7 @@
                         <label for="cancel_reason" class="form-label">Reason for Cancellation</label>
                         <textarea class="form-control" id="cancel_reason" name="cancel_reason" rows="3" placeholder="Enter reason for cancellation" required></textarea>
                     </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="immediate" name="immediate" value="1">
-                        <label class="form-check-label" for="immediate">
-                            Cancel immediately (otherwise will end at billing period)
-                        </label>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="issue_refund" name="issue_refund" value="1">
-                        <label class="form-check-label" for="issue_refund">
-                            Issue refund for unused portion
-                        </label>
-                    </div>
+                   
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -542,18 +659,238 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Load subscription plans for the change plan modal
-        fetch('/admin/api/subscription-plans/')
-            .then(response => response.json())
-            .then(data => {
-                const planSelect = document.getElementById('new_plan');
-                data.plans.forEach(plan => {
-                    const option = document.createElement('option');
-                    option.value = plan.id;
-                    option.textContent = `${plan.name} - $${plan.price}/${plan.billing_cycle}`;
-                    planSelect.appendChild(option);
+        const planSelect = document.getElementById('new_plan');
+        
+        if (planSelect) {
+            fetch('{% url "admin_dashboard:get_subscription_plans_api" %}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch plans');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.plans) {
+                        // Clear existing options except the first one
+                        planSelect.innerHTML = '<option value="" selected disabled>Choose a plan...</option>';
+                        
+                        // Filter out trial plans and add regular plans
+                        const regularPlans = data.plans.filter(plan => !plan.is_trial);
+                        
+                        regularPlans.forEach(plan => {
+                            const option = document.createElement('option');
+                            option.value = plan.id;
+                            option.textContent = `${plan.display_name || plan.name} - $${plan.price}/${plan.billing_cycle}`;
+                            
+                            // Add data attributes for additional info
+                            option.setAttribute('data-price', plan.price);
+                            option.setAttribute('data-billing-cycle', plan.billing_cycle);
+                            option.setAttribute('data-tier', plan.plan_tier);
+                            
+                            planSelect.appendChild(option);
+                        });
+                        
+                        // Disable current plan option if it exists
+                        const currentPlanId = {{ subscription.plan.id }};
+                        const currentOption = planSelect.querySelector(`option[value="${currentPlanId}"]`);
+                        if (currentOption) {
+                            currentOption.textContent += ' (Current Plan)';
+                            currentOption.disabled = true;
+                        }
+                    } else {
+                        console.error('Invalid response format:', data);
+                        planSelect.innerHTML = '<option value="">Error loading plans</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading subscription plans:', error);
+                    planSelect.innerHTML = '<option value="">Error loading plans</option>';
                 });
-            })
-            .catch(error => console.error('Error loading subscription plans:', error));
+        }
+        
+        // Admin Coupon Validation and Application
+        const adminCheckCouponBtn = document.getElementById('adminCheckCouponBtn');
+        const adminApplyCouponBtn = document.getElementById('adminApplyCouponBtn');
+        const adminCouponCodeInput = document.getElementById('adminCouponCode');
+        const adminCouponValidationResult = document.getElementById('adminCouponValidationResult');
+        const adminCouponValidSuccess = document.getElementById('adminCouponValidSuccess');
+        const adminCouponValidError = document.getElementById('adminCouponValidError');
+
+        if (adminCheckCouponBtn) {
+            adminCheckCouponBtn.addEventListener('click', function() {
+                const couponCode = adminCouponCodeInput.value.trim();
+                
+                if (!couponCode) {
+                    alert('Please enter a coupon code');
+                    return;
+                }
+
+                // Show loading state
+                adminCheckCouponBtn.disabled = true;
+                adminCheckCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking...';
+
+                // Hide previous results
+                adminCouponValidationResult.style.display = 'none';
+                adminCouponValidSuccess.style.display = 'none';
+                adminCouponValidError.style.display = 'none';
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Validate coupon
+                fetch('/subscription/validate-coupon/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        coupon_code: couponCode,
+                        plan_id: {{ subscription.plan.id }}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    adminCheckCouponBtn.disabled = false;
+                    adminCheckCouponBtn.innerHTML = '<i class="fas fa-search me-2"></i>Check Coupon';
+                    
+                    adminCouponValidationResult.style.display = 'block';
+                    
+                    if (data.valid) {
+                        // Show success state
+                        adminCouponValidSuccess.style.display = 'block';
+                        document.getElementById('adminValidCouponCode').textContent = data.coupon_code;
+                        document.getElementById('adminValidCouponDiscount').textContent = data.discount_description;
+                        document.getElementById('adminOriginalPrice').textContent = data.original_price.toFixed(2);
+                        document.getElementById('adminDiscountAmount').textContent = data.discount_amount.toFixed(2);
+                        document.getElementById('adminDiscountedPrice').textContent = data.discounted_price.toFixed(2);
+                    } else {
+                        // Show error state
+                        adminCouponValidError.style.display = 'block';
+                        document.getElementById('adminCouponErrorMessage').textContent = data.message;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    adminCheckCouponBtn.disabled = false;
+                    adminCheckCouponBtn.innerHTML = '<i class="fas fa-search me-2"></i>Check Coupon';
+                    
+                    adminCouponValidationResult.style.display = 'block';
+                    adminCouponValidError.style.display = 'block';
+                    document.getElementById('adminCouponErrorMessage').textContent = 'An error occurred. Please try again.';
+                });
+            });
+        }
+
+        if (adminApplyCouponBtn) {
+            adminApplyCouponBtn.addEventListener('click', function() {
+                const couponCode = adminCouponCodeInput.value.trim();
+                
+                if (!couponCode) {
+                    alert('Please enter a coupon code');
+                    return;
+                }
+
+                // Confirm action
+                if (!confirm('Are you sure you want to apply this coupon to the business subscription?')) {
+                    return;
+                }
+
+                // Show loading state
+                adminApplyCouponBtn.disabled = true;
+                adminApplyCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Applying...';
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Apply coupon using admin endpoint
+                fetch('/subscription/admin-apply-coupon/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: `coupon_code=${encodeURIComponent(couponCode)}&subscription_id={{ subscription.id }}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message and reload page
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        // Show error message
+                        adminApplyCouponBtn.disabled = false;
+                        adminApplyCouponBtn.innerHTML = '<i class="fas fa-check me-2"></i>Apply This Coupon to Subscription';
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    adminApplyCouponBtn.disabled = false;
+                    adminApplyCouponBtn.innerHTML = '<i class="fas fa-check me-2"></i>Apply This Coupon to Subscription';
+                    alert('An error occurred. Please try again.');
+                });
+            });
+        }
+
+        // Allow Enter key to trigger check coupon
+        if (adminCouponCodeInput) {
+            adminCouponCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    adminCheckCouponBtn.click();
+                }
+            });
+        }
+
+        // Change Plan Form Validation and Confirmation
+        const changePlanForm = document.querySelector('#changePlanModal form');
+        if (changePlanForm) {
+            changePlanForm.addEventListener('submit', function(e) {
+                const selectedPlanId = document.getElementById('new_plan').value;
+                const selectedOption = document.getElementById('new_plan').selectedOptions[0];
+                
+                if (!selectedPlanId) {
+                    e.preventDefault();
+                    alert('Please select a plan to change to.');
+                    return false;
+                }
+                
+                // Get plan details
+                const planName = selectedOption.textContent;
+                const currentPlanName = '{{ subscription.plan.display_name|default:subscription.plan.name }}';
+                const businessName = '{{ business.businessName }}';
+                
+                // Confirm the change
+                const confirmMessage = `Are you sure you want to change ${businessName}'s subscription from "${currentPlanName}" to "${planName}"?\n\nThis action will:\n- End the current subscription immediately\n- Create a new subscription with the selected plan\n- Generate a billing record`;
+                
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state on submit button
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Changing Plan...';
+            });
+        }
+
+        // Display plan details when selected
+        if (planSelect) {
+            planSelect.addEventListener('change', function() {
+                const selectedOption = this.selectedOptions[0];
+                if (selectedOption && selectedOption.value) {
+                    const price = selectedOption.getAttribute('data-price');
+                    const cycle = selectedOption.getAttribute('data-billing-cycle');
+                    const tier = selectedOption.getAttribute('data-tier');
+                    
+                    console.log(`Selected Plan: ${selectedOption.textContent}`);
+                    console.log(`Price: $${price}/${cycle}, Tier: ${tier}`);
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

@@ -1005,7 +1005,7 @@ def apply_coupon_to_subscription(request):
             return JsonResponse({'success': False, 'message': 'Business not found'}, status=404)
         
         # Get the active subscription
-        subscription = business.subscriptions.filter(is_active=True).first()
+        subscription = business.active_subscription()
         if not subscription:
             return JsonResponse({'success': False, 'message': 'No active subscription found'}, status=404)
         
@@ -1306,6 +1306,83 @@ def delete_card(request):
     
     # Redirect back to the card management page
     return redirect('subscription:manage_card')
+
+@login_required
+def admin_apply_coupon_to_subscription(request):
+    """Admin API view to apply a coupon to a business's subscription."""
+    from django.contrib.admin.views.decorators import staff_member_required
+    
+    # Check if user is staff/admin
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+    
+    try:
+        # Get business_id or subscription_id from request
+        business_id = request.POST.get('business_id')
+        subscription_id = request.POST.get('subscription_id')
+        
+        # Get the subscription
+        if subscription_id:
+            subscription = BusinessSubscription.objects.filter(id=subscription_id).first()
+            if not subscription:
+                return JsonResponse({'success': False, 'message': 'Subscription not found'}, status=404)
+            business = subscription.business
+        elif business_id:
+            business = Business.objects.filter(id=business_id).first()
+            if not business:
+                return JsonResponse({'success': False, 'message': 'Business not found'}, status=404)
+            subscription = business.active_subscription()
+            if not subscription:
+                return JsonResponse({'success': False, 'message': 'No active subscription found for this business'}, status=404)
+        else:
+            return JsonResponse({'success': False, 'message': 'Business ID or Subscription ID is required'}, status=400)
+        
+        coupon_code = request.POST.get('coupon_code', '').strip().upper()
+        
+        if not coupon_code:
+            return JsonResponse({'success': False, 'message': 'Coupon code is required'}, status=400)
+        
+        # Validate the coupon
+        try:
+            coupon = Coupon.objects.get(code=coupon_code, is_active=True)
+            plan = subscription.plan
+            user = business.user
+            
+            # Check if the coupon is valid
+            if not coupon.is_valid():
+                return JsonResponse({'success': False, 'message': 'This coupon is no longer valid'}, status=400)
+            
+            # Check if the coupon is applicable to this plan
+            if coupon.applicable_plans.exists() and not coupon.applicable_plans.filter(id=plan.id).exists():
+                return JsonResponse({'success': False, 'message': 'This coupon is not valid for the current plan'}, status=400)
+            
+            # Check if coupon is already applied
+            if subscription.coupon_used == coupon:
+                return JsonResponse({'success': False, 'message': 'This coupon is already applied to the subscription'}, status=400)
+            
+            # Check if coupon is already scheduled
+            if subscription.new_coupon == coupon:
+                return JsonResponse({'success': False, 'message': 'This coupon is already scheduled for the next billing cycle'}, status=400)
+            
+            # Apply the coupon to the subscription
+            subscription.new_coupon = coupon
+            subscription.save()
+            
+            # Return success response
+            return JsonResponse({
+                'success': True,
+                'message': f'Coupon applied successfully to {business.businessName}! It will be used in the next billing cycle.'
+            })
+            
+        except Coupon.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Invalid coupon code'}, status=400)
+        
+    except Exception as e:
+        print(f"Error applying coupon (admin): {str(e)}")
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
 
 @login_required
 def onboarding_call_success(request):

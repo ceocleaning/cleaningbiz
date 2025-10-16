@@ -52,6 +52,7 @@ urlpatterns = [
     path('subscriptions/<int:subscription_id>/', views.subscription_detail, name='subscription_detail'),
     path('subscriptions/assign/', views.assign_subscription, name='assign_subscription'),
     path('subscriptions/admin-cancel-plan/', views.admin_cancel_plan, name='admin_cancel_plan'),
+    path('api/subscription-plans/', views.get_subscription_plans_api, name='get_subscription_plans_api'),
     
     # Platform Settings
     path('platform-settings/', saas_views.platform_settings, name='platform_settings'),

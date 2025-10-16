@@ -933,7 +933,8 @@ def subscription_detail(request, subscription_id):
     
     
     context = {
-        'subscription': subscription_data,
+        'subscription': subscription,  # Pass actual subscription object for coupon access
+        'subscription_data': subscription_data,  # Keep data dict if needed elsewhere
         'business': business,
         'billing_history': billing_history,
         'usage': usage_data,
@@ -1313,6 +1314,43 @@ def admin_cancel_plan(request):
 
 @login_required
 @user_passes_test(is_admin)
+def get_subscription_plans_api(request):
+    """API endpoint to get all subscription plans for admin dashboard."""
+    try:
+        # Get all active subscription plans
+        plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+        
+        plans_data = []
+        for plan in plans:
+            plans_data.append({
+                'id': plan.id,
+                'name': plan.name,
+                'display_name': plan.display_name,
+                'price': float(plan.price),
+                'billing_cycle': plan.billing_cycle,
+                'plan_tier': plan.plan_tier,
+                'plan_type': plan.plan_type,
+                'voice_minutes': plan.voice_minutes,
+                'sms_messages': plan.sms_messages,
+                'agents': plan.agents,
+                'leads': plan.leads,
+                'cleaners': plan.cleaners,
+                'is_trial': plan.plan_type == 'trial',
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'plans': plans_data
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching plans: {str(e)}'
+        }, status=500)
+
+@login_required
+@user_passes_test(is_admin)
 def admin_change_plan(request):
     """Immediately change a business's subscription plan (admin only)."""
     redirect_url = request.META.get('HTTP_REFERER', 'admin_dashboard:businesses')
@@ -1329,6 +1367,16 @@ def admin_change_plan(request):
         subscription = get_object_or_404(BusinessSubscription, id=subscription_id)
         new_plan = get_object_or_404(SubscriptionPlan, id=new_plan_id)
         business = subscription.business
+        
+        # Validate subscription is active
+        if subscription.status != 'active':
+            messages.error(request, f'Cannot change plan for a {subscription.status} subscription. Only active subscriptions can be changed.')
+            return redirect(redirect_url)
+        
+        # Validate not changing to the same plan
+        if subscription.plan.id == new_plan.id:
+            messages.error(request, 'The selected plan is already the current plan.')
+            return redirect(redirect_url)
 
         subscriptions = BusinessSubscription.objects.filter(business=business, is_active=True)
         
