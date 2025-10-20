@@ -972,8 +972,8 @@ def booking_history_data(request):
     payment_amounts_data = []
     
     # Create a dictionary to easily look up values by month
-    counts_by_month = {item['month'].strftime('%Y-%m'): item['count'] for item in booking_counts}
-    amounts_by_month = {item['month'].strftime('%Y-%m'): float(item['amount']) for item in payment_amounts}
+    counts_by_month = {item['month'].strftime('%Y-%m'): item['count'] for item in booking_counts if item['month'] is not None}
+    amounts_by_month = {item['month'].strftime('%Y-%m'): float(item['amount']) for item in payment_amounts if item['month'] is not None}
     
     # Generate data for the last 6 months, including months with zero bookings
     for i in range(5, -1, -1):
