@@ -37,6 +37,17 @@
             
             <div class="row mb-4">
                 <div class="col-md-6">
+                    <label for="charge_onboarding_fee" class="form-label">Onboarding Fee</label>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="charge_onboarding_fee" name="charge_onboarding_fee" {% if coupon.charge_onboarding_fee %}checked{% endif %}>
+                        <label class="form-check-label" for="charge_onboarding_fee">Charge Onboarding Fee</label>
+                    </div>
+                    <div class="form-text">If enabled, the onboarding fee will be charged even when this coupon is applied.</div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
                     <label for="discount_type" class="form-label">Discount Type</label>
                     <select class="form-select" id="discount_type" name="discount_type" required>
                         <option value="percentage" {% if coupon.discount_type == 'percentage' %}selected{% endif %}>Percentage Discount</option>

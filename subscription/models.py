@@ -175,6 +175,8 @@ class Coupon(models.Model):
     limit_type = models.CharField(max_length=10, choices=LIMIT_TYPE_CHOICES, default='overall')
     usage_limit = models.PositiveIntegerField(null=True, blank=True)  # None means unlimited
     times_used = models.PositiveIntegerField(default=0)
+
+    charge_onboarding_fee = models.BooleanField(default=False)
     
     expiry_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

@@ -377,6 +377,7 @@ def add_coupon(request):
         usage_limit = request.POST.get('usage_limit') or None
         expiry_date = request.POST.get('expiry_date') or None
         is_active = 'is_active' in request.POST
+        charge_onboarding_fee = 'charge_onboarding_fee' in request.POST
         description = request.POST.get('description', '')
 
         if Coupon.objects.filter(code=code).exists():
@@ -392,6 +393,7 @@ def add_coupon(request):
             usage_limit=usage_limit,
             expiry_date=expiry_date,
             is_active=is_active,
+            charge_onboarding_fee=charge_onboarding_fee,
             description=description
         )
         
@@ -428,6 +430,7 @@ def edit_coupon(request):
         coupon.usage_limit = request.POST.get('usage_limit') or None
         coupon.expiry_date = request.POST.get('expiry_date') or None
         coupon.is_active = 'is_active' in request.POST
+        coupon.charge_onboarding_fee = 'charge_onboarding_fee' in request.POST
         coupon.description = request.POST.get('description', '')
         
         # Update applicable plans

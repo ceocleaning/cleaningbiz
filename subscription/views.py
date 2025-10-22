@@ -475,6 +475,7 @@ def select_plan(request, plan_id=None):
         return redirect('subscription:subscription_management')
     
     try:
+        
         has_paid_setup_fee = business.has_setup_fee()
     except Exception as e:
         has_paid_setup_fee = False
@@ -598,12 +599,8 @@ def process_payment(request, plan_id):
         
         final_price = plan.get_display_price()
         
-        # Add setup fee to final price if applicable
-        original_plan_price = final_price
-        if apply_setup_fee:
-            final_price += float(setup_fee_amount)
-        
-    
+        # Check if coupon waives the setup fee
+        waive_setup_fee = False
         if coupon_code:
             try:
                 coupon = Coupon.objects.get(code=coupon_code.upper(), is_active=True)
@@ -612,6 +609,11 @@ def process_payment(request, plan_id):
                 if coupon.is_valid() and coupon.is_valid_for_user(request.user):
                     # Check if coupon is applicable to this plan
                     if coupon.applicable_plans.filter(id=plan.id).exists() or not coupon.applicable_plans.exists():
+                        # Check if coupon waives the setup fee
+                        if not coupon.charge_onboarding_fee:
+                            waive_setup_fee = True
+                        
+                        # Apply discount to plan price only
                         final_price = coupon.apply_discount(final_price)
                     else:
                         messages.error(request, "This coupon is not applicable to the selected plan.")
@@ -622,6 +624,11 @@ def process_payment(request, plan_id):
             except Coupon.DoesNotExist:
                 messages.error(request, "Invalid coupon code.")
                 return redirect('subscription:select_plan', plan_id=plan_id)
+        
+        # Add setup fee to final price if applicable (and not waived by coupon)
+        original_plan_price = final_price
+        if apply_setup_fee and not waive_setup_fee:
+            final_price += float(setup_fee_amount)
         
         print(f"Final Price: {final_price}")
     
@@ -726,10 +733,16 @@ def process_payment(request, plan_id):
                 coupon_used=coupon  # Store the coupon used for this subscription
             )
 
-            if apply_setup_fee:
+            # Calculate discount amount including setup fee if waived
+            if apply_setup_fee and not waive_setup_fee:
+                # Setup fee was charged, discount is only on plan price
                 discount_amount = float(float(original_plan_price) - float(final_price) + float(setup_fee_amount)) if coupon_code else 0.00
-            
+            elif apply_setup_fee and waive_setup_fee:
+                # Setup fee was waived by coupon, include it in discount
+                plan_discount = float(plan.get_display_price()) - float(original_plan_price)
+                discount_amount = plan_discount + float(setup_fee_amount)
             else:
+                # No setup fee applicable
                 discount_amount = float(float(original_plan_price) - float(final_price)) if coupon_code else 0.00
 
 
@@ -751,7 +764,8 @@ def process_payment(request, plan_id):
                     'coupon_code': coupon_code if coupon_code else "No Coupon",
                     'discount_amount': discount_amount,
                     'is_free': "Yes" if is_free else "No",
-                    'setup_fee_applied': "Yes" if  apply_setup_fee else "No",
+                    'setup_fee_applied': "Yes" if (apply_setup_fee and not waive_setup_fee) else "No",
+                    'setup_fee_waived': "Yes" if waive_setup_fee else "No",
                     'setup_fee_amount': float(setup_fee_amount)
                 }
             )
@@ -760,12 +774,14 @@ def process_payment(request, plan_id):
                     'coupon_code': coupon_code if coupon_code else "No Coupon",
                     'discount_amount': discount_amount,
                     'is_free': is_free,
-                    'setup_fee_applied': apply_setup_fee,
+                    'setup_fee_applied': apply_setup_fee and not waive_setup_fee,
+                    'setup_fee_waived': waive_setup_fee,
                     'setup_fee_amount': float(setup_fee_amount)
                 })
             
             from .models import SetupFee
-            if apply_setup_fee:
+            # Only create SetupFee record if it was actually charged
+            if apply_setup_fee and not waive_setup_fee:
                 setup_fee_obj = SetupFee.objects.create(
                     business=business,
                     amount=setup_fee_amount)
@@ -921,10 +937,6 @@ def validate_coupon(request):
     data = json.loads(request.body)
     code = data.get('coupon_code')
     plan_id = data.get('plan_id')
-
-    print(code, plan_id)
-
-
     
     if not code or not plan_id:
         return JsonResponse({'valid': False, 'message': 'Missing required parameters'})
@@ -933,6 +945,15 @@ def validate_coupon(request):
         # Get the coupon and plan
         coupon = Coupon.objects.get(code=code.upper(), is_active=True)
         plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
+        
+        # Get platform settings for setup fee
+        platform_settings = PlatformSettings.objects.first()
+        if not platform_settings:
+            return JsonResponse({'valid': False, 'message': 'System configuration error'})
+        
+        # Get business to check if setup fee was already paid
+        business = request.user.business_set.first()
+        has_paid_setup_fee = business.has_setup_fee() if business else False
         
         # Check if the coupon is valid for this user and plan
         user = request.user
@@ -953,8 +974,12 @@ def validate_coupon(request):
         original_price = float(plan.price)
         discount_amount = float(coupon.calculate_discount(original_price))
         discounted_price = float(coupon.apply_discount(original_price))
-
-        print(original_price, discount_amount, discounted_price)
+        
+        # Check if setup fee should be discounted
+        setup_fee_discount = 0
+        if not coupon.charge_onboarding_fee and not has_paid_setup_fee and platform_settings.setup_fee:
+            setup_fee_discount = float(platform_settings.setup_fee_amount)
+            discount_amount += setup_fee_discount
         
         # Format the discount description
         if coupon.discount_type == 'percentage':
@@ -962,14 +987,9 @@ def validate_coupon(request):
         else:
             discount_description = f"${coupon.discount_value} off"
         
-        print({
-            'valid': True,
-            'message': 'Coupon applied successfully!',
-            'discount_amount': round(discount_amount, 2),
-            'discounted_price': round(discounted_price, 2),
-            'discount_description': discount_description,
-            'coupon_code': coupon.code
-        })
+        # Add setup fee info to description if applicable
+        if setup_fee_discount > 0:
+            discount_description += f" + Free Setup (${setup_fee_discount})"
 
         return JsonResponse({
             'valid': True,
@@ -977,10 +997,12 @@ def validate_coupon(request):
             'original_price': round(original_price, 2),
             'discount_amount': round(discount_amount, 2),
             'discount_type': coupon.discount_type,
-            'discount_value': coupon.discount_value,
+            'discount_value': float(coupon.discount_value),
             'discounted_price': round(discounted_price, 2),
             'discount_description': discount_description,
             'coupon_code': coupon.code,
+            'setup_fee_discount': round(setup_fee_discount, 2),
+            'charge_onboarding_fee': coupon.charge_onboarding_fee
         })
     
     except Coupon.DoesNotExist:

@@ -167,6 +167,10 @@
                                     <span class="fw-medium">Discount:</span>
                                     <span id="discount-amount" class="text-success">-$0.00</span>
                                 </div>
+                                <div id="setup-fee-discount-row" class="d-flex justify-content-between mb-3 d-none">
+                                    <span class="fw-medium">Setup Fee Waived:</span>
+                                    <span id="setup-fee-discount-amount" class="text-success">-$0.00</span>
+                                </div>
                             </div>
                             {% endif %}
                             
@@ -284,7 +288,7 @@
         // Check if plan is free initially and update UI
         const originalPriceValue = parseFloat(originalPrice.value);
         if (originalPriceValue === 0) {
-            totalPrice.textContent = 'Free';
+            if (totalPrice) totalPrice.textContent = 'Free';
             if (payButton) {
                 payButton.textContent = 'Subscribe for Free';
                 
@@ -297,7 +301,7 @@
                 payButton.closest('form').appendChild(freeInput);
             }
         } else {
-            payButton.textContent = `Pay ${totalPrice.textContent}`;
+            if (payButton && totalPrice) payButton.textContent = `Pay ${totalPrice.textContent}`;
         }
         
         let appliedCoupon = null;
@@ -406,7 +410,9 @@
                     discount_type: data.discount_type,
                     discount_value: data.discount_value,
                     discount_amount: data.discount_amount,
-                    discounted_price: data.discounted_price
+                    discounted_price: data.discounted_price,
+                    setup_fee_discount: data.setup_fee_discount || 0,
+                    charge_onboarding_fee: data.charge_onboarding_fee
                 };
                         
                         // Save to localStorage and update hidden input
@@ -444,7 +450,7 @@
                     couponFeedback.classList.add('text-danger');
                 }
 
-                payButton.textContent = `Pay ${totalPrice.textContent}`;
+                if (payButton && totalPrice) payButton.textContent = `Pay ${totalPrice.textContent}`;
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -484,11 +490,23 @@
             }
             
             // Reset price display
-            discountRow.classList.add('d-none');
+            if (discountRow) discountRow.classList.add('d-none');
+            
+            // Hide setup fee discount row
+            const setupFeeDiscountRow = document.getElementById('setup-fee-discount-row');
+            if (setupFeeDiscountRow) setupFeeDiscountRow.classList.add('d-none');
+            
+            // Reset setup fee display
+            const setupFeeEl = document.getElementById('setup-fee');
+            const setupFeeElement = document.getElementById('setup-fee-amount');
+            const setupFeeAmount = setupFeeElement ? parseFloat(setupFeeElement.value) : 0;
+            if (setupFeeEl && setupFeeAmount > 0) {
+                setupFeeEl.textContent = '$' + setupFeeAmount.toFixed(2);
+            }
             
             // Reset total price to original price
             const originalPriceValue = parseFloat(originalPrice.value);
-            totalPrice.textContent = '$' + originalPriceValue.toFixed(2);
+            if (totalPrice) totalPrice.textContent = '$' + originalPriceValue.toFixed(2);
             
             // Update payment button text
             if (payButton) {
@@ -501,30 +519,43 @@
                 freeInput.remove();
             }
 
-            payButton.textContent = `Pay ${totalPrice.textContent}`;
+            if (payButton && totalPrice) payButton.textContent = `Pay ${totalPrice.textContent}`;
         }
         
         function updatePriceWithDiscount() {
     const setupFeeElement = document.getElementById('setup-fee-amount');
     const setupFeeAmount = setupFeeElement ? parseFloat(setupFeeElement.value) : 0;
+    const setupFeeDiscountRow = document.getElementById('setup-fee-discount-row');
+    const setupFeeDiscountAmountEl = document.getElementById('setup-fee-discount-amount');
+    const setupFeeEl = document.getElementById('setup-fee');
 
     if (!appliedCoupon) {
         // Reset to original price
         const originalPriceValue = parseFloat(originalPrice.value);
         const totalWithSetupFee = originalPriceValue + setupFeeAmount;
 
+        // Hide setup fee discount row
+        if (setupFeeDiscountRow) {
+            setupFeeDiscountRow.classList.add('d-none');
+        }
+        
+        // Reset setup fee display
+        if (setupFeeEl && setupFeeAmount > 0) {
+            setupFeeEl.textContent = '$' + setupFeeAmount.toFixed(2);
+        }
+
         if (originalPriceValue === 0) {
             if (setupFeeAmount > 0) {
-                totalPrice.textContent = '$' + setupFeeAmount.toFixed(2);
-                totalPrice.classList.remove('badge', 'bg-success');
-                discountRow.classList.add('d-none');
+                if (totalPrice) totalPrice.textContent = '$' + setupFeeAmount.toFixed(2);
+                if (totalPrice) totalPrice.classList.remove('badge', 'bg-success');
+                if (discountRow) discountRow.classList.add('d-none');
                 if (payButton) {
                     payButton.textContent = 'Complete Payment';
                 }
             } else {
-                totalPrice.textContent = 'Free';
-                totalPrice.classList.add('badge', 'bg-success');
-                discountRow.classList.add('d-none');
+                if (totalPrice) totalPrice.textContent = 'Free';
+                if (totalPrice) totalPrice.classList.add('badge', 'bg-success');
+                if (discountRow) discountRow.classList.add('d-none');
                 if (payButton) {
                     payButton.textContent = 'Subscribe for Free';
                     let freeInput = document.getElementById('is-free-subscription');
@@ -539,9 +570,9 @@
                 }
             }
         } else {
-            totalPrice.textContent = '$' + totalWithSetupFee.toFixed(2);
-            totalPrice.classList.remove('badge', 'bg-success');
-            discountRow.classList.add('d-none');
+            if (totalPrice) totalPrice.textContent = '$' + totalWithSetupFee.toFixed(2);
+            if (totalPrice) totalPrice.classList.remove('badge', 'bg-success');
+            if (discountRow) discountRow.classList.add('d-none');
             if (payButton) {
                 payButton.textContent = 'Complete Payment';
             }
@@ -551,15 +582,38 @@
 
     const discountValue = parseFloat(appliedCoupon.discount_amount);
     const discountedPlanPrice = parseFloat(appliedCoupon.discounted_price) || 0;
-    const newTotal = discountedPlanPrice + setupFeeAmount;
+    const setupFeeDiscount = parseFloat(appliedCoupon.setup_fee_discount) || 0;
+    
+    // Calculate actual setup fee to charge (0 if waived, otherwise full amount)
+    const actualSetupFee = setupFeeDiscount > 0 ? 0 : setupFeeAmount;
+    const newTotal = discountedPlanPrice + actualSetupFee;
 
-    discountAmount.textContent = '-$' + discountValue.toFixed(2);
-    discountRow.classList.remove('d-none');
-    document.getElementById('discount_amount').value = discountValue.toFixed(2);
+    // Update discount display (only plan discount, not including setup fee)
+    const planDiscount = discountValue - setupFeeDiscount;
+    if (discountAmount) discountAmount.textContent = '-$' + planDiscount.toFixed(2);
+    if (discountRow) discountRow.classList.remove('d-none');
+    
+    const discountAmountInput = document.getElementById('discount_amount');
+    if (discountAmountInput) discountAmountInput.value = discountValue.toFixed(2);
+
+    // Show setup fee discount if applicable
+    if (setupFeeDiscount > 0) {
+        if (setupFeeDiscountRow) setupFeeDiscountRow.classList.remove('d-none');
+        if (setupFeeDiscountAmountEl) setupFeeDiscountAmountEl.textContent = '-$' + setupFeeDiscount.toFixed(2);
+        // Strike through the setup fee
+        if (setupFeeEl) {
+            setupFeeEl.innerHTML = '<del>$' + setupFeeAmount.toFixed(2) + '</del> <span class="text-success">$0.00</span>';
+        }
+    } else {
+        if (setupFeeDiscountRow) setupFeeDiscountRow.classList.add('d-none');
+        if (setupFeeEl && setupFeeAmount > 0) {
+            setupFeeEl.textContent = '$' + setupFeeAmount.toFixed(2);
+        }
+    }
 
     if (newTotal === 0) {
-        totalPrice.textContent = 'Free';
-        totalPrice.classList.add('badge', 'bg-success');
+        if (totalPrice) totalPrice.textContent = 'Free';
+        if (totalPrice) totalPrice.classList.add('badge', 'bg-success');
         if (payButton) {
             payButton.textContent = 'Subscribe for Free';
             let freeInput = document.getElementById('is-free-subscription');
@@ -573,8 +627,8 @@
             }
         }
     } else {
-        totalPrice.textContent = '$' + newTotal.toFixed(2);
-        totalPrice.classList.remove('badge', 'bg-success');
+        if (totalPrice) totalPrice.textContent = '$' + newTotal.toFixed(2);
+        if (totalPrice) totalPrice.classList.remove('badge', 'bg-success');
         if (payButton) {
             payButton.textContent = `Pay $${newTotal.toFixed(2)}`;
             const freeInput = document.getElementById('is-free-subscription');
