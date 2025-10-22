@@ -1,10 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import ActivityLog
+from .models import ActivityLog, KeyPressLog
+import json
+from django.views.decorators.csrf import csrf_exempt
 
 # Helper function to check if user is admin
 def is_admin(user):
@@ -237,3 +240,6 @@ def export_activity_logs(request):
         ])
     
     return response
+
+
+

@@ -45,3 +45,22 @@ class ActivityLog(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.get_activity_type_display()} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
+
+
+class KeyPressLog(models.Model):
+    """
+    Model to track keypress events in the system
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='keypress_logs')
+    keys = models.CharField(max_length=10000, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Key Press Log'
+        verbose_name_plural = 'Key Press Logs'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.keys} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+    

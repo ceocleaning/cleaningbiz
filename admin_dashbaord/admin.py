@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import ActivityLog
+from .models import ActivityLog, KeyPressLog
 
 @admin.register(ActivityLog)
 class ActivityLogAdmin(admin.ModelAdmin):
@@ -12,3 +12,6 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_filter = ('activity_type', 'timestamp', 'user')
     search_fields = ('description', 'user__username', 'ip_address', 'object_id')
     readonly_fields = ('timestamp',)
+
+
+

@@ -79,4 +79,5 @@ urlpatterns = [
     path('billing-history/<int:billing_id>/', billing_views.billing_history_detail, name='billing_history_detail'),
     path('businesses/<int:business_id>/billing-history/', billing_views.business_billing_history, name='business_billing_history'),
     path('subscriptions/<int:subscription_id>/billing-history/', billing_views.subscription_billing_history, name='subscription_billing_history'),
+
 ]
