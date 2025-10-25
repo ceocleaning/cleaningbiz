@@ -12,13 +12,13 @@ def create_customer(data, business):
         if not customer.exists():
             customer = Customer.objects.create(
             business=business,
-            first_name=data["firstName"] or data["first_name"],
-            last_name=data["lastName"] or data["last_name"],
+            first_name=data.get("firstName") or data.get("first_name", ""),
+            last_name=data.get("lastName") or data.get("last_name", ""),
             email=customer_email,
-            phone_number=data["phoneNumber"] or data["phone_number"],
-            address=data["address1"] or data["address"],
-            city=data["city"],
-            state_or_province=data["state"] or data['stateOrProvince'],
+            phone_number=data.get("phoneNumber") or data.get("phone_number", ""),
+            address=data.get("address1") or data.get("address", ""),
+            city=data.get("city", ""),
+            state_or_province=data.get("state") or data.get('stateOrProvince', ""),
             zip_code=data.get("zipCode", data.get("zip_code", ""))
             )
         else:
