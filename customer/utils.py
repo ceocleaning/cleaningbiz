@@ -18,7 +18,7 @@ def create_customer(data, business):
             phone_number=data["phoneNumber"] or data["phone_number"],
             address=data["address1"] or data["address"],
             city=data["city"],
-            state_or_province=data["state"],
+            state_or_province=data["state"] or data['stateOrProvince'],
             zip_code=data.get("zipCode", data.get("zip_code", ""))
             )
         else:
