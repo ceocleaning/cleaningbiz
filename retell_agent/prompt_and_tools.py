@@ -9,29 +9,29 @@ def get_all_active_addons(business):
     
     # Hardcoded addons
     if pricing_obj.addonPriceDishes > 0:
-        active_addons.append({"name": "dishes", "data_name": "dishes", "price": f"${pricing_obj.addonPriceDishes}"})
+        active_addons.append({"name": "Dishes", "data_name": "dishes", "price": f"${pricing_obj.addonPriceDishes}"})
     if pricing_obj.addonPriceLaundry > 0:
-        active_addons.append({"name": "laundry", "data_name": "laundry", "price": f"${pricing_obj.addonPriceLaundry}"})
+        active_addons.append({"name": "Laundry", "data_name": "laundry", "price": f"${pricing_obj.addonPriceLaundry}"})
     if pricing_obj.addonPriceWindow > 0:
-        active_addons.append({"name": "window", "data_name": "windows", "price": f"${pricing_obj.addonPriceWindow}"})
+        active_addons.append({"name": "Window", "data_name": "windows", "price": f"${pricing_obj.addonPriceWindow}"})
     if pricing_obj.addonPricePets > 0:
-        active_addons.append({"name": "pets", "data_name": "pets", "price": f"${pricing_obj.addonPricePets}"})
+        active_addons.append({"name": "Pets", "data_name": "pets", "price": f"${pricing_obj.addonPricePets}"})
     if pricing_obj.addonPriceFridge > 0:
-        active_addons.append({"name": "fridge", "data_name": "fridge", "price": f"${pricing_obj.addonPriceFridge}"})
+        active_addons.append({"name": "Fridge", "data_name": "fridge", "price": f"${pricing_obj.addonPriceFridge}"})
     if pricing_obj.addonPriceOven > 0:
-        active_addons.append({"name": "oven", "data_name": "oven", "price": f"${pricing_obj.addonPriceOven}"})
+        active_addons.append({"name": "Oven", "data_name": "oven", "price": f"${pricing_obj.addonPriceOven}"})
     if pricing_obj.addonPriceBaseboard > 0:
-        active_addons.append({"name": "baseboard", "data_name": "baseboard", "price": f"${pricing_obj.addonPriceBaseboard}"})
+        active_addons.append({"name": "Baseboard", "data_name": "baseboard", "price": f"${pricing_obj.addonPriceBaseboard}"})
     if pricing_obj.addonPriceBlinds > 0:
-        active_addons.append({"name": "blinds", "data_name": "blinds", "price": f"${pricing_obj.addonPriceBlinds}"})
+        active_addons.append({"name": "Blinds", "data_name": "blinds", "price": f"${pricing_obj.addonPriceBlinds}"})
     if pricing_obj.addonPriceGreen > 0:
-        active_addons.append({"name": "green", "data_name": "green", "price": f"${pricing_obj.addonPriceGreen}"})
+        active_addons.append({"name": "Green", "data_name": "green", "price": f"${pricing_obj.addonPriceGreen}"})
     if pricing_obj.addonPriceCabinets > 0:
-        active_addons.append({"name": "cabinets", "data_name": "cabinets", "price": f"${pricing_obj.addonPriceCabinets}"})
+        active_addons.append({"name": "Cabinets", "data_name": "cabinets", "price": f"${pricing_obj.addonPriceCabinets}"})
     if pricing_obj.addonPricePatio > 0:
-        active_addons.append({"name": "patio", "data_name": "patio", "price": f"${pricing_obj.addinPricePatio}"})
+        active_addons.append({"name": "Patio", "data_name": "patio", "price": f"${pricing_obj.addinPricePatio}"})
     if pricing_obj.addonPriceGarage > 0:
-        active_addons.append({"name": "garage", "data_name": "garage", "price": f"${pricing_obj.addonPriceGarage}"})
+        active_addons.append({"name": "Garage", "data_name": "garage", "price": f"${pricing_obj.addonPriceGarage}"})
         
     # Custom addons
     custom_addons = CustomAddons.objects.filter(business=business)
@@ -46,20 +46,21 @@ def get_retell_prompt(business):
     business_obj = api_credential.business
     pricing_obj = business_obj.settings
     all_addons = get_all_active_addons(business_obj)
-    addons_prompt_list = "\n".join([f"- {addon['name']}" for addon in all_addons])
+    addons_prompt_list = "\n".join([f"- {addon['name']} (data_name: {addon['data_name']}, price: {addon['price']})" for addon in all_addons])
 
     # Get active services
     active_services = []
     if pricing_obj.sqftMultiplierStandard > 0:
-        active_services.append("Standard")
+        active_services.append(f"Standard Cleaning (${pricing_obj.sqftMultiplierStandard} per sqft)")
     if pricing_obj.sqftMultiplierDeep > 0:
-        active_services.append("Deep Cleaning")
+        active_services.append(f"Deep Cleaning (${pricing_obj.sqftMultiplierDeep} per sqft)")
     if pricing_obj.sqftMultiplierMoveinout > 0:
-        active_services.append("Moveinout")
+        active_services.append(f"Move-in/Move-out Cleaning (${pricing_obj.sqftMultiplierMoveinout} per sqft)")
     if pricing_obj.sqftMultiplierAirbnb > 0:
-        active_services.append("Airbnb")
+        active_services.append(f"Airbnb Cleaning (${pricing_obj.sqftMultiplierAirbnb} per sqft)")
     
     services_list = "\n".join([f"- {service}" for service in active_services])
+
 
     # commercial_cleaning_prompt = f"""
     # If user selects commercial cleaning 
@@ -90,6 +91,14 @@ Provide service recommendations based on client inputs.
 Verify calendar availability before confirming appointments.
 Offer alternative time slots if the preferred time is unavailable.
 Thank the client sincerely after booking.
+
+
+##Pricing
+- Bedroom Price: ${pricing_obj.bedroomPrice}
+- Bathroom Price: ${pricing_obj.bathroomPrice}
+
+SqaureFoot Rate:
+{services_list}
 
 ##Addons
 {addons_prompt_list}
