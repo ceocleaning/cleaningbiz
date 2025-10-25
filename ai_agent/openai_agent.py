@@ -167,7 +167,8 @@ class OpenAIAgent:
             try:
                 agent_config = AgentConfiguration.objects.get(business=business)
                 
-                system_prompt = f"""You are {agent_config.agent_name}, virtual customer support and sales representative. You are speaking with a potential customer.
+                system_prompt = f"""
+                You are {agent_config.agent_name}, virtual customer support and sales representative. You are speaking with a potential customer.
                   
                     ALWAYS ASK ONE QUESTION AT A TIME.
 
