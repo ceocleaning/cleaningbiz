@@ -32,10 +32,17 @@ def calculate_total(business, client_phone_number=None, session_key=None):
         else:
             summary = chat.summary or {}
 
-        # Calculate base price
+        # Try to get customer by email to check for custom pricing
+        customer = None
+        if summary.get("email"):
+            from customer.models import Customer
+            customer = Customer.objects.filter(email=summary.get("email")).first()
+
+        # Calculate price with customer-specific pricing if available
         amount_calculation = calculateAmount(
             business,
-            summary
+            summary,
+            customer=customer
         )
 
         return {
@@ -178,6 +185,18 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         # Calculate price with customer-specific pricing if available
         calculateTotal = calculateAmount(business, data, customer=customer)
         
+        # Convert Decimal values to float for JSON serialization
+        def convert_decimals_to_float(obj):
+            if isinstance(obj, dict):
+                return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_decimals_to_float(item) for item in obj]
+            elif isinstance(obj, Decimal):
+                return float(obj)
+            return obj
+        
+        pricing_snapshot = convert_decimals_to_float(calculateTotal)
+        
         # Create booking with customer reference
         newBooking = Booking(
             business=business,
@@ -193,7 +212,7 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             totalPrice=calculateTotal.get("total_amount", 0),
             tax=calculateTotal.get("tax", 0),
             used_custom_pricing=calculateTotal.get("used_custom_pricing", False),
-            pricing_snapshot=calculateTotal,
+            pricing_snapshot=pricing_snapshot,
             addonDishes=int(data.get("addonDishes", 0) or 0),
             addonLaundryLoads=int(data.get("addonLaundryLoads", 0) or 0),
             addonWindowCleaning=int(data.get("addonWindowCleaning", 0) or 0),
@@ -206,6 +225,8 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             addonCabinetsCleaning=int(data.get("addonCabinetsCleaning", 0) or 0),
             addonPatioSweeping=int(data.get("addonPatioSweeping", 0) or 0),
             addonGarageSweeping=int(data.get("addonGarageSweeping", 0) or 0),
+            will_someone_be_home=data.get("willSomeoneBeHome", "").lower() in ['yes', 'true', '1'],
+            key_location=data.get("keyLocation", ""),
         )
 
         newBooking.save()

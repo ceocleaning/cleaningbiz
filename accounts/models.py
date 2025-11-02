@@ -45,6 +45,10 @@ class Business(models.Model):
 
     cleaner_payout_percentage = models.IntegerField(default=0, null=True, blank=True)
 
+    # Partial Payment Settings
+    allow_partial_payment = models.BooleanField(default=True, help_text="Allow customers to make partial payments on invoices")
+    minimum_partial_payment_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True, help_text="Minimum amount required for partial payment")
+
     useCall = models.BooleanField(default=False)
     timeToWait = models.IntegerField(default=0)
 
@@ -161,7 +165,7 @@ class ApiCredential(models.Model):
 class BusinessSettings(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='settings')
     
-    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Base price for cleaning service")
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text="Base price for cleaning service (optional)")
 
     # Base Pricing
     bedroomPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Price per bedroom")

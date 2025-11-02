@@ -183,11 +183,11 @@
                         <i class="fas fa-home"></i>
                     </div>
                     <div>
-                        <div class="price-label">Base Price</div>
-                        <div class="price-value" data-field="base_price">${{ settings.base_price }}</div>
+                        <div class="price-label">Base Price <span class="badge bg-secondary" style="font-size: 0.65rem;">Optional</span></div>
+                        <div class="price-value" data-field="base_price">${{ settings.base_price|default:"0.00" }}</div>
                     </div>
                 </div>
-                <p class="text-secondary small mb-0">Starting price for all cleaning services</p>
+                <p class="text-secondary small mb-0">Starting price for all cleaning services (optional)</p>
             </div>
         </div>
     </div>

@@ -661,11 +661,11 @@
                                     {% endif %}
                                 </label>
                             </div>
-                            {% if not invoice.payments.exists %}
+                            {% if not invoice.payments.exists and booking.business.allow_partial_payment %}
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="payment_type" id="manualPartialPayment" value="partial">
                                 <label class="form-check-label" for="manualPartialPayment">
-                                    Partial Payment
+                                    Partial Payment{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %} (Min: ${{ booking.business.minimum_partial_payment_amount }}){% endif %}
                                 </label>
                             </div>
                             {% endif %}
@@ -683,15 +683,16 @@
                             <label for="manual_partial_amount" class="form-label">Amount Paid:</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="manual_partial_amount" name="amount" min="1" 
+                                <input type="number" class="form-control" id="manual_partial_amount" name="amount" 
+                                       min="{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %}{{ booking.business.minimum_partial_payment_amount }}{% else %}1{% endif %}" 
                                        {% if invoice.is_partially_paid %}
                                        max="{{ invoice.get_remaining_amount }}" value="{{ invoice.get_remaining_amount }}"
                                        {% else %}
-                                       max="{{ invoice.amount }}" value="{{ invoice.amount }}"
+                                       max="{{ invoice.amount }}" value="{{ booking.invoice.amount }}"
                                        {% endif %}
                                        step="0.01">
                             </div>
-                            <div class="form-text">Enter the amount you've paid via bank transfer.</div>
+                            <div class="form-text">Enter the amount you've paid via bank transfer.{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %} Minimum: ${{ booking.business.minimum_partial_payment_amount }}{% endif %}</div>
                         </div>
                         
                         <script>
@@ -856,11 +857,11 @@
                                     {% endif %}
                                 </label>
                             </div>
-                            {% if not invoice.payments.exists %}
+                            {% if not invoice.payments.exists and booking.business.allow_partial_payment %}
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="payment_type" id="partialPayment" value="partial">
                                 <label class="form-check-label" for="partialPayment">
-                                    Partial Payment
+                                    Partial Payment{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %} (Min: ${{ booking.business.minimum_partial_payment_amount }}){% endif %}
                                 </label>
                             </div>
                             {% endif %}
@@ -870,15 +871,16 @@
                             <label for="partialAmount" class="form-label">Amount to Pay:</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="partialAmount" name="amount" min="1" 
+                                <input type="number" class="form-control" id="partialAmount" name="amount" 
+                                       min="{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %}{{ booking.business.minimum_partial_payment_amount }}{% else %}1{% endif %}" 
                                        {% if invoice.is_partially_paid %}
                                        max="{{ invoice.get_remaining_amount }}" value="{{ invoice.get_remaining_amount }}"
                                        {% else %}
-                                       max="{{ invoice.amount }}" value="{{ invoice.amount }}"
+                                       max="{{ invoice.amount }}" value="{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %}{{ booking.business.minimum_partial_payment_amount }}{% else %}{{ invoice.amount }}{% endif %}"
                                        {% endif %}
                                        step="0.01" placeholder="Enter amount">
                             </div>
-                            <div class="form-text">Enter an amount less than the total invoice amount.</div>
+                            <div class="form-text">Enter an amount less than the total invoice amount.{% if booking.business.minimum_partial_payment_amount and booking.business.minimum_partial_payment_amount > 0 %} Minimum: ${{ booking.business.minimum_partial_payment_amount }}{% endif %}</div>
                         </div>
                         
                         <script>

@@ -20,8 +20,9 @@
                                 <label for="basePrice" class="form-label">Base Price</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" class="form-control" id="basePrice" name="base_price" value="{{ settings.base_price }}">
+                                    <input type="number" step="0.01" class="form-control" id="basePrice" name="base_price" value="{{ settings.base_price }}" placeholder="0.00">
                                 </div>
+                                <small class="form-text text-muted">Optional - Leave blank if not applicable</small>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="bedroomPrice" class="form-label">Bedroom Price</label>

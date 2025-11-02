@@ -94,6 +94,78 @@
             </div>
         </div>
         
+        <!-- Payment Settings Section -->
+        <div class="settings-section border border-1">
+            <div class="settings-section-header">
+                <div class="settings-section-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="settings-section-info">
+                    <h3 class="settings-section-title">Payment Settings</h3>
+                    <p class="settings-section-description">Configure payment options for your customers</p>
+                </div>
+            </div>
+            
+            <div class="settings-section-body">
+                <!-- Enable Partial Payments -->
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-header">
+                            <div class="settings-item-icon">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="settings-item-info">
+                                <h4 class="settings-item-title">Allow Partial Payments</h4>
+                                <p class="settings-item-description">Enable customers to make partial payments on invoices</p>
+                            </div>
+                        </div>
+                        <div class="settings-item-badge">
+                            {% if business.allow_partial_payment %}
+                            <span class="badge-active">Active</span>
+                            {% else %}
+                            <span class="badge-inactive">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="settings-item-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="allowPartialPaymentToggle" name="allow_partial_payment" {% if business.allow_partial_payment %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Minimum Partial Payment Amount (Conditional) -->
+                <div id="minPartialPaymentSettings" class="settings-item settings-item-nested" {% if not business.allow_partial_payment %}style="display: none;"{% endif %}>
+                    <div class="settings-item-content">
+                        <div class="settings-item-header">
+                            <div class="settings-item-icon settings-item-icon-secondary">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="settings-item-info">
+                                <h4 class="settings-item-title">Minimum Partial Payment Amount</h4>
+                                <p class="settings-item-description">Set the minimum amount customers must pay upfront</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-item-control">
+                        <div class="input-group-modern">
+                            <span class="input-group-prefix">$</span>
+                            <input type="number" class="form-control-modern" id="minPartialPaymentAmount" name="minimum_partial_payment_amount" 
+                                   value="{{ business.minimum_partial_payment_amount|default:'0.00' }}" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>How it works:</strong> When enabled, customers will have the option to pay a portion of their invoice upfront. You can set a minimum amount that must be paid initially, and they can pay the remaining balance later.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Future Settings Placeholder -->
         <div class="settings-section settings-section-placeholder border border-1">
             <div class="settings-placeholder-content">
@@ -112,6 +184,14 @@
     <div class="loader-content">
         <div class="spinner-modern"></div>
         <p class="loader-text">Saving your settings...</p>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="settings-toast" id="settingsToast" style="display: none;">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-check-circle me-2"></i>
+        <span>Settings saved successfully!</span>
     </div>
 </div>
 
@@ -434,7 +514,8 @@
     opacity: 1;
 }
 
-.input-group-suffix {
+.input-group-suffix,
+.input-group-prefix {
     font-size: 14px;
     color: #6e6e6e;
     font-weight: 500;
@@ -541,6 +622,38 @@
     margin: 0;
 }
 
+/* Settings Toast */
+.settings-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #1aad8c 0%, #138a70 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(26, 173, 140, 0.4);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(20px);
+    font-size: 15px;
+    font-weight: 500;
+    min-width: 280px;
+}
+
+.settings-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.settings-toast.error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.settings-toast i {
+    font-size: 20px;
+}
+
 /* Responsive Design */
 @media (max-width: 991.98px) {
     .settings-hero {
@@ -625,6 +738,15 @@
         width: 100%;
         justify-content: center;
     }
+    
+    .settings-toast {
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        min-width: auto;
+        font-size: 14px;
+        padding: 14px 20px;
+    }
 }
 </style>
 
@@ -645,6 +767,16 @@
         if (useCallToggle && callDelaySettings) {
             useCallToggle.addEventListener('change', function() {
                 callDelaySettings.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Toggle minimum partial payment settings based on partial payment toggle
+        const allowPartialPaymentToggle = document.getElementById('allowPartialPaymentToggle');
+        const minPartialPaymentSettings = document.getElementById('minPartialPaymentSettings');
+        
+        if (allowPartialPaymentToggle && minPartialPaymentSettings) {
+            allowPartialPaymentToggle.addEventListener('change', function() {
+                minPartialPaymentSettings.style.display = this.checked ? 'block' : 'none';
             });
         }
         
@@ -674,6 +806,15 @@
                     formData.append('callDelayMinutes', callDelayMinutes);
                 }
                 
+                // Add partial payment settings
+                formData.append('allow_partial_payment', allowPartialPaymentToggle.checked);
+                
+                // Add minimum partial payment amount if partial payments are enabled
+                if (allowPartialPaymentToggle.checked) {
+                    const minPartialPaymentAmount = document.getElementById('minPartialPaymentAmount').value;
+                    formData.append('minimum_partial_payment_amount', minPartialPaymentAmount);
+                }
+                
                 fetch('{% url "accounts:update_business_settings" %}', {
                     method: 'POST',
                     body: formData,
@@ -692,19 +833,23 @@
                     saveSettingsBtn.disabled = false;
                     saveSettingsBtn.innerHTML = '<i class="fas fa-save me-2"></i><span>Save Settings</span>';
                     
+                    const toast = document.getElementById('settingsToast');
+                    const toastMessage = toast.querySelector('span');
+                    const toastIcon = toast.querySelector('i');
+                    
                     if (data.success) {
                         // Show success toast
-                        const toast = document.getElementById('copyToast');
-                        const toastMessage = toast.querySelector('span');
-                        const toastIcon = toast.querySelector('i');
                         toastMessage.textContent = 'Settings saved successfully!';
-                        toastIcon.className = 'fas fa-check-circle me-2 text-white';
+                        toastIcon.className = 'fas fa-check-circle me-2';
+                        toast.classList.remove('error');
                         
                         toast.style.display = 'block';
-                        toast.style.opacity = '1';
+                        setTimeout(() => {
+                            toast.classList.add('show');
+                        }, 10);
                         
                         setTimeout(function() {
-                            toast.style.opacity = '0';
+                            toast.classList.remove('show');
                             setTimeout(function() {
                                 toast.style.display = 'none';
                             }, 300);
@@ -716,21 +861,20 @@
                         }, 1000);
                     } else {
                         // Show error toast
-                        const toast = document.getElementById('copyToast');
-                        const toastMessage = toast.querySelector('span');
-                        const toastIcon = toast.querySelector('i');
                         toastMessage.textContent = data.message || 'Error saving settings';
-                        toastIcon.className = 'fas fa-exclamation-circle me-2 text-white';
-                        toast.classList.add('error-toast');
+                        toastIcon.className = 'fas fa-exclamation-circle me-2';
+                        toast.classList.add('error');
                         
                         toast.style.display = 'block';
-                        toast.style.opacity = '1';
+                        setTimeout(() => {
+                            toast.classList.add('show');
+                        }, 10);
                         
                         setTimeout(function() {
-                            toast.style.opacity = '0';
-                            toast.classList.remove('error-toast');
+                            toast.classList.remove('show');
                             setTimeout(function() {
                                 toast.style.display = 'none';
+                                toast.classList.remove('error');
                             }, 300);
                         }, 3000);
                     }
@@ -746,22 +890,25 @@
                     saveSettingsBtn.innerHTML = '<i class="fas fa-save me-2"></i><span>Save Settings</span>';
                     
                     console.error('Error:', error);
+                    
                     // Show error toast
-                    const toast = document.getElementById('copyToast');
+                    const toast = document.getElementById('settingsToast');
                     const toastMessage = toast.querySelector('span');
                     const toastIcon = toast.querySelector('i');
                     toastMessage.textContent = 'Error saving settings';
-                    toastIcon.className = 'fas fa-exclamation-circle me-2 text-white';
-                    toast.classList.add('error-toast');
+                    toastIcon.className = 'fas fa-exclamation-circle me-2';
+                    toast.classList.add('error');
                     
                     toast.style.display = 'block';
-                    toast.style.opacity = '1';
+                    setTimeout(() => {
+                        toast.classList.add('show');
+                    }, 10);
                     
                     setTimeout(function() {
-                        toast.style.opacity = '0';
-                        toast.classList.remove('error-toast');
+                        toast.classList.remove('show');
                         setTimeout(function() {
                             toast.style.display = 'none';
+                            toast.classList.remove('error');
                         }, 300);
                     }, 3000);
                 });

@@ -1015,6 +1015,24 @@ def update_business_settings(request):
                     # If conversion fails, use default value
                     business.timeToWait = 10
             
+            # Update partial payment settings
+            allow_partial_payment = request.POST.get('allow_partial_payment') == 'true' or request.POST.get('allow_partial_payment') == 'on'
+            business.allow_partial_payment = allow_partial_payment
+            
+            # Update minimum partial payment amount if provided and partial payments are enabled
+            if allow_partial_payment:
+                min_amount = request.POST.get('minimum_partial_payment_amount')
+                if min_amount:
+                    try:
+                        from decimal import Decimal
+                        min_amount = Decimal(min_amount)
+                        # Ensure value is non-negative
+                        if min_amount >= 0:
+                            business.minimum_partial_payment_amount = min_amount
+                    except (ValueError, TypeError):
+                        # If conversion fails, use default value
+                        business.minimum_partial_payment_amount = 0
+            
             business.save()
             
             return JsonResponse({'success': True})
