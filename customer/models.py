@@ -6,7 +6,7 @@ import uuid
 
 class Customer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE, null=True, blank=True, related_name='customers')
+    businesses = models.ManyToManyField('accounts.Business', related_name='customers', blank=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='customer')
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -39,7 +39,55 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.get_full_name()
-
+    
+    def has_custom_pricing_for_business(self, business):
+        """
+        Check if this customer has active custom pricing for a specific business.
+        
+        Args:
+            business: Business instance
+        
+        Returns:
+            bool: True if active custom pricing exists for this business
+        """
+        try:
+            from customer.pricing_models import CustomerPricing
+            return CustomerPricing.objects.filter(
+                customer=self,
+                business=business,
+                is_active=True
+            ).exists()
+        except Exception:
+            return False
+    
+    def get_custom_pricing_for_business(self, business):
+        """
+        Get the custom pricing configuration for this customer with a specific business.
+        
+        Args:
+            business: Business instance
+        
+        Returns:
+            CustomerPricing instance or None
+        """
+        try:
+            from customer.pricing_models import CustomerPricing
+            return CustomerPricing.objects.filter(
+                customer=self,
+                business=business,
+                is_active=True
+            ).first()
+        except Exception:
+            return None
+    
+    def get_all_businesses(self):
+        """
+        Get all businesses this customer is linked to.
+        
+        Returns:
+            QuerySet of Business instances
+        """
+        return self.businesses.all()
 
 
 class Review(models.Model):

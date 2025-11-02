@@ -305,6 +305,29 @@
                         </div>
                         {% endif %}
 
+                        <!-- Access Information -->
+                        <h6 class="mb-3 mt-4"><i class="fas fa-key me-2"></i>Access Information</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Will someone be home during the cleaning?</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="someoneHomeYes" name="willSomeoneBeHome" value="yes" checked>
+                                <label class="form-check-label" for="someoneHomeYes">
+                                    Yes, someone will be home
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="someoneHomeNo" name="willSomeoneBeHome" value="no">
+                                <label class="form-check-label" for="someoneHomeNo">
+                                    I will hide the keys
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="keyLocationContainer" style="display: none;">
+                            <label for="keyLocation" class="form-label">Where will the keys be hidden? <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="keyLocation" name="keyLocation" placeholder="e.g., Under the mat, Code: 1234, etc.">
+                            <small class="text-muted">Please provide the key code or location where the key is hidden</small>
+                        </div>
+
                         <!-- Additional Information -->
                         <h6 class="mb-3 mt-4"><i class="fas fa-info-circle me-2"></i>Special Requests</h6>
                         <div class="mb-3">
@@ -332,6 +355,14 @@
             <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Service Overview</h5>
         </div>
         <div class="card-body">
+            <!-- Custom Pricing Badge -->
+            {% if custom_pricing %}
+            <div class="alert alert-success mb-3" style="padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                <i class="fas fa-tag me-1"></i>
+                <strong>Custom Pricing Active</strong> - You're getting special rates!
+            </div>
+            {% endif %}
+            
             <!-- Business Info -->
             <div class="mb-4">
                 <h6 class="text-muted mb-3">Selected Business</h6>
@@ -490,6 +521,26 @@
         
         // Initialize the form
         updateProgressBar();
+        
+        // Handle access information toggle
+        const someoneHomeYes = document.getElementById('someoneHomeYes');
+        const someoneHomeNo = document.getElementById('someoneHomeNo');
+        const keyLocationContainer = document.getElementById('keyLocationContainer');
+        const keyLocationInput = document.getElementById('keyLocation');
+        
+        function toggleKeyLocation() {
+            if (someoneHomeNo.checked) {
+                keyLocationContainer.style.display = 'block';
+                keyLocationInput.required = true;
+            } else {
+                keyLocationContainer.style.display = 'none';
+                keyLocationInput.required = false;
+                keyLocationInput.value = '';
+            }
+        }
+        
+        someoneHomeYes.addEventListener('change', toggleKeyLocation);
+        someoneHomeNo.addEventListener('change', toggleKeyLocation);
         
         // Use My Info checkbox
         const useMyInfoCheckbox = document.getElementById('useMyInfo');

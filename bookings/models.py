@@ -89,6 +89,19 @@ class Booking(models.Model):
     
     # Additional Information
     otherRequests = models.TextField(blank=True, null=True)
+    
+    # Access Information
+    will_someone_be_home = models.BooleanField(
+        default=False,
+        help_text="Will someone be home during the cleaning?"
+    )
+    key_location = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Key code or location where key is hidden"
+    )
+    
     paymentMethod = models.CharField(max_length=20, choices=paymentMethods, null=True, blank=True)
     totalPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -106,6 +119,10 @@ class Booking(models.Model):
     # Discount Information
     appliedDiscountPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Applied discount percentage for recurring bookings")
     discountAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discount amount in dollars")
+    
+    # Pricing Source Tracking
+    used_custom_pricing = models.BooleanField(default=False, help_text="Whether custom customer pricing was used for this booking")
+    pricing_snapshot = models.JSONField(null=True, blank=True, help_text="Snapshot of pricing used at booking time")
     
     # Status Fields
     isCompleted = models.BooleanField(default=False)

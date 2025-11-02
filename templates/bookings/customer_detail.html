@@ -24,6 +24,9 @@
             <i class="fas fa-phone me-1"></i> Call
         </a>
         {% endif %}
+        <a href="{% url 'customer:pricing_detail' customer.id %}" class="btn btn-outline-warning">
+            <i class="fas fa-tag me-1"></i> Custom Pricing
+        </a>
     </div>
 </div>
 
@@ -79,6 +82,25 @@
                         </div>
                     </li>
                     {% endif %}
+                    
+                    <li class="list-group-item px-0 py-3 d-flex align-items-center">
+                        <span class="icon-circle {% if customer.custom_pricing.is_active %}bg-warning{% else %}bg-secondary{% endif %} me-3">
+                            <i class="fas fa-tag text-white"></i>
+                        </span>
+                        <div class="flex-grow-1">
+                            <p class="text-muted small mb-0">Pricing</p>
+                            {% if customer.custom_pricing.is_active %}
+                                <p class="mb-0 fw-medium text-warning">
+                                    <i class="fas fa-star me-1"></i>Custom Pricing Active
+                                </p>
+                            {% else %}
+                                <p class="mb-0 fw-medium">Standard Pricing</p>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'customer:pricing_detail' customer.id %}" class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>

@@ -149,12 +149,20 @@ def customers(request):
             
             # Create new customer
             try:
-                if Customer.objects.filter(business=business, email=email).exists():
-                    messages.error(request, 'Customer with this email already exists.')
+                # Check if customer exists by email
+                customer = Customer.objects.filter(email=email).first()
+                
+                if customer:
+                    # Customer exists, link to this business if not already linked
+                    if business not in customer.businesses.all():
+                        customer.businesses.add(business)
+                        messages.success(request, f'Customer {customer.get_full_name()} linked to your business!')
+                    else:
+                        messages.error(request, 'Customer with this email already exists in your business.')
                     return redirect('bookings:customers')
                 
+                # Create new customer
                 customer = Customer.objects.create(
-                    business=business,
                     first_name=first_name,
                     last_name=last_name,
                     email=email,
@@ -164,6 +172,7 @@ def customers(request):
                     state_or_province=state_or_province,
                     zip_code=zip_code
                 )
+                customer.businesses.add(business)
                 messages.success(request, f'Customer {customer.get_full_name()} added successfully!')
                 return redirect('bookings:customers')
             except Exception as e:
@@ -173,9 +182,14 @@ def customers(request):
         elif action == 'edit':
             customer_id = request.POST.get('customer_id')
             try:
-                customer = Customer.objects.get(id=customer_id, business=business)
+                customer = Customer.objects.get(id=customer_id, businesses=business)
 
-                if Customer.objects.exclude(id=customer_id).filter(business=business, email=request.POST.get('email')).exists():
+                # Check if another customer with same email exists in this business
+                email_check = Customer.objects.exclude(id=customer_id).filter(
+                    email=request.POST.get('email'),
+                    businesses=business
+                ).exists()
+                if email_check:
                     messages.error(request, 'Customer with this email already exists.')
                     return redirect('bookings:customers')
                 
@@ -223,16 +237,22 @@ def customers(request):
         elif action == 'delete':
             customer_id = request.POST.get('customer_id')
             try:
-                customer = Customer.objects.get(id=customer_id, business=business)
+                customer = Customer.objects.get(id=customer_id, businesses=business)
                 customer_name = customer.get_full_name()
-                customer.delete()
-                messages.success(request, f'Customer {customer_name} deleted successfully!')
+                # Remove business from customer's businesses
+                customer.businesses.remove(business)
+                # If customer has no more businesses, delete the customer
+                if customer.businesses.count() == 0:
+                    customer.delete()
+                    messages.success(request, f'Customer {customer_name} deleted successfully!')
+                else:
+                    messages.success(request, f'Customer {customer_name} removed from your business!')
                 return redirect('bookings:customers')
             except Customer.DoesNotExist:
                 messages.error(request, 'Customer not found.')
     
     # Get all customers for this business
-    all_customers = Customer.objects.filter(business=business)
+    all_customers = Customer.objects.filter(businesses=business)
     
     # Create a list to store customer data with booking statistics
     customers_list = []
@@ -275,6 +295,7 @@ def customers(request):
     
     # Sort customers by joined date (newest first)
     customers_list.sort(key=lambda x: x['joinedDate'], reverse=True)
+
     
     context = {
         'customers': customers_list,
@@ -291,7 +312,7 @@ def customer_detail(request, id):
     
     business = request.user.business_set.first()
     
-    customer = Customer.objects.get(id=id, business=business)
+    customer = Customer.objects.get(id=id, businesses=business)
     
     # Get all bookings for this customer with this business
     bookings = Booking.objects.filter(
@@ -325,13 +346,14 @@ def customer_detail(request, id):
     
     context = {
         'customer': {
+            'id': id,
             'firstName': customer.first_name,
             'lastName': customer.last_name,
             'email': customer.email,
             'phoneNumber': customer.phone_number,
             'companyName': company_name,
             'joinDate': join_date,
-       
+            'custom_pricing': customer.custom_pricings.filter(business=business, is_active=True).first(),
             'address': customer.address,
             'city': customer.city,
             'state': customer.state_or_province,
@@ -370,13 +392,6 @@ def create_booking(request):
     customAddons = CustomAddons.objects.filter(business=business)
     if request.method == 'POST':
         try:
-            # Get price details from form
-            totalPrice = Decimal(request.POST.get('totalAmount', '0'))
-            tax = Decimal(request.POST.get('tax', '0'))
-            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
-            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
-            
-            
             cleaningDate = request.POST.get('cleaningDate')
             start_time = request.POST.get('startTime')
 
@@ -410,6 +425,47 @@ def create_booking(request):
                 
                 customer = create_customer(request.POST, business)
             
+            # Prepare summary for price calculation
+            summary = {
+                'serviceType': request.POST.get('serviceType'),
+                'bedrooms': Decimal(request.POST.get('bedrooms', 0)),
+                'bathrooms': Decimal(request.POST.get('bathrooms', 0)),
+                'squareFeet': Decimal(request.POST.get('squareFeet', 0)),
+                'addonDishes': int(request.POST.get('addonDishes', 0)),
+                'addonLaundryLoads': int(request.POST.get('addonLaundryLoads', 0)),
+                'addonWindowCleaning': int(request.POST.get('addonWindowCleaning', 0)),
+                'addonPetsCleaning': int(request.POST.get('addonPetsCleaning', 0)),
+                'addonFridgeCleaning': int(request.POST.get('addonFridgeCleaning', 0)),
+                'addonOvenCleaning': int(request.POST.get('addonOvenCleaning', 0)),
+                'addonBaseboard': int(request.POST.get('addonBaseboard', 0)),
+                'addonBlinds': int(request.POST.get('addonBlinds', 0)),
+                'addonGreenCleaning': int(request.POST.get('addonGreenCleaning', 0)),
+                'addonCabinetsCleaning': int(request.POST.get('addonCabinetsCleaning', 0)),
+                'addonPatioSweeping': int(request.POST.get('addonPatioSweeping', 0)),
+                'addonGarageSweeping': int(request.POST.get('addonGarageSweeping', 0)),
+            }
+            
+            # Calculate price with customer-specific pricing
+            from automation.utils import calculateAmount
+            price_calculation = calculateAmount(business, summary, customer=customer)
+            
+            # Convert Decimal values to float for JSON serialization
+            def convert_decimals_to_float(obj):
+                if isinstance(obj, dict):
+                    return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [convert_decimals_to_float(item) for item in obj]
+                elif isinstance(obj, Decimal):
+                    return float(obj)
+                return obj
+            
+            pricing_snapshot = convert_decimals_to_float(price_calculation)
+            
+            totalPrice = price_calculation.get('total_amount', 0)
+            tax = price_calculation.get('tax', 0)
+            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
+            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
+            
             # Create the booking
             booking = Booking.objects.create(
                 business=business,
@@ -431,7 +487,9 @@ def create_booking(request):
                 tax=tax,
                 totalPrice=totalPrice,
                 appliedDiscountPercent=appliedDiscountPercent,
-                discountAmount=discountAmount
+                discountAmount=discountAmount,
+                used_custom_pricing=price_calculation.get('used_custom_pricing', False),
+                pricing_snapshot=pricing_snapshot
             )
             
             
@@ -517,7 +575,7 @@ def create_booking(request):
     }
 
     # Get all customers for this business
-    customers = Customer.objects.filter(business=business).distinct()
+    customers = Customer.objects.filter(businesses=business).distinct()
     
     context = {
         'customAddons': customAddons,

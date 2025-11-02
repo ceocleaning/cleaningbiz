@@ -315,6 +315,29 @@
                     </div>
                     {% endif %}
 
+                    <!-- Access Information -->
+                    <h6 class="mb-3 mt-4"><i class="fas fa-key me-2"></i>Access Information</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Will someone be home during the cleaning?</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="someoneHomeYes" name="willSomeoneBeHome" value="yes" checked>
+                            <label class="form-check-label" for="someoneHomeYes">
+                                Yes, someone will be home
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="someoneHomeNo" name="willSomeoneBeHome" value="no">
+                            <label class="form-check-label" for="someoneHomeNo">
+                                I will hide the keys
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="keyLocationContainer" style="display: none;">
+                        <label for="keyLocation" class="form-label">Where will the keys be hidden? <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="keyLocation" name="keyLocation" placeholder="e.g., Under the mat, Code: 1234, etc.">
+                        <small class="text-muted">Please provide the key code or location where the key is hidden</small>
+                    </div>
+
                     <!-- Additional Information -->
                     <h6 class="mb-3 mt-4"><i class="fas fa-info-circle me-2"></i>Special Requests</h6>
                     <div class="mb-3">
@@ -390,7 +413,12 @@
             <!-- Pricing Summary -->
             <div class="card bg-light">
                 <div class="card-body">
-                    <h6 class="mb-3">Price Summary</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Price Summary</h6>
+                        <span id="custom-pricing-badge" class="badge bg-warning text-dark" style="display: none;">
+                            <i class="fas fa-tag me-1"></i>Custom Pricing
+                        </span>
+                    </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Base Price:</span>
                         <span class="fw-medium">$<span id="overview-base-price">0.00</span></span>
@@ -438,6 +466,26 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Handle access information toggle
+        const someoneHomeYes = document.getElementById('someoneHomeYes');
+        const someoneHomeNo = document.getElementById('someoneHomeNo');
+        const keyLocationContainer = document.getElementById('keyLocationContainer');
+        const keyLocationInput = document.getElementById('keyLocation');
+        
+        function toggleKeyLocation() {
+            if (someoneHomeNo.checked) {
+                keyLocationContainer.style.display = 'block';
+                keyLocationInput.required = true;
+            } else {
+                keyLocationContainer.style.display = 'none';
+                keyLocationInput.required = false;
+                keyLocationInput.value = '';
+            }
+        }
+        
+        someoneHomeYes.addEventListener('change', toggleKeyLocation);
+        someoneHomeNo.addEventListener('change', toggleKeyLocation);
+        
         // Customer type toggle functionality
         const newCustomerRadio = document.getElementById('newCustomer');
         const regularCustomerRadio = document.getElementById('regularCustomer');
@@ -481,6 +529,11 @@
         // Handle customer selection change
         customerIdSelect.addEventListener('change', function() {
             selectedCustomerIdInput.value = this.value;
+            
+            // Fetch customer-specific pricing
+            if (this.value) {
+                fetchCustomerPricing(this.value);
+            }
         });
         
         // Add event listeners to radio buttons
@@ -493,20 +546,18 @@
         // Get pricing data from server
         const pricingData = JSON.parse('{{ prices|safe }}');
         
-        // Base price from business settings
-        const BASE_PRICE = pricingData.base_price || 0;
-
-        // Pricing constants from business settings
-        const BEDROOM_PRICE = pricingData.bedrooms || 0;
-        const BATHROOM_PRICE = pricingData.bathrooms || 0;
-        const SQUARE_FOOT_MULTIPLIERS = {
+        // Pricing variables (will be updated when customer is selected)
+        let BASE_PRICE = pricingData.base_price || 0;
+        let BEDROOM_PRICE = pricingData.bedrooms || 0;
+        let BATHROOM_PRICE = pricingData.bathrooms || 0;
+        let SQUARE_FOOT_MULTIPLIERS = {
             'standard': pricingData.sqftMultiplierStandard || 0,
             'deep': pricingData.sqftMultiplierDeep || 0,
             'moveinout': pricingData.sqftMultiplierMoveinout || 0,
             'airbnb': pricingData.sqftMultiplierAirbnb || 0
         };
         
-        const ADDON_PRICES = {
+        let ADDON_PRICES = {
             'addonDishes': pricingData.addonPriceDishes || 0,
             'addonLaundryLoads': pricingData.addonPriceLaundry || 0,
             'addonWindowCleaning': pricingData.addonPriceWindow || 0,
@@ -517,15 +568,139 @@
             'addonBlinds': pricingData.addonPriceBlinds || 0
         };
         
-        const TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0;
+        let TAX_RATE = pricingData.tax ? (pricingData.tax / 100) : 0;
         
         // Recurring discounts
-        const RECURRING_DISCOUNTS = {
+        let RECURRING_DISCOUNTS = {
             'one-time': 0,
             'weekly': pricingData.weeklyDiscount || 0,
             'biweekly': pricingData.biweeklyDiscount || 0,
             'monthly': pricingData.monthlyDiscount || 0
         };
+        
+        // Get business ID from template
+        const BUSINESS_ID = "{{ business.businessId }}";
+        
+        // Function to fetch customer-specific pricing
+        function fetchCustomerPricing(customerId) {
+            console.log('Fetching pricing for customer:', customerId);
+            
+            fetch(`/customer/api/pricing/${BUSINESS_ID}/customer/${customerId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Pricing API response:', data);
+                    
+                    if (data.success && data.pricing) {
+                        const pricing = data.pricing;
+                        
+                        // Update pricing variables with customer-specific pricing
+                        BASE_PRICE = pricing.base_price || 0;
+                        BEDROOM_PRICE = pricing.bedroom_price || 0;
+                        BATHROOM_PRICE = pricing.bathroom_price || 0;
+                        
+                        console.log('Updated pricing:', {
+                            BASE_PRICE,
+                            BEDROOM_PRICE,
+                            BATHROOM_PRICE,
+                            TAX_RATE: pricing.tax_percent
+                        });
+                        
+                        SQUARE_FOOT_MULTIPLIERS = {
+                            'standard': pricing.sqft_multiplier_standard || 0,
+                            'deep': pricing.sqft_multiplier_deep || 0,
+                            'moveinout': pricing.sqft_multiplier_moveinout || 0,
+                            'airbnb': pricing.sqft_multiplier_airbnb || 0
+                        };
+                        
+                        ADDON_PRICES = {
+                            'addonDishes': pricing.addon_price_dishes || 0,
+                            'addonLaundryLoads': pricing.addon_price_laundry || 0,
+                            'addonWindowCleaning': pricing.addon_price_window || 0,
+                            'addonPetsCleaning': pricing.addon_price_pets || 0,
+                            'addonFridgeCleaning': pricing.addon_price_fridge || 0,
+                            'addonOvenCleaning': pricing.addon_price_oven || 0,
+                            'addonBaseboard': pricing.addon_price_baseboard || 0,
+                            'addonBlinds': pricing.addon_price_blinds || 0
+                        };
+                        
+                        TAX_RATE = pricing.tax_percent ? (pricing.tax_percent / 100) : 0;
+                        
+                        RECURRING_DISCOUNTS = {
+                            'one-time': 0,
+                            'weekly': pricing.weekly_discount || 0,
+                            'biweekly': pricing.biweekly_discount || 0,
+                            'monthly': pricing.monthly_discount || 0
+                        };
+                        
+                        // Update custom addon prices in the DOM
+                        if (pricing.custom_addons) {
+                            Object.keys(pricing.custom_addons).forEach(addonId => {
+                                const addonData = pricing.custom_addons[addonId];
+                                const addonInput = document.getElementById('custom_addon_' + addonId);
+                                if (addonInput) {
+                                    addonInput.dataset.price = addonData.price;
+                                }
+                            });
+                        }
+                        
+                        // Show/hide custom pricing badge
+                        const customPricingBadge = document.getElementById('custom-pricing-badge');
+                        if (customPricingBadge) {
+                            if (pricing.is_custom_pricing) {
+                                customPricingBadge.style.display = 'inline-block';
+                            } else {
+                                customPricingBadge.style.display = 'none';
+                            }
+                        }
+                        
+                        // Show notification if custom pricing is being used
+                        if (pricing.is_custom_pricing) {
+                            showPricingNotification('Custom pricing applied for ' + pricing.customer_name);
+                        }
+                        
+                        // Recalculate total with new pricing
+                        // Use setTimeout to ensure calculatePrices is defined
+                        setTimeout(function() {
+                            console.log('Attempting to recalculate prices...');
+                            if (typeof calculatePrices === 'function') {
+                                console.log('calculatePrices function found, calling it...');
+                                calculatePrices();
+                            } else {
+                                console.error('calculatePrices function not found!');
+                            }
+                        }, 100);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching customer pricing:', error);
+                });
+        }
+        
+        // Function to show pricing notification
+        function showPricingNotification(message) {
+            // Check if notification element exists, if not create it
+            let notification = document.getElementById('pricing-notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'pricing-notification';
+                notification.className = 'alert alert-info alert-dismissible fade show';
+                notification.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+                notification.innerHTML = `
+                    <i class="fas fa-tag me-2"></i>
+                    <span id="pricing-notification-text"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            document.getElementById('pricing-notification-text').textContent = message;
+            notification.classList.add('show');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
         
         // Form steps navigation
         const formSteps = document.querySelectorAll('.form-step');

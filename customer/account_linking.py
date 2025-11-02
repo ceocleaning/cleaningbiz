@@ -30,21 +30,21 @@ def link_customer_account(request):
             email = request.POST.get('email')
             phone_number = request.POST.get('phone_number')
         
-        # Find customer records that match either email or phone number
-        matching_customers = Customer.objects.filter(
+        # Find customer record that matches email or phone number
+        matching_customer = Customer.objects.filter(
             email=email, 
-            user__isnull=True  # Only find unlinked customer records
-        )
+            user__isnull=True
+        ).first()
         
-        if not matching_customers.exists() and phone_number:
+        if not matching_customer and phone_number:
             # Try to find by phone number if email search failed
-            matching_customers = Customer.objects.filter(
+            matching_customer = Customer.objects.filter(
                 phone_number=phone_number,
-                user__isnull=True  # Only find unlinked customer records
-            )
+                user__isnull=True
+            ).first()
         
-        if not matching_customers.exists():
-            messages.error(request, 'No matching customer records found. Please contact the business owner.')
+        if not matching_customer:
+            messages.error(request, 'No matching customer record found. Please contact the business owner.')
             return redirect('customer:link_account')
         
         # Get the customer group
@@ -53,19 +53,15 @@ def link_customer_account(request):
         # Add the user to the customer group
         request.user.groups.add(customer_group)
         
-        # Link all matching customer records to the user account
-        linked_count = 0
-        for customer in matching_customers:
-            customer.user = request.user
-            customer.save()
-            linked_count += 1
+        # Link the customer record to the user account
+        matching_customer.user = request.user
+        matching_customer.save()
         
-        
-        # Save user profile updates
-        request.user.save()
+        # Count linked businesses
+        business_count = matching_customer.businesses.count()
         
         # Prepare success message and redirect URL
-        success_message = f'Your account has been successfully linked to {linked_count} customer profile(s)!'
+        success_message = f'Your account has been successfully linked! You have access to {business_count} business(es).'
         
         # Determine the source of the linking (login or direct) and set redirect URL
         if unlinked_customers_found:
@@ -105,10 +101,12 @@ def check_existing_customer(request):
         return JsonResponse({'exists': False, 'message': 'Please provide an email or phone number.'})
     
     # Check if a customer record exists with this email or phone
-    customer_exists = Customer.objects.filter(email=email, user__isnull=True).exists()
+    customer = Customer.objects.filter(email=email, user__isnull=True).first()
     
-    if not customer_exists and phone:
-        customer_exists = Customer.objects.filter(phone_number=phone, user__isnull=True).exists()
+    if not customer and phone:
+        customer = Customer.objects.filter(phone_number=phone, user__isnull=True).first()
+    
+    customer_exists = customer is not None
     
     if customer_exists:
         return JsonResponse({

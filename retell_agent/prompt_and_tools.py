@@ -148,6 +148,12 @@ Which service would you prefer? Based on your previous responses, I recommend [S
 ##Ask for Additional Requests
 - Ask user if they additional requests or notes that we should know
 
+##Ask About Access Information:
+"Will someone be home during the cleaning service?"
+- If YES: Record that someone will be home
+- If NO: "No problem. Do you have a key code or can you tell me where the key is hidden so our cleaner can access the property?"
+  Record the key location or code (e.g., "Under the mat", "Code: 1234", etc.)
+
 ##Collect Service Location:
 "Could you please provide the full address where the cleaning service is needed?"
 Record the client's address.
@@ -242,6 +248,14 @@ def get_book_appointment_tool_properties(business):
         "business_id": {
             "type": "string",
             "description": "Business ID"
+        },
+        "will_someone_be_home": {
+            "type": "boolean",
+            "description": "Whether someone will be home during the cleaning service"
+        },
+        "key_location": {
+            "type": "string",
+            "description": "Key code or location where key is hidden (e.g., 'Under the mat', 'Code: 1234')"
         }
     }
 

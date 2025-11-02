@@ -232,6 +232,29 @@
                         </div>
                         {% endif %}
 
+                        <!-- Access Information -->
+                        <h6 class="mb-3 mt-4"><i class="fas fa-key me-2"></i>Access Information</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Will someone be home during the cleaning?</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="someoneHomeYes" name="willSomeoneBeHome" value="yes" {% if booking.will_someone_be_home %}checked{% endif %}>
+                                <label class="form-check-label" for="someoneHomeYes">
+                                    Yes, someone will be home
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="someoneHomeNo" name="willSomeoneBeHome" value="no" {% if not booking.will_someone_be_home %}checked{% endif %}>
+                                <label class="form-check-label" for="someoneHomeNo">
+                                    I will hide the keys
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="keyLocationContainer" style="display: {% if not booking.will_someone_be_home %}block{% else %}none{% endif %};">
+                            <label for="keyLocation" class="form-label">Where will the keys be hidden? <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="keyLocation" name="keyLocation" value="{{ booking.key_location }}" placeholder="e.g., Under the mat, Code: 1234, etc.">
+                            <small class="text-muted">Please provide the key code or location where the key is hidden</small>
+                        </div>
+
                         <!-- Additional Information -->
                         <h6 class="mb-3 mt-4"><i class="fas fa-info-circle me-2"></i>Special Requests</h6>
                         <div class="mb-3">
@@ -348,7 +371,24 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-
+        // Handle access information toggle
+        const someoneHomeYes = document.getElementById('someoneHomeYes');
+        const someoneHomeNo = document.getElementById('someoneHomeNo');
+        const keyLocationContainer = document.getElementById('keyLocationContainer');
+        const keyLocationInput = document.getElementById('keyLocation');
+        
+        function toggleKeyLocation() {
+            if (someoneHomeNo.checked) {
+                keyLocationContainer.style.display = 'block';
+                keyLocationInput.required = true;
+            } else {
+                keyLocationContainer.style.display = 'none';
+                keyLocationInput.required = false;
+            }
+        }
+        
+        someoneHomeYes.addEventListener('change', toggleKeyLocation);
+        someoneHomeNo.addEventListener('change', toggleKeyLocation);
         
         // Format phone number on page load
         const phoneInput = document.getElementById('phoneNumber');

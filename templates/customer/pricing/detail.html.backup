@@ -1,0 +1,873 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Custom Pricing - {{ customer.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-light: #dbeafe;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-600: #4b5563;
+        --gray-900: #111827;
+    }
+    
+    .page-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        min-width: 120px;
+    }
+    
+    .info-value {
+        font-size: 0.9375rem;
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+    
+    .comparison-container {
+        background: var(--gray-50);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .comparison-table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--gray-200);
+    }
+    
+    .comparison-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    
+    .comparison-row:last-child {
+        border-bottom: none;
+    }
+    
+    .comparison-header-row {
+        background: var(--gray-50);
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .comparison-cell {
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .comparison-cell.name {
+        font-weight: 500;
+        color: var(--gray-900);
+    }
+    
+    .comparison-cell.default {
+        color: var(--gray-600);
+    }
+    
+    .comparison-cell.custom {
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    .comparison-cell.savings {
+        color: var(--success);
+        font-weight: 600;
+    }
+    
+    .savings-positive {
+        color: var(--success);
+    }
+    
+    .savings-negative {
+        color: #ef4444;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .status-badge.active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .btn-minimal {
+        border: 1px solid var(--gray-200);
+        background: white;
+        color: var(--gray-900);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-minimal:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+    }
+    
+    .btn-primary-minimal {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary-minimal:hover {
+        background: #1d4ed8;
+    }
+    
+    .pricing-form-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .pricing-form-header {
+        padding: 1rem 1.5rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+    
+    .pricing-form-header:hover {
+        background: var(--gray-100);
+    }
+    
+    .pricing-form-body {
+        padding: 1.5rem;
+        display: none;
+    }
+    
+    .pricing-form-body.show {
+        display: block;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .form-section-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .form-input {
+        border-radius: 6px;
+        border: 1px solid var(--gray-200);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+    
+    .input-group .form-input {
+        border-left: none;
+    }
+    
+    .input-group-text {
+        border-radius: 6px 0 0 6px;
+        border: 1px solid var(--gray-200);
+        border-right: none;
+        background: var(--gray-50);
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .form-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--gray-900);
+        margin-bottom: 0.375rem;
+    }
+    
+    .form-hint {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        margin-top: 0.25rem;
+    }
+    
+    .section-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 1.5rem 0;
+    }
+    
+    .toggle-icon {
+        transition: transform 0.3s;
+    }
+    
+    .toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1 class="h4 mb-1">Custom Pricing</h1>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">Manage custom rates for {{ customer.get_full_name }}</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="status-badge {% if customer_pricing.is_active %}active{% else %}inactive{% endif %}" id="statusBadge">
+                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                    <span id="statusText">{% if customer_pricing.is_active %}Active{% else %}Inactive{% endif %}</span>
+                </span>
+                <a href="{% url 'customer:pricing_list' %}" class="btn-minimal">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Information (Moved to top) -->
+    <div class="info-card">
+        <h6 class="mb-3" style="font-size: 0.875rem; font-weight: 600; color: var(--gray-900);">CUSTOMER INFORMATION</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-row">
+                    <span class="info-label">Name</span>
+                    <span class="info-value">{{ customer.get_full_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ customer.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone</span>
+                    <span class="info-value">{{ customer.phone_number }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-row">
+                    <span class="info-label">Address</span>
+                    <span class="info-value">{{ customer.address }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City, State</span>
+                    <span class="info-value">{{ customer.city }}, {{ customer.state_or_province }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Member Since</span>
+                    <span class="info-value">{{ customer.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Comparison -->
+    <div class="comparison-container">
+        <h6 class="mb-3" style="font-size: 0.875rem; font-weight: 600; color: var(--gray-900);">PRICING COMPARISON</h6>
+        <div class="comparison-table">
+            <!-- Header Row -->
+            <div class="comparison-row comparison-header-row">
+                <div class="comparison-cell">Item</div>
+                <div class="comparison-cell">Default Price</div>
+                <div class="comparison-cell">Custom Price</div>
+                <div class="comparison-cell">Savings</div>
+            </div>
+            
+            <!-- Base Pricing -->
+            <div class="comparison-row">
+                <div class="comparison-cell name">Base Price</div>
+                <div class="comparison-cell default">${{ business_settings.base_price }}</div>
+                <div class="comparison-cell {% if customer_pricing.base_price %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.base_price %}{{ customer_pricing.base_price }}{% else %}{{ business_settings.base_price }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.base_price %}{% if customer_pricing.base_price < business_settings.base_price %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.base_price %}
+                        {% widthratio business_settings.base_price 1 1 as default_val %}
+                        {% widthratio customer_pricing.base_price 1 1 as custom_val %}
+                        ${{ default_val|add:"-"|add:custom_val|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="comparison-row">
+                <div class="comparison-cell name">Per Bedroom</div>
+                <div class="comparison-cell default">${{ business_settings.bedroomPrice }}</div>
+                <div class="comparison-cell {% if customer_pricing.bedroom_price %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.bedroom_price %}{{ customer_pricing.bedroom_price }}{% else %}{{ business_settings.bedroomPrice }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.bedroom_price %}{% if customer_pricing.bedroom_price < business_settings.bedroomPrice %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.bedroom_price %}
+                        ${{ business_settings.bedroomPrice|add:"-"|add:customer_pricing.bedroom_price|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="comparison-row">
+                <div class="comparison-cell name">Per Bathroom</div>
+                <div class="comparison-cell default">${{ business_settings.bathroomPrice }}</div>
+                <div class="comparison-cell {% if customer_pricing.bathroom_price %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.bathroom_price %}{{ customer_pricing.bathroom_price }}{% else %}{{ business_settings.bathroomPrice }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.bathroom_price %}{% if customer_pricing.bathroom_price < business_settings.bathroomPrice %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.bathroom_price %}
+                        ${{ business_settings.bathroomPrice|add:"-"|add:customer_pricing.bathroom_price|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Addon Prices -->
+            <div class="comparison-row">
+                <div class="comparison-cell name">Dishes Addon</div>
+                <div class="comparison-cell default">${{ business_settings.addonPriceDishes }}</div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_dishes %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.addon_price_dishes %}{{ customer_pricing.addon_price_dishes }}{% else %}{{ business_settings.addonPriceDishes }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_dishes %}{% if customer_pricing.addon_price_dishes < business_settings.addonPriceDishes %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.addon_price_dishes %}
+                        ${{ business_settings.addonPriceDishes|add:"-"|add:customer_pricing.addon_price_dishes|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="comparison-row">
+                <div class="comparison-cell name">Laundry Addon</div>
+                <div class="comparison-cell default">${{ business_settings.addonPriceLaundry }}</div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_laundry %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.addon_price_laundry %}{{ customer_pricing.addon_price_laundry }}{% else %}{{ business_settings.addonPriceLaundry }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_laundry %}{% if customer_pricing.addon_price_laundry < business_settings.addonPriceLaundry %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.addon_price_laundry %}
+                        ${{ business_settings.addonPriceLaundry|add:"-"|add:customer_pricing.addon_price_laundry|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="comparison-row">
+                <div class="comparison-cell name">Windows Addon</div>
+                <div class="comparison-cell default">${{ business_settings.addonPriceWindow }}</div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_window %}custom{% else %}default{% endif %}">
+                    ${% if customer_pricing.addon_price_window %}{{ customer_pricing.addon_price_window }}{% else %}{{ business_settings.addonPriceWindow }}{% endif %}
+                </div>
+                <div class="comparison-cell {% if customer_pricing.addon_price_window %}{% if customer_pricing.addon_price_window < business_settings.addonPriceWindow %}savings-positive{% else %}savings-negative{% endif %}{% else %}default{% endif %}">
+                    {% if customer_pricing.addon_price_window %}
+                        ${{ business_settings.addonPriceWindow|add:"-"|add:customer_pricing.addon_price_window|floatformat:2 }}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Pricing Form -->
+    <div class="pricing-form-container">
+        <div class="pricing-form-header" id="formToggle">
+            <div>
+                <h6 class="mb-0" style="font-size: 0.875rem; font-weight: 600;">UPDATE PRICING</h6>
+                <p class="mb-0 text-muted" style="font-size: 0.75rem;">Click to expand and edit custom pricing</p>
+            </div>
+            <i class="fas fa-chevron-down toggle-icon" id="toggleIcon"></i>
+        </div>
+        
+        <div class="pricing-form-body" id="formBody">
+            <form id="pricingForm" method="post" action="{% url 'customer:pricing_update' customer.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="is_active" id="isActiveInput" value="{{ customer_pricing.is_active|lower }}">
+
+                <!-- Info Alert -->
+                <div class="alert alert-info border-0 mb-4" style="border-left: 3px solid var(--primary); border-radius: 8px; background: var(--primary-light); font-size: 0.875rem;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-info-circle mt-1" style="color: var(--primary);"></i>
+                        <div>
+                            <strong>How it works:</strong> Leave fields blank to use default pricing. Enter custom values to override defaults for this customer.
+                        </div>
+                    </div>
+                </div>
+
+        <div class="row">
+            <!-- Base Pricing -->
+            <div class="col-lg-6 mb-4">
+                <div class="modern-card h-100">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <i class="fas fa-dollar-sign me-2"></i>Base Pricing
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Base Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="base_price" 
+                                           value="{{ customer_pricing.base_price|default:'' }}"
+                                           placeholder="Default: ${{ business_settings.base_price }}">
+                                </div>
+                                <small class="text-muted">Business Default: ${{ business_settings.base_price }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bedroom Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="bedroom_price" 
+                                           value="{{ customer_pricing.bedroom_price|default:'' }}"
+                                           placeholder="Default: ${{ business_settings.bedroomPrice }}">
+                                </div>
+                                <small class="text-muted">Business Default: ${{ business_settings.bedroomPrice }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bathroom Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="bathroom_price" 
+                                           value="{{ customer_pricing.bathroom_price|default:'' }}"
+                                           placeholder="Default: ${{ business_settings.bathroomPrice }}">
+                                </div>
+                                <small class="text-muted">Business Default: ${{ business_settings.bathroomPrice }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Deposit Fee</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="deposit_fee" 
+                                           value="{{ customer_pricing.deposit_fee|default:'' }}"
+                                           placeholder="Default: ${{ business_settings.depositFee }}">
+                                </div>
+                                <small class="text-muted">Business Default: ${{ business_settings.depositFee }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tax Percent</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" class="form-control modern-input" name="tax_percent" 
+                                           value="{{ customer_pricing.tax_percent|default:'' }}"
+                                           placeholder="Default: {{ business_settings.taxPercent }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">Business Default: {{ business_settings.taxPercent }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Square Feet Multipliers -->
+            <div class="col-lg-6 mb-4">
+                <div class="modern-card h-100">
+                    <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <i class="fas fa-ruler-combined me-2"></i>Square Feet Multipliers
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Standard Cleaning</label>
+                                <input type="number" step="0.01" class="form-control modern-input" name="sqft_multiplier_standard" 
+                                       value="{{ customer_pricing.sqft_multiplier_standard|default:'' }}"
+                                       placeholder="Default: {{ business_settings.sqftMultiplierStandard }}">
+                                <small class="text-muted">Default: {{ business_settings.sqftMultiplierStandard }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Deep Cleaning</label>
+                                <input type="number" step="0.01" class="form-control modern-input" name="sqft_multiplier_deep" 
+                                       value="{{ customer_pricing.sqft_multiplier_deep|default:'' }}"
+                                       placeholder="Default: {{ business_settings.sqftMultiplierDeep }}">
+                                <small class="text-muted">Default: {{ business_settings.sqftMultiplierDeep }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Move In/Out</label>
+                                <input type="number" step="0.01" class="form-control modern-input" name="sqft_multiplier_moveinout" 
+                                       value="{{ customer_pricing.sqft_multiplier_moveinout|default:'' }}"
+                                       placeholder="Default: {{ business_settings.sqftMultiplierMoveinout }}">
+                                <small class="text-muted">Default: {{ business_settings.sqftMultiplierMoveinout }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Airbnb Cleaning</label>
+                                <input type="number" step="0.01" class="form-control modern-input" name="sqft_multiplier_airbnb" 
+                                       value="{{ customer_pricing.sqft_multiplier_airbnb|default:'' }}"
+                                       placeholder="Default: {{ business_settings.sqftMultiplierAirbnb }}">
+                                <small class="text-muted">Default: {{ business_settings.sqftMultiplierAirbnb }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recurring Discounts -->
+            <div class="col-lg-6 mb-4">
+                <div class="modern-card h-100">
+                    <div class="card-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                        <i class="fas fa-percent me-2"></i>Recurring Discounts
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Weekly</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" class="form-control modern-input" name="weekly_discount" 
+                                           value="{{ customer_pricing.weekly_discount|default:'' }}"
+                                           placeholder="{{ business_settings.weeklyDiscount }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">Default: {{ business_settings.weeklyDiscount }}%</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Bi-weekly</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" class="form-control modern-input" name="biweekly_discount" 
+                                           value="{{ customer_pricing.biweekly_discount|default:'' }}"
+                                           placeholder="{{ business_settings.biweeklyDiscount }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">Default: {{ business_settings.biweeklyDiscount }}%</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Monthly</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" class="form-control modern-input" name="monthly_discount" 
+                                           value="{{ customer_pricing.monthly_discount|default:'' }}"
+                                           placeholder="{{ business_settings.monthlyDiscount }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">Default: {{ business_settings.monthlyDiscount }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standard Add-ons -->
+            <div class="col-lg-6 mb-4">
+                <div class="modern-card h-100">
+                    <div class="card-header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <i class="fas fa-plus-circle me-2"></i>Standard Add-on Prices
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Dishes</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_dishes" 
+                                           value="{{ customer_pricing.addon_price_dishes|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceDishes }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Laundry</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_laundry" 
+                                           value="{{ customer_pricing.addon_price_laundry|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceLaundry }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Windows</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_window" 
+                                           value="{{ customer_pricing.addon_price_window|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceWindow }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pets</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_pets" 
+                                           value="{{ customer_pricing.addon_price_pets|default:'' }}"
+                                           placeholder="${{ business_settings.addonPricePets }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fridge</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_fridge" 
+                                           value="{{ customer_pricing.addon_price_fridge|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceFridge }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Oven</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_oven" 
+                                           value="{{ customer_pricing.addon_price_oven|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceOven }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Baseboard</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_baseboard" 
+                                           value="{{ customer_pricing.addon_price_baseboard|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceBaseboard }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Blinds</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_blinds" 
+                                           value="{{ customer_pricing.addon_price_blinds|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceBlinds }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Green Cleaning</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_green" 
+                                           value="{{ customer_pricing.addon_price_green|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceGreen }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cabinets</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_cabinets" 
+                                           value="{{ customer_pricing.addon_price_cabinets|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceCabinets }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Patio</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_patio" 
+                                           value="{{ customer_pricing.addon_price_patio|default:'' }}"
+                                           placeholder="${{ business_settings.addonPricePatio }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Garage</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control modern-input" name="addon_price_garage" 
+                                           value="{{ customer_pricing.addon_price_garage|default:'' }}"
+                                           placeholder="${{ business_settings.addonPriceGarage }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Add-ons -->
+            {% if custom_addons_list %}
+            <div class="col-12 mb-4">
+                <div class="modern-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #1f2937;">
+                        <i class="fas fa-star me-2"></i>Custom Add-on Prices
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for item in custom_addons_list %}
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ item.addon.addonName }}</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" 
+                                           name="custom_addon_{{ item.addon.id }}" 
+                                           value="{% if item.custom_price %}{{ item.custom_price }}{% endif %}"
+                                           placeholder="${{ item.addon.addonPrice }}">
+                                </div>
+                                <small class="text-muted">Default: ${{ item.addon.addonPrice }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            <div class="col-12 mb-4">
+                <div class="modern-card">
+                    <div class="card-header bg-light">
+                        <i class="fas fa-sticky-note me-2"></i>Internal Notes
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control modern-input" name="notes" rows="3" 
+                                  placeholder="Add internal notes about this custom pricing...">{{ customer_pricing.notes }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="modern-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        {% if not is_new %}
+                        <button type="button" class="btn btn-danger btn-lg" id="deletePricingBtn" style="border-radius: 12px;">
+                            <i class="fas fa-trash me-2"></i>Delete Custom Pricing
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'customer:pricing_list' %}" class="btn btn-secondary btn-lg" style="border-radius: 12px;">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                            <i class="fas fa-save me-2"></i>Save Custom Pricing
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isActiveToggle = document.getElementById('isActiveToggle');
+    const isActiveInput = document.getElementById('isActiveInput');
+    const pricingForm = document.getElementById('pricingForm');
+    const deletePricingBtn = document.getElementById('deletePricingBtn');
+
+    // Handle toggle switch
+    isActiveToggle.addEventListener('change', function() {
+        isActiveInput.value = this.checked ? 'true' : 'false';
+        const label = this.nextElementSibling.querySelector('strong');
+        label.textContent = `Custom Pricing ${this.checked ? 'Enabled' : 'Disabled'}`;
+    });
+
+    // Handle form submission
+    pricingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Custom pricing saved successfully!');
+                window.location.href = '{% url "customer:pricing_list" %}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving');
+        });
+    });
+
+    // Handle delete
+    if (deletePricingBtn) {
+        deletePricingBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this custom pricing? This action cannot be undone.')) {
+                fetch('{% url "customer:pricing_delete" customer.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Custom pricing deleted successfully!');
+                        window.location.href = '{% url "customer:pricing_list" %}';
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred');
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -46,16 +46,15 @@ def customer_signup(request):
             from automation.utils import format_phone_number
             formatted_phone = format_phone_number(phone) or phone
             
-            # Check if there are existing customer records before creating the user
-            # First try to find by email
-            existing_customers = Customer.objects.filter(email=email, user__isnull=True)
+            # Check if there is an existing customer record before creating the user
+            existing_customer = Customer.objects.filter(email=email, user__isnull=True).first()
             
-            if not existing_customers.exists() and formatted_phone:
+            if not existing_customer and formatted_phone:
                 # Try to find by phone number if email search failed
-                existing_customers = Customer.objects.filter(
+                existing_customer = Customer.objects.filter(
                     phone_number=formatted_phone,
                     user__isnull=True
-                )
+                ).first()
             
             with transaction.atomic():
                 # Create user
@@ -71,19 +70,17 @@ def customer_signup(request):
                 customer_group, created = Group.objects.get_or_create(name='Customer')
                 user.groups.add(customer_group)
                 
-                if existing_customers.exists():
-                    # Get the first matching customer record
-                    customer = existing_customers.first()
-                    
-                    # Link the customer record to the user
-                    customer.user = user
-                    customer.save()
+                if existing_customer:
+                    # Link the existing customer record to the user
+                    existing_customer.user = user
+                    existing_customer.save()
                     
                     # Show a message about the linked record
-                    messages.info(request, 'We found an existing customer record that matches your information and linked it to your account.')
+                    business_count = existing_customer.businesses.count()
+                    messages.info(request, f'We found your existing customer record with {business_count} business(es) and linked it to your account.')
                 else:
                     # Create a new customer profile
-                    customer = Customer.objects.create(
+                    existing_customer = Customer.objects.create(
                         user=user,
                         first_name=first_name,
                         last_name=last_name,
@@ -95,7 +92,7 @@ def customer_signup(request):
                 success_message = 'Account created successfully! Welcome to CleaningBiz.'
                 
                 # Determine the redirect URL before login
-                if existing_customers.exists():
+                if existing_customer and existing_customer.businesses.exists():
                     redirect_url = reverse('customer:linked_businesses') + '?from_signup=true'
                 else:
                     redirect_url = reverse('customer:dashboard')

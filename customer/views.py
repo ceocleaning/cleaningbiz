@@ -265,17 +265,24 @@ def add_booking(request, business_id):
     # Get custom add-ons for this business
     custom_addons = CustomAddons.objects.filter(business=business)
     
+    # Check for custom pricing if user is authenticated
+    custom_pricing = None
+    if request.user.is_authenticated and hasattr(request.user, 'customer'):
+        from customer.pricing_models import CustomerPricing
+        try:
+            custom_pricing = CustomerPricing.objects.get(
+                customer=request.user.customer,
+                business=business,
+                is_active=True
+            )
+        except CustomerPricing.DoesNotExist:
+            custom_pricing = None
+    
     # Get today's date for minimum date in form
     today = datetime.now()
     
     if request.method == 'POST':
         try:
-            # Get price details from form
-            total_price = float(request.POST.get('totalAmount', '0'))
-            tax = float(request.POST.get('tax', '0'))
-            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
-            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
-            
             # Format phone number
             phone_number = request.POST.get('phoneNumber')
             if phone_number:
@@ -301,6 +308,44 @@ def add_booking(request, business_id):
             else:
                 customer = create_customer(request.POST, business)
             
+            # Prepare summary for price calculation
+            from django.forms.models import model_to_dict
+            summary = {
+                'serviceType': request.POST.get('serviceType'),
+                'bedrooms': int(request.POST.get('bedrooms', 0)),
+                'bathrooms': int(request.POST.get('bathrooms', 0)),
+                'squareFeet': int(request.POST.get('squareFeet', 0)),
+                'addonDishes': int(request.POST.get('addonDishes', 0)),
+                'addonLaundryLoads': int(request.POST.get('addonLaundryLoads', 0)),
+                'addonWindowCleaning': int(request.POST.get('addonWindowCleaning', 0)),
+                'addonPetsCleaning': int(request.POST.get('addonPetsCleaning', 0)),
+                'addonFridgeCleaning': int(request.POST.get('addonFridgeCleaning', 0)),
+                'addonOvenCleaning': int(request.POST.get('addonOvenCleaning', 0)),
+                'addonBaseboard': int(request.POST.get('addonBaseboard', 0)),
+                'addonBlinds': int(request.POST.get('addonBlinds', 0)),
+            }
+            
+            # Calculate price with customer-specific pricing
+            from automation.utils import calculateAmount
+            price_calculation = calculateAmount(business, summary, customer=customer)
+            
+            # Convert Decimal values to float for JSON serialization
+            def convert_decimals_to_float(obj):
+                if isinstance(obj, dict):
+                    return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [convert_decimals_to_float(item) for item in obj]
+                elif isinstance(obj, Decimal):
+                    return float(obj)
+                return obj
+            
+            pricing_snapshot = convert_decimals_to_float(price_calculation)
+            
+            total_price = price_calculation.get('total_amount', 0)
+            tax = price_calculation.get('tax', 0)
+            appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
+            discountAmount = Decimal(request.POST.get('discountAmount', '0'))
+            
             # Create the booking
             booking = Booking.objects.create(
                 business=business,
@@ -315,10 +360,14 @@ def add_booking(request, business_id):
                 recurring=request.POST.get('recurring'),
                 paymentMethod='creditcard',  # Default payment method
                 otherRequests=request.POST.get('otherRequests', ''),
+                will_someone_be_home=request.POST.get('willSomeoneBeHome') == 'yes',
+                key_location=request.POST.get('keyLocation', ''),
                 tax=tax,
                 totalPrice=total_price,
                 appliedDiscountPercent=appliedDiscountPercent,
-                discountAmount=discountAmount
+                discountAmount=discountAmount,
+                used_custom_pricing=price_calculation.get('used_custom_pricing', False),
+                pricing_snapshot=pricing_snapshot
             )
             
             # Handle standard add-ons
@@ -359,35 +408,68 @@ def add_booking(request, business_id):
             return redirect('customer:businesses_list')
     
     # For GET requests, prepare pricing data for JavaScript
-    prices = {
-        'base_price': float(business_settings.base_price),
-        'bedrooms': float(business_settings.bedroomPrice),
-        'bathrooms': float(business_settings.bathroomPrice),
-        'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
-        'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
-        'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
-        'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
-        'addonPriceDishes': float(business_settings.addonPriceDishes),
-        'addonPriceLaundry': float(business_settings.addonPriceLaundry),
-        'addonPriceWindow': float(business_settings.addonPriceWindow),
-        'addonPricePets': float(business_settings.addonPricePets),
-        'addonPriceFridge': float(business_settings.addonPriceFridge),
-        'addonPriceOven': float(business_settings.addonPriceOven),
-        'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
-        'addonPriceBlinds': float(business_settings.addonPriceBlinds),
-        'tax': float(business_settings.taxPercent),
+    # Use custom pricing if available, otherwise use business defaults
+    if custom_pricing:
+        prices = {
+            'base_price': float(custom_pricing.base_price or business_settings.base_price),
+            'bedrooms': float(custom_pricing.bedroom_price or business_settings.bedroomPrice),
+            'bathrooms': float(custom_pricing.bathroom_price or business_settings.bathroomPrice),
+            'sqftMultiplierStandard': float(custom_pricing.sqft_multiplier_standard or business_settings.sqftMultiplierStandard),
+            'sqftMultiplierDeep': float(custom_pricing.sqft_multiplier_deep or business_settings.sqftMultiplierDeep),
+            'sqftMultiplierMoveinout': float(custom_pricing.sqft_multiplier_moveinout or business_settings.sqftMultiplierMoveinout),
+            'sqftMultiplierAirbnb': float(custom_pricing.sqft_multiplier_airbnb or business_settings.sqftMultiplierAirbnb),
+            'addonPriceDishes': float(custom_pricing.addon_price_dishes or business_settings.addonPriceDishes),
+            'addonPriceLaundry': float(custom_pricing.addon_price_laundry or business_settings.addonPriceLaundry),
+            'addonPriceWindow': float(custom_pricing.addon_price_window or business_settings.addonPriceWindow),
+            'addonPricePets': float(custom_pricing.addon_price_pets or business_settings.addonPricePets),
+            'addonPriceFridge': float(custom_pricing.addon_price_fridge or business_settings.addonPriceFridge),
+            'addonPriceOven': float(custom_pricing.addon_price_oven or business_settings.addonPriceOven),
+            'addonPriceBaseboard': float(custom_pricing.addon_price_baseboard or business_settings.addonPriceBaseboard),
+            'addonPriceBlinds': float(custom_pricing.addon_price_blinds or business_settings.addonPriceBlinds),
+            'tax': float(custom_pricing.tax_percent or business_settings.taxPercent),
 
-        # Recurring discounts
-        'weeklyDiscount': float(business_settings.weeklyDiscount),
-        'biweeklyDiscount': float(business_settings.biweeklyDiscount),
-        'monthlyDiscount': float(business_settings.monthlyDiscount)
-    }
+            # Recurring discounts
+            'weeklyDiscount': float(custom_pricing.weekly_discount or business_settings.weeklyDiscount),
+            'biweeklyDiscount': float(custom_pricing.biweekly_discount or business_settings.biweeklyDiscount),
+            'monthlyDiscount': float(custom_pricing.monthly_discount or business_settings.monthlyDiscount),
+            
+            # Flag to indicate custom pricing is active
+            'hasCustomPricing': True
+        }
+    else:
+        prices = {
+            'base_price': float(business_settings.base_price),
+            'bedrooms': float(business_settings.bedroomPrice),
+            'bathrooms': float(business_settings.bathroomPrice),
+            'sqftMultiplierStandard': float(business_settings.sqftMultiplierStandard),
+            'sqftMultiplierDeep': float(business_settings.sqftMultiplierDeep),
+            'sqftMultiplierMoveinout': float(business_settings.sqftMultiplierMoveinout),
+            'sqftMultiplierAirbnb': float(business_settings.sqftMultiplierAirbnb),
+            'addonPriceDishes': float(business_settings.addonPriceDishes),
+            'addonPriceLaundry': float(business_settings.addonPriceLaundry),
+            'addonPriceWindow': float(business_settings.addonPriceWindow),
+            'addonPricePets': float(business_settings.addonPricePets),
+            'addonPriceFridge': float(business_settings.addonPriceFridge),
+            'addonPriceOven': float(business_settings.addonPriceOven),
+            'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
+            'addonPriceBlinds': float(business_settings.addonPriceBlinds),
+            'tax': float(business_settings.taxPercent),
+
+            # Recurring discounts
+            'weeklyDiscount': float(business_settings.weeklyDiscount),
+            'biweeklyDiscount': float(business_settings.biweeklyDiscount),
+            'monthlyDiscount': float(business_settings.monthlyDiscount),
+            
+            # Flag to indicate no custom pricing
+            'hasCustomPricing': False
+        }
     
     context = {
         'business': business,
         'customAddons': custom_addons,
         'prices': json.dumps(prices),
-        'today': today
+        'today': today,
+        'custom_pricing': custom_pricing
     }
     
     return render(request, 'customer/add_booking.html', context)
@@ -470,6 +552,8 @@ def edit_booking(request, bookingId):
          
             booking.recurring = request.POST.get('recurring')
             booking.otherRequests = request.POST.get('otherRequests', '')
+            booking.will_someone_be_home = request.POST.get('willSomeoneBeHome') == 'yes'
+            booking.key_location = request.POST.get('keyLocation', '')
             booking.tax = tax
             booking.totalPrice = total_price
             booking.updatedAt = timezone.now()

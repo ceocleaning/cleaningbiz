@@ -3,6 +3,14 @@ from .views import dashboard, businesses_list, add_booking, customer_bookings, b
 from .auth_views import customer_signup, customer_login, customer_logout, profile, change_password
 from .api_views import booking_api
 from .account_linking import link_customer_account, check_existing_customer, view_linked_businesses
+from .pricing_views import (
+    customer_pricing_list, customer_pricing_detail, customer_pricing_update,
+    customer_pricing_toggle, customer_pricing_delete, customer_pricing_comparison
+)
+from .pricing_api import (
+    get_customer_pricing, calculate_booking_total, get_all_pricing
+)
+from .check_customer_api import check_customer
 
 
 app_name = 'customer'
@@ -31,4 +39,18 @@ urlpatterns = [
     path('link-account/', link_customer_account, name='link_account'),
     path('check-existing-customer/', check_existing_customer, name='check_existing_customer'),
     path('linked-businesses/', view_linked_businesses, name='linked_businesses'),
+    
+    # Customer Pricing Management
+    path('pricing/', customer_pricing_list, name='pricing_list'),
+    path('pricing/<uuid:customer_id>/', customer_pricing_detail, name='pricing_detail'),
+    path('pricing/<uuid:customer_id>/update/', customer_pricing_update, name='pricing_update'),
+    path('pricing/<uuid:customer_id>/toggle/', customer_pricing_toggle, name='pricing_toggle'),
+    path('pricing/<uuid:customer_id>/delete/', customer_pricing_delete, name='pricing_delete'),
+    path('pricing/<uuid:customer_id>/comparison/', customer_pricing_comparison, name='pricing_comparison'),
+    
+    # Pricing API Endpoints
+    path('api/pricing/<business_id>/customer/<uuid:customer_id>/', get_customer_pricing, name='api_customer_pricing'),
+    path('api/pricing/calculate/', calculate_booking_total, name='api_calculate_total'),
+    path('api/pricing/<business_id>/default/', get_all_pricing, name='api_default_pricing'),
+    path('api/check-customer/', check_customer, name='api_check_customer'),
 ]

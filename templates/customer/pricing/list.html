@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customer Pricing Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-list-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stats-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .modern-table-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .modern-table-card .card-header {
+        background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
+        border-bottom: 3px solid #667eea;
+        padding: 1.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .table-hover tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table-hover tbody tr:hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%);
+        transform: scale(1.01);
+    }
+    
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .status-active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .status-inactive {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+    }
+    
+    .action-btn {
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
+        border-radius: 15px;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Modern Header -->
+    <div class="pricing-list-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-2">
+                    <i class="fas fa-tags me-2"></i>
+                    Customer Pricing Management
+                </h1>
+                <p class="mb-0 opacity-90">Manage custom pricing for individual customers</p>
+            </div>
+            <div>
+                <a href="{% url 'home' %}" class="btn btn-light btn-lg" style="border-radius: 12px;">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1 fw-semibold">Total Customers</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_customers }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-tag text-white"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1 fw-semibold">Custom Pricing</h6>
+                            <h2 class="mb-0 fw-bold">{{ custom_pricing_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-chart-pie text-white"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1 fw-semibold">Coverage</h6>
+                            <h2 class="mb-0 fw-bold">
+                                {% if total_customers > 0 %}
+                                    {% widthratio custom_pricing_count total_customers 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customers with Custom Pricing -->
+    <div class="modern-table-card mb-4">
+        <div class="card-header">
+            <i class="fas fa-star text-warning me-2"></i>
+            Customers with Custom Pricing
+        </div>
+        <div class="card-body">
+            {% if customers_with_pricing %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Has Custom Values</th>
+                                <th>Created</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in customers_with_pricing %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2">
+                                            {{ item.customer.first_name|first }}{{ item.customer.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ item.customer.get_full_name }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div><i class="fas fa-envelope me-1"></i>{{ item.customer.email }}</div>
+                                        <div><i class="fas fa-phone me-1"></i>{{ item.customer.phone_number }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.is_active %}
+                                        <span class="status-badge status-active">
+                                            <i class="fas fa-check-circle me-1"></i>Active
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-inactive">
+                                            <i class="fas fa-times-circle me-1"></i>Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.has_custom_values %}
+                                        <i class="fas fa-check-circle text-success"></i> Yes
+                                    {% else %}
+                                        <i class="fas fa-times-circle text-muted"></i> No
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ item.pricing.created_at|date:"M d, Y" }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <a href="{% url 'customer:pricing_detail' item.customer.id %}" 
+                                           class="btn btn-sm btn-primary action-btn">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </a>
+                                        <button class="btn btn-sm btn-warning action-btn toggle-pricing" 
+                                                data-customer-id="{{ item.customer.id }}"
+                                                data-is-active="{{ item.is_active|lower }}">
+                                            <i class="fas fa-power-off me-1"></i>
+                                            {% if item.is_active %}Disable{% else %}Enable{% endif %}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tag"></i>
+                    <h5 class="text-muted mb-2">No Custom Pricing Yet</h5>
+                    <p class="text-muted">Start by adding custom pricing for your customers below</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Customers without Custom Pricing -->
+    <div class="modern-table-card">
+        <div class="card-header">
+            <i class="fas fa-users me-2"></i>
+            All Customers
+        </div>
+        <div class="card-body">
+            {% if customers_without_pricing %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Location</th>
+                                <th>Joined</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers_without_pricing %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-secondary text-white me-2">
+                                            {{ customer.first_name|first }}{{ customer.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ customer.get_full_name }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div><i class="fas fa-envelope me-1"></i>{{ customer.email }}</div>
+                                        <div><i class="fas fa-phone me-1"></i>{{ customer.phone_number }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ customer.city }}, {{ customer.state_or_province }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ customer.created_at|date:"M d, Y" }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'customer:pricing_detail' customer.id %}" 
+                                       class="btn btn-sm btn-success action-btn">
+                                        <i class="fas fa-plus me-1"></i>Add Custom Pricing
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <h5 class="text-success mb-2">All Set!</h5>
+                    <p class="text-muted">All customers have custom pricing configured</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle pricing status
+    document.querySelectorAll('.toggle-pricing').forEach(button => {
+        button.addEventListener('click', function() {
+            const customerId = this.dataset.customerId;
+            const isActive = this.dataset.isActive === 'true';
+            
+            if (confirm(`Are you sure you want to ${isActive ? 'disable' : 'enable'} custom pricing for this customer?`)) {
+                fetch(`/customer/pricing/${customerId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

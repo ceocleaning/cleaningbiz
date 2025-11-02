@@ -581,6 +581,8 @@ def create_booking(request):
             serviceType=service_type,
             recurring=data.get('recurring', 'one-time'),
             otherRequests=data.get('otherRequests', 'Not Set'),
+            will_someone_be_home=data.get('will_someone_be_home', False),
+            key_location=data.get('key_location', ''),
             addonDishes = int(data.get('dishes', 0) or 0),
             addonLaundryLoads = int(data.get('laundry', 0) or 0),
             addonWindowCleaning = int(data.get('windows', 0) or 0),
@@ -597,16 +599,29 @@ def create_booking(request):
         
 
         
-        # Calculate price using business settings
-        # Calculate base price
+        # Calculate price with customer-specific pricing if available
         amount_calculation = calculateAmount(
              business,
-             model_to_dict(booking)          
+             model_to_dict(booking),
+             customer=customer          
         )
         
+        # Convert Decimal values to float for JSON serialization
+        def convert_decimals_to_float(obj):
+            if isinstance(obj, dict):
+                return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_decimals_to_float(item) for item in obj]
+            elif isinstance(obj, Decimal):
+                return float(obj)
+            return obj
+        
+        pricing_snapshot = convert_decimals_to_float(amount_calculation)
       
         booking.totalPrice = amount_calculation['total_amount']
         booking.tax = amount_calculation['tax']
+        booking.used_custom_pricing = amount_calculation.get('used_custom_pricing', False)
+        booking.pricing_snapshot = pricing_snapshot
         
         # Save the booking
         booking.save()

@@ -162,10 +162,6 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             
             return {"success": False, "error": error_msg}
         
-        # Calculate base price
-        calculateTotal = calculateAmount(business, data)
-        
-       
         res = parse_business_datetime(data["appointmentDateTime"], business, to_utc=True, duration_hours=1)
 
         
@@ -178,6 +174,9 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             return {"success": False, "error": error_msg}
         
         customer = create_customer(data, business)
+        
+        # Calculate price with customer-specific pricing if available
+        calculateTotal = calculateAmount(business, data, customer=customer)
         
         # Create booking with customer reference
         newBooking = Booking(
@@ -193,6 +192,8 @@ def book_appointment(business, client_phone_number=None, session_key=None):
             otherRequests=data.get("otherRequests", ""),
             totalPrice=calculateTotal.get("total_amount", 0),
             tax=calculateTotal.get("tax", 0),
+            used_custom_pricing=calculateTotal.get("used_custom_pricing", False),
+            pricing_snapshot=calculateTotal,
             addonDishes=int(data.get("addonDishes", 0) or 0),
             addonLaundryLoads=int(data.get("addonLaundryLoads", 0) or 0),
             addonWindowCleaning=int(data.get("addonWindowCleaning", 0) or 0),

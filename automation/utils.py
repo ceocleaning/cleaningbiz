@@ -96,9 +96,30 @@ def generateAppoitnmentId():
 
 
 
-def calculateAmount(business, summary):
+def calculateAmount(business, summary, customer=None):
+    """
+    Calculate booking amount with optional customer-specific pricing support.
+    
+    Args:
+        business: Business instance
+        summary: Dictionary containing booking details
+        customer: Customer instance (optional) - if provided, checks for custom pricing
+    
+    Returns:
+        dict: Calculation results including pricing breakdown and metadata
+    """
+    # If customer is provided, try to use custom pricing
+    if customer:
+        try:
+            from customer.pricing_utils import calculateAmountWithCustomPricing
+            return calculateAmountWithCustomPricing(business, summary, customer)
+        except Exception as e:
+            print(f"Error using custom pricing, falling back to default: {str(e)}")
+            # Fall through to default calculation
+    
+    # Default calculation (original logic)
     # Convert service type to match choices
-    serviceType = str(summary["serviceType"] or summary["service_type"] or "").lower().replace(" ", "")
+    serviceType = str(summary.get("serviceType") or summary.get("service_type") or "").lower().replace(" ", "")
     service_type = getServiceType(serviceType)
     businessSettingsObj = business.settings
     
@@ -113,10 +134,10 @@ def calculateAmount(business, summary):
     sqftAirbnb = businessSettingsObj.sqftMultiplierAirbnb
 
     try:
-        bedrooms = Decimal(summary["bedrooms"] or 0)
-        bathrooms = Decimal(summary["bathrooms"] or 0)
-        area = Decimal(summary["squareFeet"] or summary["area"] or 0)
-    except ValueError:
+        bedrooms = Decimal(summary.get("bedrooms") or 0)
+        bathrooms = Decimal(summary.get("bathrooms") or 0)
+        area = Decimal(summary.get("squareFeet") or summary.get("area") or 0)
+    except (ValueError, TypeError):
         error_msg = "Invalid numeric values for bedrooms, bathrooms, or area"
         return {"success": False, "error": error_msg}
 
@@ -164,6 +185,8 @@ def calculateAmount(business, summary):
         'tax': tax,
         'tax_rate': taxPercent,
         'total_amount': total_amount,
+        'used_custom_pricing': False,
+        'pricing_type': 'business_default',
         
         "custom_addons": {
             "note": "No Concern of AI in this Field (Internal use only)",

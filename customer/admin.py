@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Customer, Review
+from .pricing_models import CustomerPricing, CustomerCustomAddonPricing
 
 
 class CustomerAdmin(admin.ModelAdmin):
@@ -16,3 +17,5 @@ class ReviewAdmin(admin.ModelAdmin):
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(Review, ReviewAdmin)
 
+admin.site.register(CustomerPricing)
+admin.site.register(CustomerCustomAddonPricing)

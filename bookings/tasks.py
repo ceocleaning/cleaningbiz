@@ -482,7 +482,9 @@ def process_recurring_bookings():
                         addonGarageSweeping=booking.addonGarageSweeping,
                         otherRequests=booking.otherRequests,
                         totalPrice=booking.totalPrice,
-                        tax=booking.tax
+                        tax=booking.tax,
+                        used_custom_pricing=booking.used_custom_pricing,
+                        pricing_snapshot=booking.pricing_snapshot
                     )
                     
                     # Copy custom addons

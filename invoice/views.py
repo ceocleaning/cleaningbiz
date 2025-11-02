@@ -130,6 +130,7 @@ def invoice_preview(request, invoiceId):
         invoice = Invoice.objects.get(invoiceId=invoiceId)
         booking = invoice.booking
         business = booking.business
+        
         bank_account = BankAccount.objects.filter(business=business).first()
         
         

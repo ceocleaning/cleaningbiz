@@ -22,7 +22,7 @@
                         </span>
                     </div>
                     {% else %}
-                    <div class="d-flex gap-2 mt-2 mt-sm-0">
+                    <div class="d-flex gap-2 mt-2 mt-sm-0 flex-wrap">
                         <span class="badge {% if booking.isCompleted %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
                             <i class="fas {% if booking.isCompleted %}fa-check{% else %}fa-clock{% endif %} me-1"></i>
                             {% if booking.isCompleted %}Completed{% else %}Pending{% endif %}
@@ -31,6 +31,12 @@
                         <span class="badge bg-info rounded-pill px-3 py-2">
                             <i class="fas fa-sync-alt me-1"></i>
                             {{ booking.get_recurring_display }}
+                        </span>
+                        {% endif %}
+                        {% if booking.used_custom_pricing %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                            <i class="fas fa-tag me-1"></i>
+                            Custom Pricing
                         </span>
                         {% endif %}
                     </div>
@@ -69,11 +75,19 @@
                                 <i class="fas fa-phone text-muted me-2"></i>
                                 {{ booking.customer.phone_number }}
                             </p>
-                            <p class="mb-0">
+                            <p class="mb-2">
                                 <i class="fas fa-map-marker-alt text-muted me-2"></i>
                                 <span class="text-break">{{ booking.customer.get_address }}
                                 </span>
                             </p>
+                            {% if booking.used_custom_pricing %}
+                            <div class="mt-3 pt-3 border-top">
+                                <a href="{% url 'customer:pricing_detail' booking.customer.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Manage Custom Pricing
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -151,6 +165,15 @@
                                 <span>{{ booking.endTime|to_timezone:user_timezone|date:"h:i A" }}</span>
                             </p>
                            
+                            {% if booking.used_custom_pricing %}
+                            <div class="alert alert-warning border-warning mb-3 py-2 px-3" style="border-left: 4px solid #ffc107 !important;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tag me-2"></i>
+                                    <small><strong>Custom Pricing Applied</strong> - Special rates for this customer</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
                             {% if booking.appliedDiscountPercent > 0 %}
                             <div class="card bg-light mb-2 p-2">
                                 <div class="d-flex justify-content-between mb-1">
@@ -368,6 +391,38 @@
         </div>
 
         
+        <!-- Access Information -->
+        <div class="card border border-1 mb-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-center mb-3 mb-md-4">
+                    <div class="icon-circle bg-warning text-white me-3">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h5 class="card-title mb-0">Access Information</h5>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <p class="mb-2">
+                            <i class="fas fa-home text-muted me-2"></i>
+                            <strong>Someone will be home:</strong>
+                            {% if booking.will_someone_be_home == True %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-info">Keys will be hidden</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if not booking.will_someone_be_home and booking.key_location %}
+                    <div class="col-md-6 mb-2">
+                        <p class="mb-2">
+                            <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                            <strong>Key Location:</strong> {{ booking.key_location }}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
         <!-- Special Requests -->
         <div class="card border border-1 mb-4">
