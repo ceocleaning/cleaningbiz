@@ -590,7 +590,12 @@ def forgot_password(request):
         email = request.POST.get('email')
         
         try:
-            user = User.objects.get(email=email)
+            # Filter for users with Owner group only
+            user = User.objects.filter(email=email, groups__name='Owner').first()
+            
+            if not user:
+                messages.error(request, 'No Owner account found with this email address.')
+                return render(request, 'accounts/forgot_password.html')
             
             # Generate a 6-digit OTP
             otp = ''.join(random.choices(string.digits, k=6))
@@ -660,9 +665,6 @@ def forgot_password(request):
                     otp_obj.delete()
                 messages.error(request, 'Failed to send OTP email. Please check your email configuration or try again later.')
                 return render(request, 'accounts/forgot_password.html')
-            
-        except User.DoesNotExist:
-            messages.error(request, 'No account found with this email address.')
         
         except Exception as e:
             raise Exception(str(e))
