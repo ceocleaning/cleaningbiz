@@ -13,7 +13,7 @@ from bookings.models import Booking
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from twilio.twiml.messaging_response import MessagingResponse
-from .openai_agent import OpenAIAgent
+from .langchain_agent import LangChainAgent
 import os
 import traceback
 from openai import OpenAI
@@ -160,7 +160,7 @@ def agent_config_delete(request):
 @login_required
 def agent_config_unified(request):
     """Unified view to create or edit agent configuration on a single page"""
-    from .utils import default_prompt
+    from .utils import default_custom_instructions
     business = Business.objects.filter(user=request.user).first()
     
     if not business:
@@ -171,27 +171,31 @@ def agent_config_unified(request):
     config, created = AgentConfiguration.objects.get_or_create(
         business=business,
         defaults={
-            'prompt': '',
+            'custom_instructions': '',
             'agent_name': 'Sarah'
         }
     )
 
     if created:
-        prompt = default_prompt(business)
-        if prompt != None:
-            config.prompt = prompt
+        custom_instructions = default_custom_instructions(business)
+        if custom_instructions != None:
+            config.custom_instructions = custom_instructions
             config.save()
     
     if request.method == 'POST':
         # Update configuration
-        config.prompt = request.POST.get('prompt', config.prompt)
+        config.custom_instructions = request.POST.get('custom_instructions', config.custom_instructions)
         config.agent_name = request.POST.get('agent_name', config.agent_name)
         config.save()
         
         messages.success(request, f"Configuration for {business.businessName} updated successfully.")
         
-        # Generate the system prompt for preview
-        system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
+        # Generate preview by creating agent instance
+        try:
+            agent = LangChainAgent(business.businessId)
+            system_prompt = agent._get_system_prompt()
+        except Exception as e:
+            system_prompt = f"Error generating preview: {str(e)}"
         
         return render(request, 'ai_agent/agent_config_unified.html', {
             'config': config,
@@ -220,7 +224,7 @@ def agent_config_save(request):
     config = AgentConfiguration.objects.get(business=business)
     
     # Update configuration
-    config.prompt = request.POST.get('prompt', config.prompt)
+    config.custom_instructions = request.POST.get('custom_instructions', config.custom_instructions)
     
     # Update agent name if provided
     agent_name = request.POST.get('agent_name')
@@ -229,8 +233,12 @@ def agent_config_save(request):
     
     config.save()
     
-    # Generate the system prompt for preview
-    system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
+    # Generate preview by creating agent instance
+    try:
+        agent = LangChainAgent(business.businessId)
+        system_prompt = agent._get_system_prompt()
+    except Exception as e:
+        system_prompt = f"Error generating preview: {str(e)}"
     
     return JsonResponse({
         'success': True, 
@@ -335,70 +343,25 @@ def process_sms_async(secretKey, from_number, body, to_number):
         business = apiCred.business
         print(f"[DEBUG] Business found: {business.businessName} (ID: {business.businessId})")
         
-        # Get or create a chat for this phone number
-        print(f"[DEBUG] Getting or creating chat for business ID {business.businessId} and phone {client_phone_number}")
-        chat = OpenAIAgent.get_or_create_chat(business.businessId, client_phone_number, session_key=None)
-        
-        if not chat:
-            print("[DEBUG] Failed to get or create chat")
-            send_sms_response(from_number, "Sorry, we couldn't process your request at this time.", apiCred)
-            return
-        
-        print(f"[DEBUG] Chat retrieved/created successfully (ID: {chat.id})")
-        
-        # Save user message
-        print("[DEBUG] Saving user message to database")
-        user_message = Messages.objects.create(
-            chat=chat,
-            role='user',
-            message=body
-        )
-        print(f"[DEBUG] User message saved (ID: {user_message.id})")
-        
-        # Get the system prompt
-        print("[DEBUG] Retrieving dynamic system prompt")
-        system_prompt = OpenAIAgent.get_dynamic_system_prompt(business.businessId)
-      
-        
-        # Get all messages for this chat
-        print("[DEBUG] Retrieving chat history")
-        messages = OpenAIAgent.get_chat_messages(client_phone_number, session_key=None)
-        print(f"[DEBUG] Retrieved {len(messages)} messages from chat history")
-        
-        # Format messages for OpenAI
-        print("[DEBUG] Formatting messages for OpenAI API")
-        formatted_messages = OpenAIAgent.format_messages_for_openai(messages, system_prompt)
-        
-        # Call OpenAI API
-        print("[DEBUG] Initializing OpenAI client")
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        # Create LangChain agent for this conversation
+        print(f"[DEBUG] Creating LangChain agent for business ID {business.businessId} and phone {client_phone_number}")
         
         try:
-            print("[DEBUG] Calling OpenAI API")
-            print(f"[DEBUG] API call timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=formatted_messages,
-                temperature=0.5,
-                max_tokens=3000, 
-                tools=OpenAIAgent.get_openai_tools()
+            agent = LangChainAgent(
+                business_id=business.businessId,
+                client_phone_number=client_phone_number
             )
-            print(f"[DEBUG] OpenAI API response received at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"[DEBUG] LangChain agent created successfully")
             
-            # Process the response
-            print("[DEBUG] Processing AI response")
-            ai_response_text = OpenAIAgent.process_ai_response(response, client_phone_number, business, None)
-            ai_response = ai_response_text.get('content')
-            # Save the assistant message
-            print("[DEBUG] Saving assistant message to database")
-            assistant_message = Messages.objects.create(
-                chat=chat,
-                role='assistant',
-                message=ai_response
-            )
-            print(f"[DEBUG] Assistant message saved (ID: {assistant_message.id})")
+            # Process the message with the agent
+            print("[DEBUG] Processing message with LangChain agent")
+            print(f"[DEBUG] Processing timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
-            # Send the AI response back via SMS
+            ai_response = agent.process_message(body)
+            
+            print(f"[DEBUG] Agent response received at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"[DEBUG] Response: {ai_response}")
+            
             # Truncate if necessary to fit SMS length limits
             original_length = len(ai_response)
             if len(ai_response) > 1500:
@@ -410,7 +373,7 @@ def process_sms_async(secretKey, from_number, body, to_number):
             print(f"[DEBUG] Async processing completed for {from_number} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
         except Exception as e:
-            print(f"[DEBUG] Error calling OpenAI API: {str(e)}")
+            print(f"[DEBUG] Error with LangChain agent: {str(e)}")
             traceback.print_exc()
             send_sms_response(from_number, "Sorry, we're experiencing technical difficulties. Please try again later.", apiCred)
         
@@ -607,3 +570,179 @@ def get_chat_data(request, chat_id):
             'success': False,
             'message': str(e)
         }, status=400)
+
+
+@csrf_exempt
+def chat_api(request):
+    """API endpoint for web chat using LangChain agent
+    
+    Args:
+        request: Django request object
+        
+    Returns:
+        JsonResponse with the AI response or chat messages
+    """
+    # Handle GET requests for retrieving messages
+    if request.method == 'GET':
+        try:
+            client_phone_number = request.GET.get('client_phone_number')
+            session_key = request.GET.get('session_key')
+            action = request.GET.get('action')
+            business_id = request.GET.get('business_id')
+            
+            if action == 'get_messages' and (client_phone_number or session_key):
+                # Get business by business_id
+                if not business_id:
+                    return JsonResponse({
+                        'error': 'business_id is required',
+                        'status': 'error'
+                    }, status=400)
+                
+                try:
+                    business = Business.objects.get(businessId=business_id)
+                except Business.DoesNotExist:
+                    return JsonResponse({
+                        'error': 'Business not found',
+                        'status': 'error'
+                    }, status=404)
+                
+                # Get chat
+                if client_phone_number:
+                    from .utils import find_by_phone_number
+                    chat = find_by_phone_number(Chat, 'clientPhoneNumber', client_phone_number, business)
+                elif session_key:
+                    chat = Chat.objects.filter(sessionKey=session_key, business=business).first()
+                
+                if not chat:
+                    return JsonResponse({
+                        'error': 'No messages found',
+                        'status': 'no_messages'
+                    }, status=200)
+                
+                # Get all messages for this chat
+                messages = Messages.objects.filter(chat=chat).order_by('createdAt')
+                messages_data = [{
+                    'id': msg.id,
+                    'role': msg.role,
+                    'content': msg.message,
+                    'createdAt': msg.createdAt.isoformat()
+                } for msg in messages]
+                
+                return JsonResponse({
+                    'messages': messages_data,
+                    'status': 'success'
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'error': 'Invalid action or missing phone number or session key'
+                }, status=400)
+            
+        except Exception as e:
+            print(f"Error in chat_api GET: {str(e)}")
+            traceback.print_exc()
+            return JsonResponse({
+                'error': str(e)
+            }, status=500)
+    
+    # Handle POST requests for chat interaction
+    try:
+        # Parse the request data
+        data = json.loads(request.body)
+        business_id = data.get('business_id')
+        client_phone_number = data.get('client_phone_number')
+        session_key = data.get('session_key')
+        message_text = data.get('message')
+        mode = data.get('mode', 'live')  # Default to 'live' if not provided
+
+        from usage_analytics.services.usage_service import UsageService
+        check_limit = UsageService.check_sms_messages_limit(Business.objects.get(businessId=business_id))
+        if check_limit.get('exceeded'):
+            print("SMS Limit reached for your Plan")
+            return JsonResponse({
+                'error': 'SMS limit exceeded'
+            }, status=400)
+        
+       
+        if not business_id or not (client_phone_number or session_key) or not message_text:
+            return JsonResponse({
+                'error': 'Missing required fields'
+            }, status=400)
+        
+        # Create LangChain agent for this conversation
+        print(f"[DEBUG] Creating LangChain agent for business ID {business_id}")
+        
+        try:
+            agent = LangChainAgent(
+                business_id=business_id,
+                client_phone_number=client_phone_number,
+                session_key=session_key
+            )
+            print(f"[DEBUG] LangChain agent created successfully")
+            
+            # Process the message with the agent
+            print("[DEBUG] Processing message with LangChain agent")
+            ai_response = agent.process_message(message_text)
+            
+            print(f"[DEBUG] Agent response: {ai_response}")
+            
+            # Update chat status
+            from .utils import get_chat_status
+            chat_status = get_chat_status(agent.chat)
+            print(f"[DEBUG] Chat status: {chat_status}")
+            
+            # Return the response
+            return JsonResponse({
+                'response': ai_response,
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            print(f"[DEBUG] Error with LangChain agent: {str(e)}")
+            traceback.print_exc()
+            return JsonResponse({
+                'error': str(e)
+            }, status=500)
+        
+    except Exception as e:
+        print(f"Error in chat_api POST: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+def delete_chat(request, client_phone_number):
+    """API endpoint to delete a chat
+    
+    Args:
+        request: Django request object
+        client_phone_number: The phone number of the client
+        
+    Returns:
+        JsonResponse with success or error message
+    """
+    try:
+        # Get the chat object
+        chat = Chat.objects.get(clientPhoneNumber=client_phone_number)
+        
+        # Delete all messages for this chat
+        Messages.objects.filter(chat=chat).delete()
+        
+        # Delete the chat
+        chat.delete()
+        
+        return JsonResponse({
+            'success': True
+        })
+    except Chat.DoesNotExist:
+        return JsonResponse({
+            'error': 'Chat not found'
+        }, status=404)
+    except Exception as e:
+        print(f"Error in delete_chat: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)

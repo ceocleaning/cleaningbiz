@@ -36,8 +36,8 @@
                                         </button>
                                     </div>
                                 </div>
-                                <textarea class="form-control form-input" id="prompt" name="prompt" rows="15" style="resize: none;">{{ config.prompt }}</textarea>
-                                <div class="form-text small">Configure the system prompt for your AI SMS Agent</div>
+                                <textarea class="form-control form-input" id="custom_instructions" name="custom_instructions" rows="15" style="resize: none;">{{ config.custom_instructions|default:"" }}</textarea>
+                                <div class="form-text small">Provide custom instructions for your AI SMS Agent (business info, pricing, special policies, etc.)</div>
                             </div>
                         </div>
                     </form>
@@ -381,7 +381,7 @@
         
         chatLoader = document.getElementById('chatLoading');
         chatLoader.classList.remove('d-none');
-        fetch(`/ai_agent/api/chat/?client_phone_number=${encodeURIComponent(clientPhoneNumber)}&action=get_messages`, {
+        fetch(`/ai_agent/api/chat/?client_phone_number=${encodeURIComponent(clientPhoneNumber)}&action=get_messages&business_id={{ business.businessId }}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -747,7 +747,7 @@
     }
     
     /* Improve scrolling performance */
-    #prompt {
+    #custom_instructions {
         will-change: transform;
     }
     
@@ -786,7 +786,7 @@
             padding: 0.75rem;
         }
         
-        #prompt {
+        #custom_instructions {
             font-size: 0.875rem;
             min-height: 200px;
         }

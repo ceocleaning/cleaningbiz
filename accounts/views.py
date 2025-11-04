@@ -79,8 +79,14 @@ def SignupPage(request):
                 return redirect('accounts:signup')
         
         if password1 == password2:
+            # Check for duplicate username
             if User.objects.filter(username=username).exists():
                 messages.error(request, 'Username already exists.')
+                return redirect('accounts:signup')
+            
+            # Check for duplicate email (case-insensitive)
+            if User.objects.filter(email__iexact=email).exists():
+                messages.error(request, 'Email already exists.')
                 return redirect('accounts:signup')
 
             user = User.objects.create_user(username=username, password=password1, email=email)
@@ -1587,6 +1593,11 @@ def register_cleaner_user(request, cleaner_id):
         # Check if username already exists
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists.')
+            return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
+        
+        # Check if email already exists (case-insensitive)
+        if User.objects.filter(email__iexact=email).exists():
+            messages.error(request, 'Email already exists.')
             return render(request, 'accounts/register_cleaner.html', {'cleaner': cleaner})
         
         # Create user account
