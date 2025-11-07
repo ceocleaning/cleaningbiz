@@ -1,10 +1,11 @@
 from email import message
+import traceback
 from accounts.models import ApiCredential
 from ai_agent.models import AgentConfiguration, Messages, Chat
 from retell_agent.models import RetellAgent
 from subscription.models import BusinessSubscription, SubscriptionPlan, UsageTracker
 from retell import Retell
-from .models import Lead, OpenJob, BookingNotificationTracker
+from .models import Lead, OpenJob, BookingNotificationTracker, NotificationLog
 from bookings.models import Booking
 from notification.services import NotificationService
 from django.utils import timezone
@@ -14,14 +15,55 @@ from bookings.utils import get_service_details
 
 
 def send_call_to_lead(lead_id):
+    """
+    Send a follow-up call to a lead if they haven't responded to SMS.
+    This is typically scheduled to run after a certain wait time.
+    """
     try:
         # Get the lead object from the database using the ID
         lead = Lead.objects.get(id=lead_id)
-        retellAgent = RetellAgent.objects.get(business=lead.business)
+        
+        # Check if lead already responded
+        if lead.is_response_received:
+            print(f"⊘ Lead {lead.name} already responded, skipping follow-up call")
+            lead.follow_up_call_status = 'not_attempted'
+            lead.follow_up_call_error_message = 'Lead already responded'
+            lead.save(update_fields=['follow_up_call_status', 'follow_up_call_error_message'])
+            return 0
+        
+        # Get Retell agent
+        try:
+            retellAgent = RetellAgent.objects.get(business=lead.business)
+        except RetellAgent.DoesNotExist:
+            error_message = 'No Retell agent configured for this business'
+            print(f"✗ {error_message} for lead {lead.name}")
+            lead.follow_up_call_status = 'not_attempted'
+            lead.follow_up_call_error_message = error_message
+            lead.save(update_fields=['follow_up_call_status', 'follow_up_call_error_message'])
+            return -1
+        
+        if not retellAgent.agent_number:
+            error_message = 'No agent phone number configured'
+            print(f"✗ {error_message} for lead {lead.name}")
+            lead.follow_up_call_status = 'not_attempted'
+            lead.follow_up_call_error_message = error_message
+            lead.save(update_fields=['follow_up_call_status', 'follow_up_call_error_message'])
+            return -1
 
+        # Prepare lead details
         lead_details = f"Here are the details about the lead:\nName: {lead.name}\nPhone: {lead.phone_number}\nEmail: {lead.email if lead.email else 'Not provided'}\nAddress: {lead.address1 if lead.address1 else 'Not provided'}\nCity: {lead.city if lead.city else 'Not provided'}\nState: {lead.state if lead.state else 'Not provided'}\nZip Code: {lead.zipCode if lead.zipCode else 'Not provided'}\nProposed Start Time: {lead.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if lead.proposed_start_datetime else 'Not provided'}\nNotes: {lead.notes if lead.notes else 'No additional notes'}"
 
-        if not lead.is_response_received and retellAgent.agent_number:
+        # Create notification log
+        call_log = NotificationLog.objects.create(
+            lead=lead,
+            business=lead.business,
+            notification_type='follow_up_call',
+            status='pending',
+            attempt_number=1
+        )
+        
+        try:
+            # Initiate the call
             client = Retell(api_key=settings.RETELL_API_KEY)
             call_response = client.call.create_phone_call(
                 from_number=retellAgent.agent_number,
@@ -33,19 +75,76 @@ def send_call_to_lead(lead_id):
                     'service': 'cleaning'
                 }
             )
-            lead.is_call_sent = True
-            lead.call_sent_at = timezone.now()
-            lead.save()
             
-            print(call_response)
-        
-        return 0
+            # Extract call ID
+            call_id = call_response.call_id if hasattr(call_response, 'call_id') else None
+            
+            # Update lead with success status
+            lead.follow_up_call_sent = True
+            lead.follow_up_call_sent_at = timezone.now()
+            lead.follow_up_call_status = 'initiated'
+            lead.save(update_fields=['follow_up_call_sent', 'follow_up_call_sent_at', 'follow_up_call_status'])
+            
+            # Update notification log
+            call_log.status = 'initiated'
+            call_log.success = True
+            call_log.call_id = call_id
+            call_log.metadata = {
+                'call_response': str(call_response),
+                'from_number': retellAgent.agent_number,
+                'to_number': lead.phone_number,
+                'agent_id': retellAgent.agent_id
+            }
+            call_log.save()
+            
+            print(f"✓ Follow-up call initiated successfully for {lead.name} ({lead.phone_number}). Call ID: {call_id}")
+            return 0
+            
+        except Exception as call_error:
+            # Call failed
+            error_message = f"Call Error: {str(call_error)}"
+            error_trace = traceback.format_exc()
+            
+            # Update lead with failure status
+            lead.follow_up_call_status = 'failed'
+            lead.follow_up_call_error_message = error_message
+            lead.save(update_fields=['follow_up_call_status', 'follow_up_call_error_message'])
+            
+            # Update notification log
+            call_log.status = 'failed'
+            call_log.success = False
+            call_log.error_message = error_message
+            call_log.metadata = {
+                'traceback': error_trace,
+                'from_number': retellAgent.agent_number,
+                'to_number': lead.phone_number,
+                'agent_id': retellAgent.agent_id
+            }
+            call_log.save()
+            
+            print(f"✗ Follow-up call failed for {lead.name} ({lead.phone_number}): {error_message}")
+            print(error_trace)
+            return -1
 
     except Lead.DoesNotExist:
+        print(f"✗ Lead with ID {lead_id} not found")
         return -1
 
     except Exception as e:
-        print(f"Error making call: {e}")
+        error_message = f"Unexpected error in send_call_to_lead: {str(e)}"
+        error_trace = traceback.format_exc()
+        print(f"✗ {error_message}")
+        print(error_trace)
+        
+        # Try to update lead if possible
+        try:
+            lead = Lead.objects.get(id=lead_id)
+            lead.follow_up_call_status = 'failed'
+            lead.follow_up_call_error_message = error_message
+            lead.save(update_fields=['follow_up_call_status', 'follow_up_call_error_message'])
+        except:
+            pass
+            
         return -1
 
 

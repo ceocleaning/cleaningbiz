@@ -55,9 +55,17 @@
                                         <span class="badge bg-warning text-dark py-2 px-3 rounded-pill">
                                             <i class="fas fa-clock me-1"></i>Contacted through Call at {{lead.call_sent_at|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
                                         </span>
-                                        {% else %}
+                                        {% elif lead.is_sms_sent %}
                                         <span class="badge bg-warning text-dark py-2 px-3 rounded-pill">
-                                            <i class="fas fa-clock me-1"></i>Contacted via SMS at {{lead.createdAt|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
+                                            <i class="fas fa-clock me-1"></i>Contacted via SMS at {{lead.sms_sent_at|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
+                                        </span>
+                                        {% elif lead.is_follow_up_call_sent %}
+                                        <span class="badge bg-warning text-dark py-2 px-3 rounded-pill">
+                                            <i class="fas fa-clock me-1"></i>Contacted via Follow-up Call at {{lead.follow_up_call_sent_at|to_timezone:lead.business.timezone|date:"M d, Y H:i"}}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger py-2 px-3 rounded-pill">
+                                            <i class="fas fa-times me-1"></i>Contact Failed
                                         </span>
                                         {% endif %}
                                     </div>
@@ -152,6 +160,198 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Status & Actions Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="border border-1 rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 pt-4 pb-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-light-info me-3">
+                                <i class="fas fa-bell text-info"></i>
+                            </div>
+                            <h5 class="mb-0">Notification Status & Actions</h5>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if has_twilio %}
+                            <button type="button" class="btn btn-sm btn-primary" onclick="sendManualSMS()">
+                                <i class="fas fa-sms me-1"></i>Send SMS
+                            </button>
+                            {% endif %}
+                            {% if has_retell %}
+                            <button type="button" class="btn btn-sm btn-success" onclick="sendManualCall()">
+                                <i class="fas fa-phone me-1"></i>Make Call
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Current Status Overview -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="stat-card border rounded-3 p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="icon-square {% if lead.sms_status == 'sent' %}bg-light-success{% elif lead.sms_status == 'failed' %}bg-light-danger{% else %}bg-light-warning{% endif %} rounded-3 me-2">
+                                        <i class="fas fa-sms {% if lead.sms_status == 'sent' %}text-success{% elif lead.sms_status == 'failed' %}text-danger{% else %}text-warning{% endif %}"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-muted">SMS Status</h6>
+                                </div>
+                                <div class="stat-content ps-4">
+                                    {% if lead.sms_status %}
+                                    <span class="badge {% if lead.sms_status == 'sent' %}bg-success{% elif lead.sms_status == 'failed' %}bg-danger{% elif lead.sms_status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill">
+                                        {{ lead.sms_status|title }}
+                                    </span>
+                                    {% if lead.sms_sent_at %}
+                                    <p class="mb-0 small text-muted mt-2">{{ lead.sms_sent_at|date:"M d, Y H:i" }}</p>
+                                    {% endif %}
+                                    {% if lead.sms_error_message %}
+                                    <p class="mb-0 small text-danger mt-1" title="{{ lead.sms_error_message }}">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Error occurred
+                                    </p>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">Not Attempted</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="stat-card border rounded-3 p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="icon-square {% if lead.call_status == 'initiated' or lead.call_status == 'completed' %}bg-light-success{% elif lead.call_status == 'failed' %}bg-light-danger{% else %}bg-light-warning{% endif %} rounded-3 me-2">
+                                        <i class="fas fa-phone {% if lead.call_status == 'initiated' or lead.call_status == 'completed' %}text-success{% elif lead.call_status == 'failed' %}text-danger{% else %}text-warning{% endif %}"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-muted">Call Status</h6>
+                                </div>
+                                <div class="stat-content ps-4">
+                                    {% if lead.call_status %}
+                                    <span class="badge {% if lead.call_status == 'initiated' or lead.call_status == 'completed' %}bg-success{% elif lead.call_status == 'failed' %}bg-danger{% elif lead.call_status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill">
+                                        {{ lead.call_status|title }}
+                                    </span>
+                                    {% if lead.call_sent_at %}
+                                    <p class="mb-0 small text-muted mt-2">{{ lead.call_sent_at|date:"M d, Y H:i" }}</p>
+                                    {% endif %}
+                                    {% if lead.call_error_message %}
+                                    <p class="mb-0 small text-danger mt-1" title="{{ lead.call_error_message }}">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Error occurred
+                                    </p>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">Not Attempted</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="stat-card border rounded-3 p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="icon-square {% if lead.notification_method == 'sms' or lead.notification_method == 'call' or lead.notification_method == 'both' %}bg-light-success{% else %}bg-light-secondary{% endif %} rounded-3 me-2">
+                                        <i class="fas fa-paper-plane {% if lead.notification_method == 'sms' or lead.notification_method == 'call' or lead.notification_method == 'both' %}text-success{% else %}text-secondary{% endif %}"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-muted">Method Used</h6>
+                                </div>
+                                <div class="stat-content ps-4">
+                                    {% if lead.notification_method %}
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ lead.notification_method|upper }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">None</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notification Logs -->
+                    {% if notification_logs %}
+                    <div class="notification-logs">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-history me-2"></i>Notification History
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 15%">Type</th>
+                                        <th style="width: 15%">Status</th>
+                                        <th style="width: 10%">Attempt</th>
+                                        <th style="width: 20%">Date & Time</th>
+                                        <th style="width: 15%">ID/SID</th>
+                                        <th style="width: 25%">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in notification_logs %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge {% if log.notification_type == 'sms' %}bg-info{% elif log.notification_type == 'call' %}bg-primary{% else %}bg-secondary{% endif %} rounded-pill">
+                                                <i class="fas {% if log.notification_type == 'sms' %}fa-sms{% elif log.notification_type == 'call' %}fa-phone{% else %}fa-phone-volume{% endif %} me-1"></i>
+                                                {{ log.notification_type|upper }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if log.success %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                                {% if log.success %}
+                                                <i class="fas fa-check me-1"></i>{{ log.status|title }}
+                                                {% else %}
+                                                <i class="fas fa-times me-1"></i>{{ log.status|title }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary rounded-pill">#{{ log.attempt_number }}</span>
+                                        </td>
+                                        <td class="small">
+                                            {{ log.attempted_at|date:"M d, Y" }}<br>
+                                            <span class="text-muted">{{ log.attempted_at|date:"H:i:s" }}</span>
+                                        </td>
+                                        <td class="small">
+                                            {% if log.message_sid %}
+                                            <code class="small">{{ log.message_sid|truncatechars:20 }}</code>
+                                            {% elif log.call_id %}
+                                            <code class="small">{{ log.call_id|truncatechars:20 }}</code>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small">
+                                            {% if log.error_message %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="showErrorDetails('{{ log.error_message|escapejs }}', '{{ log.error_code|default:''|escapejs }}')">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>View Error
+                                            </button>
+                                            {% elif log.metadata.manual %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-hand-pointer me-1"></i>Manual
+                                            </span>
+                                            {% else %}
+                                            <span class="text-success">
+                                                <i class="fas fa-check-circle me-1"></i>Success
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state text-center py-4">
+                        <div class="empty-icon mb-3">
+                            <i class="fas fa-bell-slash text-muted fa-2x"></i>
+                        </div>
+                        <p class="text-muted">No notification attempts recorded yet</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -642,5 +842,112 @@ document.addEventListener('DOMContentLoaded', function() {
     formatNotes();
     formatJSON();
 });
+
+// Manual SMS and Call Functions
+function sendManualSMS() {
+    if (!confirm('Are you sure you want to send an SMS to {{ lead.name }}?')) {
+        return;
+    }
+    
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+    
+    fetch('{% url "send_manual_sms" lead.leadId %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ SMS sent successfully!\n\nMessage SID: ' + data.sid);
+            location.reload();
+        } else {
+            alert('✗ Failed to send SMS:\n\n' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        alert('✗ Error sending SMS:\n\n' + error);
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    });
+}
+
+function sendManualCall() {
+    if (!confirm('Are you sure you want to initiate a call to {{ lead.name }}?')) {
+        return;
+    }
+    
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Calling...';
+    
+    fetch('{% url "send_manual_call" lead.leadId %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Call initiated successfully!\n\nCall ID: ' + (data.call_id || 'N/A'));
+            location.reload();
+        } else {
+            alert('✗ Failed to initiate call:\n\n' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        alert('✗ Error initiating call:\n\n' + error);
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    });
+}
+
+function showErrorDetails(errorMessage, errorCode) {
+    const modal = document.getElementById('errorModal');
+    document.getElementById('errorMessage').textContent = errorMessage;
+    document.getElementById('errorCode').textContent = errorCode || 'N/A';
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
 </script>
+
+<!-- Error Details Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Error Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small">Error Code:</label>
+                    <p id="errorCode" class="mb-0 font-monospace"></p>
+                </div>
+                <div>
+                    <label class="form-label fw-bold text-muted small">Error Message:</label>
+                    <p id="errorMessage" class="mb-0"></p>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

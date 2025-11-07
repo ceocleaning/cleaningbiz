@@ -24,6 +24,8 @@ urlpatterns = [
     path('leads/<str:leadId>/', views.lead_detail, name='lead_detail'),
     path('leads/<str:leadId>/update/', views.update_lead, name='update_lead'),
     path('leads/<str:leadId>/delete/', views.delete_lead, name='delete_lead'),
+    path('leads/<str:leadId>/send-sms/', views.send_manual_sms, name='send_manual_sms'),
+    path('leads/<str:leadId>/send-call/', views.send_manual_call, name='send_manual_call'),
 
     # API endpoints
     path('api/availability/<str:secretKey>/', check_availability_retell, name='check_availability'),

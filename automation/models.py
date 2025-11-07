@@ -63,11 +63,51 @@ class Lead(models.Model):
 
 
     is_response_received = models.BooleanField(default=False)
+    
+    # SMS Tracking
+    sms_sent = models.BooleanField(default=False)
+    sms_sent_at = models.DateTimeField(null=True, blank=True)
+    sms_status = models.CharField(max_length=50, null=True, blank=True, choices=[
+        ('pending', 'Pending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('not_attempted', 'Not Attempted')
+    ])
+    sms_error_message = models.TextField(null=True, blank=True)
+    sms_message_sid = models.CharField(max_length=255, null=True, blank=True)  # Twilio Message SID
+    
+    # Call Tracking
     is_call_sent = models.BooleanField(default=False)
     call_sent_at = models.DateTimeField(null=True, blank=True)
-
+    call_status = models.CharField(max_length=50, null=True, blank=True, choices=[
+        ('pending', 'Pending'),
+        ('initiated', 'Initiated'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('not_attempted', 'Not Attempted')
+    ])
+    call_error_message = models.TextField(null=True, blank=True)
+    call_id = models.CharField(max_length=255, null=True, blank=True)  # Retell Call ID
+    
+    # Follow-up Call Tracking
     follow_up_call_sent = models.BooleanField(default=False)
     follow_up_call_sent_at = models.DateTimeField(null=True, blank=True)
+    follow_up_call_status = models.CharField(max_length=50, null=True, blank=True, choices=[
+        ('pending', 'Pending'),
+        ('initiated', 'Initiated'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('not_attempted', 'Not Attempted')
+    ])
+    follow_up_call_error_message = models.TextField(null=True, blank=True)
+    
+    # Notification Method Used
+    notification_method = models.CharField(max_length=20, null=True, blank=True, choices=[
+        ('sms', 'SMS'),
+        ('call', 'Call'),
+        ('both', 'Both'),
+        ('none', 'None')
+    ])
 
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
@@ -236,4 +276,62 @@ class BookingNotificationTracker(models.Model):
         
     def __str__(self):
         return f"{self.booking.bookingId} - {self.notification_type} - {self.processed_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class NotificationLog(models.Model):
+    """Comprehensive log of all notification attempts (SMS and Calls) for leads"""
+    
+    NOTIFICATION_TYPE_CHOICES = [
+        ('sms', 'SMS'),
+        ('call', 'Call'),
+        ('follow_up_call', 'Follow-up Call'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('sent', 'Sent'),
+        ('initiated', 'Initiated'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('not_attempted', 'Not Attempted'),
+    ]
+    
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notification_logs')
+    business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE)
+    
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPE_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Attempt tracking
+    attempt_number = models.IntegerField(default=1)
+    attempted_at = models.DateTimeField(auto_now_add=True)
+    
+    # Success/Failure details
+    success = models.BooleanField(default=False)
+    error_message = models.TextField(null=True, blank=True)
+    error_code = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Provider-specific IDs
+    message_sid = models.CharField(max_length=255, null=True, blank=True)  # Twilio SMS SID
+    call_id = models.CharField(max_length=255, null=True, blank=True)  # Retell Call ID
+    
+    # Message content
+    message_content = models.TextField(null=True, blank=True)
+    
+    # Additional metadata
+    metadata = models.JSONField(null=True, blank=True, default=dict)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['lead', 'notification_type']),
+            models.Index(fields=['business', 'created_at']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.lead.name} - {self.notification_type} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
     

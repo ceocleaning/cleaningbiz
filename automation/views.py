@@ -7,13 +7,16 @@ from django.utils import timezone
 from django.db import models
 from django.core.mail import send_mail, EmailMessage
 import logging
-from .models import Lead, Cleaners, CleanerAvailability
+from .models import Lead, Cleaners, CleanerAvailability, NotificationLog
 from bookings.models import Booking
 from accounts.models import ApiCredential, Business, CleanerProfile
 from invoice.models import Invoice, Payment
 from subscription.models import UsageTracker
 from django.db import transaction
 from retell import Retell
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
+import traceback
 import random
 import pytz
 import requests
@@ -291,8 +294,29 @@ def all_leads(request):
 @login_required
 def lead_detail(request, leadId):
     lead = get_object_or_404(Lead, leadId=leadId)
+    
+    # Get notification logs for this lead
+    notification_logs = NotificationLog.objects.filter(lead=lead).order_by('-attempted_at')
+    
+    # Check if Twilio and Retell are configured
+    try:
+        api_cred = ApiCredential.objects.get(business=lead.business)
+        has_twilio = bool(api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber)
+    except ApiCredential.DoesNotExist:
+        has_twilio = False
+    
+    try:
+        from retell_agent.models import RetellAgent
+        retell_agent = RetellAgent.objects.get(business=lead.business)
+        has_retell = bool(retell_agent.agent_number)
+    except:
+        has_retell = False
+    
     context = {
-        'lead': lead
+        'lead': lead,
+        'notification_logs': notification_logs,
+        'has_twilio': has_twilio,
+        'has_retell': has_retell,
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -2000,3 +2024,229 @@ def booking_detail(request, bookingId):
         'booking': booking
     }
     return render(request, 'automation/booking_detail.html', context)
+
+
+@login_required
+@require_POST
+def send_manual_sms(request, leadId):
+    """
+    Manually send an SMS to a lead
+    """
+    lead = get_object_or_404(Lead, leadId=leadId)
+    
+    # Check permissions
+    if not request.user.business_set.filter(id=lead.business.id).exists():
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    try:
+        # Get API credentials
+        api_cred = ApiCredential.objects.get(business=lead.business)
+        
+        if not (api_cred.twilioAccountSid and api_cred.twilioAuthToken and api_cred.twilioSmsNumber):
+            return JsonResponse({
+                'success': False,
+                'error': 'Twilio credentials not configured'
+            }, status=400)
+        
+        # Get agent configuration for message
+        from ai_agent.models import AgentConfiguration
+        try:
+            agent_config = AgentConfiguration.objects.get(business=lead.business)
+            agent_name = agent_config.agent_name
+        except AgentConfiguration.DoesNotExist:
+            agent_name = lead.business.businessName
+        
+        # Get custom message or use default
+        custom_message = request.POST.get('message', '').strip()
+        if custom_message:
+            message_body = custom_message
+        else:
+            message_body = f"Hello {lead.name}, this is {agent_name} from {lead.business.businessName}. I was checking in to see if you'd like to schedule a cleaning service with us?"
+        
+        # Create notification log
+        sms_log = NotificationLog.objects.create(
+            lead=lead,
+            business=lead.business,
+            notification_type='sms',
+            status='pending',
+            attempt_number=NotificationLog.objects.filter(lead=lead, notification_type='sms').count() + 1,
+            message_content=message_body
+        )
+        
+        # Send SMS
+        client = Client(api_cred.twilioAccountSid, api_cred.twilioAuthToken)
+        message = client.messages.create(
+            body=message_body,
+            from_=api_cred.twilioSmsNumber,
+            to=lead.phone_number
+        )
+        
+        # Update lead
+        lead.sms_sent = True
+        lead.sms_sent_at = timezone.now()
+        lead.sms_status = 'sent'
+        lead.sms_message_sid = message.sid
+        if not lead.notification_method or lead.notification_method == 'none':
+            lead.notification_method = 'sms'
+        lead.save(update_fields=['sms_sent', 'sms_sent_at', 'sms_status', 'sms_message_sid', 'notification_method'])
+        
+        # Update log
+        sms_log.status = 'sent'
+        sms_log.success = True
+        sms_log.message_sid = message.sid
+        sms_log.metadata = {
+            'to': lead.phone_number,
+            'from': api_cred.twilioSmsNumber,
+            'status': message.status,
+            'manual': True
+        }
+        sms_log.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'SMS sent successfully',
+            'sid': message.sid,
+            'status': message.status
+        })
+        
+    except TwilioRestException as e:
+        error_message = f"Twilio Error: {str(e)}"
+        
+        # Update lead
+        lead.sms_status = 'failed'
+        lead.sms_error_message = error_message
+        lead.save(update_fields=['sms_status', 'sms_error_message'])
+        
+        # Update log if exists
+        if 'sms_log' in locals():
+            sms_log.status = 'failed'
+            sms_log.success = False
+            sms_log.error_message = error_message
+            sms_log.error_code = str(getattr(e, 'code', 'UNKNOWN'))
+            sms_log.metadata = {'manual': True, 'error_details': str(e)}
+            sms_log.save()
+        
+        return JsonResponse({
+            'success': False,
+            'error': error_message
+        }, status=400)
+        
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        logger.error(f"Manual SMS error for lead {leadId}: {error_message}\n{traceback.format_exc()}")
+        
+        return JsonResponse({
+            'success': False,
+            'error': error_message
+        }, status=500)
+
+
+@login_required
+@require_POST
+def send_manual_call(request, leadId):
+    """
+    Manually initiate a call to a lead
+    """
+    lead = get_object_or_404(Lead, leadId=leadId)
+    
+    # Check permissions
+    if not request.user.business_set.filter(id=lead.business.id).exists():
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    try:
+        # Get Retell agent
+        from retell_agent.models import RetellAgent
+        from django.conf import settings
+        
+        try:
+            retell_agent = RetellAgent.objects.get(business=lead.business)
+        except RetellAgent.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Retell agent not configured for this business'
+            }, status=400)
+        
+        if not retell_agent.agent_number:
+            return JsonResponse({
+                'success': False,
+                'error': 'No agent phone number configured'
+            }, status=400)
+        
+        # Prepare lead details
+        lead_details = f"Here are the details about the lead:\nName: {lead.name}\nPhone: {lead.phone_number}\nEmail: {lead.email if lead.email else 'Not provided'}\nAddress: {lead.address1 if lead.address1 else 'Not provided'}\nCity: {lead.city if lead.city else 'Not provided'}\nState: {lead.state if lead.state else 'Not provided'}\nZip Code: {lead.zipCode if lead.zipCode else 'Not provided'}\nProposed Start Time: {lead.proposed_start_datetime.strftime('%B %d, %Y at %I:%M %p') if lead.proposed_start_datetime else 'Not provided'}\nNotes: {lead.notes if lead.notes else 'No additional notes'}"
+        
+        # Create notification log
+        call_log = NotificationLog.objects.create(
+            lead=lead,
+            business=lead.business,
+            notification_type='call',
+            status='pending',
+            attempt_number=NotificationLog.objects.filter(lead=lead, notification_type='call').count() + 1
+        )
+        
+        # Initiate call
+        client = Retell(api_key=settings.RETELL_API_KEY)
+        call_response = client.call.create_phone_call(
+            from_number=retell_agent.agent_number,
+            to_number=lead.phone_number,
+            override_agent_id=retell_agent.agent_id,
+            retell_llm_dynamic_variables={
+                'name': lead.name,
+                'details': lead_details,
+                'service': 'cleaning'
+            }
+        )
+        
+        # Extract call ID
+        call_id = call_response.call_id if hasattr(call_response, 'call_id') else None
+        
+        # Update lead
+        lead.is_call_sent = True
+        lead.call_sent_at = timezone.now()
+        lead.call_status = 'initiated'
+        lead.call_id = call_id
+        if not lead.notification_method or lead.notification_method == 'none':
+            lead.notification_method = 'call'
+        lead.save(update_fields=['is_call_sent', 'call_sent_at', 'call_status', 'call_id', 'notification_method'])
+        
+        # Update log
+        call_log.status = 'initiated'
+        call_log.success = True
+        call_log.call_id = call_id
+        call_log.metadata = {
+            'call_response': str(call_response),
+            'from_number': retell_agent.agent_number,
+            'to_number': lead.phone_number,
+            'agent_id': retell_agent.agent_id,
+            'manual': True
+        }
+        call_log.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Call initiated successfully',
+            'call_id': call_id
+        })
+        
+    except Exception as e:
+        error_message = f"Call Error: {str(e)}"
+        error_trace = traceback.format_exc()
+        logger.error(f"Manual call error for lead {leadId}: {error_message}\n{error_trace}")
+        
+        # Update lead
+        lead.call_status = 'failed'
+        lead.call_error_message = error_message
+        lead.save(update_fields=['call_status', 'call_error_message'])
+        
+        # Update log if exists
+        if 'call_log' in locals():
+            call_log.status = 'failed'
+            call_log.success = False
+            call_log.error_message = error_message
+            call_log.metadata = {'manual': True, 'traceback': error_trace}
+            call_log.save()
+        
+        return JsonResponse({
+            'success': False,
+            'error': error_message
+        }, status=500)
