@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Booking, BookingCustomAddons
+from .models import Booking, BookingCustomAddons, Coupon, CouponUsage
 from .payout_models import CleanerPayout
 from django.utils.html import format_html
 
@@ -42,3 +42,49 @@ class CleanerPayoutAdmin(admin.ModelAdmin):
     def get_cleaner_name(self, obj):
         return obj.cleaner_profile.cleaner.name if obj.cleaner_profile and obj.cleaner_profile.cleaner else 'N/A'
     get_cleaner_name.short_description = 'Cleaner'
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ['code', 'business', 'discount_type', 'discount_value', 'status', 'current_uses', 'max_uses', 'valid_from', 'valid_until', 'is_active']
+    list_filter = ['status', 'discount_type', 'is_active', 'business']
+    search_fields = ['code', 'description']
+    readonly_fields = ['current_uses', 'created_at', 'updated_at']
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('business', 'code', 'description', 'is_active')
+        }),
+        ('Discount Details', {
+            'fields': ('discount_type', 'discount_value', 'min_booking_amount')
+        }),
+        ('Usage Limits', {
+            'fields': ('max_uses', 'max_uses_per_customer', 'current_uses')
+        }),
+        ('Validity Period', {
+            'fields': ('valid_from', 'valid_until', 'status')
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ['business', 'created_by']
+        return self.readonly_fields
+
+
+@admin.register(CouponUsage)
+class CouponUsageAdmin(admin.ModelAdmin):
+    list_display = ['coupon', 'booking', 'customer', 'discount_amount', 'applied_at']
+    list_filter = ['applied_at', 'coupon']
+    search_fields = ['coupon__code', 'customer__email', 'booking__bookingId']
+    readonly_fields = ['coupon', 'booking', 'customer', 'discount_amount', 'applied_at']
+    date_hierarchy = 'applied_at'
+    
+    def has_add_permission(self, request):
+        return False  # Prevent manual creation
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # Prevent editing

@@ -39,6 +39,12 @@
                             Custom Pricing
                         </span>
                         {% endif %}
+                        {% if booking.applied_coupon %}
+                        <span class="badge bg-success rounded-pill px-3 py-2">
+                            <i class="fas fa-ticket-alt me-1"></i>
+                            Coupon: {{ booking.applied_coupon.code }}
+                        </span>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -174,16 +180,39 @@
                             </div>
                             {% endif %}
                             
-                            {% if booking.appliedDiscountPercent > 0 %}
+                            {% if booking.applied_coupon %}
+                            <div class="alert alert-success border-success mb-3 py-2 px-3" style="border-left: 4px solid #28a745 !important;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-ticket-alt me-2"></i>
+                                        <small>
+                                            <strong>Coupon Applied:</strong> {{ booking.applied_coupon.code }}
+                                            <span class="text-muted">- {{ booking.applied_coupon.get_discount_display }}</span>
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-success">-${{ booking.coupon_discount_amount|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if booking.appliedDiscountPercent > 0 or booking.coupon_discount_amount > 0 %}
                             <div class="card bg-light mb-2 p-2">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span>Subtotal:</span>
-                                    <span>${{ booking.totalPrice|add:booking.discountAmount|floatformat:2 }}</span>
+                                    <span>${{ booking.totalPrice|add:booking.discountAmount|add:booking.coupon_discount_amount|floatformat:2 }}</span>
                                 </div>
+                                {% if booking.appliedDiscountPercent > 0 %}
                                 <div class="d-flex justify-content-between mb-1 text-success">
                                     <span>{{ booking.get_recurring_display }} Discount ({{ booking.appliedDiscountPercent }}%):</span>
                                     <span>-${{ booking.discountAmount|floatformat:2 }}</span>
                                 </div>
+                                {% endif %}
+                                {% if booking.coupon_discount_amount > 0 %}
+                                <div class="d-flex justify-content-between mb-1 text-success">
+                                    <span>Coupon Discount ({{ booking.applied_coupon.code }}):</span>
+                                    <span>-${{ booking.coupon_discount_amount|floatformat:2 }}</span>
+                                </div>
+                                {% endif %}
                                 {% if booking.tax %}
                                 <div class="d-flex justify-content-between mb-1">
                                     <span>Tax:</span>

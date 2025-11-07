@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}Coupons - {{ business.businessName }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Coupons</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Active Coupons</h6>
+                        <h3 class="mb-0">{{ active_count }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Expired</h6>
+                        <h3 class="mb-0">{{ expired_count }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Inactive</h6>
+                        <h3 class="mb-0">{{ inactive_count }}</h3>
+                    </div>
+                    <div class="text-secondary">
+                        <i class="fas fa-pause-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Coupons</h6>
+                        <h3 class="mb-0">{{ coupons.count }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-ticket-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coupons Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Coupons</h4>
+            <a href="{% url 'bookings:coupon_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Coupon
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="get" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Search by code or description..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <form method="get" class="d-flex justify-content-end">
+                    <select name="status" class="form-select w-auto" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table -->
+        {% if coupons %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Discount</th>
+                        <th>Valid Period</th>
+                        <th>Usage</th>
+                        <th>Total Discount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td>
+                            <strong>{{ coupon.code }}</strong>
+                            {% if coupon.description %}
+                            <br><small class="text-muted">{{ coupon.description|truncatewords:10 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ coupon.get_discount_display }}
+                            </span>
+                            {% if coupon.min_booking_amount %}
+                            <br><small class="text-muted">Min: ${{ coupon.min_booking_amount }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>
+                                {{ coupon.valid_from|date:"M d, Y" }}<br>
+                                to {{ coupon.valid_until|date:"M d, Y" }}
+                            </small>
+                        </td>
+                        <td>
+                            {{ coupon.current_uses }}
+                            {% if coupon.max_uses %}
+                            / {{ coupon.max_uses }}
+                            {% else %}
+                            / ∞
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">{{ coupon.total_usage }} total</small>
+                        </td>
+                        <td>
+                            {% if coupon.total_discount_given %}
+                            ${{ coupon.total_discount_given|floatformat:2 }}
+                            {% else %}
+                            $0.00
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if coupon.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif coupon.status == 'expired' %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                            {% if not coupon.is_active %}
+                            <br><span class="badge bg-warning text-dark mt-1">Paused</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'bookings:coupon_detail' coupon.id %}" class="btn btn-outline-info" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'bookings:coupon_edit' coupon.id %}" class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-warning toggle-status-btn" 
+                                        data-coupon-id="{{ coupon.id }}" 
+                                        data-is-active="{{ coupon.is_active|lower }}"
+                                        title="{% if coupon.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                    <i class="fas fa-{% if coupon.is_active %}pause{% else %}play{% endif %}"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger delete-coupon-btn" 
+                                        data-coupon-id="{{ coupon.id }}" 
+                                        data-coupon-code="{{ coupon.code }}"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No coupons found</h5>
+            <p class="text-muted">Create your first coupon to offer discounts to your customers.</p>
+            <a href="{% url 'bookings:coupon_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Coupon
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete coupon
+    document.querySelectorAll('.delete-coupon-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const couponId = this.dataset.couponId;
+            const couponCode = this.dataset.couponCode;
+            
+            if (confirm(`Are you sure you want to delete coupon "${couponCode}"? This action cannot be undone.`)) {
+                fetch(`/bookings/coupons/${couponId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while deleting the coupon.');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+    
+    // Handle toggle status
+    document.querySelectorAll('.toggle-status-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const couponId = this.dataset.couponId;
+            const isActive = this.dataset.isActive === 'true';
+            const action = isActive ? 'deactivate' : 'activate';
+            
+            if (confirm(`Are you sure you want to ${action} this coupon?`)) {
+                fetch(`/bookings/coupons/${couponId}/toggle-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while updating the coupon status.');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

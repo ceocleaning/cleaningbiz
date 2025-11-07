@@ -13,6 +13,7 @@ from pydantic import functional_serializers
 from accounts.decorators import customer_required
 from accounts.models import Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
+from bookings.coupon_utils import validate_coupon, apply_coupon_to_booking
 from customer.models import Customer, Review
 from automation.utils import format_phone_number
 from invoice.models import Invoice
@@ -341,10 +342,37 @@ def add_booking(request, business_id):
             
             pricing_snapshot = convert_decimals_to_float(price_calculation)
             
-            total_price = price_calculation.get('total_amount', 0)
-            tax = price_calculation.get('tax', 0)
+            # Get subtotal and tax from POST (already calculated on frontend with coupon applied)
+            subtotal = Decimal(request.POST.get('subtotal', '0'))
+            tax = Decimal(request.POST.get('tax', '0'))
+            total_price = Decimal(request.POST.get('totalAmount', '0'))
             appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
             discountAmount = Decimal(request.POST.get('discountAmount', '0'))
+            
+            # Handle coupon if applied
+            applied_coupon_code = request.POST.get('appliedCouponCode', '').strip()
+            coupon_discount_amount = Decimal(request.POST.get('couponDiscountAmount', '0'))
+            
+            # Validate coupon before creating booking
+            validated_coupon = None
+            if applied_coupon_code:
+                # For validation, use subtotal before coupon (add back the coupon discount)
+                subtotal_before_coupon = subtotal + coupon_discount_amount
+                
+                validation_result = validate_coupon(
+                    coupon_code=applied_coupon_code,
+                    customer=customer,
+                    booking_amount=subtotal_before_coupon,
+                    service_type=request.POST.get('serviceType')
+                )
+                
+                if not validation_result['valid']:
+                    messages.warning(request, f'Coupon could not be applied: {validation_result["message"]}')
+                    coupon_discount_amount = Decimal('0')
+                    validated_coupon = None
+                else:
+                    # Use validated coupon object
+                    validated_coupon = validation_result['coupon']
             
             # Create the booking
             booking = Booking.objects.create(
@@ -366,6 +394,8 @@ def add_booking(request, business_id):
                 totalPrice=total_price,
                 appliedDiscountPercent=appliedDiscountPercent,
                 discountAmount=discountAmount,
+                applied_coupon=validated_coupon,
+                coupon_discount_amount=coupon_discount_amount,
                 used_custom_pricing=price_calculation.get('used_custom_pricing', False),
                 pricing_snapshot=pricing_snapshot
             )
@@ -396,7 +426,22 @@ def add_booking(request, business_id):
                     )
                     booking.customAddons.add(new_custom_booking_addon)
             
-            messages.success(request, 'Booking created successfully!')
+            # Record coupon usage if coupon was applied
+            if applied_coupon_code and coupon_discount_amount > 0:
+                success, discount, message, coupon = apply_coupon_to_booking(
+                    coupon_code=applied_coupon_code,
+                    booking=booking,
+                    customer=customer,
+                    booking_amount=subtotal + coupon_discount_amount  # Original amount before coupon
+                )
+                
+                if success:
+                    messages.success(request, f'Booking created successfully! {message}')
+                else:
+                    messages.success(request, 'Booking created successfully!')
+                    messages.warning(request, f'Coupon tracking: {message}')
+            else:
+                messages.success(request, 'Booking created successfully!')
             # The invoice will be created automatically by the signal handler
             # Get the invoice that was created by the signal
             invoice = Invoice.objects.get(booking=booking)

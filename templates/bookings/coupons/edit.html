@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Coupon - {{ business.businessName }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'bookings:coupon_list' %}">Coupons</a></li>
+                <li class="breadcrumb-item active">Edit {{ coupon.code }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Coupon: {{ coupon.code }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="couponForm">
+                    {% csrf_token %}
+                    
+                    <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="code" class="form-label">Coupon Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" id="code" name="code" required 
+                                   value="{{ coupon.code }}" maxlength="50">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="is_active" class="form-label">Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                       {% if coupon.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2">{{ coupon.description }}</textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3"><i class="fas fa-percent me-2"></i>Discount Details</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="discount_type" class="form-label">Discount Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="discount_type" name="discount_type" required>
+                                <option value="percentage" {% if coupon.discount_type == 'percentage' %}selected{% endif %}>Percentage (%)</option>
+                                <option value="fixed" {% if coupon.discount_type == 'fixed' %}selected{% endif %}>Fixed Amount ($)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="discount_value" class="form-label">Discount Value <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="discount-prefix">
+                                    {% if coupon.discount_type == 'percentage' %}%{% else %}${% endif %}
+                                </span>
+                                <input type="number" class="form-control" id="discount_value" name="discount_value" 
+                                       required min="0" step="0.01" value="{{ coupon.discount_value }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="min_booking_amount" class="form-label">Minimum Booking Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="min_booking_amount" name="min_booking_amount" 
+                                   min="0" step="0.01" value="{{ coupon.min_booking_amount|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Usage Limits</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="max_uses" class="form-label">Maximum Total Uses</label>
+                            <input type="number" class="form-control" id="max_uses" name="max_uses" 
+                                   min="1" value="{{ coupon.max_uses|default:'' }}">
+                            <small class="text-muted">Current uses: {{ coupon.current_uses }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_uses_per_customer" class="form-label">Max Uses Per Customer <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="max_uses_per_customer" name="max_uses_per_customer" 
+                                   required min="1" value="{{ coupon.max_uses_per_customer }}">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3"><i class="fas fa-calendar-alt me-2"></i>Validity Period</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="valid_from" class="form-label">Valid From <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="valid_from" name="valid_from" 
+                                   required value="{{ coupon.valid_from|date:'Y-m-d\TH:i' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="valid_until" class="form-label">Valid Until <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="valid_until" name="valid_until" 
+                                   required value="{{ coupon.valid_until|date:'Y-m-d\TH:i' }}">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'bookings:coupon_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Coupon
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const discountType = document.getElementById('discount_type');
+    const discountPrefix = document.getElementById('discount-prefix');
+    const codeInput = document.getElementById('code');
+    
+    codeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    discountType.addEventListener('change', function() {
+        discountPrefix.textContent = this.value === 'percentage' ? '%' : '$';
+    });
+});
+</script>
+{% endblock %}

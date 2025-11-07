@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Coupon - {{ business.businessName }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'bookings:coupon_list' %}">Coupons</a></li>
+                <li class="breadcrumb-item active">Create Coupon</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mx-auto">
+        <div class="card border">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Coupon</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="couponForm">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="code" class="form-label">Coupon Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" id="code" name="code" required 
+                                   placeholder="e.g., SUMMER2024" maxlength="50">
+                            <small class="text-muted">Unique code customers will enter</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="is_active" class="form-label">Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    Active (customers can use this coupon)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" 
+                                  placeholder="Internal description (not visible to customers)"></textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Discount Details -->
+                    <h5 class="mb-3"><i class="fas fa-percent me-2"></i>Discount Details</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="discount_type" class="form-label">Discount Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="discount_type" name="discount_type" required>
+                                <option value="percentage" selected>Percentage (%)</option>
+                                <option value="fixed">Fixed Amount ($)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="discount_value" class="form-label">Discount Value <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="discount-prefix">%</span>
+                                <input type="number" class="form-control" id="discount_value" name="discount_value" 
+                                       required min="0" step="0.01" placeholder="10">
+                            </div>
+                            <small class="text-muted" id="discount-hint">Enter percentage (0-100)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="min_booking_amount" class="form-label">Minimum Booking Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="min_booking_amount" name="min_booking_amount" 
+                                   min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <small class="text-muted">Leave empty for no minimum requirement</small>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Usage Limits -->
+                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Usage Limits</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="max_uses" class="form-label">Maximum Total Uses</label>
+                            <input type="number" class="form-control" id="max_uses" name="max_uses" 
+                                   min="1" placeholder="Unlimited">
+                            <small class="text-muted">Leave empty for unlimited uses</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_uses_per_customer" class="form-label">Max Uses Per Customer <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="max_uses_per_customer" name="max_uses_per_customer" 
+                                   required min="1" value="1">
+                            <small class="text-muted">How many times each customer can use this</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Validity Period -->
+                    <h5 class="mb-3"><i class="fas fa-calendar-alt me-2"></i>Validity Period</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="valid_from" class="form-label">Valid From <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="valid_from" name="valid_from" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="valid_until" class="form-label">Valid Until <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="valid_until" name="valid_until" required>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'bookings:coupon_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Coupon
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const discountType = document.getElementById('discount_type');
+    const discountValue = document.getElementById('discount_value');
+    const discountPrefix = document.getElementById('discount-prefix');
+    const discountHint = document.getElementById('discount-hint');
+    const codeInput = document.getElementById('code');
+    
+    // Auto-uppercase coupon code
+    codeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Update discount input based on type
+    function updateDiscountInput() {
+        if (discountType.value === 'percentage') {
+            discountPrefix.textContent = '%';
+            discountValue.max = '100';
+            discountHint.textContent = 'Enter percentage (0-100)';
+            discountValue.placeholder = '10';
+        } else {
+            discountPrefix.textContent = '$';
+            discountValue.removeAttribute('max');
+            discountHint.textContent = 'Enter fixed dollar amount';
+            discountValue.placeholder = '25.00';
+        }
+    }
+    
+    discountType.addEventListener('change', updateDiscountInput);
+    updateDiscountInput();
+    
+    // Set default dates (valid from now, valid until 30 days from now)
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+    
+    // Format dates for datetime-local input
+    function formatDateTimeLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+    
+    document.getElementById('valid_from').value = formatDateTimeLocal(now);
+    document.getElementById('valid_until').value = formatDateTimeLocal(thirtyDaysLater);
+    
+    // Form validation
+    document.getElementById('couponForm').addEventListener('submit', function(e) {
+        const validFrom = new Date(document.getElementById('valid_from').value);
+        const validUntil = new Date(document.getElementById('valid_until').value);
+        
+        if (validUntil <= validFrom) {
+            e.preventDefault();
+            alert('Valid Until date must be after Valid From date');
+            return false;
+        }
+        
+        if (discountType.value === 'percentage') {
+            const value = parseFloat(discountValue.value);
+            if (value < 0 || value > 100) {
+                e.preventDefault();
+                alert('Percentage discount must be between 0 and 100');
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

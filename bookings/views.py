@@ -6,7 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 
 from bookings.utils import send_jobs_to_cleaners
-from .models import Booking, BookingCustomAddons
+from .models import Booking, BookingCustomAddons, Coupon, CouponUsage
+from .coupon_utils import apply_coupon_to_booking, validate_coupon, get_coupon_by_code
 from invoice.models import Invoice, Payment
 from accounts.models import Business, BusinessSettings, CustomAddons
 from automation.models import CleanerAvailability, Cleaners, OpenJob
@@ -23,6 +24,7 @@ from automation.utils import format_phone_number
 from django.utils import timezone
 from automation.utils import getServiceType, calculateAmount
 import pytz
+from django.core.exceptions import ValidationError
 # No longer using Django forms
 # from customer.forms import CustomerForm
 from django.http import JsonResponse
@@ -461,10 +463,68 @@ def create_booking(request):
             
             pricing_snapshot = convert_decimals_to_float(price_calculation)
             
-            totalPrice = price_calculation.get('total_amount', 0)
-            tax = price_calculation.get('tax', 0)
+            # Get subtotal and tax from POST (already calculated on frontend with coupon applied)
+            subtotal = Decimal(request.POST.get('subtotal', '0'))
+            tax = Decimal(request.POST.get('tax', '0'))
+            totalPrice = Decimal(request.POST.get('totalAmount', '0'))
             appliedDiscountPercent = Decimal(request.POST.get('appliedDiscountPercent', '0'))
             discountAmount = Decimal(request.POST.get('discountAmount', '0'))
+            
+            # Handle coupon if applied
+            applied_coupon_code = request.POST.get('appliedCouponCode', '').strip()
+            coupon_discount_amount = Decimal(request.POST.get('couponDiscountAmount', '0'))
+            
+            print("\n" + "="*60)
+            print("BOOKING CREATION - COUPON HANDLING")
+            print("="*60)
+            print(f"Applied Coupon Code from POST: '{applied_coupon_code}'")
+            print(f"Coupon Discount Amount from POST: ${coupon_discount_amount}")
+            print(f"Subtotal from POST: ${subtotal}")
+            print(f"Tax from POST: ${tax}")
+            print(f"Total Price from POST: ${totalPrice}")
+            print(f"Customer: {customer}")
+            
+            # Validate coupon before creating booking
+            validated_coupon = None
+            if applied_coupon_code:
+                print(f"\n>>> Validating coupon: {applied_coupon_code}")
+                
+                # For validation, use subtotal before coupon (add back the coupon discount)
+                subtotal_before_coupon = subtotal + coupon_discount_amount
+                
+                validation_result = validate_coupon(
+                    coupon_code=applied_coupon_code,
+                    customer=customer,
+                    booking_amount=subtotal_before_coupon,
+                    service_type=request.POST.get('serviceType')
+                )
+                
+                print(f"Validation result: {validation_result}")
+                
+                if not validation_result['valid']:
+                    print(f"❌ COUPON VALIDATION FAILED: {validation_result['message']}")
+                    messages.warning(request, f'Coupon could not be applied: {validation_result["message"]}')
+                    coupon_discount_amount = Decimal('0')
+                    validated_coupon = None
+                else:
+                    # Use validated discount amount and get coupon object
+                    validated_coupon = validation_result['coupon']
+                    print(f"✅ COUPON VALIDATED SUCCESSFULLY")
+                    print(f"   Coupon Object: {validated_coupon}")
+                    print(f"   Discount Amount: ${coupon_discount_amount}")
+                    print(f"   Subtotal after coupon: ${subtotal}")
+                    print(f"   Tax on discounted amount: ${tax}")
+                    print(f"   Total: ${totalPrice}")
+            else:
+                print(">>> No coupon code provided")
+            
+            print(f"\nFinal values before booking creation:")
+            print(f"  - validated_coupon: {validated_coupon}")
+            print(f"  - coupon_discount_amount: ${coupon_discount_amount}")
+            print(f"  - subtotal: ${subtotal}")
+            print(f"  - tax: ${tax}")
+            print(f"  - totalPrice: ${totalPrice}")
+            print("="*60 + "\n")
             
             # Create the booking
             booking = Booking.objects.create(
@@ -488,6 +548,8 @@ def create_booking(request):
                 totalPrice=totalPrice,
                 appliedDiscountPercent=appliedDiscountPercent,
                 discountAmount=discountAmount,
+                applied_coupon=validated_coupon,
+                coupon_discount_amount=coupon_discount_amount,
                 used_custom_pricing=price_calculation.get('used_custom_pricing', False),
                 pricing_snapshot=pricing_snapshot
             )
@@ -521,6 +583,41 @@ def create_booking(request):
                     )
                     booking.customAddons.add(newCustomBookingAddon)
             
+            print("\n" + "="*60)
+            print("BOOKING CREATED - NOW RECORDING COUPON USAGE")
+            print("="*60)
+            print(f"Booking ID: {booking.bookingId}")
+            print(f"Booking applied_coupon field: {booking.applied_coupon}")
+            print(f"Booking coupon_discount_amount field: ${booking.coupon_discount_amount}")
+            print(f"Booking totalPrice: ${booking.totalPrice}")
+            
+            # Record coupon usage if coupon was applied
+            if applied_coupon_code and coupon_discount_amount > 0:
+                print(f"\n>>> Recording coupon usage for: {applied_coupon_code}")
+                print(f"    Discount amount: ${coupon_discount_amount}")
+                
+                success, discount, message, coupon = apply_coupon_to_booking(
+                    coupon_code=applied_coupon_code,
+                    booking=booking,
+                    customer=customer,
+                    booking_amount=totalPrice + coupon_discount_amount  # Original amount before coupon
+                )
+                
+                print(f"    Result: {'✅ SUCCESS' if success else '❌ FAILED'}")
+                print(f"    Message: {message}")
+                print(f"    Discount recorded: ${discount}")
+                print(f"    Coupon object: {coupon}")
+                
+                if success:
+                    messages.success(request, message)
+                else:
+                    messages.warning(request, f'Booking created but coupon application failed: {message}')
+            else:
+                print(">>> No coupon to record (either no code or zero discount)")
+                print(f"    applied_coupon_code: '{applied_coupon_code}'")
+                print(f"    coupon_discount_amount: ${coupon_discount_amount}")
+            
+            print("="*60 + "\n")
 
             # Import threading for background execution
             import threading

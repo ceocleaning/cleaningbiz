@@ -743,20 +743,28 @@
                             <li>
                                 <a class="dropdown-item {% if '/bookings/all/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:all_bookings' %}">
-                                    All Bookings
+                                    <i class="fas fa-calendar-check me-2 text-primary"></i>All Bookings
                                 </a>
                             </li>
                             
                             <li>
                                 <a class="dropdown-item {% if '/customers/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:customers' %}">
-                                    Customers
+                                    <i class="fas fa-users me-2 text-info"></i>Customers
                                 </a>
                             </li>
+                            
+                            <li>
+                                <a class="dropdown-item {% if '/bookings/coupons/' in request.path %}active{% endif %}" 
+                                    href="{% url 'bookings:coupon_list' %}">
+                                    <i class="fas fa-ticket-alt me-2 text-success"></i>Coupons
+                                </a>
+                            </li>
+                            
                             <li>    
                                 <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}" 
                                     href="{% url 'bookings:embed_booking_widget' %}">
-                                    Embed Booking Form
+                                    <i class="fas fa-code me-2 text-secondary"></i>Embed Booking Form
                                 </a>
                             </li>
                         </ul>

@@ -1,6 +1,8 @@
 from django.urls import path, include
 from . import views
 from . import payout_urls
+from . import coupon_views
+from . import api_views
 
 app_name = 'bookings'
 
@@ -25,6 +27,17 @@ urlpatterns = [
     path('reopen-job/<str:booking_id>/', views.reopen_job_for_cleaner, name='reopen_job_for_cleaner'),
     path('force-assign/<str:booking_id>/<str:cleaner_id>/', views.force_assign_booking, name='force_assign_booking'),
     path('reset-open-jobs/<str:booking_id>/', views.reset_open_jobs, name='reset_open_jobs'),
+    
+    # Coupon URLs
+    path('coupons/', coupon_views.coupon_list, name='coupon_list'),
+    path('coupons/create/', coupon_views.coupon_create, name='coupon_create'),
+    path('coupons/<int:coupon_id>/', coupon_views.coupon_detail, name='coupon_detail'),
+    path('coupons/<int:coupon_id>/edit/', coupon_views.coupon_edit, name='coupon_edit'),
+    path('coupons/<int:coupon_id>/delete/', coupon_views.coupon_delete, name='coupon_delete'),
+    path('coupons/<int:coupon_id>/toggle-status/', coupon_views.coupon_toggle_status, name='coupon_toggle_status'),
+    
+    # Coupon API
+    path('api/validate-coupon/', api_views.validate_coupon, name='validate_coupon'),
     
     # Payout URLs
     path('', include(payout_urls)),

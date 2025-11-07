@@ -1,22 +1,35 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.authentication import SessionAuthentication
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
+from decimal import Decimal
+import pytz
 import json
 
 from accounts.models import Business, BusinessSettings, CustomAddons
 from bookings.models import Booking, BookingCustomAddons
+from bookings.coupon_utils import validate_coupon, apply_coupon_to_booking
 from customer.models import Customer
 from customer.serializers import BookingSerializer, CustomerSerializer
 from automation.utils import format_phone_number
 from invoice.models import Invoice
 from accounts.timezone_utils import convert_to_utc
 
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """Session authentication without CSRF check"""
+    def enforce_csrf(self, request):
+        return  # Skip CSRF check
+
+
 @api_view(['GET', 'POST'])
+@authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
 @transaction.atomic
 def booking_api(request, business_id):
@@ -88,9 +101,10 @@ def booking_api(request, business_id):
         try:
             data = request.data
             
-            # Get price details from request
-            total_price = float(data.get('totalAmount', '0'))
-            tax = float(data.get('tax', '0'))
+            # Get price details from request (already calculated on frontend with coupon applied)
+            subtotal = Decimal(str(data.get('subtotal', '0')))
+            tax = Decimal(str(data.get('tax', '0')))
+            total_price = Decimal(str(data.get('totalAmount', '0')))
             
             # Format phone number
             phone_number = data.get('phoneNumber')
@@ -107,14 +121,24 @@ def booking_api(request, business_id):
             cleaning_date = data.get('cleaningDate')
             start_time = data.get('startTime')
             
-            # Convert cleaning date and time from business timezone to UTC
-            start_time_utc = convert_to_utc(
-                cleaning_date + ' ' + start_time,
-                business.timezone
-            ).time()
+            # Parse the datetime string in business timezone
+            business_tz = pytz.timezone(business.timezone)
+            datetime_str = f"{cleaning_date} {start_time}"
+            
+            # Create naive datetime and localize to business timezone
+            naive_datetime = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
+            localized_datetime = business_tz.localize(naive_datetime)
+            
+            # Convert to UTC
+            datetime_utc = localized_datetime.astimezone(pytz.UTC)
+            
+            # Extract date and time components
+            cleaning_date_utc = datetime_utc.date()
+            start_time_utc = datetime_utc.time()
             
             # Set end time to 1 hour after start time
-            end_time_utc = (datetime.strptime(start_time_utc.strftime('%H:%M'), '%H:%M') + timedelta(hours=1)).strftime('%H:%M')
+            end_datetime_utc = datetime_utc + timedelta(hours=1)
+            end_time_utc = end_datetime_utc.time()
             
             # Try to find customer by email or create new one
             customer_email = data.get('email')
@@ -134,6 +158,31 @@ def booking_api(request, business_id):
                     zip_code=data.get('zipCode')
                 )
             
+            # Handle coupon if applied
+            applied_coupon_code = data.get('appliedCouponCode', '').strip()
+            coupon_discount_amount = Decimal(str(data.get('couponDiscountAmount', '0')))
+            
+            # Validate coupon before creating booking
+            validated_coupon = None
+            if applied_coupon_code:
+                # For validation, use subtotal before coupon (add back the coupon discount)
+                subtotal_before_coupon = subtotal + coupon_discount_amount
+                
+                validation_result = validate_coupon(
+                    coupon_code=applied_coupon_code,
+                    customer=customer,
+                    booking_amount=subtotal_before_coupon,
+                    service_type=data.get('serviceType')
+                )
+                
+                if not validation_result['valid']:
+                    # Coupon validation failed, but continue with booking without coupon
+                    coupon_discount_amount = Decimal('0')
+                    validated_coupon = None
+                else:
+                    # Use validated coupon object
+                    validated_coupon = validation_result['coupon']
+            
             # Create the booking
             booking = Booking.objects.create(
                 business=business,
@@ -142,14 +191,16 @@ def booking_api(request, business_id):
                 bathrooms=int(data.get('bathrooms', 0)),
                 squareFeet=int(data.get('squareFeet', 0)),
                 serviceType=data.get('serviceType'),
-                cleaningDate=cleaning_date,
+                cleaningDate=cleaning_date_utc,
                 startTime=start_time_utc,
                 endTime=end_time_utc,
                 recurring=data.get('recurring'),
                 paymentMethod='creditcard',  # Default payment method
                 otherRequests=data.get('otherRequests', ''),
                 tax=tax,
-                totalPrice=total_price
+                totalPrice=total_price,
+                applied_coupon=validated_coupon,
+                coupon_discount_amount=coupon_discount_amount
             )
             
             # Handle standard add-ons
@@ -179,16 +230,34 @@ def booking_api(request, business_id):
                     )
                     booking.customAddons.add(new_custom_booking_addon)
             
+            # Record coupon usage if coupon was applied
+            coupon_message = None
+            if applied_coupon_code and coupon_discount_amount > 0:
+                success, discount, message, coupon = apply_coupon_to_booking(
+                    coupon_code=applied_coupon_code,
+                    booking=booking,
+                    customer=customer,
+                    booking_amount=subtotal + coupon_discount_amount  # Original amount before coupon
+                )
+                
+                if success:
+                    coupon_message = message
+            
             # The invoice will be created automatically by the signal handler
             # Get the invoice that was created by the signal
             invoice = Invoice.objects.get(booking=booking)
             
-            return Response({
+            response_data = {
                 'success': True,
                 'message': 'Booking created successfully!',
                 'bookingId': booking.bookingId,
                 'invoiceId': invoice.invoiceId
-            }, status=status.HTTP_201_CREATED)
+            }
+            
+            if coupon_message:
+                response_data['couponMessage'] = coupon_message
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             return Response(

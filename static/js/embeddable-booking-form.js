@@ -29,6 +29,8 @@ class CleaningBizBookingForm {
     this.formElement = null;
     this.customerId = null;
     this.customerPricing = null;
+    this.appliedCoupon = null;
+    this.couponDiscountAmount = 0;
     this.init();
   }
 
@@ -526,6 +528,10 @@ class CleaningBizBookingForm {
                 <input type="hidden" id="tax" name="tax" value="0">
                 <input type="hidden" id="totalAmount" name="totalAmount" value="0">
                 
+                <!-- Coupon Hidden Fields -->
+                <input type="hidden" id="appliedCouponCode" name="appliedCouponCode" value="">
+                <input type="hidden" id="couponDiscountAmount" name="couponDiscountAmount" value="0">
+                
                 <!-- Step 1: Customer Information -->
                 <div class="cleaningbiz-form-step active" id="step1">
                   <h5 class="mb-4"><i class="fas fa-user me-2"></i>Customer Information</h5>
@@ -838,6 +844,19 @@ class CleaningBizBookingForm {
                 </div>
               </div>
               
+              <!-- Coupon Code Section -->
+              <div class="cleaningbiz-coupon-section mb-3 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                <h6 class="mb-3"><i class="fas fa-ticket-alt me-2"></i>Have a Coupon?</h6>
+                <div class="input-group mb-2">
+                  <input type="text" class="form-control text-uppercase" id="couponCode" 
+                         placeholder="Enter coupon code" maxlength="50" style="text-transform: uppercase;">
+                  <button class="btn btn-outline-primary" type="button" id="applyCouponBtn">
+                    Apply
+                  </button>
+                </div>
+                <div id="coupon-message" class="small mt-2" style="display: none;"></div>
+              </div>
+              
               <!-- Pricing Summary -->
               <div class="cleaningbiz-price-summary">
                 <h6 class="mb-3">Price Summary</h6>
@@ -852,6 +871,10 @@ class CleaningBizBookingForm {
                 <div class="cleaningbiz-price-row">
                   <span>Subtotal:</span>
                   <span class="fw-medium">$<span id="overview-subtotal">0.00</span></span>
+                </div>
+                <div id="coupon-discount-row" class="cleaningbiz-price-row text-success" style="display: none;">
+                  <span>Coupon (<span id="overview-coupon-code"></span>):</span>
+                  <span class="fw-medium">-$<span id="overview-coupon-discount">0.00</span></span>
                 </div>
                 <div class="cleaningbiz-price-row">
                   <span>Tax (<span id="tax-percentage">${this.businessData.prices.tax_percent || this.businessData.prices.taxPercent || this.businessData.prices.tax || 0}</span>%):</span>
@@ -1079,6 +1102,60 @@ class CleaningBizBookingForm {
           }
           
           this.value = formattedNumber;
+        }
+      });
+    }
+    
+    // Coupon code functionality
+    const couponCodeInput = document.getElementById('couponCode');
+    const applyCouponBtn = document.getElementById('applyCouponBtn');
+    const couponMessage = document.getElementById('coupon-message');
+    
+    if (couponCodeInput) {
+      // Auto-uppercase coupon code
+      couponCodeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+      });
+    }
+    
+    if (applyCouponBtn) {
+      applyCouponBtn.addEventListener('click', async () => {
+        const couponCode = couponCodeInput?.value?.trim();
+        
+        if (!couponCode) {
+          this.showCouponMessage('Please enter a coupon code', 'error');
+          return;
+        }
+        
+        // Show loading state
+        applyCouponBtn.disabled = true;
+        applyCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        
+        // Validate coupon
+        const result = await this.validateCoupon(couponCode);
+        
+        // Reset button
+        applyCouponBtn.disabled = false;
+        applyCouponBtn.innerHTML = 'Apply';
+        
+        if (result.success) {
+          // Show success message
+          this.showCouponMessage(result.message + ' - ' + result.coupon.description, 'success');
+          
+          // Disable input and change button to remove
+          couponCodeInput.disabled = true;
+          applyCouponBtn.innerHTML = '<i class="fas fa-times"></i>';
+          applyCouponBtn.onclick = () => {
+            this.removeCoupon();
+            couponCodeInput.value = '';
+            couponCodeInput.disabled = false;
+            applyCouponBtn.innerHTML = 'Apply';
+            applyCouponBtn.onclick = null;
+            if (couponMessage) couponMessage.style.display = 'none';
+          };
+        } else {
+          // Show error message
+          this.showCouponMessage(result.message, 'error');
         }
       });
     }
@@ -1396,8 +1473,14 @@ class CleaningBizBookingForm {
       addonsList.innerHTML = '<p class="text-muted small">No add-ons selected</p>';
     }
     
-    // Calculate subtotal, tax, and total
-    const subtotal = basePrice + addonsPrice;
+    // Calculate subtotal before coupon
+    let subtotal = basePrice + addonsPrice;
+    
+    // Apply coupon discount if available
+    const couponDiscount = this.couponDiscountAmount || 0;
+    subtotal = subtotal - couponDiscount;
+    
+    // Calculate tax on discounted subtotal
     const taxPercent = prices.tax_percent || prices.taxPercent || prices.tax || 0;
     const taxRate = taxPercent / 100;
     const taxAmount = subtotal * taxRate;
@@ -1421,7 +1504,22 @@ class CleaningBizBookingForm {
     // Update overview price summary - with null checks
     this.safeSetTextContent('overview-base-price', basePrice.toFixed(2));
     this.safeSetTextContent('overview-addons-price', addonsPrice.toFixed(2));
-    this.safeSetTextContent('overview-subtotal', subtotal.toFixed(2));
+    this.safeSetTextContent('overview-subtotal', (basePrice + addonsPrice).toFixed(2));
+    
+    // Show/hide coupon discount row
+    const couponDiscountRow = document.getElementById('coupon-discount-row');
+    if (couponDiscount > 0 && this.appliedCoupon) {
+      if (couponDiscountRow) {
+        couponDiscountRow.style.display = 'flex';
+        this.safeSetTextContent('overview-coupon-code', this.appliedCoupon.code);
+        this.safeSetTextContent('overview-coupon-discount', couponDiscount.toFixed(2));
+      }
+    } else {
+      if (couponDiscountRow) {
+        couponDiscountRow.style.display = 'none';
+      }
+    }
+    
     this.safeSetTextContent('overview-tax', taxAmount.toFixed(2));
     this.safeSetTextContent('overview-total', total.toFixed(2));
     
@@ -1758,6 +1856,105 @@ class CleaningBizBookingForm {
       // Re-enable submit buttons
       if (submitBtn) submitBtn.disabled = false;
       if (rightColumnSubmitBtn) rightColumnSubmitBtn.disabled = false;
+    }
+  }
+  
+  async validateCoupon(couponCode) {
+    if (!couponCode || !couponCode.trim()) {
+      return {
+        success: false,
+        message: 'Please enter a coupon code'
+      };
+    }
+    
+    try {
+      const subtotalBeforeDiscount = (document.getElementById('overview-subtotal')?.textContent || '0').replace('$', '');
+      const serviceType = document.getElementById('serviceType')?.value || 'standard';
+      
+      const response = await fetch(`${this.options.apiBaseUrl}/booking/api/validate-coupon/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          coupon_code: couponCode.trim().toUpperCase(),
+          business_id: this.options.businessId,
+          customer_id: this.customerId || '',
+          booking_amount: parseFloat(subtotalBeforeDiscount),
+          service_type: serviceType
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        this.appliedCoupon = data.coupon;
+        this.couponDiscountAmount = data.coupon.discount_amount;
+        
+        // Update hidden fields
+        this.safeSetValue('appliedCouponCode', data.coupon.code);
+        this.safeSetValue('couponDiscountAmount', data.coupon.discount_amount);
+        
+        this.calculatePrice();
+        return {
+          success: true,
+          message: data.message,
+          coupon: data.coupon
+        };
+      } else {
+        this.appliedCoupon = null;
+        this.couponDiscountAmount = 0;
+        
+        // Clear hidden fields
+        this.safeSetValue('appliedCouponCode', '');
+        this.safeSetValue('couponDiscountAmount', '0');
+        
+        this.calculatePrice();
+        return {
+          success: false,
+          message: data.message || 'Invalid coupon code'
+        };
+      }
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      return {
+        success: false,
+        message: 'Error validating coupon. Please try again.'
+      };
+    }
+  }
+  
+  removeCoupon() {
+    this.appliedCoupon = null;
+    this.couponDiscountAmount = 0;
+    
+    // Clear hidden fields
+    this.safeSetValue('appliedCouponCode', '');
+    this.safeSetValue('couponDiscountAmount', '0');
+    
+    this.calculatePrice();
+  }
+  
+  showCouponMessage(message, type) {
+    const couponMessage = document.getElementById('coupon-message');
+    if (!couponMessage) return;
+    
+    const icon = type === 'success' ? '<i class="fas fa-check-circle me-1"></i>' : '<i class="fas fa-exclamation-circle me-1"></i>';
+    couponMessage.innerHTML = icon + message;
+    
+    if (type === 'success') {
+      couponMessage.className = 'alert alert-success mt-2 py-2 px-3 small';
+    } else {
+      couponMessage.className = 'alert alert-danger mt-2 py-2 px-3 small';
+    }
+    
+    couponMessage.style.display = 'block';
+    
+    // Auto-hide error messages after 5 seconds
+    if (type === 'error') {
+      setTimeout(() => {
+        couponMessage.style.display = 'none';
+      }, 5000);
     }
   }
 }

@@ -46,6 +46,10 @@
                 <input type="hidden" id="totalAmount" name="totalAmount" value="0" />
                 <input type="hidden" id="appliedDiscountPercent" name="appliedDiscountPercent" value="0" />
                 <input type="hidden" id="discountAmount" name="discountAmount" value="0" />
+                
+                <!-- Coupon Hidden Fields -->
+                <input type="hidden" id="appliedCouponCode" name="appliedCouponCode" value="">
+                <input type="hidden" id="couponDiscountAmount" name="couponDiscountAmount" value="0">
                    
                   
                     <!-- Step 1: Customer Information -->
@@ -422,6 +426,21 @@
                 </div>
             </div>
 
+            <!-- Coupon Code Section -->
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="fas fa-ticket-alt me-2"></i>Have a Coupon?</h6>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control text-uppercase" id="couponCode" name="couponCode" 
+                               placeholder="Enter coupon code" maxlength="50">
+                        <button class="btn btn-outline-primary" type="button" id="applyCouponBtn">
+                            Apply
+                        </button>
+                    </div>
+                    <div id="coupon-message" class="small mt-2" style="display: none;"></div>
+                </div>
+            </div>
+
             <!-- Pricing Summary -->
             <div class="card bg-light">
                 <div class="card-body">
@@ -441,6 +460,10 @@
                     <div id="discount-row" class="d-flex justify-content-between mb-2" style="display: none;">
                         <span>Discount (<span id="overview-discount-percent">0</span>%):</span>
                         <span class="fw-medium text-success">-$<span id="overview-discount">0.00</span></span>
+                    </div>
+                    <div id="coupon-discount-row" class="d-flex justify-content-between mb-2" style="display: none;">
+                        <span>Coupon (<span id="overview-coupon-code"></span>):</span>
+                        <span class="fw-medium text-success">-$<span id="overview-coupon-discount">0.00</span></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tax ({{ business.settings.taxPercent }}%):</span>
@@ -715,7 +738,11 @@
             const discountAmount = subtotalBeforeDiscount * (discountPercent / 100);
             
             // Apply discount to get final subtotal
-            const subtotal = subtotalBeforeDiscount - discountAmount;
+            let subtotal = subtotalBeforeDiscount - discountAmount;
+            
+            // Apply coupon discount if available
+            const couponDiscountAmount = parseFloat(document.getElementById('couponDiscountAmount').value) || 0;
+            subtotal = subtotal - couponDiscountAmount;
             
             // Calculate tax and total
             const tax = subtotal * TAX_RATE;
@@ -803,6 +830,15 @@
                 document.getElementById('overview-discount').textContent = discountAmount.toFixed(2);
             } else {
                 discountRow.style.display = 'none';
+            }
+            
+            // Show/hide coupon discount row
+            const couponDiscountRow = document.getElementById('coupon-discount-row');
+            if (couponDiscountAmount > 0) {
+                couponDiscountRow.style.display = 'flex';
+                document.getElementById('overview-coupon-discount').textContent = couponDiscountAmount.toFixed(2);
+            } else {
+                couponDiscountRow.style.display = 'none';
             }
             
             document.getElementById('overview-tax').textContent = tax.toFixed(2);
@@ -1038,6 +1074,137 @@
             });
         }
     });
+    
+    // Coupon validation
+    const couponCodeInput = document.getElementById('couponCode');
+    const applyCouponBtn = document.getElementById('applyCouponBtn');
+    const couponMessage = document.getElementById('coupon-message');
+    const appliedCouponCodeInput = document.getElementById('appliedCouponCode');
+    const couponDiscountAmountInput = document.getElementById('couponDiscountAmount');
+    
+    // Auto-uppercase coupon code
+    couponCodeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Apply coupon button click
+    applyCouponBtn.addEventListener('click', function() {
+        const couponCode = couponCodeInput.value.trim();
+        
+        if (!couponCode) {
+            showCouponMessage('Please enter a coupon code', 'error');
+            return;
+        }
+        
+        // Get current subtotal before coupon
+        const subtotalBeforeDiscount = parseFloat(document.getElementById('overview-subtotal').textContent) || 0;
+        const serviceType = document.getElementById('serviceType').value;
+        const customerId = '{{ user.customer.id|default:"" }}';
+        
+        // Show loading state
+        applyCouponBtn.disabled = true;
+        applyCouponBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        
+        // Call validation API
+        fetch('/booking/api/validate-coupon/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                coupon_code: couponCode,
+                business_id: BUSINESS_ID,
+                customer_id: customerId,
+                booking_amount: subtotalBeforeDiscount,
+                service_type: serviceType
+            })
+        })
+        .then(response => {
+            return response.json().then(data => ({
+                ok: response.ok,
+                status: response.status,
+                data: data
+            }));
+        })
+        .then(result => {
+            applyCouponBtn.disabled = false;
+            applyCouponBtn.innerHTML = 'Apply';
+            
+            const data = result.data;
+            
+            if (data.success) {
+                // Apply the coupon
+                appliedCouponCodeInput.value = data.coupon.code;
+                couponDiscountAmountInput.value = data.coupon.discount_amount;
+                document.getElementById('overview-coupon-code').textContent = data.coupon.code;
+                
+                // Show success message
+                showCouponMessage(data.message + ' - ' + data.coupon.description, 'success');
+                
+                // Disable coupon input after successful application
+                couponCodeInput.disabled = true;
+                applyCouponBtn.innerHTML = '<i class="fas fa-times"></i>';
+                applyCouponBtn.onclick = removeCoupon;
+                
+                // Recalculate prices
+                calculatePrices();
+            } else {
+                // Clear coupon values
+                appliedCouponCodeInput.value = '';
+                couponDiscountAmountInput.value = '0';
+                
+                // Show error message
+                showCouponMessage(data.message || 'Invalid coupon code', 'error');
+                
+                // Recalculate prices
+                calculatePrices();
+            }
+        })
+        .catch(error => {
+            applyCouponBtn.disabled = false;
+            applyCouponBtn.innerHTML = 'Apply';
+            showCouponMessage('Error validating coupon. Please try again.', 'error');
+            console.error('Error:', error);
+        });
+    });
+    
+    // Remove coupon function
+    function removeCoupon() {
+        appliedCouponCodeInput.value = '';
+        couponDiscountAmountInput.value = '0';
+        couponCodeInput.value = '';
+        couponCodeInput.disabled = false;
+        applyCouponBtn.innerHTML = 'Apply';
+        applyCouponBtn.onclick = null;
+        couponMessage.style.display = 'none';
+        calculatePrices();
+    }
+    
+    // Show coupon message helper
+    function showCouponMessage(message, type) {
+        if (!couponMessage) {
+            return;
+        }
+        
+        const icon = type === 'success' ? '<i class="fas fa-check-circle me-1"></i>' : '<i class="fas fa-exclamation-circle me-1"></i>';
+        couponMessage.innerHTML = icon + message;
+        
+        if (type === 'success') {
+            couponMessage.className = 'alert alert-success mt-2 py-2 px-3 small';
+        } else {
+            couponMessage.className = 'alert alert-danger mt-2 py-2 px-3 small';
+        }
+        
+        couponMessage.style.display = 'block';
+        
+        // Auto-hide error messages after 5 seconds
+        if (type === 'error') {
+            setTimeout(() => {
+                couponMessage.style.display = 'none';
+            }, 5000);
+        }
+    }
 </script>
 {% endblock %}
 

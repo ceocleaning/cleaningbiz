@@ -29,7 +29,7 @@ def get_all_active_addons(business):
     if pricing_obj.addonPriceCabinets > 0:
         active_addons.append({"name": "Cabinets", "data_name": "cabinets", "price": f"${pricing_obj.addonPriceCabinets}"})
     if pricing_obj.addonPricePatio > 0:
-        active_addons.append({"name": "Patio", "data_name": "patio", "price": f"${pricing_obj.addinPricePatio}"})
+        active_addons.append({"name": "Patio", "data_name": "patio", "price": f"${pricing_obj.addonPricePatio}"})
     if pricing_obj.addonPriceGarage > 0:
         active_addons.append({"name": "Garage", "data_name": "garage", "price": f"${pricing_obj.addonPriceGarage}"})
         

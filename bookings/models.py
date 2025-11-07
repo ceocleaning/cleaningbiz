@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 import random
 import string
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from httpx._transports import default
 from accounts.models import Business
@@ -120,6 +122,10 @@ class Booking(models.Model):
     appliedDiscountPercent = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Applied discount percentage for recurring bookings")
     discountAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discount amount in dollars")
     
+    # Coupon Information
+    applied_coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings', help_text="Coupon applied to this booking")
+    coupon_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discount amount from coupon")
+    
     # Pricing Source Tracking
     used_custom_pricing = models.BooleanField(default=False, help_text="Whether custom customer pricing was used for this booking")
     pricing_snapshot = models.JSONField(null=True, blank=True, help_text="Snapshot of pricing used at booking time")
@@ -237,3 +243,187 @@ class Booking(models.Model):
                 return last_day
         
         return None
+
+
+class Coupon(models.Model):
+    """Model for discount coupons that can be applied to bookings"""
+    
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('expired', 'Expired'),
+    ]
+    
+    # Basic Information
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='coupons')
+    code = models.CharField(max_length=50, unique=True, help_text="Unique coupon code (e.g., SUMMER2024)")
+    description = models.TextField(blank=True, null=True, help_text="Internal description of the coupon")
+    
+    # Discount Details
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, help_text="Percentage (0-100) or fixed amount")
+    
+    # Usage Limits
+    max_uses = models.IntegerField(null=True, blank=True, help_text="Maximum number of times this coupon can be used (null = unlimited)")
+    max_uses_per_customer = models.IntegerField(default=1, help_text="Maximum uses per customer")
+    current_uses = models.IntegerField(default=0, help_text="Current number of times used")
+    
+    # Validity Period
+    valid_from = models.DateTimeField(help_text="Coupon becomes valid from this date/time")
+    valid_until = models.DateTimeField(help_text="Coupon expires after this date/time")
+    
+    # Minimum Purchase Requirements
+    min_booking_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Minimum booking amount required to use this coupon"
+    )
+    
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    is_active = models.BooleanField(default=True, help_text="Whether the coupon is currently active")
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['code', 'business']),
+            models.Index(fields=['status', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.code} - {self.get_discount_display()}"
+    
+    def get_discount_display(self):
+        """Return a human-readable discount description"""
+        if self.discount_type == 'percentage':
+            return f"{self.discount_value}% off"
+        else:
+            return f"${self.discount_value} off"
+    
+    def is_valid(self):
+        """Check if the coupon is currently valid"""
+        now = timezone.now()
+        
+        # Check if active
+        if not self.is_active or self.status != 'active':
+            return False, "Coupon is not active"
+        
+        # Check validity period
+        if now < self.valid_from:
+            return False, "Coupon is not yet valid"
+        
+        if now > self.valid_until:
+            self.status = 'expired'
+            self.save()
+            return False, "Coupon has expired"
+        
+        # Check usage limits
+        if self.max_uses is not None and self.current_uses >= self.max_uses:
+            return False, "Coupon usage limit reached"
+        
+        return True, "Valid"
+    
+    def can_be_used_by_customer(self, customer):
+        """Check if a specific customer can use this coupon"""
+        # Check if coupon is valid first
+        is_valid, message = self.is_valid()
+        if not is_valid:
+            return False, message
+        
+        # Check per-customer usage limit
+        customer_usage = CouponUsage.objects.filter(
+            coupon=self,
+            customer=customer
+        ).count()
+        
+        if customer_usage >= self.max_uses_per_customer:
+            return False, f"You have already used this coupon {self.max_uses_per_customer} time(s)"
+        
+        return True, "Valid"
+    
+    def can_apply_to_booking(self, booking_amount, service_type=None):
+        """Check if coupon can be applied to a booking with given amount"""
+        # Check minimum booking amount
+        if self.min_booking_amount and booking_amount < self.min_booking_amount:
+            return False, f"Minimum booking amount of ${self.min_booking_amount} required"
+        
+        return True, "Valid"
+    
+    def calculate_discount(self, booking_amount):
+        """Calculate the discount amount for a given booking amount"""
+        if self.discount_type == 'percentage':
+            discount = booking_amount * (self.discount_value / 100)
+        else:
+            discount = min(self.discount_value, booking_amount)  # Don't exceed booking amount
+        
+        return round(discount, 2)
+    
+    def apply_to_booking(self, booking, customer):
+        """Apply this coupon to a booking and record the usage"""
+        # Validate coupon can be used
+        can_use, message = self.can_be_used_by_customer(customer)
+        if not can_use:
+            raise ValidationError(message)
+        
+        # Calculate discount
+        discount_amount = self.calculate_discount(booking.totalPrice)
+        
+        # Record usage
+        CouponUsage.objects.create(
+            coupon=self,
+            booking=booking,
+            customer=customer,
+            discount_amount=discount_amount
+        )
+        
+        # Increment usage counter
+        self.current_uses += 1
+        self.save()
+        
+        return discount_amount
+    
+    def save(self, *args, **kwargs):
+        # Auto-update status based on validity
+        now = timezone.now()
+        if now > self.valid_until:
+            self.status = 'expired'
+        elif not self.is_active:
+            self.status = 'inactive'
+        
+        # Ensure code is uppercase
+        self.code = self.code.upper()
+        
+        super().save(*args, **kwargs)
+
+
+class CouponUsage(models.Model):
+    """Track coupon usage for analytics and validation"""
+    
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='coupon_usage')
+    customer = models.ForeignKey('customer.Customer', on_delete=models.CASCADE, related_name='coupon_usages')
+    
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    applied_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-applied_at']
+        indexes = [
+            models.Index(fields=['coupon', 'customer']),
+            models.Index(fields=['applied_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.coupon.code} used on {self.booking.bookingId}"

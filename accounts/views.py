@@ -101,8 +101,10 @@ def loginPage(request):
     if request.user.is_authenticated:
         return redirect('home')
     
+    context = {}
+    
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username_or_email = request.POST.get('username')
         password = request.POST.get('password')
 
         if settings.DEBUG:
@@ -120,7 +122,18 @@ def loginPage(request):
                 messages.error(request, 'reCAPTCHA verification failed. Please try again.')
                 return redirect('accounts:login')
         
-        user = authenticate(request, username=username, password=password)
+        # Try to authenticate with username first
+        user = authenticate(request, username=username_or_email, password=password)
+        
+        # If authentication failed, check if it's an email and try to get the username
+        if user is None and '@' in username_or_email:
+            try:
+                from django.contrib.auth.models import User
+                user_obj = User.objects.get(email=username_or_email)
+                # Try authenticating with the username
+                user = authenticate(request, username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                user = None
         
         if user is not None:
             login(request, user)
@@ -138,11 +151,8 @@ def loginPage(request):
             
             return redirect('home')
         else:
-            messages.error(request, 'Invalid username or password.')
+            messages.error(request, 'Invalid username/email or password.')
     
-    context = {
-        'debug': settings.DEBUG
-    }
     return render(request, 'accounts/login.html', context)
 
 
