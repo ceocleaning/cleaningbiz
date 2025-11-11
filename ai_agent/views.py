@@ -182,6 +182,18 @@ def agent_config_unified(request):
             config.custom_instructions = custom_instructions
             config.save()
     
+    # Generate system prompt for display (without initializing full agent)
+    try:
+        # Create a temporary agent instance just for getting the system prompt
+        # We use a dummy session key since we only need the prompt, not the chat
+        temp_agent = LangChainAgent.__new__(LangChainAgent)
+        temp_agent.business = business
+        system_prompt = temp_agent._get_system_prompt()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        system_prompt = f"Error generating system prompt: {str(e)}"
+    
     if request.method == 'POST':
         # Update configuration
         config.custom_instructions = request.POST.get('custom_instructions', config.custom_instructions)
@@ -190,12 +202,15 @@ def agent_config_unified(request):
         
         messages.success(request, f"Configuration for {business.businessName} updated successfully.")
         
-        # Generate preview by creating agent instance
+        # Regenerate system prompt after save
         try:
-            agent = LangChainAgent(business.businessId)
-            system_prompt = agent._get_system_prompt()
+            temp_agent = LangChainAgent.__new__(LangChainAgent)
+            temp_agent.business = business
+            system_prompt = temp_agent._get_system_prompt()
         except Exception as e:
-            system_prompt = f"Error generating preview: {str(e)}"
+            import traceback
+            traceback.print_exc()
+            system_prompt = f"Error generating system prompt: {str(e)}"
         
         return render(request, 'ai_agent/agent_config_unified.html', {
             'config': config,
@@ -207,6 +222,7 @@ def agent_config_unified(request):
     return render(request, 'ai_agent/agent_config_unified.html', {
         'config': config,
         'business': business,
+        'system_prompt': system_prompt,
         'created': created
     })
 
