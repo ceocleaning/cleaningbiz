@@ -144,7 +144,8 @@ def calculateAmountWithCustomPricing(business, summary, customer=None):
         'custom_addons': {
             'note': 'No Concern of AI in this Field (Internal use only)',
             'customAddonTotal': custom_addon_total,
-            'bookingCustomAddons': booking_custom_addons,
+            'bookingCustomAddons': booking_custom_addons,  # Model instances for booking creation
+            'bookingCustomAddonsData': custom_addons_result.get("bookingCustomAddonsData", []),  # Serializable data
         },
     }
     
@@ -251,29 +252,52 @@ def calculateCustomAddonsWithCustomPricing(business, summary, customer=None, cus
         except Exception as e:
             print(f"Error loading custom addon prices: {str(e)}")
     
+    # Get custom addons from summary (check both direct keys and customAddons dict)
+    custom_addons_dict = summary.get('customAddons', {})
+    
     # Calculate each custom addon
     for custom_addon in custom_addons_obj:
         addon_data_name = custom_addon.addonDataName
-        if addon_data_name and addon_data_name in summary:
+        quantity = 0
+        
+        # Check in customAddons dictionary first (new format from AI agent)
+        if addon_data_name and isinstance(custom_addons_dict, dict) and addon_data_name in custom_addons_dict:
+            quantity = int(custom_addons_dict.get(addon_data_name, 0) or 0)
+        # Fall back to checking direct key in summary (old format)
+        elif addon_data_name and addon_data_name in summary:
             quantity = int(summary.get(addon_data_name, 0) or 0)
-            if quantity > 0:
-                # Use custom price if available, otherwise use business default
-                addon_price = custom_addon_prices.get(
-                    custom_addon.id,
-                    custom_addon.addonPrice
-                )
-                addon_total = Decimal(str(quantity)) * Decimal(str(addon_price))
-                custom_addon_total += addon_total
-                
-                custom_addon_obj = BookingCustomAddons.objects.create(
-                    addon=custom_addon,
-                    qty=quantity
-                )
-                booking_custom_addons.append(custom_addon_obj)
+        
+        if quantity > 0:
+            # Use custom price if available, otherwise use business default
+            addon_price = custom_addon_prices.get(
+                custom_addon.id,
+                custom_addon.addonPrice
+            )
+            addon_total = Decimal(str(quantity)) * Decimal(str(addon_price))
+            custom_addon_total += addon_total
+            
+            # Create BookingCustomAddons instance
+            custom_addon_obj = BookingCustomAddons.objects.create(
+                addon=custom_addon,
+                qty=quantity
+            )
+            # Append the model instance to the list
+            booking_custom_addons.append(custom_addon_obj)
     
     response = {
         "customAddonTotal": custom_addon_total,
-        "bookingCustomAddons": booking_custom_addons
+        "bookingCustomAddons": booking_custom_addons,
+        # Add serializable version for JSON responses
+        "bookingCustomAddonsData": [
+            {
+                "addon_id": addon.addon.id,
+                "addon_name": addon.addon.addonName,
+                "addon_data_name": addon.addon.addonDataName,
+                "qty": addon.qty,
+                "price": float(addon.addon.addonPrice)
+            }
+            for addon in booking_custom_addons
+        ]
     }
     
     return response

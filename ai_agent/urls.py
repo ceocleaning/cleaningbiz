@@ -5,14 +5,9 @@ app_name = 'ai_agent'
 
 urlpatterns = [
     # OpenAI-based chatbot endpoints (primary endpoints)
-    path('chat/', openai_agent.chat_view, name='chat_view'),
-    path('api/chat/', openai_agent.chat_api, name='chat_api'),
-    path('api/chat/<str:client_phone_number>/delete/', openai_agent.delete_chat, name='delete_chat'),
+    path('api/chat/', views.chat_api, name='chat_api'),
+    path('api/chat/<str:client_phone_number>/delete/', views.delete_chat, name='delete_chat'),
     
-    # Legacy OpenAI-based chatbot endpoints (keeping for backward compatibility)
-    path('openai-chat/', openai_agent.chat_view, name='openai_chat_view'),
-    path('api/openai-chat/', openai_agent.chat_api, name='openai_chat_api'),
-    path('api/openai-chat/<str:client_phone_number>/delete/', openai_agent.delete_chat, name='openai_delete_chat'),
     
     # Twilio webhook URL
     path('api/twilio/webhook/<str:secretKey>/', views.twilio_webhook, name='twilio_webhook'),

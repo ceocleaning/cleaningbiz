@@ -187,15 +187,36 @@ def book_appointment(business, client_phone_number=None, session_key=None):
         
         # Convert Decimal values to float for JSON serialization
         def convert_decimals_to_float(obj):
+            from django.db import models
             if isinstance(obj, dict):
-                return {k: convert_decimals_to_float(v) for k, v in obj.items()}
+                # Filter out model instances from dictionaries
+                result = {}
+                for k, v in obj.items():
+                    converted = convert_decimals_to_float(v)
+                    # Only include if not a model instance
+                    if not isinstance(v, models.Model):
+                        result[k] = converted
+                return result
             elif isinstance(obj, list):
-                return [convert_decimals_to_float(item) for item in obj]
+                # Filter out model instances from lists
+                return [convert_decimals_to_float(item) for item in obj if not isinstance(item, models.Model)]
             elif isinstance(obj, Decimal):
                 return float(obj)
+            elif isinstance(obj, models.Model):
+                # Skip Django model instances - don't include them in JSON
+                return None
             return obj
         
-        pricing_snapshot = convert_decimals_to_float(calculateTotal)
+        # Create a copy of calculateTotal and remove bookingCustomAddons before conversion
+        pricing_data = calculateTotal.copy()
+        if 'custom_addons' in pricing_data and isinstance(pricing_data['custom_addons'], dict):
+            # Keep the custom_addons dict but remove the bookingCustomAddons list
+            pricing_data['custom_addons'] = {
+                k: v for k, v in pricing_data['custom_addons'].items() 
+                if k != 'bookingCustomAddons'
+            }
+        
+        pricing_snapshot = convert_decimals_to_float(pricing_data)
         
         # Create booking with customer reference
         newBooking = Booking(
@@ -231,10 +252,11 @@ def book_appointment(business, client_phone_number=None, session_key=None):
 
         newBooking.save()
         
-        # Add custom addons
+        # Add custom addons from calculateTotal (already created in calculateCustomAddonsWithCustomPricing)
         bookingCustomAddons = calculateTotal.get("custom_addons", {}).get("bookingCustomAddons")
         if bookingCustomAddons:
             newBooking.customAddons.set(bookingCustomAddons)
+            print(f"[DEBUG] Added {len(bookingCustomAddons)} custom addon(s) to booking {newBooking.bookingId}")
             newBooking.save()
         
 

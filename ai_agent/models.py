@@ -55,7 +55,8 @@ class AgentConfiguration(models.Model):
     """Store dynamic configuration for AI Voice Agent"""
     business = models.OneToOneField('accounts.Business', on_delete=models.CASCADE, related_name='agent_config')
     agent_name = models.CharField(max_length=255, null=True, blank=True, default='Sarah')
-    prompt = models.TextField(blank=True, null=True, help_text="Script for the AI agent")
+    custom_instructions = models.TextField(blank=True, null=True, help_text="Custom instructions for the AI agent")
+    is_active = models.BooleanField(default=True)
    
     class Meta:
         verbose_name = "AI Agent Configuration"
