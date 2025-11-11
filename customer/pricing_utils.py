@@ -144,7 +144,8 @@ def calculateAmountWithCustomPricing(business, summary, customer=None):
         'custom_addons': {
             'note': 'No Concern of AI in this Field (Internal use only)',
             'customAddonTotal': custom_addon_total,
-            'bookingCustomAddons': booking_custom_addons,
+            'bookingCustomAddons': booking_custom_addons,  # Model instances for booking creation
+            'bookingCustomAddonsData': custom_addons_result.get("bookingCustomAddonsData", []),  # Serializable data
         },
     }
     
@@ -275,15 +276,28 @@ def calculateCustomAddonsWithCustomPricing(business, summary, customer=None, cus
             addon_total = Decimal(str(quantity)) * Decimal(str(addon_price))
             custom_addon_total += addon_total
             
+            # Create BookingCustomAddons instance
             custom_addon_obj = BookingCustomAddons.objects.create(
                 addon=custom_addon,
                 qty=quantity
             )
+            # Append the model instance to the list
             booking_custom_addons.append(custom_addon_obj)
     
     response = {
         "customAddonTotal": custom_addon_total,
-        "bookingCustomAddons": booking_custom_addons
+        "bookingCustomAddons": booking_custom_addons,
+        # Add serializable version for JSON responses
+        "bookingCustomAddonsData": [
+            {
+                "addon_id": addon.addon.id,
+                "addon_name": addon.addon.addonName,
+                "addon_data_name": addon.addon.addonDataName,
+                "qty": addon.qty,
+                "price": float(addon.addon.addonPrice)
+            }
+            for addon in booking_custom_addons
+        ]
     }
     
     return response

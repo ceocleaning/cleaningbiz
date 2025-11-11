@@ -15,9 +15,30 @@ from .inputs import (
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
+        from django.db import models
+        
         if isinstance(o, Decimal):
             return str(o)
+        elif isinstance(o, models.Model):
+            # Skip Django model instances - they should not be in JSON responses
+            return None
         return super(DecimalEncoder, self).default(o)
+    
+    def encode(self, o):
+        """Override encode to filter out model instances from dicts and lists"""
+        from django.db import models
+        
+        def filter_models(obj):
+            if isinstance(obj, dict):
+                return {k: filter_models(v) for k, v in obj.items() if not isinstance(v, models.Model)}
+            elif isinstance(obj, list):
+                return [filter_models(item) for item in obj if not isinstance(item, models.Model)]
+            elif isinstance(obj, models.Model):
+                return None
+            return obj
+        
+        filtered = filter_models(o)
+        return super(DecimalEncoder, self).encode(filtered)
 
 
 class CheckAvailabilityTool(BaseTool):

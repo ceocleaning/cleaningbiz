@@ -252,40 +252,11 @@ def book_appointment(business, client_phone_number=None, session_key=None):
 
         newBooking.save()
         
-        # Add custom addons from calculateTotal (if available)
+        # Add custom addons from calculateTotal (already created in calculateCustomAddonsWithCustomPricing)
         bookingCustomAddons = calculateTotal.get("custom_addons", {}).get("bookingCustomAddons")
         if bookingCustomAddons:
             newBooking.customAddons.set(bookingCustomAddons)
-            newBooking.save()
-        
-        # Process custom addons from data dictionary
-        custom_addons_data = data.get("customAddons", {})
-        if custom_addons_data and isinstance(custom_addons_data, dict):
-            from accounts.models import CustomAddons
-            from bookings.models import BookingCustomAddons
-            
-            for addon_data_name, qty in custom_addons_data.items():
-                try:
-                    # Find the custom addon by data name
-                    custom_addon = CustomAddons.objects.get(
-                        business=business,
-                        addonDataName=addon_data_name
-                    )
-                    
-                    # Create BookingCustomAddons instance
-                    booking_custom_addon = BookingCustomAddons.objects.create(
-                        addon=custom_addon,
-                        qty=int(qty)
-                    )
-                    
-                    # Add to booking
-                    newBooking.customAddons.add(booking_custom_addon)
-                    print(f"[DEBUG] Added custom addon: {custom_addon.addonName} (qty: {qty}) to booking {newBooking.bookingId}")
-                except CustomAddons.DoesNotExist:
-                    print(f"[WARNING] Custom addon with data name '{addon_data_name}' not found for business {business.businessName}")
-                except Exception as e:
-                    print(f"[ERROR] Failed to add custom addon '{addon_data_name}': {str(e)}")
-            
+            print(f"[DEBUG] Added {len(bookingCustomAddons)} custom addon(s) to booking {newBooking.bookingId}")
             newBooking.save()
         
 
