@@ -328,6 +328,22 @@ def test_integration(request, platform_id):
             'message': f'Error testing integration: {str(e)}'
         }, status=500)
 
+
+def convert_to_json_serializable(obj):
+    """Convert non-JSON-serializable objects to JSON-serializable types"""
+    from decimal import Decimal
+    
+    if isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: convert_to_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_json_serializable(item) for item in obj]
+    else:
+        return obj
+
 def send_booking_data_to_integration(booking_data, integration):
     """Send booking data to a specific integration"""
     try:
@@ -376,6 +392,9 @@ def send_booking_data_to_integration(booking_data, integration):
                 "addonGarageSweeping": booking_data["addonGarageSweeping"]
             }
             
+            # Convert payload to JSON-serializable format
+            payload = convert_to_json_serializable(payload)
+            
             # Prepare headers
             headers = {"Content-Type": "application/json"}
             
@@ -390,13 +409,27 @@ def send_booking_data_to_integration(booking_data, integration):
                 timeout=30
             )
 
+            # Safely parse JSON response
+            response_data = None
+            if response.text:
+                try:
+                    response_data = response.json()
+                except (ValueError, requests.exceptions.JSONDecodeError):
+                    # Response is not JSON, store as text
+                    response_data = {'raw_response': response.text}
+            
             if response.status_code in [200, 201]:
                 log_integration_activity(
                     platform=integration,
                     status='success',
                     request_data=payload,
-                    response_data=response.json() if response.text else None
+                    response_data=response_data
                 )
+                results['success'].append({
+                    'name': integration.name,
+                    'response': response.text,
+                    'status_code': response.status_code
+                })
             else:
                 log_integration_activity(
                     platform=integration,
@@ -404,11 +437,18 @@ def send_booking_data_to_integration(booking_data, integration):
                     request_data=payload,
                     error_message=response.text
                 )
+                results['failed'].append({
+                    'name': integration.name,
+                    'error': f'HTTP {response.status_code}: {response.text}',
+                    'status_code': response.status_code
+                })
             
         else:  # direct_api
             from automation.webhooks import create_mapped_payload
             payload = create_mapped_payload(booking_data, integration)
             
+            # Convert payload to JSON-serializable format
+            payload = convert_to_json_serializable(payload)
             
             headers = {"Content-Type": "application/json"}
             
@@ -426,13 +466,27 @@ def send_booking_data_to_integration(booking_data, integration):
                 timeout=30
             )
 
+            # Safely parse JSON response
+            response_data = None
+            if response.text:
+                try:
+                    response_data = response.json()
+                except (ValueError, requests.exceptions.JSONDecodeError):
+                    # Response is not JSON, store as text
+                    response_data = {'raw_response': response.text}
+            
             if response.status_code in [200, 201]:
                 log_integration_activity(
                     platform=integration,
                     status='success',
                     request_data=payload,
-                    response_data=response.json() if response.text else None
+                    response_data=response_data
                 )
+                results['success'].append({
+                    'name': integration.name,
+                    'response': response.text,
+                    'status_code': response.status_code
+                })
             else:
                 log_integration_activity(
                     platform=integration,
@@ -440,11 +494,11 @@ def send_booking_data_to_integration(booking_data, integration):
                     request_data=payload,
                     error_message=response.text
                 )
-        results['success'].append({
-            'name': integration.name,
-            'response': response.text,
-            'status_code': response.status_code
-        })
+                results['failed'].append({
+                    'name': integration.name,
+                    'error': f'HTTP {response.status_code}: {response.text}',
+                    'status_code': response.status_code
+                })
         
     except Exception as e:
         import traceback

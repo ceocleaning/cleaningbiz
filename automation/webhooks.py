@@ -471,6 +471,21 @@ def chatgpt_analysis_webhook(request, secretKey):
     return JsonResponse({'message': 'Method not allowed'}, status=405)
 
 
+def convert_to_json_serializable(obj):
+    """Convert non-JSON-serializable objects to JSON-serializable types"""
+    from decimal import Decimal
+    
+    if isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: convert_to_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_json_serializable(item) for item in obj]
+    else:
+        return obj
+
 def send_booking_data(booking):
     """Send booking data to integration webhook"""
     try:
@@ -503,10 +518,10 @@ def send_booking_data(booking):
                         "lastName": booking.customer.last_name,
                         "email": booking.customer.email,
                         "phoneNumber": booking.customer.phone_number,
-                        "address": booking.customer_address,
+                        "address": booking.customer.address,
                         "city": booking.customer.city,
                         "stateOrProvince": booking.customer.state_or_province,
-                        "zipCode": booking.customer_zip_code,
+                        "zipCode": booking.customer.zip_code,
                         "bedrooms": booking.bedrooms,
                         "bathrooms": booking.bathrooms,
                         "squareFeet": booking.squareFeet,
@@ -530,6 +545,9 @@ def send_booking_data(booking):
                         "addonGarageSweeping": booking.addonGarageSweeping
                     }
                     
+                    # Convert payload to JSON-serializable format
+                    payload = convert_to_json_serializable(payload)
+                    
                     print(f"Sending data to workflow webhook: {integration.webhook_url}")
                     # Prepare headers
                     headers = {"Content-Type": "application/json"}
@@ -546,13 +564,22 @@ def send_booking_data(booking):
                         timeout=30
                     )
 
+                    # Safely parse JSON response
+                    response_data = None
+                    if response.text:
+                        try:
+                            response_data = response.json()
+                        except (ValueError, requests.exceptions.JSONDecodeError):
+                            # Response is not JSON, store as text
+                            response_data = {'raw_response': response.text}
+                    
                     # Log successful integration
                     if response.status_code in [200, 201]:
                         log_integration_activity(
                             platform=integration,
                             status='success',
                             request_data=payload,
-                            response_data=response.json() if response.text else None
+                            response_data=response_data
                         )
                     
                     # Log failed integration
@@ -576,6 +603,9 @@ def send_booking_data(booking):
                 
                     payload = create_mapped_payload(booking_dict, integration)
                     
+                    # Convert payload to JSON-serializable format
+                    payload = convert_to_json_serializable(payload)
+                    
                     # Send to base URL
                     headers = {"Content-Type": "application/json"}
                     
@@ -593,13 +623,22 @@ def send_booking_data(booking):
                         timeout=30
                     )
                 
+                    # Safely parse JSON response
+                    response_data = None
+                    if response.text:
+                        try:
+                            response_data = response.json()
+                        except (ValueError, requests.exceptions.JSONDecodeError):
+                            # Response is not JSON, store as text
+                            response_data = {'raw_response': response.text}
+                    
                     # Log successful integration
                     if response.status_code in [200, 201]:
                         log_integration_activity(
                             platform=integration,
                             status='success',
                             request_data=payload,
-                            response_data=response.json() if response.text else None
+                            response_data=response_data
                         )
                     
                     # Log failed integration

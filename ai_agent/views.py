@@ -532,7 +532,7 @@ def get_chat_data(request, chat_id):
                     'lastName': booking.customer.last_name,
                     'phoneNumber': booking.customer.phone_number,
                     'email': booking.customer.email,
-                    'address1': booking.customer_address,
+                    'address1': booking.customer.address,
                     'city': booking.customer.city,
                     'stateOrProvince': booking.customer.state_or_province,
                     'zipCode': booking.customer.zip_code,
