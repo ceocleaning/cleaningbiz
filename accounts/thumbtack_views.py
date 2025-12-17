@@ -262,22 +262,20 @@ def get_thumbtack_user_info(access_token):
     """
     # API endpoint for getting user information
     user_info_url = 'https://api.thumbtack.com/api/v4/users/self'
-    
     # Set up headers with the access token
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
     }
     
     try:
         # Make the request to the Thumbtack API
         response = requests.get(user_info_url, headers=headers)
-        print(response)
+        print(response.text)
         
         # Check if the request was successful
         if response.status_code == 200:
-
             return response.json()
         else:
             print(f"Error fetching user info: {response.status_code} - {response.text}")
@@ -365,13 +363,7 @@ def thumbtack_profile(request):
             
             # Set business name from API or fallback to local data
             thumbtack_business_name = business.businessName
-            
-            # Placeholder stats - in a real implementation, fetch from Thumbtack API
-            thumbtack_stats = {
-                'leads': 12,  # placeholder
-                'bookings': 5,  # placeholder
-                'conversion_rate': '41.7%'  # placeholder
-            }
+
     
     # Initialize user information variables with default values
     user_id = 'N/A'
@@ -385,7 +377,6 @@ def thumbtack_profile(request):
         'thumbtack_profile': thumbtack_profile,
         'thumbtack_business_name': thumbtack_business_name,
         'thumbtack_business_image': thumbtack_business_image,
-        'thumbtack_stats': thumbtack_stats,
         # Pass user information to the template
         'user_id': user_id,
         'email': email,

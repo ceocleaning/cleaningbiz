@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Lead, Cleaners, CleanerAvailability, OpenJob, NotificationLog
+from .models import Lead, Cleaners, CleanerAvailability, OpenJob, NotificationLog, LeadsWebhookLog
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
@@ -137,3 +137,14 @@ class NotificationLogAdmin(admin.ModelAdmin):
 admin.site.site_header = "CleaningBiz AI Dashboard"
 admin.site.site_title = "CleaningBiz AI Dashboard"
 admin.site.index_title = "Welcome to CleaningBiz AI Dashboard"
+
+
+class LeadsWebhookLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'business', 'lead_source', 'status', 'error_message', 'error_code', 'created_at', 'updated_at'
+    )
+    list_filter = ('lead_source', 'status', 'created_at', 'updated_at')
+    search_fields = ('business__businessName', 'lead_source', 'status')
+    readonly_fields = ('created_at', 'updated_at')
+
+admin.site.register(LeadsWebhookLog, LeadsWebhookLogAdmin)

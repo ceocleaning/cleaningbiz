@@ -11,6 +11,7 @@ from django.db import transaction
 
 from accounts.models import Business
 from .models import BusinessSubscription, BillingHistory, SubscriptionPlan, UsageTracker
+from saas.models import PlatformSettings
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +58,13 @@ def process_subscription_renewals():
     )
     
     print(f"Found {subscriptions_to_renew.count()} subscriptions to renew")
+
+    platform_settings = PlatformSettings.objects.first()
     
     # Initialize Square client
     square_client = Client(
-        access_token=settings.SQUARE_ACCESS_TOKEN,
-        environment=settings.SQUARE_ENVIRONMENT
+        access_token=platform_settings.square_access_token,
+        environment=platform_settings.square_environment
     )
     
     for subscription in subscriptions_to_renew:
@@ -569,11 +572,11 @@ def auto_upgrade_subscription():
     # Get all active subscriptions
     businesses = Business.objects.filter(isActive=True, isApproved=True, auto_upgrade=True)
     logger.info(f"Found {businesses.count()} businesses with auto-upgrade enabled")
-
+    platform_settings = PlatformSettings.objects.first()
     # Initialize Square client
     square_client = Client(
-        access_token=settings.SQUARE_ACCESS_TOKEN,
-        environment=settings.SQUARE_ENVIRONMENT
+        access_token=platform_settings.square_access_token,
+        environment=platform_settings.square_environment
     )
 
     for business in businesses:

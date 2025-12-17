@@ -122,6 +122,49 @@
                     </div>
                 </div>
                 
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5 class="border-bottom pb-2">Square Payment Integration</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="square_access_token">Square Access Token</label>
+                            <input type="text" class="form-control" id="square_access_token" name="square_access_token" value="{{ settings.square_access_token }}">
+                            <small class="text-muted">Your Square API access token for payment processing</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="square_location_id">Square Location ID</label>
+                            <input type="text" class="form-control" id="square_location_id" name="square_location_id" value="{{ settings.square_location_id }}">
+                            <small class="text-muted">Your Square location ID</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="square_app_id">Square Application ID</label>
+                            <input type="text" class="form-control" id="square_app_id" name="square_app_id" value="{{ settings.square_app_id }}">
+                            <small class="text-muted">Your Square application ID for web payments</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="square_environment">Square Environment</label>
+                            <select class="form-control" id="square_environment" name="square_environment">
+                                <option value="sandbox" {% if settings.square_environment == 'sandbox' %}selected{% endif %}>Sandbox (Testing)</option>
+                                <option value="production" {% if settings.square_environment == 'production' %}selected{% endif %}>Production (Live)</option>
+                            </select>
+                            <small class="text-muted">Select sandbox for testing or production for live payments</small>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="row mt-4">
                     <div class="col-md-12">
                         <button type="submit" class="btn btn-primary">

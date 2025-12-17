@@ -1,0 +1,489 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Webhook Logs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card{
+        border: 1px solid gray;
+    }
+    .stats-card {
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card.total {
+        border-left-color: var(--primary-color);
+    }
+
+    .stats-card.success {
+        border-left-color: var(--success-color);
+    }
+
+    .stats-card.failed {
+        border-left-color: var(--danger-color);
+    }
+
+    .stats-card.pending {
+        border-left-color: var(--warning-color);
+    }
+
+    .filter-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .log-row {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .log-row:hover {
+        background-color: var(--primary-light);
+        transform: translateX(5px);
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-failed {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .source-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 15px;
+        font-weight: 500;
+    }
+
+    .source-thumbtack {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .source-manual {
+        background-color: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    .progress-ring {
+        width: 80px;
+        height: 80px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-light);
+        margin-bottom: 1rem;
+    }
+
+    .filter-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-badge .remove {
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-history text-primary me-2"></i>Webhook Logs</h1>
+                <p class="text-muted mb-0">Monitor and track all incoming webhook requests</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card total">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Requests</p>
+                            <h3 class="mb-0">{{ stats.total|default:0 }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-server fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Successful</p>
+                            <h3 class="mb-0 text-success">{{ stats.successful|default:0 }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card failed">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Failed</p>
+                            <h3 class="mb-0 text-danger">{{ stats.failed|default:0 }}</h3>
+                        </div>
+                        <div class="text-danger">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card pending">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Pending</p>
+                            <h3 class="mb-0 text-warning">{{ stats.pending|default:0 }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Source Statistics -->
+    {% if source_stats %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Requests by Source</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for source in source_stats %}
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <div>
+                            <h6 class="mb-1">
+                                {% if source.lead_source == 'thumbtack' %}
+                                <i class="fas fa-thumbtack text-primary me-2"></i>Thumbtack
+                                {% else %}
+                                <i class="fas fa-webhook text-secondary me-2"></i>Manual Webhook
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">
+                                <span class="text-success">{{ source.successful }} success</span> /
+                                <span class="text-danger">{{ source.failed }} failed</span>
+                            </small>
+                        </div>
+                        <h4 class="mb-0">{{ source.count }}</h4>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="filter-section">
+        <form method="get" id="filterForm">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label"><i class="fas fa-filter me-1"></i>Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="success" {% if status_filter == 'success' %}selected{% endif %}>Success</option>
+                        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="source" class="form-label"><i class="fas fa-source me-1"></i>Source</label>
+                    <select name="source" id="source" class="form-select">
+                        <option value="">All Sources</option>
+                        <option value="thumbtack" {% if source_filter == 'thumbtack' %}selected{% endif %}>Thumbtack
+                        </option>
+                        <option value="manual_webhook" {% if source_filter == 'manual_webhook' %}selected{% endif %}>
+                            Manual Webhook</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label"><i class="fas fa-calendar me-1"></i>From Date</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label"><i class="fas fa-calendar me-1"></i>To Date</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+
+                <div class="col-md-8">
+                    <label for="search" class="form-label"><i class="fas fa-search me-1"></i>Search</label>
+                    <input type="text" name="search" id="search" class="form-control"
+                        placeholder="Search by error message, error code, or data..." value="{{ search_query }}">
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-search me-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'webhook_logs' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Active Filters Display -->
+        {% if status_filter or source_filter or search_query or date_from or date_to %}
+        <div class="mt-3">
+            <small class="text-muted">Active Filters:</small>
+            {% if status_filter %}
+            <span class="filter-badge">Status: {{ status_filter }} <span class="remove"
+                    onclick="removeFilter('status')">×</span></span>
+            {% endif %}
+            {% if source_filter %}
+            <span class="filter-badge">Source: {{ source_filter }} <span class="remove"
+                    onclick="removeFilter('source')">×</span></span>
+            {% endif %}
+            {% if search_query %}
+            <span class="filter-badge">Search: "{{ search_query }}" <span class="remove"
+                    onclick="removeFilter('search')">×</span></span>
+            {% endif %}
+            {% if date_from %}
+            <span class="filter-badge">From: {{ date_from }} <span class="remove"
+                    onclick="removeFilter('date_from')">×</span></span>
+            {% endif %}
+            {% if date_to %}
+            <span class="filter-badge">To: {{ date_to }} <span class="remove"
+                    onclick="removeFilter('date_to')">×</span></span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Webhook Requests ({{ logs.paginator.count }} total)</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th>Error</th>
+                            <th>Lead ID</th>
+                            <th>IP Address</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr class="log-row" onclick="window.location='{% url 'webhook_log_detail' log.id %}'">
+                            <td><strong>#{{ log.id }}</strong></td>
+                            <td>
+                                {% if log.lead_source == 'thumbtack' %}
+                                <span class="source-badge source-thumbtack">
+                                    <i class="fas fa-thumbtack me-1"></i>Thumbtack
+                                </span>
+                                {% else %}
+                                <span class="source-badge source-manual">
+                                    <i class="fas fa-webhook me-1"></i>Manual
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                <span class="status-badge status-success">
+                                    <i class="fas fa-check-circle me-1"></i>Success
+                                </span>
+                                {% elif log.status == 'failed' %}
+                                <span class="status-badge status-failed">
+                                    <i class="fas fa-times-circle me-1"></i>Failed
+                                </span>
+                                {% else %}
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.error_code %}
+                                <span class="badge bg-danger">{{ log.error_code }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.webhook_data.lead_id %}
+                                <a href="{% url 'lead_detail' log.webhook_data.lead_id %}" class="text-primary"
+                                    onclick="event.stopPropagation()">
+                                    {{ log.webhook_data.lead_id }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ log.webhook_data.metadata.ip_address|default:'-' }}
+                                </small>
+                            </td>
+                            <td>
+                                <small class="convert-timezone" data-utc-time="{{ log.created_at|date:'c' }}">
+                                    {{ log.created_at|date:'Y-m-d H:i:s' }}
+                                </small>
+                            </td>
+                            <td>
+                                <a href="{% url 'webhook_log_detail' log.id %}" class="btn btn-sm btn-outline-primary"
+                                    onclick="event.stopPropagation()">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if logs.has_other_pages %}
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if logs.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ logs.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Page {{ logs.number }} of {{ logs.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if logs.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ logs.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ logs.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h4 class="text-muted">No webhook logs found</h4>
+                <p class="text-muted">
+                    {% if status_filter or source_filter or search_query or date_from or date_to %}
+                    Try adjusting your filters to see more results.
+                    {% else %}
+                    Webhook logs will appear here when requests are received.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function removeFilter(filterName) {
+        const form = document.getElementById('filterForm');
+        const input = form.querySelector(`[name="${filterName}"]`);
+        if (input) {
+            input.value = '';
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

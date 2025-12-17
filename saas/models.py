@@ -16,6 +16,12 @@ class PlatformSettings(models.Model):
     maintenance_message = models.TextField(blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Square Credentials
+    square_access_token = models.CharField(max_length=255, blank=True, null=True)
+    square_location_id = models.CharField(max_length=255, blank=True, null=True)
+    square_app_id = models.CharField(max_length=255, blank=True, null=True)
+    square_environment = models.CharField(max_length=255, blank=True, null=True)
     
     class Meta:
         verbose_name = "Platform Settings"

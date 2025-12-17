@@ -2250,3 +2250,125 @@ def send_manual_call(request, leadId):
             'success': False,
             'error': error_message
         }, status=500)
+
+
+@login_required
+def webhook_logs(request):
+    """Display webhook logs with filtering and search capabilities"""
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    # Import the model
+    from .models import LeadsWebhookLog
+    from django.core.paginator import Paginator
+    from django.db.models import Q, Count
+    
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    source_filter = request.GET.get('source', '')
+    search_query = request.GET.get('search', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Base queryset
+    logs = LeadsWebhookLog.objects.filter(business=business).order_by('-created_at')
+    
+    # Apply filters
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    
+    if source_filter:
+        logs = logs.filter(lead_source=source_filter)
+    
+    if search_query:
+        logs = logs.filter(
+            Q(error_message__icontains=search_query) |
+            Q(error_code__icontains=search_query) |
+            Q(webhook_data__icontains=search_query)
+        )
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            date_to_obj = date_to_obj + timedelta(days=1)
+            logs = logs.filter(created_at__lt=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Calculate statistics
+    stats = LeadsWebhookLog.objects.filter(business=business).aggregate(
+        total=Count('id'),
+        successful=Count('id', filter=Q(status='success')),
+        failed=Count('id', filter=Q(status='failed')),
+        pending=Count('id', filter=Q(status='pending'))
+    )
+    
+    # Calculate success rate
+    success_rate = (stats['successful'] / stats['total'] * 100) if stats['total'] > 0 else 0
+    
+    # Get source breakdown
+    source_stats = LeadsWebhookLog.objects.filter(business=business).values('lead_source').annotate(
+        count=Count('id'),
+        successful=Count('id', filter=Q(status='success')),
+        failed=Count('id', filter=Q(status='failed'))
+    )
+    
+    # Pagination
+    paginator = Paginator(logs, 20)  # Show 20 logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'logs': page_obj,
+        'stats': stats,
+        'success_rate': success_rate,
+        'source_stats': source_stats,
+        'status_filter': status_filter,
+        'source_filter': source_filter,
+        'search_query': search_query,
+        'date_from': date_from,
+        'date_to': date_to,
+        'title': 'Webhook Logs',
+    }
+    
+    return render(request, 'automation/webhook_logs.html', context)
+
+
+@login_required
+def webhook_log_detail(request, log_id):
+    """Display detailed information about a specific webhook log"""
+    business = request.user.business_set.first()
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    from .models import LeadsWebhookLog
+    
+    log = get_object_or_404(LeadsWebhookLog, id=log_id, business=business)
+    
+    # Try to get associated lead if available
+    lead = None
+    lead_id = log.webhook_data.get('lead_id')
+    if lead_id:
+        try:
+            lead = Lead.objects.get(leadId=lead_id, business=business)
+        except Lead.DoesNotExist:
+            pass
+    
+    context = {
+        'log': log,
+        'lead': lead,
+        'title': f'Webhook Log #{log.id}',
+    }
+    
+    return render(request, 'automation/webhook_log_detail.html', context)

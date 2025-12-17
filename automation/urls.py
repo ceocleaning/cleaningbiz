@@ -86,4 +86,8 @@ urlpatterns = [
     path('twilio/phone-numbers/update-webhook/', twilio_views.update_twilio_webhook, name='update_twilio_webhook'),
     path('twilio/phone-numbers/set-active/', twilio_views.set_active_number, name='set_active_number'),
 
+    # Webhook Logs URLs
+    path('webhook-logs/', views.webhook_logs, name='webhook_logs'),
+    path('webhook-logs/<int:log_id>/', views.webhook_log_detail, name='webhook_log_detail'),
+
 ]

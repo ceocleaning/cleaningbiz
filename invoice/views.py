@@ -31,6 +31,7 @@ import json
 import random
 from accounts.decorators import owner_or_customer
 from .utils import handle_payment_completed
+from saas.models import PlatformSettings
 
 
 
@@ -110,6 +111,7 @@ def delete_invoice(request, invoiceId):
 @owner_or_customer
 def invoice_detail(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
+    platform_settings = PlatformSettings.objects.first()
     if hasattr(request.user, 'customer') and request.user.customer:
         base_template = 'customer/base.html'
     else:

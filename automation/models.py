@@ -335,3 +335,34 @@ class NotificationLog(models.Model):
     def __str__(self):
         return f"{self.lead.name} - {self.notification_type} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
     
+
+
+LEADS_WEBHOOK_STATUS_CHOICES = [
+    ('pending', 'Pending'),
+    ('success', 'Success'),
+    ('failed', 'Failed'),
+]
+
+LEADS_WEBHOOK_SOURCE_CHOICES = [
+    ('thumbtack', 'Thumbtack'),
+    ('manual_webhook', 'Manual Webhook'),
+]
+
+class LeadsWebhookLog(models.Model):
+    business = models.ForeignKey('accounts.Business', on_delete=models.CASCADE)
+    lead_source = models.CharField(max_length=20, choices=LEADS_WEBHOOK_SOURCE_CHOICES, default='manual_webhook')
+    status = models.CharField(max_length=20, choices=LEADS_WEBHOOK_STATUS_CHOICES, default='pending')
+    error_message = models.TextField(null=True, blank=True)
+    error_code = models.CharField(max_length=100, null=True, blank=True)
+    webhook_data = models.JSONField(null=True, blank=True, default=dict)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['business', 'created_at']),
+            models.Index(fields=['status']),
+        ]
+    def __str__(self):
+        return f"{self.business.name} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"

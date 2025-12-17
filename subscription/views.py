@@ -18,12 +18,13 @@ from .models import SubscriptionPlan, BusinessSubscription, BillingHistory, Feat
 from saas.models import PlatformSettings
 from accounts.models import Business
 from usage_analytics.services.usage_service import UsageService
+from saas.models import PlatformSettings
 
 @login_required
 def subscription_management(request):
     """View for managing subscriptions."""
     business = request.user.business_set.first()
-    
+    platform_settings = PlatformSettings.objects.first()    
     if not business:
         messages.error(request, 'No business found for this user.')
         return redirect('accounts:register_business')
@@ -76,8 +77,8 @@ def subscription_management(request):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Retrieve the card details
@@ -137,6 +138,7 @@ def subscription_management(request):
 def billing_history(request):
     """View for billing history."""
     business = request.user.business_set.first()
+    platform_settings = PlatformSettings.objects.first()
     
     if not business:
         messages.error(request, 'No business found for this user.')
@@ -204,8 +206,8 @@ def billing_history(request):
             from django.conf import settings
             
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Retrieve the card details
@@ -521,7 +523,7 @@ def select_plan(request, plan_id=None):
         print(f"Error checking active subscription: {str(e)}")
         subscription = None
             
-  
+    platform_settings = PlatformSettings.objects.first()
     
     # Get card details from Square if available
     card_details = None
@@ -529,8 +531,8 @@ def select_plan(request, plan_id=None):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Retrieve the card details
@@ -556,8 +558,8 @@ def select_plan(request, plan_id=None):
         'subscription': subscription,
         'business': business,
         'card_details': card_details,
-        'square_app_id': settings.SQUARE_APP_ID,
-        'environment': settings.SQUARE_ENVIRONMENT,
+        'square_app_id': platform_settings.square_app_id,
+        'environment': platform_settings.square_environment,
         'active_page': 'subscription',
         'title': 'Select Plan',
         'platform_settings': platform_settings,
@@ -646,12 +648,13 @@ def process_payment(request, plan_id):
         customer_id = business.square_customer_id if business.square_customer_id else None
         card_id = business.square_card_id if business.square_card_id else None
         
+        platform_settings = PlatformSettings.objects.first()
         # Only process payment if the final price is greater than zero
         if not is_free:
             # Initialize Square client
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Prepare payment amount
@@ -1083,7 +1086,7 @@ def apply_coupon_to_subscription(request):
 def manage_card(request):
     """View for saving or updating card details."""
     business = request.user.business_set.first()
-
+    platform_settings = PlatformSettings.objects.first()
     
     # Get redirect URL if provided
     redirect_url = request.GET.get('redirect_url') or request.POST.get('redirect_url')
@@ -1094,8 +1097,8 @@ def manage_card(request):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Retrieve the card details
@@ -1124,8 +1127,8 @@ def manage_card(request):
             context = {
                 'business': business,
                 'card_details': card_details,
-                'square_app_id': settings.SQUARE_APP_ID,
-                'environment': settings.SQUARE_ENVIRONMENT,
+                'square_app_id': platform_settings.square_app_id,
+                'environment': platform_settings.square_environment,
                 'redirect_url': redirect_url,
                 'active_page': 'subscription',
                 'title': 'Manage Payment Method'
@@ -1137,8 +1140,8 @@ def manage_card(request):
             context = {
                 'business': business, 
                 'card_details': card_details,
-                'square_app_id': settings.SQUARE_APP_ID,
-                'environment': settings.SQUARE_ENVIRONMENT,
+                'square_app_id': platform_settings.square_app_id,
+                'environment': platform_settings.square_environment,
                 'redirect_url': redirect_url,
                 'active_page': 'subscription',
                 'title': 'Manage Payment Method'
@@ -1147,8 +1150,8 @@ def manage_card(request):
         
         # Initialize Square client
         square_client = Client(
-            access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment=settings.SQUARE_ENVIRONMENT
+            access_token=platform_settings.square_access_token,
+            environment=platform_settings.square_environment
         )
         
         # Check if business already has a Square customer ID
@@ -1177,8 +1180,8 @@ def manage_card(request):
                 context = {
                     'business': business,
                     'card_details': card_details,
-                    'square_app_id': settings.SQUARE_APP_ID,
-                    'environment': settings.SQUARE_ENVIRONMENT,
+                    'square_app_id': platform_settings.square_app_id,
+                    'environment': platform_settings.square_environment,
                     'redirect_url': redirect_url,
                     'active_page': 'subscription',
                     'title': 'Manage Payment Method'
@@ -1242,8 +1245,8 @@ def manage_card(request):
     context = {
         'business': business,
         'card_details': card_details,
-        'square_app_id': settings.SQUARE_APP_ID,
-        'environment': settings.SQUARE_ENVIRONMENT,
+        'square_app_id': platform_settings.square_app_id,
+        'environment': platform_settings.square_environment,
         'redirect_url': redirect_url,
         'active_page': 'subscription',
         'title': 'Manage Payment Method'
@@ -1294,6 +1297,7 @@ def delete_card(request):
         try:
             # Get the business instance
             business = request.user.business_set.first()
+            platform_settings = PlatformSettings.objects.first()
             
             if not business.square_card_id:
                 messages.error(request, 'No card found to delete.')
@@ -1301,8 +1305,8 @@ def delete_card(request):
             
             # Initialize Square client
             square_client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment=settings.SQUARE_ENVIRONMENT
+                access_token=platform_settings.square_access_token,
+                environment=platform_settings.square_environment
             )
             
             # Delete the card from Square

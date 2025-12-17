@@ -32,6 +32,10 @@ def platform_settings(request):
         settings.default_timezone = request.POST.get('default_timezone')
         settings.maintenance_mode = 'maintenance_mode' in request.POST
         settings.maintenance_message = request.POST.get('maintenance_message')
+        settings.square_app_id = request.POST.get('square_app_id')
+        settings.square_location_id = request.POST.get('square_location_id')
+        settings.square_environment = request.POST.get('square_environment')
+        settings.square_access_token = request.POST.get('square_access_token')
         settings.updated_by = request.user
         settings.save()
         

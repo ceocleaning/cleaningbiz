@@ -37,9 +37,35 @@ def thumbtack_webhook(request, secretKey):
     business = verifySecretKey.first().business
 
     if request.method == 'POST':
+        # Initialize webhook log
+        webhook_log = None
+        
         try:
+            # Extract request metadata
+            metadata = {
+                'ip_address': request.META.get('REMOTE_ADDR'),
+                'user_agent': request.META.get('HTTP_USER_AGENT'),
+                'content_type': request.META.get('CONTENT_TYPE'),
+                'http_method': request.method,
+                'headers': {
+                    'content_length': request.META.get('CONTENT_LENGTH'),
+                    'http_accept': request.META.get('HTTP_ACCEPT'),
+                    'http_host': request.META.get('HTTP_HOST'),
+                }
+            }
             data = json.loads(request.body)
             print(f"Received Thumbtack webhook: {data}")
+            
+            # Create webhook log entry with pending status
+            webhook_log = LeadsWebhookLog.objects.create(
+                business=business,
+                lead_source='thumbtack',
+                status='pending',
+                webhook_data={
+                    'raw_data': data,
+                    'metadata': metadata
+                }
+            )
             
             # Extract required fields from the webhook payload
             lead_data = data.get('data', {})
@@ -148,6 +174,12 @@ def thumbtack_webhook(request, secretKey):
             
             print(f"Successfully created Thumbtack lead: {lead.leadId}")
             
+            # Update webhook log to success
+            if webhook_log:
+                webhook_log.status = 'success'
+                webhook_log.webhook_data['lead_id'] = lead.leadId
+                webhook_log.save()
+            
             # Track usage
             try:
                 from subscription.models import UsageTracker
@@ -160,7 +192,17 @@ def thumbtack_webhook(request, secretKey):
         except Exception as e:
             print(f"Error processing Thumbtack webhook: {str(e)}")
             import traceback
-            print(traceback.format_exc())
+            error_traceback = traceback.format_exc()
+            print(error_traceback)
+            
+            # Update webhook log to failed
+            if webhook_log:
+                webhook_log.status = 'failed'
+                webhook_log.error_message = str(e)
+                webhook_log.error_code = type(e).__name__
+                webhook_log.webhook_data['traceback'] = error_traceback
+                webhook_log.save()
+            
             return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
     
     return JsonResponse({'status': 'success'}, status=200)
@@ -333,10 +375,36 @@ def chatgpt_analysis_webhook(request, secretKey):
     business = verifySecretKey.first().business
 
     if request.method == 'POST':
+        # Initialize webhook log
+        webhook_log = None
+        
         try:
+            # Extract request metadata
+            metadata = {
+                'ip_address': request.META.get('REMOTE_ADDR'),
+                'user_agent': request.META.get('HTTP_USER_AGENT'),
+                'content_type': request.META.get('CONTENT_TYPE'),
+                'http_method': request.method,
+                'headers': {
+                    'content_length': request.META.get('CONTENT_LENGTH'),
+                    'http_accept': request.META.get('HTTP_ACCEPT'),
+                    'http_host': request.META.get('HTTP_HOST'),
+                }
+            }
             # Parse incoming JSON data
             data = json.loads(request.body)
             print(f"Received data for ChatGPT analysis: {data}")
+            
+            # Create webhook log entry with pending status
+            webhook_log = LeadsWebhookLog.objects.create(
+                business=business,
+                lead_source='manual_webhook',
+                status='pending',
+                webhook_data={
+                    'raw_data': data,
+                    'metadata': metadata
+                }
+            )
             
             # Initialize OpenAI client
             client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -394,6 +462,14 @@ def chatgpt_analysis_webhook(request, secretKey):
                 missing_fields.append('phone_number')
 
             if missing_fields:
+                # Update webhook log to failed for validation error
+                if webhook_log:
+                    webhook_log.status = 'failed'
+                    webhook_log.error_message = f'Missing required fields: {", ".join(missing_fields)}'
+                    webhook_log.error_code = 'VALIDATION_ERROR'
+                    webhook_log.webhook_data['missing_fields'] = missing_fields
+                    webhook_log.save()
+                
                 return JsonResponse({
                     'message': 'Invalid Data',
                     'missing_fields': missing_fields
@@ -448,6 +524,13 @@ def chatgpt_analysis_webhook(request, secretKey):
             lead = Lead.objects.create(**lead_data)
             print(f"Successfully created lead from ChatGPT analysis: {lead.leadId}")
             
+            # Update webhook log to success
+            if webhook_log:
+                webhook_log.status = 'success'
+                webhook_log.webhook_data['lead_id'] = lead.leadId
+                webhook_log.webhook_data['structured_data'] = structured_data
+                webhook_log.save()
+            
             # Track usage
             try:
                 UsageTracker.increment_leads(business=business, increment_by=1)
@@ -460,12 +543,29 @@ def chatgpt_analysis_webhook(request, secretKey):
                 'lead_data': structured_data
             }, status=200)
             
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            # Update webhook log to failed for JSON decode error
+            if webhook_log:
+                webhook_log.status = 'failed'
+                webhook_log.error_message = 'Invalid JSON data'
+                webhook_log.error_code = 'JSON_DECODE_ERROR'
+                webhook_log.save()
+            
             return JsonResponse({'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             print(f"Error processing ChatGPT analysis webhook: {str(e)}")
             import traceback
-            print(traceback.format_exc())
+            error_traceback = traceback.format_exc()
+            print(error_traceback)
+            
+            # Update webhook log to failed
+            if webhook_log:
+                webhook_log.status = 'failed'
+                webhook_log.error_message = str(e)
+                webhook_log.error_code = type(e).__name__
+                webhook_log.webhook_data['traceback'] = error_traceback
+                webhook_log.save()
+            
             return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
     
     return JsonResponse({'message': 'Method not allowed'}, status=405)

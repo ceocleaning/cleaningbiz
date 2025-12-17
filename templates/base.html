@@ -2,6 +2,7 @@
 {% load notification_tags %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,9 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
     <!-- Toastify CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <!-- Bootstrap JS Bundle (includes Popper) -->
@@ -22,11 +25,12 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <!-- Moment.js for timezone handling -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <!-- Custom timezone utilities -->
     <script src="{% static 'js/timezone.js' %}"></script>
-    
-    
+
+
     <style>
         :root {
             --primary-color: #1aad8c;
@@ -53,7 +57,7 @@
             --transition: all 0.3s ease;
             --border-radius: 10px;
 
-            
+
         }
 
         * {
@@ -152,7 +156,8 @@
             overflow-x: auto;
         }
 
-        ul, ol {
+        ul,
+        ol {
             font-size: 0.9rem;
             margin-bottom: 1rem;
             padding-left: 1.5rem;
@@ -192,7 +197,10 @@
                 font-size: 0.8rem;
             }
 
-            p, a, ul, ol {
+            p,
+            a,
+            ul,
+            ol {
                 font-size: 0.875rem;
             }
         }
@@ -251,13 +259,13 @@
             background-color: var(--primary-color);
             border-radius: 3px;
         }
-        
+
         /* Fix for active dropdown toggles */
         .dropdown-toggle.active {
             pointer-events: auto;
             cursor: pointer;
         }
-        
+
         /* Override the active indicator for dropdown toggles */
         .dropdown-toggle.active::after {
             bottom: 0;
@@ -278,11 +286,11 @@
                 z-index: 1000;
                 margin-top: 0.5rem;
             }
-            
+
             .nav-item {
                 margin-bottom: 0.5rem;
             }
-            
+
             .dropdown-menu {
                 position: static !important;
                 float: none;
@@ -291,20 +299,20 @@
                 box-shadow: none;
                 border: 1px solid var(--gray-light);
             }
-            
+
             .navbar-nav {
                 margin-bottom: 1rem !important;
             }
-            
+
             .d-flex.align-items-center {
                 width: auto;
             }
-            
-            .navbar .container > .d-flex.align-items-center {
+
+            .navbar .container>.d-flex.align-items-center {
                 flex-grow: 1;
                 justify-content: space-between;
             }
-            
+
             .nav-link.active::after {
                 display: none;
             }
@@ -423,14 +431,16 @@
         }
 
         /* Form Controls */
-        .form-control, .form-select {
+        .form-control,
+        .form-select {
             border-radius: 8px;
             padding: 0.75rem 1rem;
             border: 1px solid #cbd5e1;
             font-size: 0.9rem;
         }
 
-        .form-control:focus, .form-select:focus {
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
         }
@@ -448,7 +458,8 @@
             padding-bottom: 1rem;
         }
 
-        .page-header h1, .page-header h2 {
+        .page-header h1,
+        .page-header h2 {
             font-weight: 600;
             font-size: 1.5rem;
             color: var(--dark-color);
@@ -472,7 +483,7 @@
             justify-content: center;
             box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
-        
+
         .avatar-initials {
             color: white;
             font-weight: 600;
@@ -489,7 +500,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        
+
         .dropdown-item {
             padding: 0.75rem 1.25rem;
             display: flex;
@@ -498,21 +509,21 @@
             font-size: 0.9rem;
             color: var(--dark-color);
         }
-        
+
         .dropdown-item:hover {
             background-color: var(--primary-light);
             color: var(--primary-color);
         }
-        
+
         .dropdown-item:hover i {
             color: var(--primary-color) !important;
         }
-        
+
         .dropdown-item.text-danger:hover {
             background-color: #fee2e2;
             color: var(--danger-color) !important;
         }
-        
+
         .dropdown-item.text-danger:hover i {
             color: var(--danger-color) !important;
         }
@@ -576,6 +587,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -613,33 +625,33 @@
             .navbar {
                 padding: 0.5rem 0;
             }
-            
+
             .card-body {
                 padding: 1.25rem;
             }
-            
+
             .btn {
                 padding: 0.5rem 1.25rem;
             }
-            
+
             .table thead th {
                 padding: 0.75rem;
             }
-            
+
             .table tbody td {
                 padding: 0.75rem;
             }
-            
+
             .avatar-circle {
                 width: 25px;
                 height: 25px;
             }
-            
+
             .avatar-initials {
                 font-size: 14px;
             }
         }
-        
+
         /* Ensure navbar container has position for dropdown */
         .navbar .container {
             position: relative;
@@ -647,31 +659,33 @@
 
         /* Toast notifications */
         .toast-container {
-            margin-top: 60px; /* Add space below navbar */
+            margin-top: 60px;
+            /* Add space below navbar */
         }
-        
+
         .toast {
             margin-bottom: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             min-width: 300px;
         }
-        
+
         .toast.bg-success {
             background-color: #10b981 !important;
         }
-        
-        .toast.bg-danger, .toast.bg-error {
+
+        .toast.bg-danger,
+        .toast.bg-error {
             background-color: #ef4444 !important;
         }
-        
+
         .toast.bg-warning {
             background-color: #f59e0b !important;
         }
-        
+
         .toast.bg-info {
             background-color: #3b82f6 !important;
         }
-        
+
         .toast-body {
             padding: 12px 15px;
             font-weight: 500;
@@ -691,7 +705,9 @@
     {% block extra_css %}
     {% endblock %}
 </head>
-<body data-business-timezone="{% if user.is_authenticated and user.business_set.exists %}{{ user.business_set.first.timezone }}{% else %}UTC{% endif %}">
+
+<body
+    data-business-timezone="{% if user.is_authenticated and user.business_set.exists %}{{ user.business_set.first.timezone }}{% else %}UTC{% endif %}">
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
@@ -699,12 +715,12 @@
                 {% if request.user.is_authenticated and request.user.customer %}
                 <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'customer:dashboard' %}">
                     <img class="logo" src="{% static 'img/logo1.png' %}" alt="">
-                   CleaningBiz Customer Dashboard
+                    CleaningBiz Customer Dashboard
                 </a>
                 {% else %}
                 <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
                     <img class="logo" src="{% static 'img/logo_dark.png' %}" alt="">
-                   
+
                 </a>
                 {% endif %}
                 <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -716,7 +732,7 @@
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     {% if user.is_authenticated %}
                     {% load user_tags %}
-                    
+
                     {% if request.user|is_cleaner %}
                     <!-- Cleaner Navigation Links -->
                     <!-- <li class="nav-item">
@@ -734,170 +750,185 @@
                     {% elif request.user|is_business_owner and not request.user.customer %}
                     <!-- Business Owner Navigation Links -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" 
-                            href="#" id="bookingsDropdown" role="button" 
+                        <a class="nav-link dropdown-toggle" href="#" id="bookingsDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             Bookings
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="bookingsDropdown">
                             <li>
-                                <a class="dropdown-item {% if '/bookings/all/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/bookings/all/' in request.path %}active{% endif %}"
                                     href="{% url 'bookings:all_bookings' %}">
                                     <i class="fas fa-calendar-check me-2 text-primary"></i>All Bookings
                                 </a>
                             </li>
-                            
+
                             <li>
-                                <a class="dropdown-item {% if '/customers/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/customers/' in request.path %}active{% endif %}"
                                     href="{% url 'bookings:customers' %}">
                                     <i class="fas fa-users me-2 text-info"></i>Customers
                                 </a>
                             </li>
-                            
+
                             <li>
-                                <a class="dropdown-item {% if '/bookings/coupons/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/bookings/coupons/' in request.path %}active{% endif %}"
                                     href="{% url 'bookings:coupon_list' %}">
                                     <i class="fas fa-ticket-alt me-2 text-success"></i>Coupons
                                 </a>
                             </li>
-                            
-                            <li>    
-                                <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}" 
+
+                            <li>
+                                <a class="dropdown-item {% if '/bookings/embed-widget/' in request.path %}active{% endif %}"
                                     href="{% url 'bookings:embed_booking_widget' %}">
                                     <i class="fas fa-code me-2 text-secondary"></i>Embed Booking Form
                                 </a>
                             </li>
                         </ul>
                     </li>
-                    
+
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/booking/invoices/' %}active{% endif %}" 
+                        <a class="nav-link {% if request.path == '/booking/invoices/' %}active{% endif %}"
                             href="{% url 'invoice:all_invoices' %}">
                             <!-- <i class="fas fa-file-invoice-dollar me-1"></i> -->
                             Invoices
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/leads/' %}active{% endif %}" 
-                            href="{% url 'all_leads' %}">
-                            <!-- <i class="fas fa-user-friends me-1"></i> -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="bookingsDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Leads
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="bookingsDropdown">
+                            <li>
+                                <a class="nav-link {% if request.path == '/leads/' %}active{% endif %}"
+                                    href="{% url 'all_leads' %}">
+                                    <!-- <i class="fas fa-user-friends me-1"></i> -->
+                                    Leads
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="nav-link {% if request.path == '/webhook-logs/' %}active{% endif %}"
+                                    href="{% url 'webhook_logs' %}">
+                                    <!-- <i class="fas fa-user-friends me-1"></i> -->
+                                    Webhook Logs
+                                </a>
+                            </li>
+
+
+                        </ul>
                     </li>
+
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" 
-                            href="#" id="cleanersDropdown" role="button" 
+                        <a class="nav-link dropdown-toggle" href="#" id="cleanersDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <!-- <i class="fas fa-user-friends me-1"></i> -->
                             Cleaners
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="cleanersDropdown">
                             <li>
-                                <a class="dropdown-item {% if request.path == '/cleaners/' %}active{% endif %}" 
+                                <a class="dropdown-item {% if request.path == '/cleaners/' %}active{% endif %}"
                                     href="{% url 'cleaners_list' %}">
                                     <i class="fas fa-user-friends me-2 text-primary"></i>All Cleaners
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if '/payouts/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/payouts/' in request.path %}active{% endif %}"
                                     href="{% url 'bookings:payouts_dashboard' %}">
                                     <i class="fas fa-money-bill-wave me-2 text-success"></i>Payouts
                                 </a>
                             </li>
                         </ul>
                     </li>
-     
+
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if '/accounts/thumbtack/' in request.path %}active{% endif %}" 
-                            href="#" id="thumbtackDropdown" role="button" 
-                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle {% if '/accounts/thumbtack/' in request.path %}active{% endif %}"
+                            href="#" id="thumbtackDropdown" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <!-- <i class="fas fa-plug me-1"></i> -->
                             Integration
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="thumbtackDropdown">
                             <li>
-                                <a class="dropdown-item {% if request.path == '/integration/' %}active{% endif %}" 
-                                href="{% url 'integration_list' %}">
-                                <i class="fas fa-screwdriver me-1"></i>
-                                Bookings Integration
-                            </a>
+                                <a class="dropdown-item {% if request.path == '/integration/' %}active{% endif %}"
+                                    href="{% url 'integration_list' %}">
+                                    <i class="fas fa-screwdriver me-1"></i>
+                                    Bookings Integration
+                                </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if '/accounts/thumbtack/profile/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/accounts/thumbtack/profile/' in request.path %}active{% endif %}"
                                     href="{% url 'accounts:thumbtack_profile' %}">
                                     <i class="fas fa-user-circle me-2 text-primary"></i>Thumbtack Profile
                                 </a>
                             </li>
-                           
-                 
+
+
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" 
-                            href="#" id="aiDropdown" role="button" 
+                        <a class="nav-link dropdown-toggle" href="#" id="aiDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <!-- <i class="fas fa-robot me-1"></i> -->
                             AI Agents
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="aiDropdown">
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}"
                                     href="{% url 'ai_agent:agent_config' %}">
                                     <i class="fas fa-cogs me-2 text-primary"></i>SMS AI Agent
                                 </a>
                             </li>
-                            
+
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}"
                                     href="{% url 'ai_agent:all_chats' %}">
                                     <i class="fas fa-sms me-2 text-success"></i>SMS Chat History
                                 </a>
                             </li>
 
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/embed-agent/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/embed-agent/' in request.path %}active{% endif %}"
                                     href="{% url 'ai_agent:embed_agent' %}">
                                     <i class="fas fa-code me-2 text-info"></i>Embed AI Agent
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}"
                                     href="{% url 'list_retell_agents' %}">
                                     <i class="fas fa-cogs me-2 text-primary"></i>Voice AI Agent
                                 </a>
                             </li>
-                            
+
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" 
-                            href="#" id="analyticsDropdown" role="button" 
+                        <a class="nav-link dropdown-toggle" href="#" id="analyticsDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <!-- <i class="fas fa-robot me-1"></i> -->
                             Analytics
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="analyticsDropdown">
                             <li>
-                                <a class="dropdown-item {% if '/analytics/agent-config/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/analytics/agent-config/' in request.path %}active{% endif %}"
                                     href="{% url 'analytics:analytics_dashboard' %}">
                                     <i class="fas fa-cogs me-2 text-primary"></i>Business Analytics
                                 </a>
                             </li>
-                            
+
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/sms-chats/' in request.path %}active{% endif %}"
                                     href="{% url 'usage_analytics:usage_overview' %}">
                                     <i class="fas fa-sms me-2 text-success"></i>Usage Analytics
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}"
                                     href="{% url 'usage_analytics:sms_analytics' %}">
                                     <i class="fas fa-cogs me-2 text-primary"></i>SMS Analytics
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}" 
+                                <a class="dropdown-item {% if '/ai_agent/agent-config/' in request.path %}active{% endif %}"
                                     href="{% url 'usage_analytics:voice_analytics' %}">
                                     <i class="fas fa-cogs me-2 text-primary"></i>Voice Analytics
                                 </a>
@@ -905,189 +936,214 @@
                         </ul>
                     </li>
                     {% endif %}
-                {% endif %}
+                    {% endif %}
                 </ul>
-                    
+
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'notification:notification_list' %}" class="position-relative" title="Notifications">
-                            <i class="fa-regular fa-bell h4 text-dark"></i>
-                          
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                            style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"
-                            >
-                                {% unread_notification_count request.user %}
-                            </span>
-                        
+                    <a href="{% url 'notification:notification_list' %}" class="position-relative"
+                        title="Notifications">
+                        <i class="fa-regular fa-bell h4 text-dark"></i>
+
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                            style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
+                            {% unread_notification_count request.user %}
+                        </span>
+
+                    </a>
+
+                    {% if not request.user|is_cleaner and not request.user.customer %}
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                            role="button" data-bs-toggle="dropdown">
+                            <div class="avatar-circle me-2">
+                                <span class="avatar-initials">
+                                    {{ request.user.business_set.all.0.businessName|make_list|first|upper }}</span>
+                            </div>
+                            <span class="d-md-inline d-none">{{ request.user.business_set.all.0.businessName }}</span>
+                            <span class="d-inline d-md-none">Account</span>
                         </a>
-                        
-                        {% if not request.user|is_cleaner and not request.user.customer %}
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <div class="avatar-circle me-2">
-                                    <span class="avatar-initials">{{ request.user.business_set.all.0.businessName|make_list|first|upper }}</span>
-                                </div>
-                                <span class="d-md-inline d-none">{{ request.user.business_set.all.0.businessName }}</span>
-                                <span class="d-inline d-md-none">Account</span>
-                            </a>
-                
-                            
-                            <ul class="dropdown-menu dropdown-menu-lg-end">
-                                <li class="px-3 py-2 d-flex flex-column">
-                                    <span class="fw-bold">{{ request.user.get_full_name }}</span>
-                                    <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>Profile
-                                    </a>
-                                </li>
-                              
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'accounts:payment_main' %}">
-                                        <i class="fas fa-credit-card me-2 text-success"></i>
-                                        Payments
-                                    </a>
-                                </li>
 
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'subscription:subscription_management' %}">
-                                        <i class="fas fa-chart-bar me-2 text-primary"></i>Subscription
-                                    </a>
-                                </li>
 
-                                <li>
-                                    <a class="dropdown-item" href="https://support.cleaningbizai.com/" rel="noopener noreferrer" target="_blank">
-                                        <i class="fas fa-robot me-2 text-primary"></i>
-                                        Help Center
-                                    </a>
-                                </li>
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                            <li class="px-3 py-2 d-flex flex-column">
+                                <span class="fw-bold">{{ request.user.get_full_name }}</span>
+                                <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>Profile
+                                </a>
+                            </li>
 
-                                <li>
-                                    {% load subscription_tags %}
-                                    {% get_setup_fee_status as setup_fee %}
-                                    {% if setup_fee %}
-                                    {% if setup_fee.call_status == 'pending' %}
-                                    <a id="app-scheduling" href="#" class="dropdown-item" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
-                                        <i class="fas fa-phone-alt me-2"></i>
-                                        Schedule Onboarding Call Now</a>
-                                    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
-                                    {% endif %}
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:payment_main' %}">
+                                    <i class="fas fa-credit-card me-2 text-success"></i>
+                                    Payments
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'subscription:subscription_management' %}">
+                                    <i class="fas fa-chart-bar me-2 text-primary"></i>Subscription
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="https://support.cleaningbizai.com/"
+                                    rel="noopener noreferrer" target="_blank">
+                                    <i class="fas fa-robot me-2 text-primary"></i>
+                                    Help Center
+                                </a>
+                            </li>
+
+                            <li>
+                                {% load subscription_tags %}
+                                {% get_setup_fee_status as setup_fee %}
+                                {% if setup_fee %}
+                                {% if setup_fee.call_status == 'pending' %}
+                                <a id="app-scheduling" href="#" class="dropdown-item" alt="Booknow button"
+                                    target="_blank"
+                                    data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
+                                    <i class="fas fa-phone-alt me-2"></i>
+                                    Schedule Onboarding Call Now</a>
+                                <script id="scheduling_script" type="text/javascript"
+                                    src="https://app.bookafy.com/popup-code.js"></script>
                                 {% endif %}
-                                </li>
-                                
-                                
-
-                               {% if request.user.is_superuser %}
-                                <li class="nav-item">
-                                    <a href="{% url 'admin_dashboard:index' %}" class="dropdown-item">
-                                        <i class="fas fa-cog me-2 text-primary"></i>Admin Dashboard</a>
-                                </li>
                                 {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        {% elif request.user.customer %}
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <div class="avatar-circle me-2">
-                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
-                                </div>
-                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
-                                <span class="d-inline d-md-none">Account</span>
-                            </a>
-                
-                            
-                            <ul class="dropdown-menu dropdown-menu-lg-end">
-                                <li class="px-3 py-2 d-flex flex-column">
-                                    <span class="fw-bold">{{ request.user.get_full_name }}</span>
-                                    <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'customer:profile' %}">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>
-                                        Profile
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'customer:linked_businesses' %}">
-                                        <i class="fas fa-building me-2 text-success"></i>
-                                        Linked Businesses
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'customer:link_account' %}">
-                                        <i class="fas fa-link me-2 text-info"></i>
-                                        Link Existing Customer Record
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="https://support.cleaningbizai.com/" rel="noopener noreferrer" target="_blank">
-                                        <i class="fas fa-robot me-2 text-primary"></i>
-                                        Help Center
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        {% else %}
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <div class="avatar-circle me-2">
-                                    <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
-                                </div>
-                                <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username }}</span>
-                                <span class="d-inline d-md-none">Account</span>
-                            </a>
-                
-                            
-                            <ul class="dropdown-menu dropdown-menu-lg-end">
-                                <li class="px-3 py-2 d-flex flex-column">
-                                    <span class="fw-bold">{{ request.user.get_full_name }}</span>
-                                    <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'cleaner_detail' request.user.cleaner_profile.cleaner.id %}">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>
-                                        Profile
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="https://support.cleaningbizai.com/" rel="noopener noreferrer" target="_blank">
-                                        <i class="fas fa-robot me-2 text-primary"></i>
-                                        Help Center
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        {% endif %}
-                       
+                            </li>
+
+
+
+                            {% if request.user.is_superuser %}
+                            <li class="nav-item">
+                                <a href="{% url 'admin_dashboard:index' %}" class="dropdown-item">
+                                    <i class="fas fa-cog me-2 text-primary"></i>Admin Dashboard</a>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% elif request.user.customer %}
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                            role="button" data-bs-toggle="dropdown">
+                            <div class="avatar-circle me-2">
+                                <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
+                            </div>
+                            <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username
+                                }}</span>
+                            <span class="d-inline d-md-none">Account</span>
+                        </a>
+
+
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                            <li class="px-3 py-2 d-flex flex-column">
+                                <span class="fw-bold">{{ request.user.get_full_name }}</span>
+                                <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'customer:profile' %}">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'customer:linked_businesses' %}">
+                                    <i class="fas fa-building me-2 text-success"></i>
+                                    Linked Businesses
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'customer:link_account' %}">
+                                    <i class="fas fa-link me-2 text-info"></i>
+                                    Link Existing Customer Record
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="https://support.cleaningbizai.com/"
+                                    rel="noopener noreferrer" target="_blank">
+                                    <i class="fas fa-robot me-2 text-primary"></i>
+                                    Help Center
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                            role="button" data-bs-toggle="dropdown">
+                            <div class="avatar-circle me-2">
+                                <span class="avatar-initials">{{ request.user.username|make_list|first|upper }}</span>
+                            </div>
+                            <span class="d-md-inline d-none">{{ request.user.get_full_name|default:request.user.username
+                                }}</span>
+                            <span class="d-inline d-md-none">Account</span>
                         </a>
-                        <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
-                            <i class="fas fa-user-plus me-1"></i>Get Started
-                        </a>
+
+
+                        <ul class="dropdown-menu dropdown-menu-lg-end">
+                            <li class="px-3 py-2 d-flex flex-column">
+                                <span class="fw-bold">{{ request.user.get_full_name }}</span>
+                                <span class="text-muted small">{{ request.user.email|default:"No email set" }}</span>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                    href="{% url 'cleaner_detail' request.user.cleaner_profile.cleaner.id %}">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="https://support.cleaningbizai.com/"
+                                    rel="noopener noreferrer" target="_blank">
+                                    <i class="fas fa-robot me-2 text-primary"></i>
+                                    Help Center
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </a>
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i>Get Started
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -1099,7 +1155,8 @@
         {% if user.is_authenticated and user.business_set.exists %}
         <div class="text-end mb-2">
             <small class="text-muted">
-                <i class="fas fa-clock me-1"></i>Current time: <span id="current-business-time">{{ current_time|date:"F j, Y, g:i a" }}</span>
+                <i class="fas fa-clock me-1"></i>Current time: <span id="current-business-time">{{ current_time|date:"F
+                    j, Y, g:i a" }}</span>
                 <span class="ms-1">({{ user_timezone }})</span>
             </small>
         </div>
@@ -1112,7 +1169,7 @@
                     timeElement.textContent = moment().tz(businessTimezone).format('MMMM D, YYYY, h:mm A');
                 }
             }
-            
+
             // Update immediately and then every minute
             updateBusinessTime();
             setInterval(updateBusinessTime, 60000);
@@ -1121,30 +1178,33 @@
         <!-- Toast container for messages -->
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
             {% if messages %}
-                {% for message in messages %}
-                    {% with message_type=message.tags %}
-                        <div class="toast align-items-center text-white bg-{{ message_type }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex">
-                                <div class="toast-body">
-                                    <i class="fas {% if message_type == 'success' %}fa-check-circle{% elif message_type == 'danger' or message_type == 'error' %}fa-exclamation-circle{% elif message_type == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-                                    {{ message }}
-                                </div>
-                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                            </div>
-                        </div>
-                    {% endwith %}
-                {% endfor %}
+            {% for message in messages %}
+            {% with message_type=message.tags %}
+            <div class="toast align-items-center text-white bg-{{ message_type }} border-0" role="alert"
+                aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i
+                            class="fas {% if message_type == 'success' %}fa-check-circle{% elif message_type == 'danger' or message_type == 'error' %}fa-exclamation-circle{% elif message_type == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                        aria-label="Close"></button>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
             {% endif %}
         </div>
-        
-      
-            {% block content %}
-            {% endblock %}
-        
+
+
+        {% block content %}
+        {% endblock %}
+
     </div>
 
     {% block chats %}{% endblock %}
-    
+
 
 
     <!-- Footer -->
@@ -1173,16 +1233,16 @@
 
     <!-- Bootstrap Toast Initialization -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize all toasts
             var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-            var toastList = toastElList.map(function(toastEl) {
+            var toastList = toastElList.map(function (toastEl) {
                 // Configure toast options
                 var toast = new bootstrap.Toast(toastEl, {
                     autohide: true,
                     delay: 5000 // Auto-hide after 5 seconds
                 });
-                
+
                 // Show the toast
                 toast.show();
                 return toast;
@@ -1190,22 +1250,25 @@
 
             // Fix for active dropdown toggle
             // This ensures the dropdown menu stays accessible when the nav item is active
-            document.querySelectorAll('.dropdown-toggle.active').forEach(function(element) {
+            document.querySelectorAll('.dropdown-toggle.active').forEach(function (element) {
                 new bootstrap.Dropdown(element);
             });
-            
+
             var s = document.createElement("script");
             s.type = "text/javascript";
             s.src = "https://app.webvizio.com/js/webvizio.js";
             s.id = "webvizio_script";
             document.head.append(s);
-      
+
         });
     </script>
-    <script async data-survey-token="UVxbxqVDlBAPYurIF4+qaQyfLMgaTxNCDz4xw50NTDeq/J3uWE1momU1mpPSDbCYlPZsNLAbocVZFsMVhTN8Rw==" data-subdomain="5c8e-prod-micro" src="https://assets.surveysensum.com/in-app/ss-widget.min.js"></script>
+    <script async
+        data-survey-token="UVxbxqVDlBAPYurIF4+qaQyfLMgaTxNCDz4xw50NTDeq/J3uWE1momU1mpPSDbCYlPZsNLAbocVZFsMVhTN8Rw=="
+        data-subdomain="5c8e-prod-micro" src="https://assets.surveysensum.com/in-app/ss-widget.min.js"></script>
 
     {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
-    
+
 </body>
+
 </html>
