@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CEO Cleaners - Sign Up</title>
+    <title>CleaningBiz AI - Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Add Swiper CSS -->
@@ -218,8 +218,11 @@
                                     <i class="fas fa-lock text-gray-400"></i>
                                 </div>
                                 <input id="password1" name="password1" type="password" required
-                                    class="pl-10 appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition duration-150 ease-in-out sm:text-sm"
+                                    class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition duration-150 ease-in-out sm:text-sm"
                                     placeholder="Create a password">
+                                <button type="button" onclick="togglePassword('password1', 'togglePassword1Icon')" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <i id="togglePassword1Icon" class="fas fa-eye text-gray-400 hover:text-gray-600 cursor-pointer"></i>
+                                </button>
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
                         </div>
@@ -231,8 +234,11 @@
                                     <i class="fas fa-lock text-gray-400"></i>
                                 </div>
                                 <input id="password2" name="password2" type="password" required
-                                    class="pl-10 appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition duration-150 ease-in-out sm:text-sm"
+                                    class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition duration-150 ease-in-out sm:text-sm"
                                     placeholder="Confirm your password">
+                                <button type="button" onclick="togglePassword('password2', 'togglePassword2Icon')" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <i id="togglePassword2Icon" class="fas fa-eye text-gray-400 hover:text-gray-600 cursor-pointer"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -344,6 +350,22 @@
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     {% endif %}
     <script>
+        // Password toggle function
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(iconId);
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
         // Function to enable submit button when reCAPTCHA is verified
         function enableSubmitButton() {
             if (document.getElementById('recaptchaError')) {

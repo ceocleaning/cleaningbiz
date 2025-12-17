@@ -15,6 +15,7 @@ urlpatterns = [
     path('register-business/', views.register_business, name='register_business'),
     path('business/edit/', views.edit_business, name='edit_business'),
     path('business/pricing/', views.profile_pricing_page, name='profile_pricing'),
+    path('business/pricing/export-pdf/', views.export_pricing_pdf, name='export_pricing_pdf'),
     path('business/settings/edit/', views.edit_business_settings, name='edit_business_settings'),
 
     path('custom-addon/', views.custom_addons_page, name='custom_addons'),

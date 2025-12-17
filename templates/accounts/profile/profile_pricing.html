@@ -9,6 +9,10 @@
 
 {% block header_actions %}
 <div id="viewModeActions">
+    <a href="{% url 'accounts:export_pricing_pdf' %}" class="btn btn-outline-primary d-flex align-items-center me-2">
+        <i class="fas fa-file-pdf me-2"></i>
+        <span>Export PDF</span>
+    </a>
     <button type="button" id="toggleEditMode" class="btn btn-primary d-flex align-items-center">
         <i class="fas fa-pen-to-square me-2"></i>
         <span>Edit Pricing</span>
@@ -271,7 +275,7 @@
     
     <div class="col-12 mb-2">
         <h6 class="section-title">
-            <i class="fas fa-calculator"></i> Service Multipliers
+            <i class="fas fa-calculator"></i> SqFt Multipliers
         </h6>
     </div>
     

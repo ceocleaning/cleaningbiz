@@ -371,6 +371,35 @@ def profile_pricing_page(request):
 
 
 @login_required
+def export_pricing_pdf(request):
+    """Export business pricing configuration as PDF"""
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.error(request, 'No business found.')
+        return redirect('accounts:register_business')
+    
+    # Check if the business is approved
+    if not business.isApproved:
+        return redirect('accounts:approval_pending')
+    
+    # Import the PDF generation utility
+    from .pdf_utils import generate_pricing_pdf
+    
+    # Generate and return the PDF
+    try:
+        pdf_response = generate_pricing_pdf(business)
+        if pdf_response:
+            return pdf_response
+        else:
+            messages.error(request, 'Error generating PDF. Please ensure your business settings are configured.')
+            return redirect('accounts:profile_pricing')
+    except Exception as e:
+        messages.error(request, f'Error generating PDF: {str(e)}')
+        return redirect('accounts:profile_pricing')
+
+
+@login_required
 def edit_business_settings(request):
     business = request.user.business_set.first()
     if not business:

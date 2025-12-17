@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
-
+from leadsAutomation.utils import send_email
 from .models import PlatformSettings, SupportTicket, TicketComment
 from accounts.models import User, Business
 
@@ -65,6 +65,14 @@ def submit_ticket(request):
             ticket.screenshot = request.FILES['screenshot']
         
         ticket.save()
+
+        send_email(
+            from_email="CleaningBiz AI <noreply@cleaningbizai.com>",
+            to_email=request.user.email,
+            subject="New Support Ticket Submitted",
+            text_content=f"A new support ticket has been submitted by {request.user.username}.  Ticket: {ticket.id}  Description: {description}"
+        )
+
         messages.success(request, 'Your support ticket has been submitted successfully. We will get back to you soon.')
         return redirect('saas:my_tickets')
     
