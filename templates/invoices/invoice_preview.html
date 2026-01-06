@@ -320,6 +320,8 @@
         display: none;
     }
 </style>
+
+<script></script>
 {% endblock %}
 
 {% block content %}
@@ -1372,7 +1374,7 @@
 </script>
 
 {% if booking.business.defaultPaymentMethod == 'square' %}
-<script src="https://js.squareup.com/v2/paymentform"></script>
+<script src="https://web.squarecdn.com/v1/square.js"></script>
     <script>
         // Square Payment JS
         document.addEventListener('DOMContentLoaded', function() {
@@ -1424,6 +1426,11 @@
         const square_env = '{{ settings.SQUARE_ENVIRONMENT }}';
         const square_location_id = '{{ settings.SQUARE_LOCATION_ID }}';
         let payments;
+
+        console.log(appId);
+        console.log(square_location_id);
+        
+        
 
         async function initializeCard(payments) {
             const card = await payments.card();
