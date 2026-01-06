@@ -1500,7 +1500,28 @@
         }
 
         window.addEventListener('load', async function () {
-            payments = window.Square.payments(appId);
+            // Check if Square SDK is loaded
+            if (typeof window.Square === 'undefined') {
+                console.error('Square SDK not loaded');
+                displayPaymentResults({ error: 'Payment system not loaded. Please refresh the page and try again.' });
+                return;
+            }
+            
+            // Check if appId is valid
+            if (!appId) {
+                console.error('Square App ID is not configured');
+                displayPaymentResults({ error: 'Payment system not configured properly. Please contact support.' });
+                return;
+            }
+            
+            try {
+                payments = window.Square.payments(appId);
+            } catch (e) {
+                console.error('Failed to initialize Square payments:', e);
+                displayPaymentResults({ error: 'Failed to initialize payment system. Please try again.' });
+                return;
+            }
+            
             let card;
             try {
                 card = await initializeCard(payments);
