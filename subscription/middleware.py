@@ -89,7 +89,7 @@ class SubscriptionRequiredMiddleware:
                 subscription = business.active_subscription()
                 
                 # If no active subscription or subscription is not active, redirect to subscription page
-                if not subscription or not subscription.is_subscription_active():
+                if not subscription:
                     messages.warning(request, 'You need an active subscription to access this page.')
                     return redirect('subscription:subscription_management')
             else:

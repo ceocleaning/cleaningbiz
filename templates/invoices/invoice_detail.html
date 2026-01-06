@@ -546,7 +546,7 @@
                        class="btn btn-primary mb-2 mb-md-0 px-3 px-md-4"
                        data-bs-toggle="tooltip"
                        data-bs-title="Preview invoice in printable format">
-                        <i class="fas fa-eye me-2"></i>Preview Invoice
+                        <i class="fas fa-eye me-2"></i>Invoice Link
                     </a>
                     {% if not request.user.customer %}
                     <a href="{% url 'bookings:booking_detail' invoice.booking.bookingId %}" 

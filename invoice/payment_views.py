@@ -25,8 +25,8 @@ def process_payment(request):
         invoice_id = data.get('invoiceId')
         auto_complete = data.get('autoComplete', True)
         payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
-        amount = float(data.get('amount', 0))  # Amount for partial payment
-        tip_amount = float(data.get('tipAmount', 0))  # Tip amount
+        amount = Decimal(str(data.get('amount', 0)))  # Amount for partial payment
+        tip_amount = Decimal(str(data.get('tipAmount', 0)))  # Tip amount
 
         # Get the invoice
         invoice = get_object_or_404(Invoice, invoiceId=invoice_id)
@@ -178,7 +178,7 @@ def process_manual_payment(request):
         data = json.loads(request.body)
         invoice_id = data.get('invoiceId')
         payment_method = data.get('paymentMethod')
-        amount = float(data.get('amount', 0))
+        amount = Decimal(str(data.get('amount', 0)))
         transaction_id = data.get('transactionId')
         square_payment_id = data.get('squarePaymentId')
 
@@ -292,8 +292,8 @@ def process_stripe_payment(request):
         invoice_id = data.get('invoice_id')
         auto_complete = data.get('auto_complete', True)
         payment_type = data.get('payment_type', 'full')  # 'full' or 'partial'
-        amount = Decimal(data.get('amount', 0))  # Amount for partial payment
-        tip_amount = Decimal(data.get('tip_amount', 0))  # Tip amount
+        amount = Decimal(str(data.get('amount', 0)))  # Amount for partial payment
+        tip_amount = Decimal(str(data.get('tip_amount', 0)))  # Tip amount
 
         print("Tip amount:", tip_amount)
         # Get the invoice
@@ -611,7 +611,7 @@ def process_paypal_payment(request):
         invoice_id = data.get('invoiceId')
         manual_verification = data.get('manualVerification', False)
         payment_type = data.get('paymentType', 'full')  # 'full' or 'partial'
-        tip_amount = float(data.get('tipAmount', 0))  # Tip amount
+        tip_amount = Decimal(str(data.get('tipAmount', 0)))  # Tip amount
         print(f"PayPal payment request received - Order ID: {order_id}, Invoice ID: {invoice_id}, Manual: {manual_verification}, Type: {payment_type}")
 
         # Get the invoice
@@ -716,7 +716,7 @@ def process_paypal_payment(request):
         # Verify payment amount
         try:
             payment_units = order_data['purchase_units'][0]
-            payment_amount = float(payment_units['amount']['value'])
+            payment_amount = Decimal(str(payment_units['amount']['value']))
             payment_currency = payment_units['amount']['currency_code']
             
             # Determine expected amount based on payment type
@@ -754,7 +754,7 @@ def process_paypal_payment(request):
                     expected_amount_with_tip = expected_amount + tip_amount
                 
                 # Allow for small rounding differences (within 1 cent)
-                if abs(payment_amount - expected_amount_with_tip) > 0.01:
+                if abs(payment_amount - expected_amount_with_tip) > Decimal('0.01'):
                     print(f"Payment amount mismatch - Expected: ${expected_amount_with_tip} (including ${tip_amount} tip), Received: ${payment_amount}")
                     return JsonResponse({
                         'success': False,

@@ -305,7 +305,7 @@ class BusinessSubscription(models.Model):
             return False
         if self.status == 'past_due':
             return False
-        if self.end_date and self.end_date < timezone.now():
+        if self.end_date and self.end_date + timedelta(days=1) < timezone.now():
             return False
         return True
 

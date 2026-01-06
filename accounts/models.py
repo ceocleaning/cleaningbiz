@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import pytz
+from datetime import timedelta
 
 from django.urls import reverse
 
@@ -95,7 +96,7 @@ class Business(models.Model):
                 business=self,
                 is_active=True,
                 status__in=['active', 'cancelled'],
-                end_date__gte=timezone.now()
+                end_date__gte=timezone.now() - timedelta(days=1)
             ).first()
 
             if subscription and subscription.is_subscription_active():
