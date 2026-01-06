@@ -104,7 +104,6 @@ def process_payment(request):
             # If tip amount is provided, update the booking using TipService
             booking = invoice.booking
             if tip_amount > 0:
-                from decimal import Decimal
                 from .services import TipService
                 
                 # Convert to Decimal for precision
@@ -284,7 +283,6 @@ def process_manual_payment(request):
 @require_http_methods(["POST"])
 def process_stripe_payment(request):
     """Process a Stripe payment for an invoice with option to authorize only or make partial payment"""
-    from decimal import Decimal
     try:
         # Parse the request body
         data = json.loads(request.body)
@@ -389,7 +387,6 @@ def process_stripe_payment(request):
                     # If tip amount is provided, update the booking using TipService
                     booking = invoice.booking
                     if tip_amount > 0:
-                        from decimal import Decimal
                         from .services import TipService
                         
                         # Convert to Decimal for precision
@@ -474,7 +471,6 @@ def process_stripe_payment(request):
                     # If tip amount is provided, update the booking using TipService
                     booking = invoice.booking
                     if tip_amount > 0 and not invoice.is_partially_paid():
-                        from decimal import Decimal
                         from .services import TipService
                         
                         # Convert to Decimal for precision
@@ -774,7 +770,6 @@ def process_paypal_payment(request):
         booking = invoice.booking
         if tip_amount > 0:
             print(f"Adding tip amount of ${tip_amount} to booking using TipService")
-            from decimal import Decimal
             from .services import TipService
             
             # Convert to Decimal for precision
