@@ -1372,12 +1372,7 @@
 </script>
 
 {% if booking.business.defaultPaymentMethod == 'square' %}
-    {% if settings.SQUARE_ENVIRONMENT == 'sandbox' %}
-    <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
-    {% else %}
-
-    <script src="https://js.squareup.com/v2/paymentform"></script>
-    {% endif %}
+<script src="https://js.squareup.com/v2/paymentform"></script>
     <script>
         // Square Payment JS
         document.addEventListener('DOMContentLoaded', function() {
@@ -1501,7 +1496,7 @@
 
         window.addEventListener('load', async function () {
             // Check if Square SDK is loaded
-            if (typeof window.Square === 'undefined') {
+            if (!window.Square) {
                 console.error('Square SDK not loaded');
                 displayPaymentResults({ error: 'Payment system not loaded. Please refresh the page and try again.' });
                 return;
@@ -1515,7 +1510,12 @@
             }
             
             try {
-                payments = window.Square.payments(appId);
+                if(square_location_id){
+                    payments = window.Square.payments(appId, square_location_id);
+                } else{
+                    payments = window.Square.payments(appId);
+                }
+                
             } catch (e) {
                 console.error('Failed to initialize Square payments:', e);
                 displayPaymentResults({ error: 'Failed to initialize payment system. Please try again.' });
