@@ -40,15 +40,51 @@ def thumbtack_connect(request):
     
     # Define the scopes needed for your application
     # Thumbtack-specific scopes for accessing business data and leads
-    scopes = [
-    ]
+     scopes = [
+        "availability",
+        "bookings",
+        'openid', 'profile',
+        "demand::businesses/media.read",
+        "demand::businesses/reviews.read",
+        "demand::businesses/search.read",
+        "demand::categories.read",
+        "demand::categories/request-form.read",
+        "demand::keywords.read",
+        "demand::messages.read",
+        "demand::messages.write",
+        "demand::negotiations.read",
+        "demand::orders.read",
+        "demand::orders.write",
+        "demand::orders/availability.read",
+        "demand::requests.write",
+        "demand::users.disconnect",
+        "demand::users.read",
+        "demand::users.write",
+        "demand::webhooks.read",
+        "demand::webhooks.write",
+        "messages",
+        "offline_access",
+        "supply::associate-phone-numbers.read",
+        "supply::associate-phone-numbers.write",
+        "supply::businesses.list",
+        "supply::businesses/associate-phone-numbers.read",
+        "supply::businesses/associate-phone-numbers.write",
+        "supply::messages.read",
+        "supply::messages.write",
+        "supply::negotiations.read",
+        "supply::users.disconnect",
+        "supply::users.read",
+        "supply::webhooks.read",
+        "supply::webhooks.write",
+        "targeting"
+]
     
     # Build the authorization URL
     auth_url = f"{THUMBTACK_AUTH_URL}?" + \
                f"response_type=code&" + \
                f"client_id={THUMBTACK_CLIENT_ID}&" + \
                f"redirect_uri={THUMBTACK_REDIRECT_URI_PROD}&" + \
-               f"scope={'+'.join(scopes)}&" + \
+               f"scope={'+'{.join(scopes)}}&" + \
                f"state={state}&" + \
                f"audience={THUMBTACK_AUDIENCE}"
     
@@ -211,7 +247,7 @@ def create_thumbtack_webhook(access_token, business):
     print("=" * 80)
     print(f"Business: {business.businessName}")
     print(f"Webhook URL: {webhook_url}")
-    print(f"Payload: {json.dumps(payload, indent=2)}")
+    print(f"Payload: {json.dumps(payload)}")
     print("=" * 80)
     
     # Set up headers with the access token
@@ -245,7 +281,7 @@ def create_thumbtack_webhook(access_token, business):
             return response_data
         else:
             print("=" * 80)
-            print("✗ WEBHOOK CREATION FAILED")
+            print("WEBHOOK CREATION FAILED")
             print("=" * 80)
             print(f"Status Code: {response.status_code}")
             print(f"Error Response: {response.text}")
@@ -254,7 +290,7 @@ def create_thumbtack_webhook(access_token, business):
             
     except Exception as e:
         print("=" * 80)
-        print("✗ EXCEPTION OCCURRED WHILE CREATING WEBHOOK")
+        print("EXCEPTION OCCURRED WHILE CREATING WEBHOOK")
         print("=" * 80)
         print(f"Exception Type: {type(e).__name__}")
         print(f"Exception Message: {str(e)}")
