@@ -320,6 +320,16 @@ class ThumbtackProfile(models.Model):
     access_token = models.CharField(max_length=2000, null=True, blank=True)
     refresh_token = models.CharField(max_length=2000, null=True, blank=True)
 
+    # Cached data from Thumbtack API
+    cached_user_info = models.JSONField(null=True, blank=True, help_text="Cached user information from Thumbtack")
+    cached_business_info = models.JSONField(null=True, blank=True, help_text="Cached business information from Thumbtack")
+    cached_webhooks = models.JSONField(null=True, blank=True, help_text="Cached webhooks from Thumbtack")
+    
+    # Last refresh timestamps
+    user_info_last_refresh = models.DateTimeField(null=True, blank=True)
+    business_info_last_refresh = models.DateTimeField(null=True, blank=True)
+    webhooks_last_refresh = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(null=True, blank=True)
     

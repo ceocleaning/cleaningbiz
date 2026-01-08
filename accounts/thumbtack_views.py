@@ -379,6 +379,7 @@ def get_thumbtack_user_info(access_token):
         
         # Check if the request was successful
         if response.status_code == 200:
+            print("User info fetched successfully: {}".format(response.text))
             return response.json()
         else:
             print(f"Error fetching user info: {response.status_code} - {response.text}")
@@ -418,76 +419,379 @@ def get_thumbtack_business_info(access_token):
         return None
 
 
+def get_thumbtack_webhooks(access_token, business_id):
+    """
+    Fetch all webhooks for a business from Thumbtack API
+    """
+    webhooks_url = f'https://api.thumbtack.com/api/v4/businesses/{business_id}/webhooks'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    try:
+        response = requests.get(webhooks_url, headers=headers)
+        
+        if response.status_code == 200:
+            print(f"Webhooks: {response.text}")
+            return response.json()
+        else:
+            print(f"Error fetching webhooks: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"Exception fetching webhooks: {str(e)}")
+        return None
+
+
 @login_required
 def thumbtack_profile(request):
     """
-    Display the user's Thumbtack profile information
+    Display the user's Thumbtack profile information using cached data
     """
-    from .models import ThumbtackProfile
+    from .models import ThumbtackProfile, ApiCredential
     
     # Get the user's business and Thumbtack profile
     business = request.user.business_set.first()
     thumbtack_profile = None
     thumbtack_user_info = None
-    thumbtack_business_info = None
-    thumbtack_business_name = None
-    thumbtack_business_image = None
-    thumbtack_stats = {
-        'leads': 0,
-        'bookings': 0,
-        'conversion_rate': '0%'
-    }
+    thumbtack_businesses = []
+    thumbtack_webhooks = []
     
     if business:
         thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
         
-        # If the user has a Thumbtack profile, fetch additional information
+        # If the user has a Thumbtack profile, use cached data
         if thumbtack_profile and thumbtack_profile.access_token:
-            # Fetch user information from Thumbtack API
-            thumbtack_user_info = get_thumbtack_user_info(thumbtack_profile.access_token)
+            # Use cached data instead of making API calls
+            thumbtack_user_info = thumbtack_profile.cached_user_info
             
-            # Fetch business information from Thumbtack API
-            thumbtack_business_info = get_thumbtack_business_info(thumbtack_profile.access_token)
+            if thumbtack_profile.cached_business_info:
+                thumbtack_businesses = thumbtack_profile.cached_business_info.get('data', [])
             
-            # Use the fetched information or fallback to placeholder data
-            if thumbtack_user_info:
-                # Extract user information
-                user_id = thumbtack_user_info.get('userID')
-                email = thumbtack_user_info.get('email')
-                first_name = thumbtack_user_info.get('firstName')
-                last_name = thumbtack_user_info.get('lastName')
-                phone_number = thumbtack_user_info.get('phoneNumber')
-            else:
-                # Use placeholder data if API call failed
-                user_id = 'N/A'
-                email = request.user.email
-                first_name = request.user.first_name
-                last_name = request.user.last_name
-                phone_number = 'N/A'
+            if thumbtack_profile.cached_webhooks:
+                thumbtack_webhooks = thumbtack_profile.cached_webhooks.get('data', [])
             
-            # Set business name from API or fallback to local data
-            thumbtack_business_name = business.businessName
-
+            # If no cached data exists, fetch it initially
+            if not thumbtack_user_info or not thumbtack_businesses or not thumbtack_webhooks:
+                # Fetch and cache data on first load
+                _refresh_all_thumbtack_data(thumbtack_profile)
+                
+                # Reload the profile to get cached data
+                thumbtack_profile.refresh_from_db()
+                thumbtack_user_info = thumbtack_profile.cached_user_info
+                
+                if thumbtack_profile.cached_business_info:
+                    thumbtack_businesses = thumbtack_profile.cached_business_info.get('data', [])
+                
+                if thumbtack_profile.cached_webhooks:
+                    thumbtack_webhooks = thumbtack_profile.cached_webhooks.get('data', [])
     
-    # Initialize user information variables with default values
-    user_id = 'N/A'
-    email = request.user.email
-    first_name = request.user.first_name
-    last_name = request.user.last_name
-    phone_number = 'N/A'
+    # Get webhook URL for this business
+    webhook_url = None
+    if business:
+        api_credential = ApiCredential.objects.filter(business=business).first()
+        if api_credential:
+            webhook_url = api_credential.getThumbtackUrl()
     
     # Return the profile template with context data
     return render(request, 'accounts/thumbtack/profile.html', {
         'thumbtack_profile': thumbtack_profile,
-        'thumbtack_business_name': thumbtack_business_name,
-        'thumbtack_business_image': thumbtack_business_image,
-        # Pass user information to the template
-        'user_id': user_id,
-        'email': email,
-        'first_name': first_name,
-        'last_name': last_name,
-        'phone_number': phone_number
+        'thumbtack_user_info': thumbtack_user_info,
+        'thumbtack_businesses': thumbtack_businesses,
+        'thumbtack_webhooks': thumbtack_webhooks,
+        'webhook_url': webhook_url,
     })
+
+
+def _refresh_all_thumbtack_data(thumbtack_profile):
+    """
+    Helper function to refresh all Thumbtack data and cache it
+    """
+    from django.utils import timezone
+    
+    # Fetch user info
+    user_response = get_thumbtack_user_info(thumbtack_profile.access_token)
+    if user_response:
+        thumbtack_profile.cached_user_info = user_response
+        thumbtack_profile.user_info_last_refresh = timezone.now()
+    
+    # Fetch business info
+    business_response = get_thumbtack_business_info(thumbtack_profile.access_token)
+    if business_response:
+        thumbtack_profile.cached_business_info = business_response
+        thumbtack_profile.business_info_last_refresh = timezone.now()
+        
+        # If we have businesses, fetch webhooks for the first one
+        if business_response.get('data'):
+            first_business_id = business_response['data'][0].get('businessID')
+            webhooks_response = get_thumbtack_webhooks(
+                thumbtack_profile.access_token, 
+                first_business_id
+            )
+            if webhooks_response:
+                thumbtack_profile.cached_webhooks = webhooks_response
+                thumbtack_profile.webhooks_last_refresh = timezone.now()
+    
+    thumbtack_profile.save()
+
+
+
+@login_required
+def thumbtack_refresh_user_info(request):
+    """
+    Refresh user information from Thumbtack API
+    """
+    from .models import ThumbtackProfile
+    from django.utils import timezone
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=400)
+    
+    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+    if not thumbtack_profile or not thumbtack_profile.access_token:
+        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
+    
+    # Fetch user info from API
+    user_response = get_thumbtack_user_info(thumbtack_profile.access_token)
+    if user_response:
+        thumbtack_profile.cached_user_info = user_response
+        thumbtack_profile.user_info_last_refresh = timezone.now()
+        thumbtack_profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'User information refreshed successfully',
+            'data': user_response
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to fetch user information'
+        }, status=500)
+
+
+@login_required
+def thumbtack_refresh_business_info(request):
+    """
+    Refresh business information from Thumbtack API
+    """
+    from .models import ThumbtackProfile
+    from django.utils import timezone
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=400)
+    
+    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+    if not thumbtack_profile or not thumbtack_profile.access_token:
+        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
+    
+    # Fetch business info from API
+    business_response = get_thumbtack_business_info(thumbtack_profile.access_token)
+    if business_response:
+        thumbtack_profile.cached_business_info = business_response
+        thumbtack_profile.business_info_last_refresh = timezone.now()
+        thumbtack_profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Business information refreshed successfully',
+            'data': business_response
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to fetch business information'
+        }, status=500)
+
+
+@login_required
+def thumbtack_refresh_webhooks(request):
+    """
+    Refresh webhooks from Thumbtack API
+    """
+    from .models import ThumbtackProfile
+    from django.utils import timezone
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=400)
+    
+    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+    if not thumbtack_profile or not thumbtack_profile.access_token:
+        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
+    
+    # Get business ID from cached data
+    if not thumbtack_profile.cached_business_info:
+        return JsonResponse({
+            'success': False,
+            'error': 'No business information cached. Please refresh business info first.'
+        }, status=400)
+    
+    business_data = thumbtack_profile.cached_business_info.get('data', [])
+    if not business_data:
+        return JsonResponse({
+            'success': False,
+            'error': 'No business data available'
+        }, status=400)
+    
+    business_id = business_data[0].get('businessID')
+    
+    # Fetch webhooks from API
+    webhooks_response = get_thumbtack_webhooks(thumbtack_profile.access_token, business_id)
+    if webhooks_response:
+        thumbtack_profile.cached_webhooks = webhooks_response
+        thumbtack_profile.webhooks_last_refresh = timezone.now()
+        thumbtack_profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Webhooks refreshed successfully',
+            'data': webhooks_response
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to fetch webhooks'
+        }, status=500)
+
+
+
+@login_required
+def thumbtack_update_webhook(request):
+    """
+    Update a Thumbtack webhook URL
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    from .models import ThumbtackProfile, ApiCredential
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=400)
+    
+    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+    if not thumbtack_profile or not thumbtack_profile.access_token:
+        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
+    
+    # Get parameters from request
+    business_id = request.POST.get('business_id')
+    webhook_id = request.POST.get('webhook_id')
+    
+    if not business_id or not webhook_id:
+        return JsonResponse({'error': 'Missing business_id or webhook_id'}, status=400)
+    
+    # Get the new webhook URL
+    api_credential = ApiCredential.objects.filter(business=business).first()
+    if not api_credential:
+        return JsonResponse({'error': 'No API credentials found'}, status=400)
+    
+    webhook_url = api_credential.getThumbtackUrl()
+    
+    # Update webhook via Thumbtack API
+    update_url = f'https://api.thumbtack.com/api/v4/businesses/{business_id}/webhooks/{webhook_id}'
+    headers = {
+        'Authorization': f'Bearer {thumbtack_profile.access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    payload = {
+        "webhookURL": webhook_url,
+        "eventTypes": ["MessageCreatedV4"],
+        "enabled": True
+    }
+    
+    try:
+        response = requests.put(update_url, headers=headers, json=payload)
+        
+        if response.status_code == 200:
+            return JsonResponse({
+                'success': True,
+                'message': 'Webhook updated successfully',
+                'data': response.json()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to update webhook: {response.text}'
+            }, status=response.status_code)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def thumbtack_add_webhook(request):
+    """
+    Add a new Thumbtack webhook
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    from .models import ThumbtackProfile, ApiCredential
+    
+    business = request.user.business_set.first()
+    if not business:
+        return JsonResponse({'error': 'No business found'}, status=400)
+    
+    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+    if not thumbtack_profile or not thumbtack_profile.access_token:
+        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
+    
+    # Get business_id from request
+    business_id = request.POST.get('business_id')
+    
+    if not business_id:
+        return JsonResponse({'error': 'Missing business_id'}, status=400)
+    
+    # Get the webhook URL
+    api_credential = ApiCredential.objects.filter(business=business).first()
+    if not api_credential:
+        return JsonResponse({'error': 'No API credentials found'}, status=400)
+    
+    webhook_url = api_credential.getThumbtackUrl()
+    
+    # Create webhook via Thumbtack API
+    create_url = f'https://api.thumbtack.com/api/v4/businesses/{business_id}/webhooks'
+    headers = {
+        'Authorization': f'Bearer {thumbtack_profile.access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    payload = {
+        "webhookURL": webhook_url,
+        "eventTypes": ["MessageCreatedV4"],
+        "enabled": True
+    }
+    
+    try:
+        response = requests.post(create_url, headers=headers, json=payload)
+        
+        if response.status_code == 201:
+            return JsonResponse({
+                'success': True,
+                'message': 'Webhook created successfully',
+                'data': response.json()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to create webhook: {response.text}'
+            }, status=response.status_code)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 @login_required
@@ -521,30 +825,6 @@ def thumbtack_dashboard(request):
             
             # Placeholder leads - in a real implementation, fetch from Thumbtack API
             recent_leads = [
-                {
-                    'id': '1',
-                    'customer_name': 'John Smith',
-                    'service_type': 'House Cleaning',
-                    'location': 'San Francisco, CA',
-                    'created_at': '2025-06-28',
-                    'status': 'new'
-                },
-                {
-                    'id': '2',
-                    'customer_name': 'Emily Johnson',
-                    'service_type': 'Office Cleaning',
-                    'location': 'Oakland, CA',
-                    'created_at': '2025-06-27',
-                    'status': 'contacted'
-                },
-                {
-                    'id': '3',
-                    'customer_name': 'Michael Brown',
-                    'service_type': 'Deep Cleaning',
-                    'location': 'San Jose, CA',
-                    'created_at': '2025-06-25',
-                    'status': 'booked'
-                }
             ]
             
             # Placeholder stats
