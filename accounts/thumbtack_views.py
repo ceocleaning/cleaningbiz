@@ -240,7 +240,7 @@ def get_thumbtack_client_credentials_token():
     scopes = [
         "availability",
         "bookings",
-        'openid', 'profile'
+        'openid', 'profile',
         "demand::businesses/media.read",
         "demand::businesses/reviews.read",
         "demand::businesses/search.read",
@@ -289,6 +289,7 @@ def get_thumbtack_client_credentials_token():
         response = requests.post(THUMBTACK_TOKEN_URL, headers=headers, data=data)
         return response.json()
     except Exception as e:
+        print(e)
         return {
             'error': 'request_failed',
             'error_description': str(e)
