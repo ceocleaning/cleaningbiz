@@ -189,43 +189,16 @@
                         </div>
                     </div>
 
-                    <!-- Quick Actions -->
-                    <div class="row mb-4">
-                        <div class="col-md-4 mb-3">
-                            <a href="{% url 'accounts:thumbtack_dashboard' %}" class="btn btn-outline-primary btn-block action-btn" style="height: 100%;">
-                                <i class="fas fa-chart-line mr-2"></i>
-                                <div>
-                                    <strong>Dashboard</strong>
-                                    <small class="d-block text-muted">View leads & stats</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{% url 'accounts:thumbtack_webhooks_page' %}" class="btn btn-outline-info btn-block action-btn" style="height: 100%;">
-                                <i class="fas fa-bell mr-2"></i>
-                                <div>
-                                    <strong>Webhooks</strong>
-                                    <small class="d-block text-muted">Manage notifications</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="https://pro.thumbtack.com/" target="_blank" class="btn btn-outline-success btn-block action-btn" style="height: 100%;">
-                                <i class="fas fa-external-link-alt mr-2"></i>
-                                <div>
-                                    <strong>Thumbtack Pro</strong>
-                                    <small class="d-block text-muted">Open in new tab</small>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Disconnect Action -->
-                    <div class="d-flex justify-content-center pt-3 border-top">
+                    <!-- Actions -->
+                    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center pt-3 border-top">
+                        <a href="https://pro.thumbtack.com/" target="_blank" class="btn btn-primary action-btn">
+                            <i class="fas fa-external-link-alt mr-2"></i>
+                            Open Thumbtack Pro
+                        </a>
                         <a href="{% url 'accounts:thumbtack_disconnect' %}" class="btn disconnect-btn action-btn"
                             onclick="return confirm('Are you sure you want to disconnect your Thumbtack account? This will stop syncing leads.')">
                             <i class="fas fa-unlink mr-2"></i>
-                            Disconnect Account
+                            Disconnect
                         </a>
                     </div>
                 </div>

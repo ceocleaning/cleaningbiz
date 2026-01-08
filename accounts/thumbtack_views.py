@@ -52,6 +52,9 @@ def thumbtack_connect(request):
                f"state={state}&" + \
                f"audience={THUMBTACK_AUDIENCE}"
     
+
+    print(f"Auth URL: {auth_url}")
+    
     # Redirect the user to Thumbtack's authorization page
     return HttpResponseRedirect(auth_url)
 
@@ -173,6 +176,92 @@ def refresh_thumbtack_token(refresh_token):
         }
 
 
+def create_thumbtack_webhook(access_token, business):
+    """
+    Create a webhook for a User automatically when OAuth is completed
+    This will subscribe to MessageCreatedV4 events
+    """
+    from .models import ApiCredential
+    
+    # Get or create API credentials to get the webhook URL
+    api_credential = ApiCredential.objects.get(
+        business=business
+    )
+    
+    # Get the webhook URL (dummy link for testing)
+    webhook_url = api_credential.getThumbtackUrl()
+    
+    # Thumbtack webhook API endpoint
+    webhook_api_url = 'https://api.thumbtack.com/v4/users/webhooks'
+    
+    # Prepare the webhook payload
+    payload = {
+        "webhookURL": webhook_url,
+        "eventTypes": ["MessageCreatedV4"],
+        "enabled": True,
+        "auth": {
+            "username": "webhook_user",
+            "password": secrets.token_urlsafe(32)  # Generate a secure password
+        }
+    }
+    
+    # Print the payload for debugging
+    print("=" * 80)
+    print("CREATING THUMBTACK WEBHOOK")
+    print("=" * 80)
+    print(f"Business: {business.businessName}")
+    print(f"Webhook URL: {webhook_url}")
+    print(f"Payload: {json.dumps(payload, indent=2)}")
+    print("=" * 80)
+    
+    # Set up headers with the access token
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    try:
+        # Make the request to create the webhook
+        response = requests.post(webhook_api_url, headers=headers, json=payload)
+        
+        # Print response details
+        print(f"Response Status Code: {response.status_code}")
+        print(f"Response Body: {response.text}")
+        
+        # Check if the request was successful
+        if response.status_code == 201:
+            response_data = response.json()
+            print("=" * 80)
+            print("✓ WEBHOOK CREATED SUCCESSFULLY")
+            print("=" * 80)
+            print(f"Webhook ID: {response_data.get('webhookID')}")
+            print(f"Webhook URL: {response_data.get('webhookURL')}")
+            print(f"Enabled: {response_data.get('enabled')}")
+            print(f"Auth Type: {response_data.get('authType')}")
+            print(f"User ID: {response_data.get('userID')}")
+            print(f"Event Types: {response_data.get('eventTypes')}")
+            print("=" * 80)
+            return response_data
+        else:
+            print("=" * 80)
+            print("✗ WEBHOOK CREATION FAILED")
+            print("=" * 80)
+            print(f"Status Code: {response.status_code}")
+            print(f"Error Response: {response.text}")
+            print("=" * 80)
+            return None
+            
+    except Exception as e:
+        print("=" * 80)
+        print("✗ EXCEPTION OCCURRED WHILE CREATING WEBHOOK")
+        print("=" * 80)
+        print(f"Exception Type: {type(e).__name__}")
+        print(f"Exception Message: {str(e)}")
+        print("=" * 80)
+        return None
+
+
 def save_thumbtack_tokens(user_id, token_data):
     """
     Save the Thumbtack tokens in the database
@@ -198,6 +287,12 @@ def save_thumbtack_tokens(user_id, token_data):
             # 'thumbtack_business_id': extract_business_id_from_token(token_data)
         }
     )
+    
+    # Automatically create webhook after saving tokens
+    print("\n" + "=" * 80)
+    print("OAUTH COMPLETED - CREATING WEBHOOK AUTOMATICALLY")
+    print("=" * 80)
+    create_thumbtack_webhook(token_data.get('access_token'), business)
     
     return thumbtack_profile
 
@@ -238,7 +333,27 @@ def get_thumbtack_client_credentials_token():
     # Adjust these based on your specific requirements
 
     scopes = [
+        "availability",
+        "bookings",
         'openid', 'profile',
+        "demand::businesses/media.read",
+        "demand::businesses/reviews.read",
+        "demand::businesses/search.read",
+        "demand::categories.read",
+        "demand::categories/request-form.read",
+        "demand::keywords.read",
+        "demand::messages.read",
+        "demand::messages.write",
+        "demand::negotiations.read",
+        "demand::orders.read",
+        "demand::orders.write",
+        "demand::orders/availability.read",
+        "demand::requests.write",
+        "demand::users.disconnect",
+        "demand::users.read",
+        "demand::users.write",
+        "demand::webhooks.read",
+        "demand::webhooks.write",
         "messages",
         "offline_access",
         "supply::associate-phone-numbers.read",
@@ -253,6 +368,7 @@ def get_thumbtack_client_credentials_token():
         "supply::users.read",
         "supply::webhooks.read",
         "supply::webhooks.write",
+        "targeting"
 ]
 
     
@@ -497,582 +613,3 @@ def thumbtack_settings(request):
     
     messages.success(request, 'Thumbtack settings updated successfully')
     return redirect('accounts:thumbtack_dashboard')
-
-
-@login_required
-def webhooks_management_page(request):
-    """
-    Display the webhook management page
-    """
-    print("\n" + "="*60)
-    print("[WEBHOOK PAGE] Accessing webhook management page")
-    print(f"[WEBHOOK PAGE] User: {request.user.username}")
-    
-    from .models import ThumbtackProfile
-    
-    # Get the user's business and Thumbtack profile
-    business = request.user.business_set.first()
-    thumbtack_profile = None
-    
-    print(f"[WEBHOOK PAGE] Business found: {business.businessName if business else 'None'}")
-    
-    if business:
-        thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
-        print(f"[WEBHOOK PAGE] Thumbtack profile found: {thumbtack_profile is not None}")
-        if thumbtack_profile:
-            print(f"[WEBHOOK PAGE] Has access token: {bool(thumbtack_profile.access_token)}")
-    
-    # Check if user has connected Thumbtack
-    if not thumbtack_profile or not thumbtack_profile.access_token:
-        print("[WEBHOOK PAGE] User not connected to Thumbtack - redirecting to connect")
-        messages.warning(request, 'Please connect your Thumbtack account first.')
-        return redirect('accounts:thumbtack_connect')
-    
-    print("[WEBHOOK PAGE] Rendering webhooks page")
-    print("="*60 + "\n")
-    return render(request, 'accounts/thumbtack/webhooks.html', {
-        'thumbtack_profile': thumbtack_profile
-    })
-
-
-# ============================================================================
-# WEBHOOK MANAGEMENT FUNCTIONS
-# ============================================================================
-
-def create_thumbtack_webhook(access_token, webhook_url, event_types, enabled=True, auth_username=None, auth_password=None):
-    """
-    Create a webhook for a Thumbtack user
-    
-    Args:
-        access_token (str): OAuth access token for the user
-        webhook_url (str): HTTPS URL to receive webhook notifications
-        event_types (list): List of event types to subscribe to (e.g., ["MessageCreatedV4"])
-        enabled (bool): Whether the webhook should be enabled
-        auth_username (str, optional): Username for webhook authentication
-        auth_password (str, optional): Password for webhook authentication
-    
-    Returns:
-        dict: Response from Thumbtack API containing webhook details or error
-    """
-    print("\n" + "="*60)
-    print("[CREATE WEBHOOK] Starting webhook creation")
-    print(f"[CREATE WEBHOOK] Webhook URL: {webhook_url}")
-    print(f"[CREATE WEBHOOK] Event Types: {event_types}")
-    print(f"[CREATE WEBHOOK] Enabled: {enabled}")
-    print(f"[CREATE WEBHOOK] Has Auth: {bool(auth_username and auth_password)}")
-    
-    # API endpoint for creating webhooks
-    webhook_api_url = 'https://api.thumbtack.com/v4/users/webhooks'
-    print(f"[CREATE WEBHOOK] API URL: {webhook_api_url}")
-    
-    # Set up headers with the access token
-    headers = {
-        'Authorization': f'Bearer {access_token[:20]}...',  # Only show first 20 chars for security
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-    
-    # Build the request payload
-    payload = {
-        'webhookURL': webhook_url,
-        'eventTypes': event_types,
-        'enabled': enabled
-    }
-    
-    # Add authentication if provided
-    if auth_username and auth_password:
-        payload['auth'] = {
-            'username': auth_username,
-            'password': auth_password
-        }
-        print(f"[CREATE WEBHOOK] Auth username: {auth_username}")
-    
-    print(f"[CREATE WEBHOOK] Payload: {json.dumps(payload, indent=2)}")
-    
-    try:
-        # Make the POST request to create the webhook
-        print("[CREATE WEBHOOK] Sending POST request to Thumbtack API...")
-        response = requests.post(webhook_api_url, headers=headers, json=payload)
-        
-        print(f"[CREATE WEBHOOK] Response Status: {response.status_code}")
-        print(f"[CREATE WEBHOOK] Response Body: {response.text}")
-        
-        # Check if the request was successful
-        if response.status_code == 201:
-            print("[CREATE WEBHOOK] ✓ Webhook created successfully!")
-            print("="*60 + "\n")
-            return {
-                'success': True,
-                'data': response.json()
-            }
-        else:
-            print(f"[CREATE WEBHOOK] ✗ Failed with status {response.status_code}")
-            print("="*60 + "\n")
-            return {
-                'success': False,
-                'error': f"Error creating webhook: {response.status_code}",
-                'details': response.text
-            }
-    except Exception as e:
-        print(f"[CREATE WEBHOOK] ✗ Exception occurred: {str(e)}")
-        print("="*60 + "\n")
-        return {
-            'success': False,
-            'error': 'request_failed',
-            'details': str(e)
-        }
-
-
-def list_thumbtack_webhooks(access_token):
-    """
-    List all webhooks for a Thumbtack user
-    
-    Args:
-        access_token (str): OAuth access token for the user
-    
-    Returns:
-        dict: Response containing list of webhooks or error
-    """
-    # API endpoint for listing webhooks
-    webhook_api_url = 'https://api.thumbtack.com/v4/users/webhooks'
-    
-    # Set up headers with the access token
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Accept': 'application/json'
-    }
-    
-    try:
-        # Make the GET request to list webhooks
-        response = requests.get(webhook_api_url, headers=headers)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            return {
-                'success': True,
-                'data': response.json()
-            }
-        else:
-            return {
-                'success': False,
-                'error': f"Error listing webhooks: {response.status_code}",
-                'details': response.text
-            }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'request_failed',
-            'details': str(e)
-        }
-
-
-def update_thumbtack_webhook(access_token, webhook_id, webhook_url=None, event_types=None, enabled=None, auth_username=None, auth_password=None):
-    """
-    Update an existing webhook for a Thumbtack user
-    
-    Args:
-        access_token (str): OAuth access token for the user
-        webhook_id (str): ID of the webhook to update
-        webhook_url (str, optional): New HTTPS URL for the webhook
-        event_types (list, optional): New list of event types
-        enabled (bool, optional): New enabled status
-        auth_username (str, optional): New username for authentication
-        auth_password (str, optional): New password for authentication
-    
-    Returns:
-        dict: Response from Thumbtack API or error
-    """
-    # API endpoint for updating a specific webhook
-    webhook_api_url = f'https://api.thumbtack.com/v4/users/webhooks/{webhook_id}'
-    
-    # Set up headers with the access token
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-    
-    # Build the request payload with only provided fields
-    payload = {}
-    if webhook_url is not None:
-        payload['webhookURL'] = webhook_url
-    if event_types is not None:
-        payload['eventTypes'] = event_types
-    if enabled is not None:
-        payload['enabled'] = enabled
-    if auth_username and auth_password:
-        payload['auth'] = {
-            'username': auth_username,
-            'password': auth_password
-        }
-    
-    try:
-        # Make the PUT request to update the webhook
-        response = requests.put(webhook_api_url, headers=headers, json=payload)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            return {
-                'success': True,
-                'data': response.json()
-            }
-        else:
-            return {
-                'success': False,
-                'error': f"Error updating webhook: {response.status_code}",
-                'details': response.text
-            }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'request_failed',
-            'details': str(e)
-        }
-
-
-def delete_thumbtack_webhook(access_token, webhook_id):
-    """
-    Delete a webhook for a Thumbtack user
-    
-    Args:
-        access_token (str): OAuth access token for the user
-        webhook_id (str): ID of the webhook to delete
-    
-    Returns:
-        dict: Response indicating success or error
-    """
-    # API endpoint for deleting a specific webhook
-    webhook_api_url = f'https://api.thumbtack.com/v4/users/webhooks/{webhook_id}'
-    
-    # Set up headers with the access token
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Accept': 'application/json'
-    }
-    
-    try:
-        # Make the DELETE request to remove the webhook
-        response = requests.delete(webhook_api_url, headers=headers)
-        
-        # Check if the request was successful
-        if response.status_code == 204:
-            return {
-                'success': True,
-                'message': 'Webhook deleted successfully'
-            }
-        else:
-            return {
-                'success': False,
-                'error': f"Error deleting webhook: {response.status_code}",
-                'details': response.text
-            }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'request_failed',
-            'details': str(e)
-        }
-
-
-# ============================================================================
-# WEBHOOK VIEW ENDPOINTS
-# ============================================================================
-
-@login_required
-def create_webhook_view(request):
-    """
-    View to create a new webhook for the authenticated user
-    """
-    print("\n" + "="*60)
-    print("[CREATE WEBHOOK VIEW] Received webhook creation request")
-    print(f"[CREATE WEBHOOK VIEW] User: {request.user.username}")
-    print(f"[CREATE WEBHOOK VIEW] Method: {request.method}")
-    
-    from .models import ThumbtackProfile
-    
-    if request.method != 'POST':
-        print("[CREATE WEBHOOK VIEW] ✗ Invalid method")
-        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
-    
-    # Get the user's business and Thumbtack profile
-    business = request.user.business_set.first()
-    print(f"[CREATE WEBHOOK VIEW] Business: {business.businessName if business else 'None'}")
-    
-    if not business:
-        print("[CREATE WEBHOOK VIEW] ✗ No business found")
-        return JsonResponse({'error': 'No business found for user'}, status=400)
-    
-    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
-    print(f"[CREATE WEBHOOK VIEW] Thumbtack profile exists: {thumbtack_profile is not None}")
-    
-    if not thumbtack_profile or not thumbtack_profile.access_token:
-        print("[CREATE WEBHOOK VIEW] ✗ Thumbtack not connected")
-        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
-    
-    # Parse request data
-    try:
-        data = json.loads(request.body)
-        print(f"[CREATE WEBHOOK VIEW] Request data: {json.dumps(data, indent=2)}")
-    except json.JSONDecodeError as e:
-        print(f"[CREATE WEBHOOK VIEW] ✗ JSON decode error: {str(e)}")
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    # Extract webhook parameters
-    webhook_url = data.get('webhookURL')
-    event_types = data.get('eventTypes', ['MessageCreatedV4'])
-    enabled = data.get('enabled', True)
-    auth_username = data.get('auth', {}).get('username')
-    auth_password = data.get('auth', {}).get('password')
-    
-    print(f"[CREATE WEBHOOK VIEW] Webhook URL: {webhook_url}")
-    print(f"[CREATE WEBHOOK VIEW] Event Types: {event_types}")
-    print(f"[CREATE WEBHOOK VIEW] Enabled: {enabled}")
-    
-    # Validate required fields
-    if not webhook_url:
-        print("[CREATE WEBHOOK VIEW] ✗ Missing webhook URL")
-        return JsonResponse({'error': 'webhookURL is required'}, status=400)
-    
-    if not webhook_url.startswith('https://'):
-        print("[CREATE WEBHOOK VIEW] ✗ Webhook URL must be HTTPS")
-        return JsonResponse({'error': 'webhookURL must start with https://'}, status=400)
-    
-    if not event_types or not isinstance(event_types, list):
-        print("[CREATE WEBHOOK VIEW] ✗ Invalid event types")
-        return JsonResponse({'error': 'eventTypes must be a non-empty array'}, status=400)
-    
-    print("[CREATE WEBHOOK VIEW] Validation passed, creating webhook...")
-    
-    # Create the webhook
-    result = create_thumbtack_webhook(
-        access_token=thumbtack_profile.access_token,
-        webhook_url=webhook_url,
-        event_types=event_types,
-        enabled=enabled,
-        auth_username=auth_username,
-        auth_password=auth_password
-    )
-    
-    if result['success']:
-        print("[CREATE WEBHOOK VIEW] ✓ Webhook created successfully")
-        print("="*60 + "\n")
-        return JsonResponse(result['data'], status=201)
-    else:
-        print(f"[CREATE WEBHOOK VIEW] ✗ Failed: {result['error']}")
-        print("="*60 + "\n")
-        return JsonResponse({
-            'error': result['error'],
-            'details': result.get('details', '')
-        }, status=400)
-
-
-@login_required
-def list_webhooks_view(request):
-    """
-    View to list all webhooks for the authenticated user
-    """
-    print("\n" + "="*60)
-    print("[LIST WEBHOOKS VIEW] Received list webhooks request")
-    print(f"[LIST WEBHOOKS VIEW] User: {request.user.username}")
-    
-    from .models import ThumbtackProfile
-    
-    # Get the user's business and Thumbtack profile
-    business = request.user.business_set.first()
-    print(f"[LIST WEBHOOKS VIEW] Business: {business.businessName if business else 'None'}")
-    
-    if not business:
-        print("[LIST WEBHOOKS VIEW] ✗ No business found")
-        return JsonResponse({'error': 'No business found for user'}, status=400)
-    
-    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
-    if not thumbtack_profile or not thumbtack_profile.access_token:
-        print("[LIST WEBHOOKS VIEW] ✗ Thumbtack not connected")
-        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
-    
-    print("[LIST WEBHOOKS VIEW] Fetching webhooks from Thumbtack API...")
-    
-    # List webhooks
-    result = list_thumbtack_webhooks(thumbtack_profile.access_token)
-    
-    if result['success']:
-        webhook_count = len(result['data'].get('webhooks', []))
-        print(f"[LIST WEBHOOKS VIEW] ✓ Found {webhook_count} webhook(s)")
-        print("="*60 + "\n")
-        return JsonResponse(result['data'], status=200)
-    else:
-        print(f"[LIST WEBHOOKS VIEW] ✗ Failed: {result['error']}")
-        print("="*60 + "\n")
-        return JsonResponse({
-            'error': result['error'],
-            'details': result.get('details', '')
-        }, status=400)
-
-
-@login_required
-def update_webhook_view(request, webhook_id):
-    """
-    View to update an existing webhook
-    """
-    from .models import ThumbtackProfile
-    
-    if request.method != 'PUT':
-        return JsonResponse({'error': 'Only PUT method is allowed'}, status=405)
-    
-    # Get the user's business and Thumbtack profile
-    business = request.user.business_set.first()
-    if not business:
-        return JsonResponse({'error': 'No business found for user'}, status=400)
-    
-    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
-    if not thumbtack_profile or not thumbtack_profile.access_token:
-        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
-    
-    # Parse request data
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    # Extract webhook parameters
-    webhook_url = data.get('webhookURL')
-    event_types = data.get('eventTypes')
-    enabled = data.get('enabled')
-    auth_username = data.get('auth', {}).get('username')
-    auth_password = data.get('auth', {}).get('password')
-    
-    # Update the webhook
-    result = update_thumbtack_webhook(
-        access_token=thumbtack_profile.access_token,
-        webhook_id=webhook_id,
-        webhook_url=webhook_url,
-        event_types=event_types,
-        enabled=enabled,
-        auth_username=auth_username,
-        auth_password=auth_password
-    )
-    
-    if result['success']:
-        return JsonResponse(result['data'], status=200)
-    else:
-        return JsonResponse({
-            'error': result['error'],
-            'details': result.get('details', '')
-        }, status=400)
-
-
-@login_required
-def delete_webhook_view(request, webhook_id):
-    """
-    View to delete a webhook
-    """
-    from .models import ThumbtackProfile
-    
-    if request.method != 'DELETE':
-        return JsonResponse({'error': 'Only DELETE method is allowed'}, status=405)
-    
-    # Get the user's business and Thumbtack profile
-    business = request.user.business_set.first()
-    if not business:
-        return JsonResponse({'error': 'No business found for user'}, status=400)
-    
-    thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
-    if not thumbtack_profile or not thumbtack_profile.access_token:
-        return JsonResponse({'error': 'Thumbtack not connected'}, status=400)
-    
-    # Delete the webhook
-    result = delete_thumbtack_webhook(thumbtack_profile.access_token, webhook_id)
-    
-    if result['success']:
-        return JsonResponse({'message': result['message']}, status=204)
-    else:
-        return JsonResponse({
-            'error': result['error'],
-            'details': result.get('details', '')
-        }, status=400)
-
-
-@csrf_exempt
-def webhook_receiver(request):
-    """
-    Endpoint to receive webhook notifications from Thumbtack
-    
-    This endpoint should be publicly accessible and configured as the webhook URL
-    in your Thumbtack webhook settings.
-    
-    Example webhook URL: https://yourdomain.com/api/thumbtack/webhook/
-    """
-    print("\n" + "="*60)
-    print("[WEBHOOK RECEIVER] Incoming webhook event")
-    print(f"[WEBHOOK RECEIVER] Method: {request.method}")
-    print(f"[WEBHOOK RECEIVER] Remote IP: {request.META.get('REMOTE_ADDR')}")
-    
-    if request.method != 'POST':
-        print("[WEBHOOK RECEIVER] ✗ Invalid method")
-        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
-    
-    try:
-        # Parse the webhook payload
-        payload = json.loads(request.body)
-        
-        # Log the webhook event for debugging
-        print("[WEBHOOK RECEIVER] Payload received:")
-        print(json.dumps(payload, indent=2))
-        
-        # Extract event information
-        event_type = payload.get('eventType')
-        event_id = payload.get('eventID')
-        user_id = payload.get('userID')
-        
-        print(f"[WEBHOOK RECEIVER] Event Type: {event_type}")
-        print(f"[WEBHOOK RECEIVER] Event ID: {event_id}")
-        print(f"[WEBHOOK RECEIVER] User ID: {user_id}")
-        
-        # Handle different event types
-        if event_type == 'MessageCreatedV4':
-            print("[WEBHOOK RECEIVER] Processing MessageCreatedV4 event")
-            
-            # Handle message created event
-            message_data = payload.get('message', {})
-            message_id = message_data.get('messageID')
-            conversation_id = message_data.get('conversationID')
-            sender_id = message_data.get('senderID')
-            content = message_data.get('content')
-            
-            print(f"[WEBHOOK RECEIVER] Message ID: {message_id}")
-            print(f"[WEBHOOK RECEIVER] Conversation ID: {conversation_id}")
-            print(f"[WEBHOOK RECEIVER] Sender ID: {sender_id}")
-            print(f"[WEBHOOK RECEIVER] Content: {content[:100] if content else 'None'}...")
-            
-            # TODO: Process the message (e.g., save to database, send notification)
-            print("[WEBHOOK RECEIVER] TODO: Add custom message processing logic here")
-            
-            # You can add your custom logic here to:
-            # 1. Save the message to your database
-            # 2. Send a notification to the user
-            # 3. Trigger an auto-response
-            # 4. Update lead status
-        else:
-            print(f"[WEBHOOK RECEIVER] Unknown event type: {event_type}")
-            
-        # Add handlers for other event types as needed
-        
-        # Return a 200 response to acknowledge receipt
-        print("[WEBHOOK RECEIVER] ✓ Event processed successfully")
-        print("="*60 + "\n")
-        return JsonResponse({
-            'status': 'success',
-            'eventID': event_id,
-            'eventType': event_type
-        }, status=200)
-        
-    except json.JSONDecodeError as e:
-        print(f"[WEBHOOK RECEIVER] ✗ JSON decode error: {str(e)}")
-        print("="*60 + "\n")
-        return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
-    except Exception as e:
-        print(f"[WEBHOOK RECEIVER] ✗ Exception: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
-        print("="*60 + "\n")
-        return JsonResponse({'error': 'Internal server error'}, status=500)

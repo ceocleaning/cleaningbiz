@@ -79,12 +79,4 @@ urlpatterns = [
     path('thumbtack/profile/', thumbtack_views.thumbtack_profile, name='thumbtack_profile'),
     path('thumbtack/dashboard/', thumbtack_views.thumbtack_dashboard, name='thumbtack_dashboard'),
     path('thumbtack/settings/', thumbtack_views.thumbtack_settings, name='thumbtack_settings'),
-    path('thumbtack/webhooks/', thumbtack_views.webhooks_management_page, name='thumbtack_webhooks_page'),
-    
-    # Thumbtack Webhook Management URLs
-    path('thumbtack/webhooks/create/', thumbtack_views.create_webhook_view, name='thumbtack_create_webhook'),
-    path('thumbtack/webhooks/list/', thumbtack_views.list_webhooks_view, name='thumbtack_list_webhooks'),
-    path('thumbtack/webhooks/<str:webhook_id>/update/', thumbtack_views.update_webhook_view, name='thumbtack_update_webhook'),
-    path('thumbtack/webhooks/<str:webhook_id>/delete/', thumbtack_views.delete_webhook_view, name='thumbtack_delete_webhook'),
-    path('thumbtack/webhook/receiver/', thumbtack_views.webhook_receiver, name='thumbtack_webhook_receiver'),
 ]
