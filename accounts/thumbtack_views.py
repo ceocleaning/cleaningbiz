@@ -177,43 +177,17 @@ def refresh_thumbtack_token(refresh_token):
 
 def create_thumbtack_webhook(access_token, business):
     """
-    Create a webhook for a User automatically when OAuth is completed
+    Create a webhook for a Business (Supply-side) automatically when OAuth is completed
     This will subscribe to MessageCreatedV4 events
     """
     from .models import ApiCredential
     
     # Get or create API credentials to get the webhook URL
-    api_credential = ApiCredential.objects.get(
-        business=business
-    )
-    
-    # Get the webhook URL (dummy link for testing)
+    api_credential = ApiCredential.objects.get(business=business)
     webhook_url = api_credential.getThumbtackUrl()
     
-    # Thumbtack webhook API endpoint
-    webhook_api_url = 'https://api.thumbtack.com/v4/users/webhooks'
-    
-    # Prepare the webhook payload
-    payload = {
-        "webhookURL": webhook_url,
-        "eventTypes": ["MessageCreatedV4"],
-        "enabled": True,
-        "auth": {
-            "username": "webhook_user",
-            "password": secrets.token_urlsafe(32)  # Generate a secure password
-        }
-    }
-    
-    # Print the payload for debugging
-    print("=" * 80)
-    print("CREATING THUMBTACK WEBHOOK")
-    print("=" * 80)
-    print(f"Business: {business.businessName}")
-    print(f"Webhook URL: {webhook_url}")
-    print(f"Payload: {json.dumps(payload)}")
-    print("=" * 80)
-    
-    # Set up headers with the access token
+    # First, get the list of businesses for this user
+    businesses_url = 'https://api.thumbtack.com/api/v4/businesses'
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
@@ -221,43 +195,66 @@ def create_thumbtack_webhook(access_token, business):
     }
     
     try:
+        # Get businesses list
+        businesses_response = requests.get(businesses_url, headers=headers)
+        
+        if businesses_response.status_code != 200:
+            print(f"❌ Failed to get business list - Status: {businesses_response.status_code}")
+            print(f"Error: {businesses_response.text}")
+            return None
+        
+        businesses_data = businesses_response.json()
+        businesses = businesses_data.get('businesses', [])
+        
+        if not businesses:
+            print("❌ No businesses found for this user")
+            return None
+        
+        # Get the first business ID
+        business_id = businesses[0].get('businessID')
+        
+        # Store the Thumbtack business ID in the profile
+        from .models import ThumbtackProfile
+        thumbtack_profile = ThumbtackProfile.objects.filter(business=business).first()
+        if thumbtack_profile:
+            thumbtack_profile.thumbtack_business_id = business_id
+            thumbtack_profile.save()
+        
+    except Exception as e:
+        print(f"❌ Exception getting business list: {type(e).__name__} - {str(e)}")
+        return None
+    
+    # Now create the webhook using the supply-side endpoint
+    webhook_api_url = f'https://api.thumbtack.com/api/v4/businesses/{business_id}/webhooks'
+    
+    # Prepare the webhook payload for supply-side
+    payload = {
+        "webhookURL": webhook_url,
+        "eventTypes": ["MessageCreatedV4"],
+        "enabled": True,
+        "auth": {
+            "username": "webhook_user",
+            "password": secrets.token_urlsafe(32)
+        }
+    }
+    
+    try:
         # Make the request to create the webhook
         response = requests.post(webhook_api_url, headers=headers, json=payload)
-        
-        # Print response details
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Body: {response.text}")
         
         # Check if the request was successful
         if response.status_code == 201:
             response_data = response.json()
-            print("=" * 80)
-            print("✓ WEBHOOK CREATED SUCCESSFULLY")
-            print("=" * 80)
-            print(f"Webhook ID: {response_data.get('webhookID')}")
-            print(f"Webhook URL: {response_data.get('webhookURL')}")
-            print(f"Enabled: {response_data.get('enabled')}")
-            print(f"Auth Type: {response_data.get('authType')}")
-            print(f"User ID: {response_data.get('userID')}")
-            print(f"Event Types: {response_data.get('eventTypes')}")
-            print("=" * 80)
+            print(f"✅ Webhook created successfully - ID: {response_data.get('webhookID')}")
+            print(f"Payload: {json.dumps(response_data, indent=2)}")
             return response_data
         else:
-            print("=" * 80)
-            print("WEBHOOK CREATION FAILED")
-            print("=" * 80)
-            print(f"Status Code: {response.status_code}")
-            print(f"Error Response: {response.text}")
-            print("=" * 80)
+            print(f"❌ Webhook creation failed - Status: {response.status_code}")
+            print(f"Error: {response.text}")
             return None
             
     except Exception as e:
-        print("=" * 80)
-        print("EXCEPTION OCCURRED WHILE CREATING WEBHOOK")
-        print("=" * 80)
-        print(f"Exception Type: {type(e).__name__}")
-        print(f"Exception Message: {str(e)}")
-        print("=" * 80)
+        print(f"❌ Exception creating webhook: {type(e).__name__} - {str(e)}")
         return None
 
 
@@ -288,9 +285,7 @@ def save_thumbtack_tokens(user_id, token_data):
     )
     
     # Automatically create webhook after saving tokens
-    print("\n" + "=" * 80)
-    print("OAUTH COMPLETED - CREATING WEBHOOK AUTOMATICALLY")
-    print("=" * 80)
+    print("\n🔗 Creating Thumbtack webhook...")
     create_thumbtack_webhook(token_data.get('access_token'), business)
     
     return thumbtack_profile
@@ -334,11 +329,7 @@ def get_thumbtack_client_credentials_token():
     scopes = [
         'openid', 'profile',
         "offline_access",
-        "supply::associate-phone-numbers.read",
-        "supply::associate-phone-numbers.write",
         "supply::businesses.list",
-        "supply::businesses/associate-phone-numbers.read",
-        "supply::businesses/associate-phone-numbers.write",
         "supply::messages.read",
         "supply::messages.write",
         "supply::negotiations.read",
@@ -402,7 +393,7 @@ def get_thumbtack_business_info(access_token):
     Fetch business information from Thumbtack API using the access token
     """
     # API endpoint for getting business information
-    business_info_url = 'https://api.thumbtack.com/api/v4/business'
+    business_info_url = 'https://api.thumbtack.com/api/v4/businesses'
     
     # Set up headers with the access token
     headers = {
@@ -417,6 +408,7 @@ def get_thumbtack_business_info(access_token):
         
         # Check if the request was successful
         if response.status_code == 200:
+            print(f"Business info: {response.text}")
             return response.json()
         else:
             print(f"Error fetching business info: {response.status_code} - {response.text}")
