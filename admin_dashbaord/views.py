@@ -12,7 +12,7 @@ from django.conf import settings
 from django.db import transaction
 from datetime import timedelta
 from accounts.models import ApiCredential, Business, User, BusinessSettings
-from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature, BillingHistory
+from subscription.models import SubscriptionPlan, BusinessSubscription, Coupon, Feature, BillingHistory, SubscriptionRenewalLog
 from saas.models import PlatformSettings, SupportTicket, TicketComment
 from bookings.models import Booking
 from invoice.models import Invoice
@@ -509,15 +509,11 @@ def business_detail(request, business_id):
     
     # Get active subscription
     try:
-        business.active_subscription = business.active_subscription()
+        subscription = business.active_subscription()
     except BusinessSubscription.DoesNotExist:
         business.active_subscription = None
-    
-    # Get all active subscriptions (including trial plans)
-    business.all_subscriptions = BusinessSubscription.objects.filter(
-        business=business,
-        is_active=True
-    ).exclude(status='ended').order_by('-start_date')
+
+
     
     # Get previous subscriptions (ended or cancelled)
     business.previous_subscriptions = BusinessSubscription.objects.filter(
@@ -602,6 +598,7 @@ def business_detail(request, business_id):
         'api_credentials': api_credentials,
         'business_settings': business_settings,
         'today': timezone.now(),
+        'subscription': subscription,
     }
     
     return render(request, 'admin_dashboard/business_detail.html', context)
@@ -945,6 +942,111 @@ def subscription_detail(request, subscription_id):
     }
     
     return render(request, 'admin_dashboard/subscription_detail.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def renewal_logs(request):
+    """View to display all subscription renewal logs with filtering"""
+    
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    renewal_type_filter = request.GET.get('renewal_type', '')
+    business_filter = request.GET.get('business', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Start with all logs
+    logs = SubscriptionRenewalLog.objects.all().select_related(
+        'business', 'subscription', 'old_plan', 'new_plan', 'billing_record'
+    )
+    
+    # Apply filters
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    
+    if renewal_type_filter:
+        logs = logs.filter(renewal_type=renewal_type_filter)
+    
+    if business_filter:
+        logs = logs.filter(
+            Q(business__businessName__icontains=business_filter) |
+            Q(business__id=business_filter if business_filter.isdigit() else 0)
+        )
+    
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(attempted_at__gte=from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            to_date = to_date + timedelta(days=1)
+            logs = logs.filter(attempted_at__lt=to_date)
+        except ValueError:
+            pass
+    
+    # Get statistics
+    total_logs = logs.count()
+    success_count = logs.filter(status='success').count()
+    failed_count = logs.filter(status='failed').count()
+    no_card_count = logs.filter(status='no_card').count()
+    free_plan_count = logs.filter(status='free_plan').count()
+    
+    # Calculate success rate
+    success_rate = (success_count / total_logs * 100) if total_logs > 0 else 0
+    
+    # Pagination
+    paginator = Paginator(logs, 25)  # Show 25 logs per page
+    page_number = request.GET.get('page', 1)
+    logs_page = paginator.get_page(page_number)
+    
+    context = {
+        'logs': logs_page,
+        'total_logs': total_logs,
+        'success_count': success_count,
+        'failed_count': failed_count,
+        'no_card_count': no_card_count,
+        'free_plan_count': free_plan_count,
+        'success_rate': round(success_rate, 1),
+        'status_filter': status_filter,
+        'renewal_type_filter': renewal_type_filter,
+        'business_filter': business_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': SubscriptionRenewalLog.STATUS_CHOICES,
+        'renewal_type_choices': SubscriptionRenewalLog.RENEWAL_TYPE_CHOICES,
+    }
+    
+    return render(request, 'admin_dashboard/renewal_logs.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def renewal_log_detail(request, log_id):
+    """View to display detailed information about a specific renewal log"""
+    
+    log = get_object_or_404(
+        SubscriptionRenewalLog.objects.select_related(
+            'business', 'subscription', 'old_plan', 'new_plan', 'billing_record'
+        ),
+        id=log_id
+    )
+    
+    # Get related logs for this business (last 10)
+    related_logs = SubscriptionRenewalLog.objects.filter(
+        business=log.business
+    ).exclude(id=log.id).order_by('-attempted_at')[:10]
+    
+    context = {
+        'log': log,
+        'related_logs': related_logs,
+    }
+    
+    return render(request, 'admin_dashboard/renewal_log_detail.html', context)
+
 
 # User Management Views
 @login_required

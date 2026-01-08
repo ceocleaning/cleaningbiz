@@ -518,6 +518,89 @@ CALL_STATUS_CHOICES = [
     ('pending', 'Pending'),
 ]
 
+class SubscriptionRenewalLog(models.Model):
+    """Model for tracking subscription renewal attempts and their outcomes."""
+    
+    STATUS_CHOICES = [
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped'),
+        ('no_card', 'No Card Available'),
+        ('free_plan', 'Free Plan - No Payment Required'),
+    ]
+    
+    RENEWAL_TYPE_CHOICES = [
+        ('automatic', 'Automatic Renewal'),
+        ('plan_change', 'Plan Change'),
+        ('upgrade', 'Upgrade'),
+        ('downgrade', 'Downgrade'),
+    ]
+    
+    # Core fields
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='renewal_logs')
+    subscription = models.ForeignKey(BusinessSubscription, on_delete=models.SET_NULL, null=True, blank=True, related_name='renewal_logs')
+    
+    # Renewal details
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    renewal_type = models.CharField(max_length=20, choices=RENEWAL_TYPE_CHOICES, default='automatic')
+    
+    # Plan information
+    old_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True, blank=True, related_name='old_plan_renewals')
+    new_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True, blank=True, related_name='new_plan_renewals')
+    
+    # Payment details
+    amount_charged = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    square_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    card_last_4 = models.CharField(max_length=4, blank=True, null=True)
+    
+    # Billing history reference
+    billing_record = models.ForeignKey(BillingHistory, on_delete=models.SET_NULL, null=True, blank=True, related_name='renewal_logs')
+    
+    # Error tracking
+    error_message = models.TextField(blank=True, null=True)
+    error_code = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Additional details stored as JSON
+    details = models.JSONField(default=dict, help_text="Additional renewal details including payment response, notifications sent, etc.")
+    
+    # Timestamps
+    attempted_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-attempted_at']
+        indexes = [
+            models.Index(fields=['-attempted_at']),
+            models.Index(fields=['business', '-attempted_at']),
+            models.Index(fields=['status', '-attempted_at']),
+        ]
+    
+    def __str__(self):
+        return f"Renewal Log #{self.id} - {self.business.businessName} - {self.get_status_display()} ({self.attempted_at.strftime('%Y-%m-%d %H:%M')})"
+    
+    def get_status_badge_class(self):
+        """Return Bootstrap badge class based on status."""
+        status_classes = {
+            'success': 'badge-success',
+            'failed': 'badge-danger',
+            'skipped': 'badge-warning',
+            'no_card': 'badge-info',
+            'free_plan': 'badge-secondary',
+        }
+        return status_classes.get(self.status, 'badge-secondary')
+    
+    def get_renewal_type_badge_class(self):
+        """Return Bootstrap badge class based on renewal type."""
+        type_classes = {
+            'automatic': 'badge-primary',
+            'plan_change': 'badge-info',
+            'upgrade': 'badge-success',
+            'downgrade': 'badge-warning',
+        }
+        return type_classes.get(self.renewal_type, 'badge-secondary')
+
+
 class SetupFee(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='setup_fee')
     amount = models.DecimalField(max_digits=10, decimal_places=2)

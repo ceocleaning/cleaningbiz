@@ -14,11 +14,12 @@ import json
 import uuid
 from square.client import Client
 
-from .models import SubscriptionPlan, BusinessSubscription, BillingHistory, Feature, Coupon, CouponUsage, UsageTracker, SetupFee
+from .models import SubscriptionPlan, BusinessSubscription, BillingHistory, Feature, Coupon, CouponUsage, UsageTracker, SetupFee, SubscriptionRenewalLog
 from saas.models import PlatformSettings
 from accounts.models import Business
 from usage_analytics.services.usage_service import UsageService
 from saas.models import PlatformSettings
+from django.core.paginator import Paginator
 
 @login_required
 def subscription_management(request):
@@ -1427,3 +1428,99 @@ def onboarding_call_success(request):
     }
     
     return render(request, 'subscription/onboarding_call_success.html', context)
+
+@login_required
+def renewal_logs(request):
+    """View for businesses to see their own subscription renewal logs"""
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.error(request, 'No business found for this user.')
+        return redirect('accounts:register_business')
+    
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Start with logs for this business only
+    logs = SubscriptionRenewalLog.objects.filter(
+        business=business
+    ).select_related('subscription', 'old_plan', 'new_plan', 'billing_record')
+    
+    # Apply filters
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(attempted_at__gte=from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            to_date = to_date + timedelta(days=1)
+            logs = logs.filter(attempted_at__lt=to_date)
+        except ValueError:
+            pass
+    
+    # Get statistics
+    total_logs = logs.count()
+    success_count = logs.filter(status='success').count()
+    failed_count = logs.filter(status='failed').count()
+    
+    # Pagination
+    paginator = Paginator(logs, 10)  # Show 10 logs per page
+    page_number = request.GET.get('page', 1)
+    logs_page = paginator.get_page(page_number)
+    
+    context = {
+        'logs': logs_page,
+        'total_logs': total_logs,
+        'success_count': success_count,
+        'failed_count': failed_count,
+        'status_filter': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': SubscriptionRenewalLog.STATUS_CHOICES,
+        'active_page': 'renewal_logs',
+        'title': 'Renewal History'
+    }
+    
+    return render(request, 'subscription/renewal_logs.html', context)
+
+@login_required
+def renewal_log_detail(request, log_id):
+    """View for businesses to see details of a specific renewal log"""
+    business = request.user.business_set.first()
+    
+    if not business:
+        messages.error(request, 'No business found for this user.')
+        return redirect('accounts:register_business')
+    
+    # Get the log, ensuring it belongs to this business
+    log = get_object_or_404(
+        SubscriptionRenewalLog.objects.select_related(
+            'subscription', 'old_plan', 'new_plan', 'billing_record'
+        ),
+        id=log_id,
+        business=business
+    )
+    
+    # Get related logs for this business (last 5)
+    related_logs = SubscriptionRenewalLog.objects.filter(
+        business=business
+    ).exclude(id=log.id).order_by('-attempted_at')[:5]
+    
+    context = {
+        'log': log,
+        'related_logs': related_logs,
+        'active_page': 'renewal_logs',
+        'title': f'Renewal Log #{log.id}'
+    }
+    
+    return render(request, 'subscription/renewal_log_detail.html', context)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Feature, Coupon, CouponUsage, SetupFee
+from .models import SubscriptionPlan, BusinessSubscription, UsageTracker, BillingHistory, Feature, Coupon, CouponUsage, SetupFee, SubscriptionRenewalLog
 
 class FeatureAdmin(admin.ModelAdmin):
     list_display = ('display_name', 'name', 'is_active')
@@ -63,6 +63,37 @@ class BillingHistoryAdmin(admin.ModelAdmin):
     search_fields = ('business__name', 'stripe_invoice_id')
     date_hierarchy = 'billing_date'
 
+class SubscriptionRenewalLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'business', 'status', 'renewal_type', 'old_plan', 'new_plan', 'amount_charged', 'attempted_at')
+    list_filter = ('status', 'renewal_type', 'attempted_at')
+    search_fields = ('business__businessName', 'error_message', 'square_payment_id')
+    date_hierarchy = 'attempted_at'
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('business', 'subscription', 'status', 'renewal_type', 'attempted_at')
+        }),
+        ('Plan Details', {
+            'fields': ('old_plan', 'new_plan')
+        }),
+        ('Payment Information', {
+            'fields': ('amount_charged', 'square_payment_id', 'card_last_4', 'billing_record')
+        }),
+        ('Error Details', {
+            'fields': ('error_message', 'error_code'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Details', {
+            'fields': ('details',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
 admin.site.register(Feature, FeatureAdmin)
 admin.site.register(SubscriptionPlan, SubscriptionPlanAdmin)
 admin.site.register(Coupon, CouponAdmin)
@@ -70,4 +101,5 @@ admin.site.register(CouponUsage, CouponUsageAdmin)
 admin.site.register(BusinessSubscription, BusinessSubscriptionAdmin)
 admin.site.register(UsageTracker, UsageTrackerAdmin)
 admin.site.register(BillingHistory, BillingHistoryAdmin)
+admin.site.register(SubscriptionRenewalLog, SubscriptionRenewalLogAdmin)
 admin.site.register(SetupFee)

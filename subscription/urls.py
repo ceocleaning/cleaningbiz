@@ -26,4 +26,8 @@ urlpatterns = [
     path('update-auto-upgrade/', views.update_auto_upgrade, name='update_auto_upgrade'),
     path('manage-card/', views.manage_card, name='manage_card'),  # New URL for card management
     path('delete-card/', views.delete_card, name='delete_card'),
+    
+    # Renewal logs
+    path('renewal-logs/', views.renewal_logs, name='renewal_logs'),
+    path('renewal-logs/<int:log_id>/', views.renewal_log_detail, name='renewal_log_detail'),
 ]

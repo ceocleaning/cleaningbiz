@@ -1,0 +1,370 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Subscription Renewal Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Subscription Renewal Logs</h1>
+    <div>
+        <button class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-calendar-alt me-1"></i> {{ request.GET.date_from|default:"All Time" }}
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="#"><i class="far fa-file-csv me-2"></i> CSV</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-list-alt fa-2x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Total Logs</div>
+                        <div class="h4 mb-0">{{ total_logs }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Successful</div>
+                        <div class="h4 mb-0">{{ success_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Failed</div>
+                        <div class="h4 mb-0">{{ failed_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-credit-card fa-2x text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">No Card</div>
+                        <div class="h4 mb-0">{{ no_card_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-gift fa-2x text-secondary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Free Plans</div>
+                        <div class="h4 mb-0">{{ free_plan_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-percentage fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Success Rate</div>
+                        <div class="h4 mb-0">{{ success_rate }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'admin_dashboard:renewal_logs' %}">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="renewal_type" class="form-label">Renewal Type</label>
+                    <select class="form-select" id="renewal_type" name="renewal_type">
+                        <option value="">All Types</option>
+                        {% for value, label in renewal_type_choices %}
+                        <option value="{{ value }}" {% if renewal_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="business" class="form-label">Business</label>
+                    <input type="text" class="form-control" id="business" name="business" 
+                           value="{{ business_filter }}" placeholder="Search by name or ID">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            {% if status_filter or renewal_type_filter or business_filter or date_from or date_to %}
+            <div class="mt-3">
+                <a href="{% url 'admin_dashboard:renewal_logs' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Clear Filters
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Renewal Logs Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Renewal Attempts</h5>
+        <span class="badge bg-primary">{{ total_logs }} Total</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="renewalLogsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Business</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Plan Change</th>
+                        <th>Amount</th>
+                        <th>Attempted At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>#{{ log.id }}</td>
+                        <td>
+                            <a href="{% url 'admin_dashboard:business_detail' log.business.id %}">
+                                {{ log.business.businessName }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if log.status == 'success' %}
+                            <span class="badge bg-success-subtle text-success">
+                                <i class="fas fa-check-circle me-1"></i>Success
+                            </span>
+                            {% elif log.status == 'failed' %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="fas fa-times-circle me-1"></i>Failed
+                            </span>
+                            {% elif log.status == 'no_card' %}
+                            <span class="badge bg-info-subtle text-info">
+                                <i class="fas fa-credit-card me-1"></i>No Card
+                            </span>
+                            {% elif log.status == 'free_plan' %}
+                            <span class="badge bg-secondary-subtle text-secondary">
+                                <i class="fas fa-gift me-1"></i>Free Plan
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning">{{ log.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.renewal_type == 'automatic' %}
+                            <span class="badge bg-primary-subtle text-primary">Automatic</span>
+                            {% elif log.renewal_type == 'upgrade' %}
+                            <span class="badge bg-success-subtle text-success">
+                                <i class="fas fa-arrow-up me-1"></i>Upgrade
+                            </span>
+                            {% elif log.renewal_type == 'downgrade' %}
+                            <span class="badge bg-warning-subtle text-warning">
+                                <i class="fas fa-arrow-down me-1"></i>Downgrade
+                            </span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info">{{ log.get_renewal_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.old_plan and log.new_plan %}
+                                {% if log.old_plan.id == log.new_plan.id %}
+                                <span class="text-muted">{{ log.old_plan.name }}</span>
+                                {% else %}
+                                <span class="text-muted">{{ log.old_plan.name }}</span>
+                                <i class="fas fa-arrow-right mx-1"></i>
+                                <strong>{{ log.new_plan.name }}</strong>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.amount_charged %}
+                            <strong>${{ log.amount_charged|floatformat:2 }}</strong>
+                            {% else %}
+                            <span class="text-muted">$0.00</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ log.attempted_at|date:"M d, Y" }}</div>
+                            <small class="text-muted">{{ log.attempted_at|date:"g:i A" }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_dashboard:renewal_log_detail' log.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No renewal logs found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if logs.has_other_pages %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if logs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in logs.paginator.page_range %}
+                    {% if logs.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a></li>
+                    {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if renewal_type_filter %}&renewal_type={{ renewal_type_filter }}{% endif %}{% if business_filter %}&business={{ business_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit form on filter change
+        const statusFilter = document.getElementById('status');
+        const renewalTypeFilter = document.getElementById('renewal_type');
+        
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+        
+        if (renewalTypeFilter) {
+            renewalTypeFilter.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

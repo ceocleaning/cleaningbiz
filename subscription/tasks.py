@@ -10,7 +10,7 @@ import logging
 from django.db import transaction
 
 from accounts.models import Business
-from .models import BusinessSubscription, BillingHistory, SubscriptionPlan, UsageTracker
+from .models import BusinessSubscription, BillingHistory, SubscriptionPlan, UsageTracker, SubscriptionRenewalLog
 from saas.models import PlatformSettings
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ def process_subscription_renewals():
 
     
     
-    # Get 2 days ago
-    two_days_ago = timezone.now() - timedelta(days=2)
+    # Get subscriptions expiring within the next day
+    tomorrow = timezone.now() + timedelta(days=1)
 
     trial_plans = BusinessSubscription.objects.filter(
         plan__plan_type='trial',
@@ -46,11 +46,11 @@ def process_subscription_renewals():
     # Find subscriptions that:
     # 1. Are marked as active in the database
     # 2. Have status 'active' or 'past_due'
-    # 3. End date is between 2 days ago
+    # 3. End date is within the next day (expiring soon)
     subscriptions_to_renew = BusinessSubscription.objects.filter(
         is_active=True,
         plan__plan_type='paid',
-        end_date__lte=two_days_ago
+        end_date__lte=tomorrow
     ).filter(
         Q(status='past_due') | Q(status='active')
     ).exclude(
@@ -85,7 +85,7 @@ def process_subscription_renewals():
         plan_to_use = next_plan if next_plan else current_plan
         
         # Handle free plans (zero price) without payment processing
-        if plan_to_use.price == 0 or plan_to_use.price == 0.00:
+        if plan_to_use.price == 0:
             print(f"Free plan detected for {business.businessName} - Plan: {plan_to_use.name}. Skipping payment processing.")
             
             # Create a mock payment result for the free plan
@@ -156,7 +156,7 @@ def _process_renewal_payment(business, subscription, plan, square_client):
             print(f"Using coupon_used: {coupon.code} for {business.businessName}")
         
         discount_applied = False
-        original_price = final_price  # Store original price before any coupon discount
+        # original_price already set above (line 142), will be updated if coupon applies
         coupon_code = None
         discount_amount = 0
         
@@ -256,12 +256,26 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
     """
     print(f"Successful renewal for {business.businessName} - Plan: {plan.name}")
     
+    billing_record = None
+    new_subscription = None
+    
     try:
         # Calculate new end date based on billing cycle
         if plan.billing_cycle == 'monthly':
             new_end_date = timezone.now() + timedelta(days=30)
         else:  # yearly
             new_end_date = timezone.now() + timedelta(days=365)
+        
+        # Determine renewal type
+        renewal_type = 'automatic'
+        if old_subscription.plan.id != plan.id:
+            # Plan change detected
+            if plan.price > old_subscription.plan.price:
+                renewal_type = 'upgrade'
+            elif plan.price < old_subscription.plan.price:
+                renewal_type = 'downgrade'
+            else:
+                renewal_type = 'plan_change'
         
         # Mark the old subscription as inactive
         old_subscription.is_active = False
@@ -292,6 +306,9 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
         discount_amount = payment_result.get('discount_amount', 0)
         final_price = payment_result.get('final_price', plan.price)
         
+        # Determine status based on payment result
+        is_free_plan = payment_result.get('message') == 'Free plan - no payment required'
+        
         # Create billing history record with coupon details
         billing_record = BillingHistory.objects.create(
             business=business,
@@ -301,7 +318,7 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             billing_date=timezone.now(),
             square_payment_id=payment_result['payment_id'],
             details={
-                'renewal_type': 'automatic',
+                'renewal_type': renewal_type,
                 'card_last4': last4,
                 'plan_name': plan.name,
                 'billing_cycle': plan.billing_cycle,
@@ -312,13 +329,73 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             }
         )
         
+        # Create comprehensive renewal log
+        log_status = 'free_plan' if is_free_plan else 'success'
+        
+        SubscriptionRenewalLog.objects.create(
+            business=business,
+            subscription=new_subscription,
+            status=log_status,
+            renewal_type=renewal_type,
+            old_plan=old_subscription.plan,
+            new_plan=plan,
+            amount_charged=final_price,
+            square_payment_id=payment_result['payment_id'],
+            card_last_4=last4,
+            billing_record=billing_record,
+            error_message=None,
+            error_code=None,
+            details={
+                'payment_message': payment_result.get('message', 'Payment processed successfully'),
+                'coupon_applied': coupon_applied,
+                'coupon_code': coupon_code,
+                'discount_amount': str(discount_amount),
+                'original_price': str(payment_result.get('original_price', plan.price)),
+                'final_price': str(final_price),
+                'old_plan_name': old_subscription.plan.name,
+                'new_plan_name': plan.name,
+                'old_plan_price': str(old_subscription.plan.price),
+                'new_plan_price': str(plan.price),
+                'billing_cycle': plan.billing_cycle,
+                'start_date': new_subscription.start_date.isoformat(),
+                'end_date': new_subscription.end_date.isoformat(),
+                'notification_sent': True,
+            }
+        )
+        
         # Send success notification
         _send_successful_renewal_notification(business, new_subscription, plan, last4)
         
         print(f"Renewal completed successfully for {business.businessName}")
+        logger.info(f"Successfully renewed subscription for {business.businessName} - {renewal_type} from {old_subscription.plan.name} to {plan.name}")
         
     except Exception as e:
         print(f"Error handling successful renewal: {str(e)}")
+        logger.error(f"Error handling successful renewal for {business.businessName}: {str(e)}")
+        
+        # Create error log even in success handler if something goes wrong
+        try:
+            SubscriptionRenewalLog.objects.create(
+                business=business,
+                subscription=new_subscription if new_subscription else old_subscription,
+                status='failed',
+                renewal_type='automatic',
+                old_plan=old_subscription.plan,
+                new_plan=plan,
+                amount_charged=None,
+                square_payment_id=payment_result.get('payment_id'),
+                card_last_4=None,
+                billing_record=billing_record,
+                error_message=f"Error in success handler: {str(e)}",
+                error_code='HANDLER_ERROR',
+                details={
+                    'error_type': type(e).__name__,
+                    'error_traceback': str(e),
+                }
+            )
+        except Exception as log_error:
+            logger.error(f"Failed to create error log: {str(log_error)}")
+
 
 
 def _handle_failed_renewal(business, subscription, plan, payment_result):
@@ -333,13 +410,17 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
     """
     print(f"Failed renewal for {business.businessName} - Plan: {plan.name}")
     
+    billing_record = None
+    
     try:
         # Record the failed payment in billing history
         error_details = payment_result.get('error', 'Unknown error')
         if isinstance(error_details, list):
             error_message = '; '.join([e.get('detail', str(e)) for e in error_details])
+            error_code = error_details[0].get('code', 'UNKNOWN') if error_details else 'UNKNOWN'
         else:
             error_message = str(error_details)
+            error_code = 'PAYMENT_FAILED'
         
         billing_record = BillingHistory.objects.create(
             business=business,
@@ -355,17 +436,44 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
             }
         )
         
-        # Mark subscription as past_due
-        if subscription.end_date.date() < timezone.now().date():
-            subscription.status = 'past_due'
-            subscription.save()
+        # Create comprehensive renewal failure log
+        SubscriptionRenewalLog.objects.create(
+            business=business,
+            subscription=subscription,
+            status='failed',
+            renewal_type='automatic',
+            old_plan=subscription.plan,
+            new_plan=plan,
+            amount_charged=None,
+            square_payment_id=None,
+            card_last_4=None,
+            billing_record=billing_record,
+            error_message=error_message,
+            error_code=error_code,
+            details={
+                'payment_message': payment_result.get('message', 'Payment failed'),
+                'error_details': str(error_details),
+                'plan_name': plan.name,
+                'plan_price': str(plan.price),
+                'billing_cycle': plan.billing_cycle,
+                'subscription_status': subscription.status,
+                'subscription_end_date': subscription.end_date.isoformat() if subscription.end_date else None,
+                'notification_sent': True,
+            }
+        )
         
-
-        two_days_after = timezone.now().date() + timedelta(days=2)
+        # Update subscription status based on expiration
+        today = timezone.now().date()
+        grace_period_end = today - timedelta(days=2)  # 2 days after expiration
         
-        if subscription.end_date.date() < two_days_after:
+        if subscription.end_date.date() < grace_period_end:
+            # Grace period has passed - mark as ended
             subscription.is_active = False
             subscription.status = 'ended'
+            subscription.save()
+        elif subscription.end_date.date() < today:
+            # Just expired but within grace period - mark as past_due
+            subscription.status = 'past_due'
             subscription.save()
         
         # Send failure notification
@@ -373,11 +481,39 @@ def _handle_failed_renewal(business, subscription, plan, payment_result):
             _send_failed_renewal_notification(business, subscription, plan, error_message)
         except Exception as e:
             print(f"Error sending failed renewal notification: {str(e)}")
+            logger.error(f"Error sending failed renewal notification: {str(e)}")
         
         print(f"Recorded failed renewal for {business.businessName}")
+        logger.warning(f"Failed renewal for {business.businessName} - {error_message}")
         
     except Exception as e:
         print(f"Error handling failed renewal: {str(e)}")
+        logger.error(f"Error handling failed renewal for {business.businessName}: {str(e)}")
+        
+        # Create error log even if the failure handler fails
+        try:
+            SubscriptionRenewalLog.objects.create(
+                business=business,
+                subscription=subscription,
+                status='failed',
+                renewal_type='automatic',
+                old_plan=subscription.plan,
+                new_plan=plan,
+                amount_charged=None,
+                square_payment_id=None,
+                card_last_4=None,
+                billing_record=billing_record,
+                error_message=f"Error in failure handler: {str(e)}",
+                error_code='HANDLER_ERROR',
+                details={
+                    'error_type': type(e).__name__,
+                    'error_traceback': str(e),
+                    'original_error': str(payment_result.get('error', 'Unknown')),
+                }
+            )
+        except Exception as log_error:
+            logger.error(f"Failed to create error log: {str(log_error)}")
+
 
 
 def _send_successful_renewal_notification(business, subscription, plan, card_last4, is_upgrade=False):
@@ -470,6 +606,9 @@ The CleaningBizAI Team
 
 def _send_no_card_notification(business, subscription, plan):
     """Send email notification when no card is available for automatic renewal"""
+    
+    billing_record = None
+    
     try:
         # Prepare email content
         subject = f"ACTION REQUIRED: Update Payment Method for Subscription Renewal"
@@ -493,6 +632,7 @@ The CleaningBizAI Team
         """
         
         # Send the email
+        notification_sent = False
         if business.user and business.user.email:
             send_mail(
                 subject=subject,
@@ -502,9 +642,10 @@ The CleaningBizAI Team
                 fail_silently=False
             )
             print(f"Sent no card notification to {business.user.email}")
+            notification_sent = True
             
             # Create a record in billing history
-            BillingHistory.objects.create(
+            billing_record = BillingHistory.objects.create(
                 business=business,
                 subscription=subscription,
                 amount=plan.price,
@@ -519,9 +660,63 @@ The CleaningBizAI Team
             )
         else:
             print(f"No email address found for {business.businessName}")
+            logger.warning(f"No email address found for {business.businessName}")
+        
+        # Create comprehensive renewal log for no card scenario
+        SubscriptionRenewalLog.objects.create(
+            business=business,
+            subscription=subscription,
+            status='no_card',
+            renewal_type='automatic',
+            old_plan=subscription.plan,
+            new_plan=plan,
+            amount_charged=None,
+            square_payment_id=None,
+            card_last_4=None,
+            billing_record=billing_record,
+            error_message='No payment method on file',
+            error_code='NO_CARD',
+            details={
+                'plan_name': plan.name,
+                'plan_price': str(plan.price),
+                'billing_cycle': plan.billing_cycle,
+                'subscription_end_date': subscription.end_date.isoformat() if subscription.end_date else None,
+                'notification_sent': notification_sent,
+                'has_square_customer_id': bool(business.square_customer_id),
+                'has_square_card_id': bool(business.square_card_id),
+                'user_email': business.user.email if business.user else None,
+            }
+        )
+        
+        logger.info(f"No card notification logged for {business.businessName}")
             
     except Exception as e:
         print(f"Error sending no card notification: {str(e)}")
+        logger.error(f"Error sending no card notification for {business.businessName}: {str(e)}")
+        
+        # Create error log
+        try:
+            SubscriptionRenewalLog.objects.create(
+                business=business,
+                subscription=subscription,
+                status='no_card',
+                renewal_type='automatic',
+                old_plan=subscription.plan,
+                new_plan=plan,
+                amount_charged=None,
+                square_payment_id=None,
+                card_last_4=None,
+                billing_record=billing_record,
+                error_message=f"Error sending no card notification: {str(e)}",
+                error_code='NOTIFICATION_ERROR',
+                details={
+                    'error_type': type(e).__name__,
+                    'error_traceback': str(e),
+                }
+            )
+        except Exception as log_error:
+            logger.error(f"Failed to create no card log: {str(log_error)}")
+
 
 
 def schedule_subscription_renewals():
@@ -535,18 +730,7 @@ def schedule_subscription_renewals():
     # Check if the task is already scheduled
     task_name = 'Subscription Renewals (Test)'
     second_task_name = 'Auto Upgrade Subscription'
-    
-    if not Schedule.objects.filter(name=task_name).exists():
-        # Schedule the task to run every 5 minutes
-        schedule(
-            'subscription.tasks.process_subscription_renewals',
-            name=task_name,
-            schedule_type='D',  # Daily
-            repeats=-1,  # Repeat indefinitely
-            # At Midnight
-            next_run=timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        )
-        print(f"Scheduled {task_name} to run every 5 minutes for testing")
+
     
     if not Schedule.objects.filter(name=second_task_name).exists():
         schedule(
@@ -588,7 +772,7 @@ def auto_upgrade_subscription():
                 logger.warning(f"No payment method found for {business.businessName}")
                 continue
 
-            active_subscription = business.active_subscription
+            active_subscription = business.active_subscription()
             if not active_subscription:
                 logger.warning(f"No active subscription found for {business.businessName}")
                 continue
@@ -636,9 +820,6 @@ def auto_upgrade_subscription():
                     if payment_result['success']:
                         # Handle successful renewal using existing function
                         _handle_successful_renewal(business, active_subscription, next_plan, payment_result, square_client)
-                        
-                
-                        
                         logger.info(f"Successfully upgraded {business.businessName} from {current_plan.name} to {next_plan.name}")
                     else:
                         # Handle failed renewal using existing function

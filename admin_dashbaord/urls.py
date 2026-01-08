@@ -54,6 +54,10 @@ urlpatterns = [
     path('subscriptions/admin-cancel-plan/', views.admin_cancel_plan, name='admin_cancel_plan'),
     path('api/subscription-plans/', views.get_subscription_plans_api, name='get_subscription_plans_api'),
     
+    # Subscription Renewal Logs
+    path('renewal-logs/', views.renewal_logs, name='renewal_logs'),
+    path('renewal-logs/<int:log_id>/', views.renewal_log_detail, name='renewal_log_detail'),
+    
     # Platform Settings
     path('platform-settings/', saas_views.platform_settings, name='platform_settings'),
     

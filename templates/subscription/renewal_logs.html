@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Renewal History{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Renewal History</h1>
+            <p class="text-muted">View your subscription renewal attempts and history</p>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'subscription:subscription_management' %}">Subscription</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Renewal History</li>
+        </ol>
+    </nav>
+    
+    <!-- Summary Cards Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Total Renewals</h6>
+                        <div class="rounded-circle bg-primary-light p-2">
+                            <i class="fas fa-sync-alt text-primary"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ total_logs }}</h2>
+                    <p class="text-muted mb-0">All time</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Successful</h6>
+                        <div class="rounded-circle bg-success-light p-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ success_count }}</h2>
+                    <p class="text-success mb-0">
+                        <i class="fas fa-check-circle me-1"></i> 
+                        {% if total_logs > 0 %}
+                            {{ success_count|floatformat:0 }} / {{ total_logs }}
+                        {% else %}
+                            No renewals yet
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-subtitle text-muted">Failed</h6>
+                        <div class="rounded-circle bg-danger-light p-2">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-1">{{ failed_count }}</h2>
+                    <p class="text-muted mb-0">Requires attention</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'subscription:renewal_logs' %}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                {% if status_filter or date_from or date_to %}
+                <div class="mt-3">
+                    <a href="{% url 'subscription:renewal_logs' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Renewal Logs Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Renewal Attempts</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Plan Change</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <div>{{ log.attempted_at|date:"M d, Y" }}</div>
+                                <small class="text-muted">{{ log.attempted_at|date:"g:i A" }}</small>
+                            </td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                <span class="badge bg-success-light text-success">
+                                    <i class="fas fa-check-circle me-1"></i>Success
+                                </span>
+                                {% elif log.status == 'failed' %}
+                                <span class="badge bg-danger-light text-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Failed
+                                </span>
+                                {% elif log.status == 'no_card' %}
+                                <span class="badge bg-info-light text-info">
+                                    <i class="fas fa-credit-card me-1"></i>No Card
+                                </span>
+                                {% elif log.status == 'free_plan' %}
+                                <span class="badge bg-secondary-light text-secondary">
+                                    <i class="fas fa-gift me-1"></i>Free Plan
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-light text-warning">{{ log.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.old_plan and log.new_plan %}
+                                    {% if log.old_plan.id == log.new_plan.id %}
+                                    <span class="text-muted">{{ log.old_plan.name }}</span>
+                                    {% else %}
+                                    <span class="text-muted">{{ log.old_plan.name }}</span>
+                                    <i class="fas fa-arrow-right mx-1"></i>
+                                    <strong>{{ log.new_plan.name }}</strong>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.amount_charged %}
+                                <strong>${{ log.amount_charged|floatformat:2 }}</strong>
+                                {% else %}
+                                <span class="text-muted">$0.00</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'subscription:renewal_log_detail' log.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No renewal logs found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if logs.has_other_pages %}
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <p class="text-muted mb-0">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</p>
+                </div>
+                <nav aria-label="Renewal logs pagination">
+                    <ul class="pagination mb-0">
+                        {% if logs.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ logs.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in logs.paginator.page_range %}
+                            {% if logs.number == num %}
+                            <li class="page-item active"><a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a></li>
+                            {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if logs.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ logs.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-light { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-success-light { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-warning-light { background-color: rgba(255, 193, 7, 0.1); }
+    .bg-danger-light { background-color: rgba(220, 53, 69, 0.1); }
+    .bg-info-light { background-color: rgba(13, 202, 240, 0.1); }
+    .bg-secondary-light { background-color: rgba(108, 117, 125, 0.1); }
+</style>
+{% endblock %}

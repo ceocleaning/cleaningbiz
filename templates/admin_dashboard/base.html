@@ -529,6 +529,12 @@
                         <span>Billing History</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'renewal-logs' in request.path %}active{% endif %}" href="{% url 'admin_dashboard:renewal_logs' %}">
+                        <i class="fas fa-fw fa-sync-alt"></i>
+                        <span>Renewal Logs</span>
+                    </a>
+                </li>
             </ul>
             
             <hr class="sidebar-divider">

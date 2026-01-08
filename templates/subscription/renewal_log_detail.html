@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Renewal Log #{{ log.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'subscription:renewal_logs' %}" class="btn btn-sm btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-1"></i> Back to Renewal History
+            </a>
+            <h1 class="h2 mb-0">Renewal Log #{{ log.id }}</h1>
+            <p class="text-muted">Attempted on {{ log.attempted_at|date:"F j, Y, g:i A" }}</p>
+        </div>
+        <div>
+            {% if log.status == 'success' or log.status == 'free_plan' %}
+            <span class="badge bg-success fs-6 px-3 py-2">
+                <i class="fas fa-check-circle me-1"></i>{{ log.get_status_display }}
+            </span>
+            {% elif log.status == 'failed' %}
+            <span class="badge bg-danger fs-6 px-3 py-2">
+                <i class="fas fa-times-circle me-1"></i>{{ log.get_status_display }}
+            </span>
+            {% elif log.status == 'no_card' %}
+            <span class="badge bg-info fs-6 px-3 py-2">
+                <i class="fas fa-credit-card me-1"></i>{{ log.get_status_display }}
+            </span>
+            {% else %}
+            <span class="badge bg-warning fs-6 px-3 py-2">{{ log.get_status_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'subscription:subscription_management' %}">Subscription</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'subscription:renewal_logs' %}">Renewal History</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Log #{{ log.id }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-lg-8">
+            <!-- Plan Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Plan Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded bg-light">
+                                <label class="text-muted small">Previous Plan</label>
+                                {% if log.old_plan %}
+                                <div class="h5 mb-1">{{ log.old_plan.name }}</div>
+                                <div class="text-muted">${{ log.old_plan.price|floatformat:2 }}/{{ log.old_plan.get_billing_cycle_display }}</div>
+                                {% else %}
+                                <div class="text-muted">N/A</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            {% if log.old_plan and log.new_plan and log.old_plan.id != log.new_plan.id %}
+                            <i class="fas fa-arrow-right fa-2x text-primary"></i>
+                            {% else %}
+                            <i class="fas fa-sync fa-2x text-muted"></i>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded {% if log.status == 'success' or log.status == 'free_plan' %}bg-success-light{% else %}bg-light{% endif %}">
+                                <label class="text-muted small">New Plan</label>
+                                {% if log.new_plan %}
+                                <div class="h5 mb-1">{{ log.new_plan.name }}</div>
+                                <div class="text-muted">${{ log.new_plan.price|floatformat:2 }}/{{ log.new_plan.get_billing_cycle_display }}</div>
+                                {% else %}
+                                <div class="text-muted">N/A</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Amount Charged</label>
+                            <div class="h4 mb-0">
+                                {% if log.amount_charged %}
+                                ${{ log.amount_charged|floatformat:2 }}
+                                {% else %}
+                                <span class="text-muted">$0.00</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Card Used</label>
+                            <div class="h6">
+                                {% if log.card_last_4 %}
+                                <i class="fas fa-credit-card me-1"></i>•••• {{ log.card_last_4 }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="text-muted small">Payment ID</label>
+                            <div>
+                                {% if log.square_payment_id %}
+                                <code class="text-primary">{{ log.square_payment_id }}</code>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Information Card (Only show if failed) -->
+            {% if log.status == 'failed' or log.status == 'no_card' %}
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger-light">
+                    <h5 class="mb-0 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger mb-0">
+                        {% if log.error_message %}
+                        <strong>{{ log.error_code|default:"Error" }}:</strong> {{ log.error_message }}
+                        {% else %}
+                        <span class="text-muted">No error message available</span>
+                        {% endif %}
+                    </div>
+                    {% if log.status == 'no_card' %}
+                    <div class="mt-3">
+                        <a href="{% url 'subscription:manage_card' %}" class="btn btn-primary">
+                            <i class="fas fa-credit-card me-1"></i> Add Payment Method
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Stats Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                        <span class="text-muted">Log ID</span>
+                        <strong>#{{ log.id }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                        <span class="text-muted">Renewal Type</span>
+                        <span>
+                            {% if log.renewal_type == 'automatic' %}
+                            <span class="badge bg-primary-light text-primary">Automatic</span>
+                            {% elif log.renewal_type == 'upgrade' %}
+                            <span class="badge bg-success-light text-success">Upgrade</span>
+                            {% elif log.renewal_type == 'downgrade' %}
+                            <span class="badge bg-warning-light text-warning">Downgrade</span>
+                            {% else %}
+                            <span class="badge bg-info-light text-info">{{ log.get_renewal_type_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                        <span class="text-muted">Attempted</span>
+                        <span>{{ log.attempted_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Time</span>
+                        <span>{{ log.attempted_at|date:"g:i A" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Logs Card -->
+            {% if related_logs %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Renewals</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for related_log in related_logs %}
+                        <a href="{% url 'subscription:renewal_log_detail' related_log.id %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">#{{ related_log.id }}</div>
+                                    <small class="text-muted">{{ related_log.attempted_at|date:"M d, Y g:i A" }}</small>
+                                </div>
+                                <div>
+                                    {% if related_log.status == 'success' %}
+                                    <span class="badge bg-success">Success</span>
+                                    {% elif related_log.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% elif related_log.status == 'no_card' %}
+                                    <span class="badge bg-info">No Card</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ related_log.get_status_display }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'subscription:subscription_management' %}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-file-invoice-dollar me-1"></i> View Subscription
+                    </a>
+                    <a href="{% url 'subscription:billing_history' %}" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-receipt me-1"></i> Billing History
+                    </a>
+                    <a href="{% url 'subscription:renewal_logs' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left me-1"></i> Back to All Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-light { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-success-light { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-warning-light { background-color: rgba(255, 193, 7, 0.1); }
+    .bg-danger-light { background-color: rgba(220, 53, 69, 0.1); }
+    .bg-info-light { background-color: rgba(13, 202, 240, 0.1); }
+    .bg-secondary-light { background-color: rgba(108, 117, 125, 0.1); }
+</style>
+{% endblock %}
