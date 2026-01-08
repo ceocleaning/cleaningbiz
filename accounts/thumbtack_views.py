@@ -236,7 +236,46 @@ def get_thumbtack_client_credentials_token():
     
     # Define the scopes needed for your application
     # Adjust these based on your specific requirements
-    scopes = ['openid', 'profile']
+
+    scopes = [
+        "availability",
+        "bookings",
+        'openid', 'profile'
+        "demand::businesses/media.read",
+        "demand::businesses/reviews.read",
+        "demand::businesses/search.read",
+        "demand::categories.read",
+        "demand::categories/request-form.read",
+        "demand::keywords.read",
+        "demand::messages.read",
+        "demand::messages.write",
+        "demand::negotiations.read",
+        "demand::orders.read",
+        "demand::orders.write",
+        "demand::orders/availability.read",
+        "demand::requests.write",
+        "demand::users.disconnect",
+        "demand::users.read",
+        "demand::users.write",
+        "demand::webhooks.read",
+        "demand::webhooks.write",
+        "messages",
+        "offline_access",
+        "supply::associate-phone-numbers.read",
+        "supply::associate-phone-numbers.write",
+        "supply::businesses.list",
+        "supply::businesses/associate-phone-numbers.read",
+        "supply::businesses/associate-phone-numbers.write",
+        "supply::messages.read",
+        "supply::messages.write",
+        "supply::negotiations.read",
+        "supply::users.disconnect",
+        "supply::users.read",
+        "supply::webhooks.read",
+        "supply::webhooks.write",
+        "targeting"
+]
+
     
     # Set up the data for the token request
     data = {
