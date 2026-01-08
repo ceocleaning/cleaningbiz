@@ -40,7 +40,7 @@ def thumbtack_connect(request):
     
     # Define the scopes needed for your application
     # Thumbtack-specific scopes for accessing business data and leads
-    scopes = ["availability", "bookings", "openid", "profile", "demand::businesses/media.read", "demand::businesses/reviews.read", "demand::businesses/search.read", "demand::categories.read", "demand::categories/request-form.read", "demand::keywords.read", "demand::messages.read", "demand::messages.write", "demand::negotiations.read", "demand::orders.read", "demand::orders.write", "demand::orders/availability.read", "demand::requests.write", "demand::users.disconnect", "demand::users.read", "demand::users.write", "demand::webhooks.read", "demand::webhooks.write", "messages", "offline_access", "supply::associate-phone-numbers.read", "supply::associate-phone-numbers.write", "supply::businesses.list", "supply::businesses/associate-phone-numbers.read", "supply::businesses/associate-phone-numbers.write", "supply::messages.read", "supply::messages.write", "supply::negotiations.read", "supply::users.disconnect", "supply::users.read", "supply::webhooks.read", "supply::webhooks.write", "targeting"]
+    scopes = ["openid", "profile", "offline_access", "supply::associate-phone-numbers.read", "supply::associate-phone-numbers.write", "supply::businesses.list", "supply::businesses/associate-phone-numbers.read", "supply::businesses/associate-phone-numbers.write", "supply::messages.read", "supply::messages.write", "supply::negotiations.read", "supply::users.disconnect", "supply::users.read", "supply::webhooks.read", "supply::webhooks.write", "targeting"]
     
     # Build the authorization URL
     auth_url = f"{THUMBTACK_AUTH_URL}?" + \
@@ -332,28 +332,7 @@ def get_thumbtack_client_credentials_token():
     # Adjust these based on your specific requirements
 
     scopes = [
-        "availability",
-        "bookings",
         'openid', 'profile',
-        "demand::businesses/media.read",
-        "demand::businesses/reviews.read",
-        "demand::businesses/search.read",
-        "demand::categories.read",
-        "demand::categories/request-form.read",
-        "demand::keywords.read",
-        "demand::messages.read",
-        "demand::messages.write",
-        "demand::negotiations.read",
-        "demand::orders.read",
-        "demand::orders.write",
-        "demand::orders/availability.read",
-        "demand::requests.write",
-        "demand::users.disconnect",
-        "demand::users.read",
-        "demand::users.write",
-        "demand::webhooks.read",
-        "demand::webhooks.write",
-        "messages",
         "offline_access",
         "supply::associate-phone-numbers.read",
         "supply::associate-phone-numbers.write",
@@ -367,7 +346,6 @@ def get_thumbtack_client_credentials_token():
         "supply::users.read",
         "supply::webhooks.read",
         "supply::webhooks.write",
-        "targeting"
 ]
 
     
