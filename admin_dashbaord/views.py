@@ -869,9 +869,41 @@ def export_businesses(request):
 def subscriptions(request):
     """View to display all business subscriptions"""
     from subscription.models import BusinessSubscription, SubscriptionPlan
+    from datetime import timedelta
     
     all_subscriptions = BusinessSubscription.objects.all().order_by('-start_date')
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    
+    # Calculate statistics
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
+    seven_days_from_now = today + timedelta(days=7)
+    
+    # 1. Total Active Subscriptions
+    total_active = BusinessSubscription.objects.filter(
+        is_active=True,
+        status='active'
+    ).count()
+    
+    # 2. Subscriptions to be renewed in 7 days
+    renewals_in_7_days = BusinessSubscription.objects.filter(
+        is_active=True,
+        Q(status='active') | Q(status='past_due'),
+        end_date__gte=timezone.now(),
+        end_date__lte=timezone.now() + timedelta(days=7)
+    ).count()
+    
+    # 3. Subscriptions to be renewed tomorrow
+    renewals_tomorrow = BusinessSubscription.objects.filter(
+        is_active=True,
+        Q(status='active') | Q(status='past_due'),
+        end_date__date=tomorrow
+    ).count()
+    
+    # 4. Total Subscriptions Past Due or Past Billing Date
+    past_due_subscriptions = BusinessSubscription.objects.filter(
+        Q(status='past_due') | Q(end_date__lt=timezone.now(), is_active=True)
+    ).count()
     
     # Pagination
     paginator = Paginator(all_subscriptions, 10)
@@ -882,6 +914,11 @@ def subscriptions(request):
         'subscriptions': subscriptions,
         'subscription_plans': subscription_plans,
         'today': timezone.now(),
+        # Statistics
+        'total_active': total_active,
+        'renewals_in_7_days': renewals_in_7_days,
+        'renewals_tomorrow': renewals_tomorrow,
+        'past_due_subscriptions': past_due_subscriptions,
     }
     
     return render(request, 'admin_dashboard/subscriptions.html', context)
