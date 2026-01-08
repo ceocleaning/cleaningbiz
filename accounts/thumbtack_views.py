@@ -40,7 +40,7 @@ def thumbtack_connect(request):
     
     # Define the scopes needed for your application
     # Thumbtack-specific scopes for accessing business data and leads
-    scopes = ["openid", "profile", "offline_access", "supply::associate-phone-numbers.read", "supply::associate-phone-numbers.write", "supply::businesses.list", "supply::businesses/associate-phone-numbers.read", "supply::businesses/associate-phone-numbers.write", "supply::messages.read", "supply::messages.write", "supply::negotiations.read", "supply::users.disconnect", "supply::users.read", "supply::webhooks.read", "supply::webhooks.write", "targeting"]
+    scopes = ["openid", "profile", "offline_access", "supply::businesses.list", "supply::messages.read", "supply::messages.write", "supply::negotiations.read", "supply::users.disconnect", "supply::users.read", "supply::webhooks.read", "supply::webhooks.write"]
     
     # Build the authorization URL
     auth_url = f"{THUMBTACK_AUTH_URL}?" + \
