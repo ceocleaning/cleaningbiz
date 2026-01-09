@@ -887,22 +887,22 @@ def subscriptions(request):
     
     # 2. Subscriptions to be renewed in 7 days
     renewals_in_7_days = BusinessSubscription.objects.filter(
-        is_active=True,
         Q(status='active') | Q(status='past_due'),
+        is_active=True,
         end_date__gte=timezone.now(),
         end_date__lte=timezone.now() + timedelta(days=7)
     ).count()
     
     # 3. Subscriptions to be renewed tomorrow
     renewals_tomorrow = BusinessSubscription.objects.filter(
-        is_active=True,
         Q(status='active') | Q(status='past_due'),
+        is_active=True,
         end_date__date=tomorrow
     ).count()
     
     # 4. Total Subscriptions Past Due or Past Billing Date
     past_due_subscriptions = BusinessSubscription.objects.filter(
-        Q(status='past_due') | Q(end_date__lt=timezone.now(), is_active=True)
+        Q(status='past_due') | (Q(end_date__lt=timezone.now()) & Q(is_active=True))
     ).count()
     
     # Pagination
