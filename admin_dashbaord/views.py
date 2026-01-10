@@ -871,14 +871,59 @@ def subscriptions(request):
     from subscription.models import BusinessSubscription, SubscriptionPlan
     from datetime import timedelta
     
-    all_subscriptions = BusinessSubscription.objects.all().order_by('-start_date')
     subscription_plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
     
-    # Calculate statistics
+    # Calculate dates for filtering
     today = timezone.now().date()
     tomorrow = today + timedelta(days=1)
     seven_days_from_now = today + timedelta(days=7)
     
+    # Get filter parameter from request
+    filter_type = request.GET.get('filter', 'all')
+    
+    # Base queryset
+    base_queryset = BusinessSubscription.objects.all()
+    
+    # Apply filter based on selection
+    if filter_type == 'renewing_tomorrow':
+        # Subscriptions with next_billing_date or end_date tomorrow
+        subscriptions_queryset = base_queryset.filter(
+            Q(status='active') | Q(status='past_due'),
+            is_active=True
+        ).filter(
+            Q(next_billing_date__date=tomorrow) | 
+            (Q(next_billing_date__isnull=True) & Q(end_date__date=tomorrow))
+        ).order_by('-start_date')
+    elif filter_type == 'renewing_this_week':
+        # Subscriptions with next_billing_date or end_date within the next 7 days
+        subscriptions_queryset = base_queryset.filter(
+            Q(status='active') | Q(status='past_due'),
+            is_active=True
+        ).filter(
+            Q(next_billing_date__date__gte=today, next_billing_date__date__lte=seven_days_from_now) |
+            (Q(next_billing_date__isnull=True) & Q(end_date__date__gte=today, end_date__date__lte=seven_days_from_now))
+        ).order_by('-start_date')
+    elif filter_type == 'active':
+        # Active subscriptions
+        subscriptions_queryset = base_queryset.filter(
+            status='active',
+            is_active=True
+        ).order_by('-start_date')
+    elif filter_type == 'past_due':
+        # Past due subscriptions
+        subscriptions_queryset = base_queryset.filter(
+            status='past_due'
+        ).order_by('-start_date')
+    elif filter_type == 'cancelled':
+        # Cancelled subscriptions
+        subscriptions_queryset = base_queryset.filter(
+            status='cancelled'
+        ).order_by('-start_date')
+    else:
+        # All subscriptions (default)
+        subscriptions_queryset = base_queryset.order_by('-start_date')
+    
+    # Calculate statistics (always show total counts regardless of filter)
     # 1. Total Active Subscriptions
     total_active = BusinessSubscription.objects.filter(
         is_active=True,
@@ -888,32 +933,31 @@ def subscriptions(request):
     # 2. Subscriptions to be renewed in 7 days
     renewals_in_7_days = BusinessSubscription.objects.filter(
         Q(status='active') | Q(status='past_due'),
-        is_active=True,
-        end_date__gte=timezone.now(),
-        end_date__lte=timezone.now() + timedelta(days=7)
+        is_active=True
+    ).filter(
+        Q(next_billing_date__date__gte=today, next_billing_date__date__lte=seven_days_from_now) |
+        (Q(next_billing_date__isnull=True) & Q(end_date__date__gte=today, end_date__date__lte=seven_days_from_now))
     ).count()
     
     # 3. Subscriptions to be renewed tomorrow
     renewals_tomorrow = BusinessSubscription.objects.filter(
         Q(status='active') | Q(status='past_due'),
-        is_active=True,
-        end_date__date=tomorrow
+        is_active=True
+    ).filter(
+        Q(next_billing_date__date=tomorrow) | 
+        (Q(next_billing_date__isnull=True) & Q(end_date__date=tomorrow))
     ).count()
     
-    # 4. Total Subscriptions Past Due or Past Billing Date
+    # 4. Total Subscriptions Past Due
     past_due_subscriptions = BusinessSubscription.objects.filter(
-        Q(status='past_due') | (Q(end_date__lt=timezone.now()) & Q(is_active=True))
-    ).exclude(status='active').exclude(status='ended').count()
-    
-    # Pagination
-    paginator = Paginator(all_subscriptions, 45)
-    page_number = request.GET.get('page', 1)
-    subscriptions = paginator.get_page(page_number)
+        status='past_due'
+    ).count()
     
     context = {
-        'subscriptions': subscriptions,
+        'subscriptions': subscriptions_queryset,
         'subscription_plans': subscription_plans,
         'today': timezone.now(),
+        'current_filter': filter_type,
         # Statistics
         'total_active': total_active,
         'renewals_in_7_days': renewals_in_7_days,
