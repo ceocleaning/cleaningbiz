@@ -1163,7 +1163,6 @@ def manage_card(request):
                 'family_name': request.user.last_name or "",
                 'email_address': request.user.email,
                 'reference_id': str(business.businessId),
-                'phone_number': business.phone
             }
             
             customer_result = square_client.customers.create_customer(
