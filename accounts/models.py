@@ -95,8 +95,8 @@ class Business(models.Model):
             subscription = BusinessSubscription.objects.filter(
                 business=self,
                 is_active=True,
-                status__in=['active', 'cancelled'],
-                end_date__gte=timezone.now() - timedelta(days=1)
+                status__in=['active', 'cancelled', 'past_due'],  # Include past_due for grace period
+                end_date__gte=timezone.now() - timedelta(days=2)  # 2-day grace period
             ).first()
 
             if subscription and subscription.is_subscription_active():

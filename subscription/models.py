@@ -303,9 +303,11 @@ class BusinessSubscription(models.Model):
         """Check if the subscription is currently active."""
         if not self.is_active:
             return False
-        if self.status == 'past_due':
+        # Allow past_due subscriptions during grace period (they're still active)
+        if self.status not in ['active', 'cancelled', 'past_due']:
             return False
-        if self.end_date and self.end_date + timedelta(days=1) < timezone.now():
+        # 2-day grace period after end_date
+        if self.end_date and self.end_date + timedelta(days=2) < timezone.now():
             return False
         return True
 

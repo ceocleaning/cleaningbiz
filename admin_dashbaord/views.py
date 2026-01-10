@@ -511,7 +511,7 @@ def business_detail(request, business_id):
     try:
         subscription = business.active_subscription()
     except BusinessSubscription.DoesNotExist:
-        business.active_subscription = None
+        subscription = None
 
 
     
@@ -525,12 +525,12 @@ def business_detail(request, business_id):
     business.future_subscription = None
     
     
-    if business.active_subscription and business.active_subscription.next_plan_id:
+    if subscription and subscription.next_plan_id:
         try:
             business.future_subscription = {
-                'current_subscription': business.active_subscription,
-                'next_plan': SubscriptionPlan.objects.get(id=business.active_subscription.next_plan_id),
-                'effective_date': business.active_subscription.next_billing_date
+                'current_subscription': subscription,
+                'next_plan': SubscriptionPlan.objects.get(id=subscription.next_plan_id),
+                'effective_date': subscription.next_billing_date
             }
         except SubscriptionPlan.DoesNotExist:
             pass
@@ -903,10 +903,10 @@ def subscriptions(request):
     # 4. Total Subscriptions Past Due or Past Billing Date
     past_due_subscriptions = BusinessSubscription.objects.filter(
         Q(status='past_due') | (Q(end_date__lt=timezone.now()) & Q(is_active=True))
-    ).count()
+    ).exclude(status='active').exclude(status='ended').count()
     
     # Pagination
-    paginator = Paginator(all_subscriptions, 10)
+    paginator = Paginator(all_subscriptions, 45)
     page_number = request.GET.get('page', 1)
     subscriptions = paginator.get_page(page_number)
     

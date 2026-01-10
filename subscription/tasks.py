@@ -187,9 +187,9 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 'card_details': {'card': {'last_4': 'FREE'}},
                 'coupon_applied': True,
                 'coupon_code': coupon.code,
-                'original_price': original_price,
+                'original_price': float(original_price),  # Convert Decimal to float
                 'final_price': 0,
-                'discount_amount': discount_amount
+                'discount_amount': float(discount_amount)  # Convert Decimal to float
             }
         
         # Calculate amount in cents
@@ -223,9 +223,9 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 'card_details': payment.get('card_details', {}),
                 'coupon_applied': discount_applied,
                 'coupon_code': coupon_code,
-                'original_price': original_price,
-                'final_price': final_price,
-                'discount_amount': discount_amount
+                'original_price': float(original_price),  # Convert Decimal to float
+                'final_price': float(final_price),  # Convert Decimal to float
+                'discount_amount': float(discount_amount)  # Convert Decimal to float
             }
         else:
             return {
@@ -323,9 +323,9 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
                 'plan_name': plan.name,
                 'billing_cycle': plan.billing_cycle,
                 'coupon_code': coupon_code if coupon_code else "No Coupon",
-                'discount_amount': discount_amount,
+                'discount_amount': str(discount_amount),  # Convert to string for JSON
                 'coupon_applied': coupon_applied,
-                'original_price': payment_result.get('original_price', plan.price)
+                'original_price': str(payment_result.get('original_price', plan.price))  # Convert to string for JSON
             }
         )
         
@@ -348,14 +348,14 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             details={
                 'payment_message': payment_result.get('message', 'Payment processed successfully'),
                 'coupon_applied': coupon_applied,
-                'coupon_code': coupon_code,
-                'discount_amount': str(discount_amount),
-                'original_price': str(payment_result.get('original_price', plan.price)),
-                'final_price': str(final_price),
+                'coupon_code': str(coupon_code) if coupon_code else None,  # Convert to string for JSON
+                'discount_amount': str(discount_amount),  # Already converted
+                'original_price': str(payment_result.get('original_price', plan.price)),  # Already converted
+                'final_price': str(final_price),  # Already converted
                 'old_plan_name': old_subscription.plan.name,
                 'new_plan_name': plan.name,
-                'old_plan_price': str(old_subscription.plan.price),
-                'new_plan_price': str(plan.price),
+                'old_plan_price': str(old_subscription.plan.price),  # Already converted
+                'new_plan_price': str(plan.price),  # Already converted
                 'billing_cycle': plan.billing_cycle,
                 'start_date': new_subscription.start_date.isoformat(),
                 'end_date': new_subscription.end_date.isoformat(),
