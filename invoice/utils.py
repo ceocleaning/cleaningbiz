@@ -20,6 +20,7 @@ def create_and_start_thread(fn, args):
 
 
 def handle_payment_completed(payment):
+    print("Payment completed handler called")
     try:
         invoice = payment.invoice
         booking = invoice.booking
@@ -29,9 +30,10 @@ def handle_payment_completed(payment):
         from bookings.utils import send_jobs_to_cleaners
      
         
-        create_and_start_thread(send_jobs_to_cleaners, args=(business, booking))
+        
         create_and_start_thread(notify_business_owner_payment_completed, args=(business, payment, invoice, booking))
         create_and_start_thread(send_email_payment_completed, args=(payment,))
+        create_and_start_thread(send_jobs_to_cleaners, args=(business, booking))
 
         
         return True
@@ -62,7 +64,7 @@ Payment Details:
 - Invoice ID: {invoice.invoiceId}
 - Payment ID: {payment.paymentId}
 - Amount: ${invoice.amount:.2f}
-- Payment Date: {payment.paidAt.strftime('%Y-%m-%d %H:%M:%S')}
+- Payment Date: {format_date(payment.paidAt) if payment.paidAt else 'Pending'}
 
 Customer Details:
 - Name: {booking.customer.get_full_name()}

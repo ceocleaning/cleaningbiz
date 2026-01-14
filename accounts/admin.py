@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SquareCredentials, StripeCredentials, PayPalCredentials, ThumbtackProfile
+from .models import Business, BusinessSettings, ApiCredential, CustomAddons, PasswordResetOTP, SquareCredentials, StripeCredentials, PayPalCredentials, ThumbtackProfile, CleanerProfile
 
 
 class BusinessAdmin(admin.ModelAdmin):
@@ -76,3 +76,6 @@ class ThumbtackProfileAdmin(admin.ModelAdmin):
     list_display = ('id', 'business', 'thumbtack_business_id', 'access_token', 'refresh_token', 'created_at', 'updated_at')
     search_fields = ('business__businessName', 'thumbtack_business_id', 'access_token', 'refresh_token')
     readonly_fields = ('created_at', 'updated_at')
+
+
+admin.site.register(CleanerProfile)

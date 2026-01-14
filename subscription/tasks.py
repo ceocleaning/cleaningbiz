@@ -160,16 +160,30 @@ def _process_renewal_payment(business, subscription, plan, square_client):
         coupon_code = None
         discount_amount = 0
         
-        # Apply coupon if it exists, is of type per_user, and is valid for the user
-        if coupon and coupon.limit_type == 'per_user' and business.user:
-            if coupon.is_valid_for_user(business.user):
+        # Apply coupon if it exists and is valid
+        if coupon:
+            is_valid = False
+            # Check if this is a recurring use of the same coupon already on the subscription
+            # If it's a new_coupon, we check full validity; if it's a carry-over coupon_used, we only check activity/expiry
+            if coupon == subscription.coupon_used and not subscription.new_coupon:
+                is_valid = coupon.is_active and (not coupon.expiry_date or coupon.expiry_date >= timezone.now().date())
+                if is_valid:
+                    print(f"Recurring coupon {coupon.code} is still active/valid for {business.businessName}")
+            else:
+                # For new/priority coupons, do full validity check including usage limits
+                if coupon.limit_type == 'per_user' and business.user:
+                    is_valid = coupon.is_valid_for_user(business.user)
+                else:
+                    is_valid = coupon.is_valid()
+            
+            if is_valid:
                 # Apply the coupon discount
                 coupon_code = coupon.code
                 original_price = final_price
                 final_price = coupon.apply_discount(final_price)
                 discount_amount = float(original_price) - float(final_price)
                 discount_applied = True
-                print(f"Applied coupon {coupon.code} for user {business.user.username}, discount amount: {discount_amount}")
+                print(f"Applied coupon {coupon.code}, discount amount: {discount_amount}")
                 
                 # If we used new_coupon, move it to coupon_used and clear new_coupon
                 if subscription.new_coupon == coupon:
@@ -292,6 +306,8 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             next_billing_date=new_end_date,
             square_subscription_id=payment_result['payment_id'],
             square_customer_id=business.square_customer_id,
+            coupon_used=old_subscription.coupon_used if payment_result.get('coupon_applied') else None,
+            new_coupon=old_subscription.new_coupon if payment_result.get('coupon_applied') else None,
             is_active=True
         )
         

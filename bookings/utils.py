@@ -37,8 +37,10 @@ def send_jobs_to_cleaners(business, booking, exclude_ids=None, assignment_check_
     available_cleaners = find_all_available_cleaners(cleaners, time_to_check)
     
     if not available_cleaners:
+        print("No available cleaners found")
         return False
 
+    print("Available cleaners found, creating jobs")
     jobs_created = 0
     for cleaner_id in available_cleaners:
         cleaner = CleanerProfile.objects.filter(cleaner__id=cleaner_id).first()
@@ -77,9 +79,10 @@ def send_jobs_to_cleaners(business, booking, exclude_ids=None, assignment_check_
                 )
                 jobs_created += 1
             else:
-                pass
+                print("Job already exists for cleaner", cleaner.cleaner.name)
+
         else:
-            pass
+            print("No available cleaners found")
     
     return jobs_created > 0
 

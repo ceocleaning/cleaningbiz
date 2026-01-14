@@ -467,6 +467,9 @@ def process_stripe_payment(request):
                     idempotency_key=idempotency_key
                 )
 
+                print("Payment intent created successfully")
+                print(payment_intent)
+
                 if payment_intent.status in ['requires_capture', 'succeeded']:
                     # If tip amount is provided, update the booking using TipService
                     booking = invoice.booking
@@ -498,6 +501,8 @@ def process_stripe_payment(request):
                         payment_type='authorized'
                     )
 
+                    print("Payment authorized successfully")
+                    print("Adding handle_payment_completed thread")
                     payment_thread = threading.Thread(target=handle_payment_completed, args=(payment,))
                     payment_thread.daemon = True
                     payment_thread.start()

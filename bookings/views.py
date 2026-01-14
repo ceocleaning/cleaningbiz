@@ -51,8 +51,7 @@ def all_bookings(request):
     upcoming_bookings = all_bookings.filter(
         isCompleted=False,
         cleaningDate__gte=today,
-        invoice__isnull=True,
-        invoice__isPaid=False
+        invoice__payments__status__in=["COMPLETED", "AUTHORIZED", 'APPROVED']
     ).order_by('cleaningDate', 'startTime')
     
     # Upcoming paid bookings (not completed, future date, with paid invoice)
@@ -60,7 +59,7 @@ def all_bookings(request):
         isCompleted=False,
         cleaningDate__gte=today,
         invoice__isnull=False,
-        invoice__isPaid=True
+        invoice__payments__status__in=["COMPLETED", "AUTHORIZED", 'APPROVED']
     ).order_by('cleaningDate', 'startTime')
     
     # Completed bookings (isCompleted=True and past date)
@@ -80,7 +79,8 @@ def all_bookings(request):
         isCompleted=False,
         invoice__isnull=False,
         invoice__isPaid=False,
-        cancelled_at__isnull=True
+        cancelled_at__isnull=True,
+        invoice__payments__status__in=["PENDING",]
     ).order_by('cleaningDate', 'startTime')
     
     # Counts for the dashboard cards
