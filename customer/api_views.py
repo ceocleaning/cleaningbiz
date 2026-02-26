@@ -71,7 +71,10 @@ def booking_api(request, business_id):
             'addonPriceOven': float(business_settings.addonPriceOven),
             'addonPriceBaseboard': float(business_settings.addonPriceBaseboard),
             'addonPriceBlinds': float(business_settings.addonPriceBlinds),
-            'tax': float(business_settings.taxPercent)
+            'tax': float(business_settings.taxPercent),
+            'weekly_discount': float(business_settings.weeklyDiscount),
+            'biweekly_discount': float(business_settings.biweeklyDiscount),
+            'monthly_discount': float(business_settings.monthlyDiscount),
         }
         
         # Prepare custom addons data

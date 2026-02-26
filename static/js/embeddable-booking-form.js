@@ -527,6 +527,8 @@ class CleaningBizBookingForm {
                 <input type="hidden" id="subtotal" name="subtotal" value="0">
                 <input type="hidden" id="tax" name="tax" value="0">
                 <input type="hidden" id="totalAmount" name="totalAmount" value="0">
+                <input type="hidden" id="appliedDiscountPercent" name="appliedDiscountPercent" value="0">
+                <input type="hidden" id="discountAmount" name="discountAmount" value="0">
                 
                 <!-- Coupon Hidden Fields -->
                 <input type="hidden" id="appliedCouponCode" name="appliedCouponCode" value="">
@@ -872,6 +874,10 @@ class CleaningBizBookingForm {
                   <span>Subtotal:</span>
                   <span class="fw-medium">$<span id="overview-subtotal">0.00</span></span>
                 </div>
+                <div id="discount-row" class="cleaningbiz-price-row text-success" style="display: none;">
+                  <span>Discount (<span id="overview-discount-percent">0</span>%):</span>
+                  <span class="fw-medium">-$<span id="overview-discount">0.00</span></span>
+                </div>
                 <div id="coupon-discount-row" class="cleaningbiz-price-row text-success" style="display: none;">
                   <span>Coupon (<span id="overview-coupon-code"></span>):</span>
                   <span class="fw-medium">-$<span id="overview-coupon-discount">0.00</span></span>
@@ -1014,7 +1020,7 @@ class CleaningBizBookingForm {
     
     // Add event listeners for price calculation
     const priceInputs = [
-      'bedrooms', 'bathrooms', 'squareFeet', 'serviceType',
+      'bedrooms', 'bathrooms', 'squareFeet', 'serviceType', 'recurring',
       'addonDishes', 'addonLaundryLoads', 'addonWindowCleaning',
       'addonPetsCleaning', 'addonFridgeCleaning', 'addonOvenCleaning',
       'addonBaseboard', 'addonBlinds'
@@ -1473,8 +1479,26 @@ class CleaningBizBookingForm {
       addonsList.innerHTML = '<p class="text-muted small">No add-ons selected</p>';
     }
     
-    // Calculate subtotal before coupon
-    let subtotal = basePrice + addonsPrice;
+    // Calculate subtotal before discount and coupon
+    let subtotalBeforeDiscount = basePrice + addonsPrice;
+    
+    // Calculate discount based on recurring option
+    const recurringTypeEl = document.getElementById('recurring');
+    let discountPercent = 0;
+    
+    if (recurringTypeEl) {
+      const recurringType = recurringTypeEl.value;
+      if (recurringType === 'weekly') {
+        discountPercent = prices.weekly_discount || prices.weeklyDiscount || 0;
+      } else if (recurringType === 'biweekly') {
+        discountPercent = prices.biweekly_discount || prices.biweeklyDiscount || 0;
+      } else if (recurringType === 'monthly') {
+        discountPercent = prices.monthly_discount || prices.monthlyDiscount || 0;
+      }
+    }
+    
+    const discountAmount = subtotalBeforeDiscount * (discountPercent / 100);
+    let subtotal = subtotalBeforeDiscount - discountAmount;
     
     // Apply coupon discount if available
     const couponDiscount = this.couponDiscountAmount || 0;
@@ -1504,7 +1528,21 @@ class CleaningBizBookingForm {
     // Update overview price summary - with null checks
     this.safeSetTextContent('overview-base-price', basePrice.toFixed(2));
     this.safeSetTextContent('overview-addons-price', addonsPrice.toFixed(2));
-    this.safeSetTextContent('overview-subtotal', (basePrice + addonsPrice).toFixed(2));
+    this.safeSetTextContent('overview-subtotal', subtotalBeforeDiscount.toFixed(2));
+    
+    // Show/hide discount row
+    const discountRow = document.getElementById('discount-row');
+    if (discountPercent > 0) {
+      if (discountRow) {
+        discountRow.style.display = 'flex';
+        this.safeSetTextContent('overview-discount-percent', discountPercent);
+        this.safeSetTextContent('overview-discount', discountAmount.toFixed(2));
+      }
+    } else {
+      if (discountRow) {
+        discountRow.style.display = 'none';
+      }
+    }
     
     // Show/hide coupon discount row
     const couponDiscountRow = document.getElementById('coupon-discount-row');
@@ -1539,6 +1577,8 @@ class CleaningBizBookingForm {
     // Update hidden fields - with null checks
     this.safeSetValue('totalAmount', total.toFixed(2));
     this.safeSetValue('tax', taxAmount.toFixed(2));
+    this.safeSetValue('appliedDiscountPercent', discountPercent.toFixed(2));
+    this.safeSetValue('discountAmount', discountAmount.toFixed(2));
   }
   
   // Helper method to safely set text content with null check
