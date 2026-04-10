@@ -31,7 +31,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
 
-@login_required
+@login_required(login_url='accounts:signup')
 def all_bookings(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
@@ -114,7 +114,7 @@ def all_bookings(request):
     }
     return render(request, 'bookings/bookings.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customers(request):
     if not Business.objects.filter(user=request.user).exists():
         return redirect('accounts:register_business')
@@ -306,7 +306,7 @@ def customers(request):
     
     return render(request, 'bookings/customers.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customer_detail(request, id):
     """View for displaying a specific customer's details and booking history."""
     if not Business.objects.filter(user=request.user).exists():
@@ -378,7 +378,7 @@ def customer_detail(request, id):
 
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_required(login_url='accounts:signup')
 @transaction.atomic
 def create_booking(request):
     redirect_url = request.GET.get('next')
@@ -688,7 +688,7 @@ def create_booking(request):
 
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_required(login_url='accounts:signup')
 @transaction.atomic
 def edit_booking(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
@@ -855,7 +855,7 @@ def delete_booking(request, bookingId):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def booking_detail(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
     show_reopen_jobs_button = False
@@ -874,7 +874,7 @@ def booking_detail(request, bookingId):
 
 
 @require_http_methods(["POST"])
-@login_required
+@login_required(login_url='accounts:signup')
 def bulk_delete_bookings(request):
     try:
         data = json.loads(request.body)
@@ -907,7 +907,7 @@ def bulk_delete_bookings(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-@login_required
+@login_required(login_url='accounts:signup')
 def booking_calendar(request):
     """
     Display a Google Calendar style view of all bookings.
@@ -1074,12 +1074,12 @@ def booking_calendar(request):
 
 
 # Embed Booking Widget instructions page
-@login_required
+@login_required(login_url='accounts:signup')
 def embed_booking_widget(request):
     return render(request, 'bookings/embed_booking_widget.html')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def booking_history_data(request):
     """
     API endpoint to fetch booking history data for the customer dashboard chart.
@@ -1217,7 +1217,7 @@ def cancel_booking(request):
         return JsonResponse({'success': False, 'message': f'Error cancelling booking: {str(e)}'}, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def reopen_job_for_cleaner(request, booking_id):
     """
     Reopen a job for specific cleaners selected by the business owner.
@@ -1286,7 +1286,7 @@ def reopen_job_for_cleaner(request, booking_id):
     return render(request, 'bookings/reopen_job.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def force_assign_booking(request, booking_id, cleaner_id):
     """
     Force assign a booking to a specific cleaner, even if they previously rejected it.
@@ -1351,7 +1351,7 @@ Please check your dashboard for more details.
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def reset_open_jobs(request, booking_id):
     booking = get_object_or_404(Booking, bookingId=booking_id)
     booking.cleaner = None

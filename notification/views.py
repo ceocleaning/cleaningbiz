@@ -15,7 +15,7 @@ from .utils import get_user_type
 from django.db.models import Q
 
 # Web views for notifications
-@login_required
+@login_required(login_url='accounts:signup')
 def notification_list(request):
     """View to display user's notifications"""
     
@@ -32,7 +32,7 @@ def notification_list(request):
         'page_obj': page_obj,
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def notification_detail(request, notification_id):
     """View to display a single notification"""
     user_type = get_user_type(request.user)
@@ -50,7 +50,7 @@ def notification_detail(request, notification_id):
 
 # Notification preferences functionality removed
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def mark_notification_read(request, notification_id):
     """Mark a notification as read"""

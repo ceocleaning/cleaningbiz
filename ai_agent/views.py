@@ -23,7 +23,7 @@ import json
 
 # Create your views here.
 
-@login_required
+@login_required(login_url='accounts:signup')
 def all_chats(request):
     """
     View all chats for the current user's business
@@ -71,7 +71,7 @@ def all_chats(request):
         return redirect('home')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def delete_chat(request):
     """
@@ -138,7 +138,7 @@ def delete_chat(request):
         messages.error(request, f"Error deleting chat: {str(e)}")
         return redirect('ai_agent:all_chats')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def agent_config_delete(request):
     """View to delete an agent configuration"""
@@ -157,7 +157,7 @@ def agent_config_delete(request):
     return redirect('ai_agent:agent_config')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def agent_config_unified(request):
     """Unified view to create or edit agent configuration on a single page"""
     from .utils import default_custom_instructions
@@ -226,7 +226,7 @@ def agent_config_unified(request):
         'created': created
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def agent_config_save(request):
     """AJAX view to save agent configuration"""
     if request.method != 'POST':
@@ -263,7 +263,7 @@ def agent_config_save(request):
     })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def embed_agent(request):
     """View for embedding AI Agent on external websites"""
     business = Business.objects.filter(user=request.user).first()
@@ -455,7 +455,7 @@ def send_sms_response(to_number, message, apiCred):
         traceback.print_exc()
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def business_credentials_api(request):
     """
     API endpoint to get business credentials for the current user's business

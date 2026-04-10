@@ -12,7 +12,7 @@ from .services.retell_api_service import RetellAPIService
 
 # Create your views here.
 
-@login_required
+@login_required(login_url='accounts:signup')
 def usage_overview(request):
     """Main usage overview dashboard."""
     business = request.user.business_set.first()
@@ -128,7 +128,7 @@ def usage_overview(request):
     
     return render(request, 'usage_analytics/overview.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def voice_analytics(request):
     """View for voice analytics dashboard."""
     business = request.user.business_set.first()
@@ -143,7 +143,7 @@ def voice_analytics(request):
     
     return render(request, 'usage_analytics/voice_analytics.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_voice_analytics(request):
     """API endpoint to retrieve voice analytics summary data."""
     business = request.user.business_set.first()
@@ -218,7 +218,7 @@ def get_voice_analytics(request):
     
     return JsonResponse(response_data)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_call_outcomes(request):
     """API endpoint to get call outcomes data with date range filtering."""
     business = request.user.business_set.first()
@@ -290,7 +290,7 @@ def get_call_outcomes(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_call_duration_distribution(request):
     """API endpoint to get call duration distribution data with date range filtering."""
     business = request.user.business_set.first()
@@ -346,7 +346,7 @@ def get_call_duration_distribution(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_call_success_rate(request):
     """API endpoint to get call success rate with date range filtering."""
     business = request.user.business_set.first()
@@ -402,7 +402,7 @@ def get_call_success_rate(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_disconnection_reasons(request):
     """API endpoint to get call disconnection reason distribution with date range filtering."""
     business = request.user.business_set.first()
@@ -468,7 +468,7 @@ def get_disconnection_reasons(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def sms_analytics(request):
     """Detailed SMS analytics page."""
     business = request.user.business_set.first()
@@ -483,7 +483,7 @@ def sms_analytics(request):
     
     return render(request, 'usage_analytics/sms_analytics.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_sms_analytics(request):
     """API endpoint to retrieve SMS analytics summary data."""
     business = request.user.business_set.first()
@@ -572,7 +572,7 @@ def get_sms_analytics(request):
         print(f"Error in get_sms_analytics: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_usage_data(request):
     """API endpoint to retrieve usage data for charts and metrics."""
     business = request.user.business_set.first()
@@ -756,7 +756,7 @@ def get_usage_data(request):
     
     return JsonResponse(response_data)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_sentiment_distribution(request):
     """API endpoint to get user sentiment distribution with date range filtering."""
     business = request.user.business_set.first()
@@ -821,7 +821,7 @@ def get_sentiment_distribution(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_call_success_distribution(request):
     """API endpoint to get call success distribution with date range filtering."""
     business = request.user.business_set.first()
@@ -886,7 +886,7 @@ def get_call_success_distribution(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_recent_calls(request):
     """API endpoint to get recent calls with date range filtering."""
     business = request.user.business_set.first()
@@ -942,7 +942,7 @@ def get_recent_calls(request):
         }
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_call_volume(request):
     """API endpoint to retrieve call volume data for the chart."""
     business = request.user.business_set.first()
@@ -1035,7 +1035,7 @@ def get_call_volume(request):
     
     return JsonResponse(response_data)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_sms_volume(request):
     """API endpoint to retrieve SMS message volume data for the chart."""
     business = request.user.business_set.first()
@@ -1098,7 +1098,7 @@ def get_sms_volume(request):
         print(f"Error in get_sms_volume: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_sms_response_rate(request):
     """API endpoint to retrieve SMS response rate data."""
     business = request.user.business_set.first()
@@ -1179,7 +1179,7 @@ def get_sms_response_rate(request):
         print(f"Error in get_sms_response_rate: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_sms_response_time(request):
     """API endpoint to retrieve SMS response time data."""
     business = request.user.business_set.first()
@@ -1296,7 +1296,7 @@ def get_sms_response_time(request):
         print(f"Error in get_sms_response_time: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_recent_sms_messages(request):
     """API endpoint to retrieve recent SMS messages."""
     business = request.user.business_set.first()

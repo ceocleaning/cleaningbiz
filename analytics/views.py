@@ -14,7 +14,7 @@ import calendar
 from dateutil.relativedelta import relativedelta
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def analytics_dashboard(request):
     """Main analytics dashboard view"""
     if not request.user.business_set.first():
@@ -86,7 +86,7 @@ def analytics_dashboard(request):
     return render(request, 'analytics/dashboard.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def revenue_data_api(request):
     """API endpoint for revenue trends data"""
     # Get time period from request (default to last 6 months)
@@ -317,7 +317,7 @@ def revenue_data_api(request):
     })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def booking_data_api(request):
     """API endpoint for booking trends data"""
     # Get time period from request (default to last 6 months)
@@ -533,7 +533,7 @@ def booking_data_api(request):
         })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cleaner_data_api(request):
     """API endpoint for cleaner analytics data"""
     # Get time period from request (default to last 6 months)
@@ -927,7 +927,7 @@ def cleaner_data_api(request):
         })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customer_data_api(request):
     """API endpoint for customer analytics data"""
     # Get time period from request (default to last 6 months)
@@ -1018,7 +1018,7 @@ def customer_data_api(request):
     })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def addon_data_api(request):
     """API endpoint for addon analytics data"""
     # Get time period from request (default to last 6 months)

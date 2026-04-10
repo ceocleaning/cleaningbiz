@@ -14,7 +14,7 @@ def is_admin(user):
 
 
 # Platform Settings View
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def platform_settings(request):
     # Get or create platform settings
@@ -50,7 +50,7 @@ def platform_settings(request):
 
 
 # Support Tickets Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def support_tickets(request):
     # Get all tickets with filtering
@@ -96,7 +96,7 @@ def support_tickets(request):
     return render(request, 'admin_dashboard/support_tickets.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def ticket_detail(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)

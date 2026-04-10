@@ -62,7 +62,7 @@ def all_invoices(request):
     }
     return render(request, 'invoices/invoices.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def create_invoice(request, bookingId):
     bookingObj = get_object_or_404(Booking, bookingId=bookingId)    
     invoice = Invoice.objects.create(
@@ -74,7 +74,7 @@ def create_invoice(request, bookingId):
         
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_invoice(request, invoiceId):
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
     
@@ -188,7 +188,7 @@ def invoice_preview(request, invoiceId):
         print(str(e))
         raise Http404('Error Generating Invoice Preview')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def mark_invoice_paid(request, invoiceId):
     if request.method == 'POST':
         invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
@@ -211,7 +211,7 @@ def mark_invoice_paid(request, invoiceId):
     
     return redirect('invoice:invoice_detail', invoiceId=invoice.invoiceId)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def generate_pdf(request, invoiceId):
     # Get the invoice
     invoice = get_object_or_404(Invoice, invoiceId=invoiceId)
@@ -468,7 +468,7 @@ def generate_pdf(request, invoiceId):
     )
 
 @require_http_methods(["POST"])
-@login_required
+@login_required(login_url='accounts:signup')
 def bulk_delete_invoices(request):
     try:
         data = json.loads(request.body)

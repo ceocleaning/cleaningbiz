@@ -23,7 +23,7 @@ def is_admin(user):
     return user.is_staff or user.is_superuser
 
 # Dashboard index view
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def dashboard_index(request):   
     # Get counts for dashboard stats
@@ -62,7 +62,7 @@ def dashboard_index(request):
     return render(request, 'admin_dashboard/index.html', context)
 
 # Subscription Plans Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def subscription_plans(request):
     # Get all subscription plans
@@ -79,7 +79,7 @@ def subscription_plans(request):
     }
     return render(request, 'admin_dashboard/subscription_plans.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def add_plan(request):
     if request.method == 'POST':
@@ -159,7 +159,7 @@ def add_plan(request):
     }
     return render(request, 'admin_dashboard/create_subscription_plan.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_plan(request):
     if request.method == 'POST':
@@ -236,7 +236,7 @@ def edit_plan(request):
     }
     return render(request, 'admin_dashboard/edit_subscription_plan.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def delete_plan(request):
     if request.method == 'POST':
@@ -258,7 +258,7 @@ def delete_plan(request):
     return redirect('admin_dashboard:subscription_plans')
 
 # Feature Management Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def features(request):
     # Get all features
@@ -275,7 +275,7 @@ def features(request):
     }
     return render(request, 'admin_dashboard/features.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def add_feature(request):
     if request.method == 'POST':
@@ -297,7 +297,7 @@ def add_feature(request):
     
     return redirect('admin_dashboard:features')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_feature(request):
     if request.method == 'POST':
@@ -316,7 +316,7 @@ def edit_feature(request):
     
     return redirect('admin_dashboard:features')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def delete_feature(request):
     if request.method == 'POST':
@@ -339,7 +339,7 @@ def delete_feature(request):
     return redirect('admin_dashboard:features')
 
 # Coupon Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def coupons(request):
     from subscription.models import Coupon
@@ -364,7 +364,7 @@ def coupons(request):
     
     return render(request, 'admin_dashboard/coupons.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def add_coupon(request):
     from subscription.models import Coupon
@@ -414,7 +414,7 @@ def add_coupon(request):
     }
     return render(request, 'admin_dashboard/create_coupon.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_coupon(request):
     from subscription.models import Coupon
@@ -461,7 +461,7 @@ def edit_coupon(request):
     }
     return render(request, 'admin_dashboard/edit_coupon.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def delete_coupon(request):
     if request.method == 'POST':
@@ -479,7 +479,7 @@ def delete_coupon(request):
     return redirect('admin_dashboard:coupons')
 
 # Business Management Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def businesses(request):
     businesses = Business.objects.filter(user__isnull=False).order_by('-createdAt')
@@ -502,7 +502,7 @@ def businesses(request):
     return render(request, 'admin_dashboard/businesses.html', context)
    
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def business_detail(request, business_id):
     business = get_object_or_404(Business, id=business_id)
@@ -603,7 +603,7 @@ def business_detail(request, business_id):
     
     return render(request, 'admin_dashboard/business_detail.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def add_business(request):
     if request.method == 'POST':
@@ -659,7 +659,7 @@ def add_business(request):
     }
     return render(request, 'admin_dashboard/add_business.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_business(request):
     if request.method == 'POST':
@@ -708,7 +708,7 @@ def edit_business(request):
     
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def approve_business(request):
     if request.method == 'POST':
@@ -756,7 +756,7 @@ def approve_business(request):
     
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def reject_business(request):
     if request.method == 'POST':
@@ -796,7 +796,7 @@ def reject_business(request):
     
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def delete_business(request):
     if request.method == 'POST':
@@ -811,7 +811,7 @@ def delete_business(request):
     
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_api_credentials(request):
     if request.method == 'POST':
@@ -834,7 +834,7 @@ def edit_api_credentials(request):
     
     return redirect('admin_dashboard:business_detail', business_id=business.id)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def export_businesses(request):
     businesses = Business.objects.all().order_by('-createdAt')
@@ -864,7 +864,7 @@ def export_businesses(request):
     return response
 
 # Subscription Management Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def subscriptions(request):
     """View to display all business subscriptions"""
@@ -967,7 +967,7 @@ def subscriptions(request):
     
     return render(request, 'admin_dashboard/subscriptions.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def subscription_detail(request, subscription_id):
     """View to display detailed information about a specific subscription"""
@@ -1024,7 +1024,7 @@ def subscription_detail(request, subscription_id):
     
     return render(request, 'admin_dashboard/subscription_detail.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def renewal_logs(request):
     """View to display all subscription renewal logs with filtering"""
@@ -1104,7 +1104,7 @@ def renewal_logs(request):
     
     return render(request, 'admin_dashboard/renewal_logs.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def renewal_log_detail(request, log_id):
     """View to display detailed information about a specific renewal log"""
@@ -1130,7 +1130,7 @@ def renewal_log_detail(request, log_id):
 
 
 # User Management Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def users(request):
     """View to display all users with filtering and pagination"""
@@ -1175,7 +1175,7 @@ def users(request):
     
     return render(request, 'admin_dashboard/users.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def add_user(request):
     """View to add a new user"""
@@ -1229,7 +1229,7 @@ def add_user(request):
     
     return render(request, 'admin_dashboard/create_user.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def edit_user(request):
     """View to edit an existing user"""
@@ -1312,7 +1312,7 @@ def edit_user(request):
     
     return render(request, 'admin_dashboard/edit_user.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def delete_user(request):
     """View to delete a user"""
@@ -1335,7 +1335,7 @@ def delete_user(request):
     return redirect('admin_dashboard:users')
 
 # Activity Log Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def activity_logs(request):
     """View to display activity logs with filtering"""
@@ -1392,7 +1392,7 @@ def activity_logs(request):
     
     return render(request, 'admin_dashboard/activity_logs.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def activity_log_detail(request, log_id):
     """View to display details of a specific activity log"""
@@ -1406,7 +1406,7 @@ def activity_log_detail(request, log_id):
     
     return render(request, 'admin_dashboard/activity_log_detail.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def assign_subscription(request):
     """Assign a subscription plan to a business without requiring payment (admin only)."""
@@ -1471,7 +1471,7 @@ def assign_subscription(request):
     # If not POST, redirect to businesses list
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def admin_cancel_plan(request):
     """Immediately cancel a subscription plan for a business (admin only)."""
@@ -1498,7 +1498,7 @@ def admin_cancel_plan(request):
     
     return redirect('admin_dashboard:businesses')
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def get_subscription_plans_api(request):
     """API endpoint to get all subscription plans for admin dashboard."""
@@ -1535,7 +1535,7 @@ def get_subscription_plans_api(request):
             'message': f'Error fetching plans: {str(e)}'
         }, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def admin_change_plan(request):
     """Immediately change a business's subscription plan (admin only)."""
@@ -1608,7 +1608,7 @@ def admin_change_plan(request):
     
     return redirect(redirect_url)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def analytics(request):
     """View for analytics dashboard page"""
@@ -1618,7 +1618,7 @@ def analytics(request):
     return render(request, 'admin_dashboard/analytics.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def api_analytics(request):
     """API endpoint to provide analytics data with date range filtering"""
@@ -1768,7 +1768,7 @@ def api_analytics(request):
     return JsonResponse(response_data)
 
 # Add the business_analytics view function
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def business_analytics(request, business_id):
     """View for displaying analytics for a specific business"""
@@ -1782,7 +1782,7 @@ def business_analytics(request, business_id):
     return render(request, 'admin_dashboard/business_analytics.html', context)
 
 # Add the business_analytics_api endpoint
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def business_analytics_api(request, business_id):
     """API endpoint to provide analytics data for a specific business with date range filtering"""
@@ -1955,7 +1955,7 @@ def business_analytics_api(request, business_id):
 
 
 # Platform Settings View
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def platform_settings(request):
     # Get or create platform settings
@@ -1987,7 +1987,7 @@ def platform_settings(request):
 
 
 # Support Tickets Views
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def support_tickets(request):
     # Get all tickets with filtering
@@ -2033,7 +2033,7 @@ def support_tickets(request):
     return render(request, 'admin_dashboard/support_tickets.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def ticket_detail(request, ticket_id):
     ticket = get_object_or_404(SupportTicket, id=ticket_id)

@@ -12,7 +12,7 @@ from twilio.base.exceptions import TwilioRestException
 
 logger = logging.getLogger(__name__)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def twilio_phone_numbers(request):
     """
     View for managing Twilio phone numbers
@@ -33,7 +33,7 @@ def twilio_phone_numbers(request):
     
     return render(request, 'automation/twilio_phone_numbers.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def search_twilio_numbers(request):
     """
     API endpoint to search for available Twilio phone numbers
@@ -94,7 +94,7 @@ def search_twilio_numbers(request):
     except Exception as e:
         return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def purchase_twilio_number(request):
     """
@@ -149,7 +149,7 @@ def purchase_twilio_number(request):
     except Exception as e:
         return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_twilio_numbers(request):
     """
     API endpoint to get all Twilio phone numbers associated with the account
@@ -196,7 +196,7 @@ def get_twilio_numbers(request):
         print(e)
         return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def update_twilio_webhook(request):
     """
@@ -246,7 +246,7 @@ def update_twilio_webhook(request):
     except Exception as e:
         return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def set_active_number(request):
     """

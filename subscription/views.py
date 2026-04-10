@@ -21,7 +21,7 @@ from usage_analytics.services.usage_service import UsageService
 from saas.models import PlatformSettings
 from django.core.paginator import Paginator
 
-@login_required
+@login_required(login_url='accounts:signup')
 def subscription_management(request):
     """View for managing subscriptions."""
     business = request.user.business_set.first()
@@ -135,7 +135,7 @@ def subscription_management(request):
     
     return render(request, 'usage_analytics/subscription.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def billing_history(request):
     """View for billing history."""
     business = request.user.business_set.first()
@@ -277,7 +277,7 @@ def billing_history(request):
     
     return render(request, 'usage_analytics/billing_history.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def change_plan(request):
     """Handle plan changes to take effect at the next billing date."""
@@ -338,7 +338,7 @@ def change_plan(request):
             'redirect_url': reverse('subscription:select_plan', args=[new_plan_id])
         })
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def cancel_subscription(request):
     """Cancel a subscription."""
@@ -384,7 +384,7 @@ def cancel_subscription(request):
             'error': "No active subscription found with the specified plan."
         })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def get_subscription_data(request):
     """API endpoint to retrieve subscription data."""
     business = request.user.business_set.first()
@@ -460,7 +460,7 @@ def get_subscription_data(request):
     return JsonResponse(response_data)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def select_plan(request, plan_id=None):
     """View for selecting a plan and proceeding to payment."""
     business = request.user.business_set.first()
@@ -570,7 +570,7 @@ def select_plan(request, plan_id=None):
     
     return render(request, 'subscription/payment.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def process_payment(request, plan_id):
     """Process the payment for a subscription plan."""
@@ -816,7 +816,7 @@ def process_payment(request, plan_id):
         print(f"Error processing payment: {str(e)}")
         return redirect('subscription:select_plan', plan_id=plan_id)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def subscription_success(request, subscription_id, transaction_id):
     """Show subscription success page after successful payment."""
     from .models import SetupFee
@@ -881,7 +881,7 @@ def subscription_success(request, subscription_id, transaction_id):
     
     return render(request, 'subscription/success.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def trial_success(request, subscription_id):
     """Show trial success page after successful trial activation."""
     business = request.user.business_set.first()
@@ -899,7 +899,7 @@ def trial_success(request, subscription_id):
     
     return render(request, 'accounts/trial_success.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cancel_plan_change(request):
     """Cancel a scheduled plan change."""
     if request.method != 'POST':
@@ -932,7 +932,7 @@ def cancel_plan_change(request):
     except BusinessSubscription.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'No active subscription found'})
 
-@login_required
+@login_required(login_url='accounts:signup')
 def validate_coupon(request):
     """API endpoint to validate a coupon code."""
     if request.method != 'POST':
@@ -1019,7 +1019,7 @@ def validate_coupon(request):
         print(f"Error: {str(e)}")
         return JsonResponse({'valid': False, 'message': f'An error occurred: {str(e)}'})
 
-@login_required
+@login_required(login_url='accounts:signup')
 def apply_coupon_to_subscription(request):
     """API view to apply a coupon to the user's subscription."""
     if request.method != 'POST':
@@ -1083,7 +1083,7 @@ def apply_coupon_to_subscription(request):
         print(f"Error applying coupon: {str(e)}")
         return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def manage_card(request):
     """View for saving or updating card details."""
     business = request.user.business_set.first()
@@ -1253,7 +1253,7 @@ def manage_card(request):
     }
     return render(request, 'subscription/manage_card.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def update_auto_upgrade(request):
     """Update the auto-upgrade setting for a business."""
@@ -1333,7 +1333,7 @@ def delete_card(request):
     # Redirect back to the card management page
     return redirect('subscription:manage_card')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def admin_apply_coupon_to_subscription(request):
     """Admin API view to apply a coupon to a business's subscription."""
     from django.contrib.admin.views.decorators import staff_member_required
@@ -1410,7 +1410,7 @@ def admin_apply_coupon_to_subscription(request):
         print(f"Error applying coupon (admin): {str(e)}")
         return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def onboarding_call_success(request):
     """Show success page after booking an onboarding call."""
     business = request.user.business_set.first()
@@ -1428,7 +1428,7 @@ def onboarding_call_success(request):
     
     return render(request, 'subscription/onboarding_call_success.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def renewal_logs(request):
     """View for businesses to see their own subscription renewal logs"""
     business = request.user.business_set.first()
@@ -1492,7 +1492,7 @@ def renewal_logs(request):
     
     return render(request, 'subscription/renewal_logs.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def renewal_log_detail(request, log_id):
     """View for businesses to see details of a specific renewal log"""
     business = request.user.business_set.first()

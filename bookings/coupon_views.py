@@ -13,7 +13,7 @@ from accounts.models import Business
 from customer.models import Customer
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def coupon_list(request):
     """List all coupons for the business"""
     if not Business.objects.filter(user=request.user).exists():
@@ -67,7 +67,7 @@ def coupon_list(request):
     return render(request, 'bookings/coupons/list.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def coupon_create(request):
     """Create a new coupon"""
     if not Business.objects.filter(user=request.user).exists():
@@ -136,7 +136,7 @@ def coupon_create(request):
     return render(request, 'bookings/coupons/create.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def coupon_edit(request, coupon_id):
     """Edit an existing coupon"""
     if not Business.objects.filter(user=request.user).exists():
@@ -205,7 +205,7 @@ def coupon_edit(request, coupon_id):
     return render(request, 'bookings/coupons/edit.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def coupon_detail(request, coupon_id):
     """View coupon details and usage statistics"""
     if not Business.objects.filter(user=request.user).exists():
@@ -239,7 +239,7 @@ def coupon_detail(request, coupon_id):
     return render(request, 'bookings/coupons/detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_http_methods(["POST"])
 def coupon_delete(request, coupon_id):
     """Delete a coupon"""
@@ -258,7 +258,7 @@ def coupon_delete(request, coupon_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_http_methods(["POST"])
 def coupon_toggle_status(request, coupon_id):
     """Toggle coupon active status"""

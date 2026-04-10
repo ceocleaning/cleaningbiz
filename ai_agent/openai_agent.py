@@ -1343,7 +1343,7 @@ class OpenAIAgent:
 
 
 # Django views for OpenAI chat
-@login_required
+@login_required(login_url='accounts:signup')
 def chat_view(request):
     """View for the OpenAI chat interface
     

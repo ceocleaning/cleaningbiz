@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 def is_admin(user):
     return user.is_staff or user.is_superuser
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def activity_logs(request):
     """View to display activity logs with filtering"""
@@ -105,7 +105,7 @@ def activity_logs(request):
     
     return render(request, 'admin_dashboard/activity_logs.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def activity_log_detail(request, log_id):
     """View to display details of a specific activity log"""
@@ -138,7 +138,7 @@ def activity_log_detail(request, log_id):
     
     return render(request, 'admin_dashboard/activity_log_detail.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def user_activity_logs(request, user_id):
     """View to display all activity logs for a specific user"""
@@ -186,7 +186,7 @@ def user_activity_logs(request, user_id):
     
     return render(request, 'admin_dashboard/user_activity_logs.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin)
 def export_activity_logs(request):
     """Export activity logs as CSV based on filters"""

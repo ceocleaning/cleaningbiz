@@ -62,3 +62,21 @@ def assign_owner_group(sender, instance, created, **kwargs):
 #             api_credential.twilioAuthToken = twilio_auth_token
 #             api_credential.save()
     
+@receiver(post_save, sender=Business)
+def send_welcome_email(sender, instance, created, **kwargs):
+    """
+    Send a welcome email with the video tutorial link to newly registered business owners.
+    """
+    if created and instance.user and instance.user.email:
+        try:
+            from django_q.tasks import async_task
+            from .tasks import send_welcome_email_task
+            
+            async_task(
+                send_welcome_email_task,
+                email=instance.user.email,
+                first_name=instance.user.first_name,
+                username=instance.user.username
+            )
+        except Exception as e:
+            print(f"Failed to enqueue welcome email task: {e}")

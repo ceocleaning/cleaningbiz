@@ -11,4 +11,8 @@ urlpatterns = [
     
     # Maintenance mode URL
     path('maintenance/', views.maintenance_view, name='maintenance'),
+    
+    # Demo Leads and Video
+    path('submit-demo-lead/', views.submit_demo_lead, name='submit_demo_lead'),
+    path('demo-video/', views.demo_video, name='demo_video'),
 ]

@@ -385,11 +385,9 @@
                                 </a>
                             </li>
                             <li>
-                                <a id="app-scheduling" href="#" class="dropdown-item text-white" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
-                                    
-                                    <i class="fas fa-calendar-check me-2"></i>Schedule Demo</a>
-    
-                            </li>
+                                <a href="#" class="dropdown-item text-white" data-bs-toggle="modal" data-bs-target="#demoModal">
+                                    <i class="fas fa-video me-2"></i>Get Demo Video
+                                </a>
                             <li><hr class="dropdown-divider bg-dark-border"></li>
                             <li>
                                 <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
@@ -509,11 +507,9 @@
                             </div>
                             <div>
                               
-                                <a id="app-scheduling" href="#" class="btn btn-outline-primary" alt="Booknow button" target="_blank" data-domain-name="https://cleaningbizai.bookafy.com/schedule/?type=iframe&custom_embed=true&locale=en">
-                                    
-                                    Schedule Demo</a>
-        
-                                
+                                <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#demoModal">
+                                    <i class="fas fa-video me-2"></i>Get Demo Video
+                                </a>
                             </div>
                         </li>
                     </ul>
@@ -547,7 +543,7 @@
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script id="scheduling_script" type="text/javascript" src="https://app.bookafy.com/popup-code.js"></script>
+
     
   
     
@@ -585,5 +581,115 @@
     </script>
     
     {% block scripts %}{% endblock %}
+
+    <!-- Demo Leads Modal -->
+    <div class="modal fade" id="demoModal" tabindex="-1" aria-labelledby="demoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="background-color: var(--dark-surface-2);">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold" id="demoModalLabel"><i class="fas fa-video me-2"></i>Get Full Demo Video</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-dark-text-secondary mb-4">Enter your details below to receive instant access to our comprehensive CleaningBiz AI video tutorial.</p>
+                    <form id="demoLeadForm">
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold">Full Name</label>
+                            <input type="text" class="form-control bg-dark-surface-3 border-secondary text-white" id="demoName" required placeholder="John Doe">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">Email Address</label>
+                            <input type="email" class="form-control bg-dark-surface-3 border-secondary text-white" id="demoEmail" required placeholder="john@example.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="demoSubmitBtn">
+                            Get Instant Access <i class="fas fa-arrow-right ms-1"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toastify CSS/JS for Notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const demoForm = document.getElementById('demoLeadForm');
+        if (demoForm) {
+            demoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const btn = document.getElementById('demoSubmitBtn');
+                const originalText = btn.innerHTML;
+                const name = document.getElementById('demoName').value.trim();
+                const email = document.getElementById('demoEmail').value.trim();
+                
+                if(!name || !email) {
+                    Toastify({
+                        text: "Please fill in all fields",
+                        duration: 3000,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#ef4444",
+                    }).showToast();
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+                
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('email', email);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                fetch("{% url 'saas:submit_demo_lead' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        var myModalEl = document.getElementById('demoModal');
+                        if (bootstrap.Modal.getInstance(myModalEl)) {
+                            bootstrap.Modal.getInstance(myModalEl).hide();
+                        }
+                        window.location.href = "{% url 'saas:demo_video' %}";
+                    } else {
+                        Toastify({
+                            text: data.message || "An error occurred",
+                            duration: 3000,
+                            close: true,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#ef4444",
+                        }).showToast();
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Toastify({
+                        text: "A network error occurred. Please try again.",
+                        duration: 3000,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#ef4444",
+                    }).showToast();
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            });
+        }
+    });
+    </script>
 </body>
 </html>

@@ -168,7 +168,7 @@ def logoutUser(request):
     return redirect('accounts:login')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def profile_view(request):
     business = request.user.business_set.first()
     
@@ -199,7 +199,7 @@ def profile_view(request):
     return render(request, 'accounts/profile/profile.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_profile(request):
     if request.method == 'POST':
         user = request.user
@@ -215,7 +215,7 @@ def update_profile(request):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
@@ -232,7 +232,7 @@ def change_password(request):
     return redirect('accounts:profile')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def register_business(request):
     # Check if user already has a business
     if request.user.business_set.exists():
@@ -296,7 +296,7 @@ def register_business(request):
     return render(request, 'accounts/register_business.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_business(request):
     business = request.user.business_set.first()
     if not business:
@@ -370,7 +370,7 @@ def profile_pricing_page(request):
     return render(request, 'accounts/profile/profile_pricing.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def export_pricing_pdf(request):
     """Export business pricing configuration as PDF"""
     business = request.user.business_set.first()
@@ -399,7 +399,7 @@ def export_pricing_pdf(request):
         return redirect('accounts:profile_pricing')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_business_settings(request):
     business = request.user.business_set.first()
     if not business:
@@ -474,7 +474,7 @@ def integrations_page(request):
     }
     return render(request, 'accounts/profile/integrations.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_credentials(request):
     business = request.user.business_set.first()
     if not business:
@@ -501,7 +501,7 @@ def edit_credentials(request):
     return redirect('accounts:integrations')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def generate_secret_key(request):
     business = request.user.business_set.first()
     if not business:
@@ -521,7 +521,7 @@ def generate_secret_key(request):
     return redirect('accounts:integrations')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def regenerate_secret_key(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
@@ -539,7 +539,7 @@ def regenerate_secret_key(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def custom_addons_page(request):
     business = request.user.business_set.first()
     if not business:
@@ -555,7 +555,7 @@ def custom_addons_page(request):
     return render(request, 'accounts/profile/custom_addons.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def add_custom_addon(request):
     if request.method == 'POST':
         business = request.user.business_set.first()
@@ -580,7 +580,7 @@ def add_custom_addon(request):
     return redirect('accounts:custom_addons')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_custom_addon(request, addon_id):
     if request.method == 'POST':
         try:
@@ -605,7 +605,7 @@ def edit_custom_addon(request, addon_id):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_custom_addon(request, addon_id):
     if request.method == 'POST':
         try:
@@ -968,7 +968,7 @@ def send_otp_email(user, otp):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def approval_pending(request):
     """
     View for the approval pending page
@@ -1018,7 +1018,7 @@ def approval_pending(request):
     return render(request, 'accounts/approval_pending.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def settings_page(request):
     business = request.user.business_set.first()
     
@@ -1038,7 +1038,7 @@ def settings_page(request):
     }
     return render(request, 'accounts/profile/settings.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_business_settings(request):
     if request.method == 'POST':
         business = request.user.business_set.first()
@@ -1089,7 +1089,7 @@ def update_business_settings(request):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payment_square_view(request):
     """
     View for managing Square credentials and viewing payment history
@@ -1124,7 +1124,7 @@ def payment_square_view(request):
     
     return render(request, 'accounts/payments/payment_square.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def manage_square_credentials(request):
     """
     Consolidated view for both adding and updating Square credentials
@@ -1176,7 +1176,7 @@ def manage_square_credentials(request):
     return redirect('accounts:payment_square')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def bank_account(request):
     """
     Handle bank account management (view, create, update, delete) with HTML forms
@@ -1252,7 +1252,7 @@ def bank_account(request):
     
     
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payment_main_view(request):
     """
     Main payment selection view to choose payment gateway integration
@@ -1294,7 +1294,7 @@ def payment_main_view(request):
     
     return render(request, 'accounts/payments/payment_main.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payment_stripe_view(request):
     """
     View for managing Stripe credentials and viewing payment history
@@ -1328,7 +1328,7 @@ def payment_stripe_view(request):
     
     return render(request, 'accounts/payments/payment_stripe.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def manage_stripe_credentials(request):
     """
     Consolidated view for both adding and updating Stripe credentials
@@ -1376,7 +1376,7 @@ def manage_stripe_credentials(request):
     
     return redirect('accounts:payment_stripe')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payment_paypal_view(request):
     """
     View for managing PayPal credentials and viewing payment history
@@ -1410,7 +1410,7 @@ def payment_paypal_view(request):
     
     return render(request, 'accounts/payments/payment_paypal.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def manage_paypal_credentials(request):
     """
     Consolidated view for both adding and updating PayPal credentials
@@ -1458,7 +1458,7 @@ def manage_paypal_credentials(request):
     
     return redirect('accounts:payment_paypal')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def set_default_payment(request):
     """
     Set the default payment method for the business
@@ -1821,7 +1821,7 @@ def reset_cleaner_password(request):
     return redirect('accounts:manage_cleaners')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cleaner_change_password(request):
     """
     View for cleaners to change their password

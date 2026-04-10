@@ -13,7 +13,7 @@ from .models import Chat, Message, AgentConfig
 from twilio.twiml.messaging_response import MessagingResponse
 from .utils import process_sms_with_langchain, process_web_chat_with_langchain
 
-@login_required
+@login_required(login_url='accounts:signup')
 def agent_dashboard(request):
     """
     Unified dashboard for managing and testing AI agents for a business.
@@ -57,7 +57,7 @@ def agent_dashboard(request):
     
     return render(request, 'ai_agent/ai_agent_unified.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def chat_list(request):
     """
     List all chats for a business.
@@ -72,7 +72,7 @@ def chat_list(request):
     
     return render(request, 'ai_agent/chat_list.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def chat_detail(request, chat_id):
     """
     View details of a chat including all messages.

@@ -19,7 +19,7 @@ import requests
 from django.conf import settings
 # Create your views here.
 
-@login_required
+@login_required(login_url='accounts:signup')
 @ensure_csrf_cookie
 def integration_list(request):
     business = request.user.business_set.first()
@@ -31,7 +31,7 @@ def integration_list(request):
         'integrations': integrations
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def add_integration(request):
     if request.method == 'POST':
         name = request.POST.get('serviceName')
@@ -78,7 +78,7 @@ def add_integration(request):
     
     return render(request, 'integrations/add_integration.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def integration_mapping(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
     
@@ -147,7 +147,7 @@ def integration_mapping(request, platform_id):
 
     return render(request, 'integrations/mapping.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def preview_mapping(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
     mappings = DataMapping.objects.filter(platform=platform)
@@ -258,7 +258,7 @@ def preview_mapping(request, platform_id):
 
     return render(request, 'integrations/preview_mapping.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def test_integration(request, platform_id):
     """Test an integration by sending sample data"""
@@ -519,7 +519,7 @@ def send_booking_data_to_integration(booking_data, integration):
     
     return results
 
-@login_required
+@login_required(login_url='accounts:signup')
 def edit_integration(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
     
@@ -578,7 +578,7 @@ def edit_integration(request, platform_id):
         'platform_types': platform_types,
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_integration(request, platform_id):
     platform = get_object_or_404(PlatformIntegration, id=platform_id, business=request.user.business_set.first())
     if request.method == 'POST':
@@ -590,7 +590,7 @@ def delete_integration(request, platform_id):
         'platform': platform
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def save_field_mappings(request, integration_id):
     if request.method == 'POST':
         try:
@@ -631,7 +631,7 @@ def save_field_mappings(request, integration_id):
 #                   Retell
 #===========================================
 
-@login_required
+@login_required(login_url='accounts:signup')
 def retell_settings(request):
     """
     Display available Retell API functions and their documentation
@@ -660,7 +660,7 @@ def retell_settings(request):
     
     return render(request, 'integrations/retell_settings.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def integration_logs(request, platform_id=None):
     """View integration logs for all integrations or a specific one"""
     business = request.user.business_set.first()

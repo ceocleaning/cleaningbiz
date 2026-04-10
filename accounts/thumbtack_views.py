@@ -27,7 +27,7 @@ THUMBTACK_REDIRECT_URI_PROD = getattr(settings, 'THUMBTACK_REDIRECT_URI', '')
 THUMBTACK_STATES = {}
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_connect(request):
     """
     Initiates the OAuth flow by redirecting the user to Thumbtack's authorization page
@@ -292,7 +292,7 @@ def save_thumbtack_tokens(user_id, token_data):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_disconnect(request):
     """
     Disconnect the user from Thumbtack by revoking tokens
@@ -444,7 +444,7 @@ def get_thumbtack_webhooks(access_token, business_id):
         return None
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_profile(request):
     """
     Display the user's Thumbtack profile information using cached data
@@ -537,7 +537,7 @@ def _refresh_all_thumbtack_data(thumbtack_profile):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_refresh_user_info(request):
     """
     Refresh user information from Thumbtack API
@@ -572,7 +572,7 @@ def thumbtack_refresh_user_info(request):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_refresh_business_info(request):
     """
     Refresh business information from Thumbtack API
@@ -607,7 +607,7 @@ def thumbtack_refresh_business_info(request):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_refresh_webhooks(request):
     """
     Refresh webhooks from Thumbtack API
@@ -659,7 +659,7 @@ def thumbtack_refresh_webhooks(request):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_update_webhook(request):
     """
     Update a Thumbtack webhook URL
@@ -727,7 +727,7 @@ def thumbtack_update_webhook(request):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_add_webhook(request):
     """
     Add a new Thumbtack webhook
@@ -794,7 +794,7 @@ def thumbtack_add_webhook(request):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_dashboard(request):
     """
     Display the Thumbtack dashboard with leads and stats
@@ -844,7 +844,7 @@ def thumbtack_dashboard(request):
     })
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def thumbtack_settings(request):
     """
     Handle Thumbtack integration settings

@@ -21,7 +21,7 @@ API_KEY = settings.RETELL_API_KEY
 
 client = Retell(api_key=API_KEY)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def setup_retell_agent(request):
     """
     View to display and handle the Retell agent setup form.
@@ -210,7 +210,7 @@ def setup_retell_agent(request):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def create_retell_llm(request):
     """
     View to automatically create a Retell LLM with default settings.
@@ -298,7 +298,7 @@ def create_retell_llm(request):
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('setup_retell_agent')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def list_retell_voices(request):
     """
     View to list available Retell voices, optionally filtered by provider.
@@ -341,7 +341,7 @@ def list_retell_voices(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def list_retell_agents(request):
     """
     View to display all Retell agents for the current business.
@@ -363,7 +363,7 @@ def list_retell_agents(request):
         'agent_limit_reached': agent_limit_reached
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_retell_agent(request, agent_id):
     """
     View to update a Retell agent and its associated LLM.
@@ -719,7 +719,7 @@ def update_retell_agent(request, agent_id):
     context['loading'] = False
     return render(request, 'retell_agent/update_agent.html', context)
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_retell_agent(request, agent_id):
     """
     View to delete a Retell agent and its associated LLM.
@@ -825,7 +825,7 @@ def delete_retell_agent(request, agent_id):
         'will_delete_llm': llm_other_agents_count == 0 and agent.llm is not None
     })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def assign_phone_number(request):
     """
     View to assign a phone number to a Retell agent.
@@ -860,7 +860,7 @@ def assign_phone_number(request):
     
     return redirect('list_retell_agents')
 
-@login_required
+@login_required(login_url='accounts:signup')
 def voice_conversations(request):
     """
     View to display voice call transcripts in a messaging platform style.

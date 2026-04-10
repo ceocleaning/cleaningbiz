@@ -31,7 +31,7 @@ def maintenance_view(request):
     return render(request, 'maintenance.html', context)
 
 # User-facing support ticket submission view
-@login_required
+@login_required(login_url='accounts:signup')
 def submit_ticket(request):
     if request.method == 'POST':
         # Create a new ticket from form data
@@ -82,7 +82,7 @@ def submit_ticket(request):
     return render(request, 'support/submit_ticket.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def my_tickets(request):
     # Get tickets for the current user
     tickets = SupportTicket.objects.filter(created_by=request.user).order_by('-created_at')
@@ -99,7 +99,7 @@ def my_tickets(request):
     return render(request, 'support/my_tickets.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def ticket_detail(request, ticket_id):
     # Ensure the user can only view their own tickets
     ticket = get_object_or_404(SupportTicket, id=ticket_id, created_by=request.user)
@@ -132,3 +132,17 @@ def ticket_detail(request, ticket_id):
         'title': f'Ticket #{ticket.id}: {ticket.title}'
     }
     return render(request, 'support/ticket_detail.html', context)
+
+def submit_demo_lead(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        if name and email:
+            from .models import DemoLeads
+            DemoLeads.objects.create(name=name, email=email)
+            return JsonResponse({'status': 'success', 'message': 'Lead saved successfully'})
+        return JsonResponse({'status': 'error', 'message': 'Name and Email are required'}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=405)
+
+def demo_video(request):
+    return render(request, 'saas/demo_video.html')

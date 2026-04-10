@@ -11,7 +11,7 @@ from subscription.models import BillingHistory, BusinessSubscription
 from .views import is_admin as is_admin_user
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin_user)
 def billing_history_list(request):
     """View for displaying all billing history records"""
@@ -62,7 +62,7 @@ def billing_history_list(request):
     return render(request, 'admin_dashboard/billing_history_list.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin_user)
 def billing_history_detail(request, billing_id):
     """View for displaying details of a specific billing record"""
@@ -81,7 +81,7 @@ def billing_history_detail(request, billing_id):
     return render(request, 'admin_dashboard/billing_history_detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin_user)
 def business_billing_history(request, business_id):
     """View for displaying billing history for a specific business"""
@@ -104,7 +104,7 @@ def business_billing_history(request, business_id):
     return render(request, 'admin_dashboard/business_billing_history.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @user_passes_test(is_admin_user)
 def subscription_billing_history(request, subscription_id):
     """View for displaying billing history for a specific subscription"""

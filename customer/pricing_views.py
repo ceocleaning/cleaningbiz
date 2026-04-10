@@ -18,7 +18,7 @@ from customer.pricing_models import CustomerPricing, CustomerCustomAddonPricing
 from customer.pricing_utils import get_pricing_comparison
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customer_pricing_list(request):
     """
     Display list of all customers with custom pricing.
@@ -62,7 +62,7 @@ def customer_pricing_list(request):
     return render(request, 'customer/pricing/list.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customer_pricing_detail(request, customer_id):
     """
     Display and edit custom pricing for a specific customer.
@@ -134,7 +134,7 @@ def customer_pricing_detail(request, customer_id):
     return render(request, 'customer/pricing/detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_http_methods(["POST"])
 def customer_pricing_update(request, customer_id):
     """
@@ -235,7 +235,7 @@ def customer_pricing_update(request, customer_id):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_http_methods(["POST"])
 def customer_pricing_toggle(request, customer_id):
     """
@@ -278,7 +278,7 @@ def customer_pricing_toggle(request, customer_id):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_http_methods(["POST"])
 def customer_pricing_delete(request, customer_id):
     """
@@ -319,7 +319,7 @@ def customer_pricing_delete(request, customer_id):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def customer_pricing_comparison(request, customer_id):
     """
     API endpoint to get pricing comparison between business default and custom pricing.

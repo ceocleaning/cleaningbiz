@@ -28,7 +28,9 @@ class BusinessApprovalMiddleware:
             'approval_pending', 'profile', 'update_profile', 'change_password',
             'forgot_password', 'verify_otp', 'resend_otp', 'reset_password',
             'admin:index', 'admin:login', 'select_plan', 'subscription_management', 'manage_card',
-            'process_payment', 'validate_coupon'
+            'process_payment', 'validate_coupon', 'landing-page', 'pricing-page',
+            'features-page', 'about-us', 'contact-us', 'docs-page',
+            'submit_demo_lead', 'demo_video'
         ]
         
         # Also skip if URL is exempt or is admin URL

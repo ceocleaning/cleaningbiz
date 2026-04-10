@@ -167,7 +167,7 @@ def DocsPage(request):
     return render(request, 'core/DocsPage.html')
 
 
-@login_required()
+@login_required(login_url='accounts:signup')
 def home(request):
     # Get the user's business
     business = request.user.business_set.first()
@@ -280,7 +280,7 @@ def home(request):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def all_leads(request):
     if not request.user.business_set.first():
         return redirect('accounts:register_business')
@@ -291,7 +291,7 @@ def all_leads(request):
     return render(request, 'leads/leads.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def lead_detail(request, leadId):
     lead = get_object_or_404(Lead, leadId=leadId)
     
@@ -321,7 +321,7 @@ def lead_detail(request, leadId):
     return render(request, 'leads/lead_detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def create_lead(request):
     if request.method == 'POST':
         try:
@@ -409,7 +409,7 @@ def create_lead(request):
     return render(request, 'leads/create_lead.html')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_lead(request, leadId):
     lead = get_object_or_404(Lead, leadId=leadId)
     
@@ -486,7 +486,7 @@ def update_lead(request, leadId):
     return render(request, 'leads/update_lead.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_lead(request, leadId):
     lead = get_object_or_404(Lead, leadId=leadId)
     
@@ -502,7 +502,7 @@ def delete_lead(request, leadId):
     return redirect('lead_detail', leadId=leadId)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cleaners_list(request):
     # Only process for cleaner users with 'Cleaner' group
     if request.user.groups.filter(name='Cleaner').exists():
@@ -522,7 +522,7 @@ def cleaners_list(request):
     return render(request, 'automation/cleaners.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def add_cleaner(request):
     business = request.user.business_set.first()
     if not business:
@@ -593,7 +593,7 @@ def add_cleaner(request):
     return redirect('cleaners_list')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cleaner_detail(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -786,7 +786,7 @@ def cleaner_detail(request, cleaner_id):
     return render(request, 'automation/cleaner_detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_cleaner_profile(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -832,7 +832,7 @@ def update_cleaner_profile(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def update_cleaner_schedule(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -961,7 +961,7 @@ def update_cleaner_schedule(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def add_specific_date(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -1034,7 +1034,7 @@ def add_specific_date(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_specific_date(request, cleaner_id, exception_id):
     business = request.user.business_set.first()
     if not business:
@@ -1056,7 +1056,7 @@ def delete_specific_date(request, cleaner_id, exception_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def toggle_cleaner_availability(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -1081,7 +1081,7 @@ def toggle_cleaner_availability(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def delete_cleaner(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -1104,7 +1104,7 @@ def delete_cleaner(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def toggle_cleaner_active(request, cleaner_id):
     business = request.user.business_set.first()
     if not business:
@@ -1129,7 +1129,7 @@ def toggle_cleaner_active(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def test_availability_api(request):
     """
     Render a page to test the Retell availability API.
@@ -1149,7 +1149,7 @@ def test_availability_api(request):
     return render(request, 'automation/test_availability_api.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def test_features(request):
     """
     Render a page that lists all available test features.
@@ -1157,7 +1157,7 @@ def test_features(request):
     return render(request, 'automation/test_features.html')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cleaner_monthly_schedule(request, cleaner_id):
     """
     Display a monthly calendar view of a cleaner's schedule.
@@ -1310,7 +1310,7 @@ def cleaner_monthly_schedule(request, cleaner_id):
     return render(request, 'automation/cleaner_monthly_schedule.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def business_monthly_schedule(request):
     """
     Display a monthly calendar view of all cleaners' schedules.
@@ -1612,7 +1612,7 @@ def TermsOfServicePage(request):
     return render(request, 'core/TermsOfService.html')
 
 @require_http_methods(["POST"])
-@login_required
+@login_required(login_url='accounts:signup')
 def bulk_delete_leads(request):
     try:
         data = json.loads(request.body)
@@ -1648,7 +1648,7 @@ def sitemap(request):
     return render(request, 'core/sitemap.html')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def open_jobs(request, cleaner_id=None):
     """
     Display open jobs for a specific cleaner
@@ -1710,7 +1710,7 @@ def open_jobs(request, cleaner_id=None):
     return render(request, 'automation/open_jobs.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 @transaction.atomic
 def accept_open_job(request, job_id):
@@ -1837,7 +1837,7 @@ This is an automated notification from your CleaningBiz AI system.
     
     return False
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 @transaction.atomic
 def reject_open_job(request, job_id):
@@ -2017,7 +2017,7 @@ def update_cleaner_login(request, cleaner_id):
     return redirect('cleaner_detail', cleaner_id=cleaner.id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def booking_detail(request, bookingId):
     booking = get_object_or_404(Booking, bookingId=bookingId)
     context = {
@@ -2026,7 +2026,7 @@ def booking_detail(request, bookingId):
     return render(request, 'automation/booking_detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def send_manual_sms(request, leadId):
     """
@@ -2141,7 +2141,7 @@ def send_manual_sms(request, leadId):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @require_POST
 def send_manual_call(request, leadId):
     """
@@ -2252,7 +2252,7 @@ def send_manual_call(request, leadId):
         }, status=500)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def webhook_logs(request):
     """Display webhook logs with filtering and search capabilities"""
     business = request.user.business_set.first()
@@ -2344,7 +2344,7 @@ def webhook_logs(request):
     return render(request, 'automation/webhook_logs.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def webhook_log_detail(request, log_id):
     """Display detailed information about a specific webhook log"""
     business = request.user.business_set.first()

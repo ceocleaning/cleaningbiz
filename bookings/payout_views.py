@@ -11,7 +11,7 @@ from bookings.models import Booking
 from bookings.payout_models import CleanerPayout, PAYOUT_STATUS_CHOICES
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payouts_dashboard(request):
     """
     Main dashboard view for payouts - shows different views for business owners vs cleaners
@@ -124,7 +124,7 @@ def payouts_dashboard(request):
         return redirect('home')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def payout_detail(request, payout_id):
     """
     View details of a specific payout
@@ -159,7 +159,7 @@ def payout_detail(request, payout_id):
     return render(request, 'payouts/payout_detail.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @transaction.atomic
 def create_payout(request):
     """
@@ -223,7 +223,7 @@ def create_payout(request):
         return redirect('bookings:payouts_dashboard')
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def mark_payout_as_paid(request, payout_id):
     """
     Mark a payout as paid
@@ -251,7 +251,7 @@ def mark_payout_as_paid(request, payout_id):
     return redirect('bookings:payout_detail', payout_id=payout.payout_id)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 def cancel_payout(request, payout_id):
     """
     Cancel a payout

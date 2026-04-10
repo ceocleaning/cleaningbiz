@@ -119,7 +119,7 @@ def check_existing_customer(request):
             'message': 'No matching customer records found. Please contact the business owner.'
         })
 
-@login_required
+@login_required(login_url='accounts:signup')
 def view_linked_businesses(request):
     """
     View to display all businesses that the customer has bookings with.

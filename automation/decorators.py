@@ -10,7 +10,7 @@ def cleaner_or_owner(view_func):
     whose detail is being viewed. Must be used on views with cleaner_id parameter.
     """
     @wraps(view_func)
-    @login_required
+    @login_required(login_url='accounts:signup')
     def _wrapped_view(request, cleaner_id, *args, **kwargs):
         # Check if user is a cleaner by group membership and profile
         is_cleaner = request.user.groups.filter(name='Cleaner').exists() and hasattr(request.user, 'cleaner_profile')

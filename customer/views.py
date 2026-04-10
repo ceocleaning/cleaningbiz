@@ -23,7 +23,7 @@ from customer.utils import create_customer
 import pytz
 from django.utils import timezone
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 def dashboard(request):
     """
@@ -131,7 +131,7 @@ def customer_bookings(request):
     return render(request, 'customer/bookings.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 def businesses_list(request):
     """
@@ -530,7 +530,7 @@ def booking_detail(request, bookingId):
 
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
@@ -686,7 +686,7 @@ def edit_booking(request, bookingId):
     return render(request, 'customer/edit_booking.html', context)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 @require_http_methods(["POST"])
 def submit_review(request, bookingId):
@@ -730,7 +730,7 @@ def submit_review(request, bookingId):
     return redirect('customer:booking_detail', bookingId=bookingId)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 @require_http_methods(["POST"])
 def edit_review(request, review_id):
@@ -780,7 +780,7 @@ def edit_review(request, review_id):
             return redirect('customer:booking_detail', bookingId=booking.bookingId)
 
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 @require_http_methods(["GET", "POST"])
 def delete_review(request, review_id):
@@ -808,7 +808,7 @@ def delete_review(request, review_id):
     
     return redirect('customer:booking_detail', bookingId=booking.bookingId)
 
-@login_required
+@login_required(login_url='accounts:signup')
 @customer_required
 def customer_reviews(request):
     """
