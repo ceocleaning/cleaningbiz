@@ -333,7 +333,7 @@ class BusinessSubscription(models.Model):
             
             # Record per-user usage - use get_or_create to prevent duplicates
             if self.business.user:
-                CouponUsage.objects.get_or_create(
+                CouponUsage.objects.create(
                     coupon=self.coupon_used,
                     user=self.business.user,
                     subscription=self

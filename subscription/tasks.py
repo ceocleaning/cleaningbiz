@@ -149,11 +149,11 @@ def _process_renewal_payment(business, subscription, plan, square_client):
         if subscription.new_coupon:
             # Use new_coupon if available (scheduled for this billing cycle)
             coupon = subscription.new_coupon
-            print(f"Using new_coupon: {coupon.code} for {business.businessName}")
+       
         elif subscription.coupon_used:
             # Fall back to coupon_used if no new_coupon is scheduled
             coupon = subscription.coupon_used
-            print(f"Using coupon_used: {coupon.code} for {business.businessName}")
+           
         
         discount_applied = False
         # original_price already set above (line 142), will be updated if coupon applies
@@ -163,18 +163,10 @@ def _process_renewal_payment(business, subscription, plan, square_client):
         # Apply coupon if it exists and is valid
         if coupon:
             is_valid = False
-            # Check if this is a recurring use of the same coupon already on the subscription
-            # If it's a new_coupon, we check full validity; if it's a carry-over coupon_used, we only check activity/expiry
-            if coupon == subscription.coupon_used and not subscription.new_coupon:
-                is_valid = coupon.is_active and (not coupon.expiry_date or coupon.expiry_date >= timezone.now().date())
-                if is_valid:
-                    print(f"Recurring coupon {coupon.code} is still active/valid for {business.businessName}")
+            if coupon.limit_type == 'per_user' and business.user:
+                is_valid = coupon.is_valid_for_user(business.user)
             else:
-                # For new/priority coupons, do full validity check including usage limits
-                if coupon.limit_type == 'per_user' and business.user:
-                    is_valid = coupon.is_valid_for_user(business.user)
-                else:
-                    is_valid = coupon.is_valid()
+                is_valid = coupon.is_valid()
             
             if is_valid:
                 # Apply the coupon discount
@@ -201,6 +193,7 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 'card_details': {'card': {'last_4': 'FREE'}},
                 'coupon_applied': True,
                 'coupon_code': coupon.code,
+                'coupon': coupon,
                 'original_price': float(original_price),  # Convert Decimal to float
                 'final_price': 0,
                 'discount_amount': float(discount_amount)  # Convert Decimal to float
@@ -237,9 +230,11 @@ def _process_renewal_payment(business, subscription, plan, square_client):
                 'card_details': payment.get('card_details', {}),
                 'coupon_applied': discount_applied,
                 'coupon_code': coupon_code,
+                
                 'original_price': float(original_price),  # Convert Decimal to float
                 'final_price': float(final_price),  # Convert Decimal to float
-                'discount_amount': float(discount_amount)  # Convert Decimal to float
+                'discount_amount': float(discount_amount),  # Convert Decimal to float
+            
             }
         else:
             return {
@@ -295,6 +290,12 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
         old_subscription.is_active = False
         old_subscription.status = 'ended'
         old_subscription.save()
+
+        # Handle coupon carry-over or promotion
+        coupon_to_use = None
+        if payment_result.get('coupon_applied'):
+            coupon_to_use = payment_result.get('coupon')
+        # If no coupon was applied in this payment, we don't carry over the old one
         
         # Create a new subscription
         new_subscription = BusinessSubscription.objects.create(
@@ -306,8 +307,8 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
             next_billing_date=new_end_date,
             square_subscription_id=payment_result['payment_id'],
             square_customer_id=business.square_customer_id,
-            coupon_used=old_subscription.coupon_used if payment_result.get('coupon_applied') else None,
-            new_coupon=old_subscription.new_coupon if payment_result.get('coupon_applied') else None,
+            coupon_used=coupon_to_use,
+            new_coupon=None, # Clear new_coupon after it has been applied/processed
             is_active=True
         )
         
@@ -323,7 +324,7 @@ def _handle_successful_renewal(business, old_subscription, plan, payment_result,
         final_price = payment_result.get('final_price', plan.price)
         
         # Determine status based on payment result
-        is_free_plan = payment_result.get('message') == 'Free plan - no payment required'
+        is_free_plan = payment_result.get('final_price') == 0
         
         # Create billing history record with coupon details
         billing_record = BillingHistory.objects.create(

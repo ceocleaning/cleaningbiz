@@ -27,6 +27,7 @@ import json
 from automation.utils import format_phone_number
 from decimal import Decimal
 from notification.services import NotificationService
+from subscription.tasks import process_subscription_renewals
 logger = logging.getLogger(__name__)
 
 
