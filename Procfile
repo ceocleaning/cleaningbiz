@@ -1,1 +1,1 @@
-web: (python manage.py qcluster &) && gunicorn leadsAutomation.wsgi
+web: bash start.sh
