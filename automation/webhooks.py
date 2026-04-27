@@ -9,6 +9,7 @@ import threading
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware, is_naive
 import os
+import base64
 
 from rest_framework import status
 from .models import *
@@ -35,6 +36,24 @@ def thumbtack_webhook(request, secretKey):
         return JsonResponse({'message': 'Secret Key Not Verified'}, status=500)
 
     business = verifySecretKey.first().business
+
+    # Basic Authentication check
+    auth_header = request.META.get('HTTP_AUTHORIZATION')
+    if not auth_header or not auth_header.startswith('Basic '):
+        return JsonResponse({'message': 'Authentication required'}, status=401)
+    
+    try:
+        encoded_credentials = auth_header.split(' ')[1]
+        decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
+        username, password = decoded_credentials.split(':', 1)
+        
+        # Verify credentials
+        # Use business.user.username and secretKey as the expected credentials
+        if not business.user or username != business.user.username or password != secretKey:
+            return JsonResponse({'message': 'Authentication failed'}, status=401)
+    except Exception as e:
+        print(f"Auth error: {e}")
+        return JsonResponse({'message': 'Invalid authentication'}, status=401)
 
     if request.method == 'POST':
         # Initialize webhook log
@@ -146,7 +165,7 @@ def thumbtack_webhook(request, secretKey):
                 business=business,
                 name=f"{customer_data.get('firstName', '')} {customer_data.get('lastName', '')}".strip(),
                 email=customer_data.get('email', None),  # May be None
-                phone_number=customer_data.get('Phone', ''),
+                phone_number=customer_data.get('phone', ''),
                 
                 # Address fields
                 address1=location_data.get('address1', ''),

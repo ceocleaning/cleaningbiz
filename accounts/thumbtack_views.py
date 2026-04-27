@@ -229,11 +229,11 @@ def create_thumbtack_webhook(access_token, business):
     # Prepare the webhook payload for supply-side
     payload = {
         "webhookURL": webhook_url,
-        "eventTypes": ["NegotiationCreatedV4"],
+        "eventTypes": ["NegotiationCreatedV4",],
         "enabled": True,
         "auth": {
-            "username": "webhook_user",
-            "password": secrets.token_urlsafe(32)
+            "username": business.user.username,
+            "password": api_credential.secretKey
         }
     }
     
@@ -700,8 +700,12 @@ def thumbtack_update_webhook(request):
     
     payload = {
         "webhookURL": webhook_url,
-        "eventTypes": ["MessageCreatedV4"],
-        "enabled": True
+        "eventTypes": ["NegotiationCreatedV4"],
+        "enabled": True,
+        "auth": {
+            "username": business.user.username,
+            "password": api_credential.secretKey
+        }
     }
     
     try:
