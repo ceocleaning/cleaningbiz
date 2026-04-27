@@ -52,7 +52,6 @@ def thumbtack_connect(request):
                f"audience={THUMBTACK_AUDIENCE}"
     
 
-    print(f"Auth URL: {auth_url}")
     
     # Redirect the user to Thumbtack's authorization page
     return HttpResponseRedirect(auth_url)
@@ -230,7 +229,7 @@ def create_thumbtack_webhook(access_token, business):
     # Prepare the webhook payload for supply-side
     payload = {
         "webhookURL": webhook_url,
-        "eventTypes": ["MessageCreatedV4"],
+        "eventTypes": ["NegotiationCreatedV4"],
         "enabled": True,
         "auth": {
             "username": "webhook_user",
