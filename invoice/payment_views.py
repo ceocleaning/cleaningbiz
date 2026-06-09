@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 import json
 import uuid
-from square.client import Client
+from square import Square as Client
 from .models import Invoice, Payment
 from accounts.models import Business, SquareCredentials, PayPalCredentials
 from .utils import handle_payment_completed
@@ -67,7 +67,7 @@ def process_payment(request):
 
         # Initialize Square client
         client = Client(
-            access_token=square_credentials.access_token,
+            token=square_credentials.access_token,
             environment='sandbox' if settings.DEBUG else 'production'
         )
 
@@ -201,7 +201,7 @@ def process_manual_payment(request):
 
                 # Initialize Square client
                 client = Client(
-                    access_token=square_credentials.access_token,
+                    token=square_credentials.access_token,
                     environment='sandbox' if settings.DEBUG else 'production'
                 )
 

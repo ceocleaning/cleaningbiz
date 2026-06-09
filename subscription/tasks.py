@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 from datetime import timedelta
 import uuid
 import json
-from square.client import Client
+from square import Square as Client
 from django.db.models import Q
 import logging
 from django.db import transaction
@@ -63,7 +63,7 @@ def process_subscription_renewals():
     
     # Initialize Square client
     square_client = Client(
-        access_token=platform_settings.square_access_token,
+        token=platform_settings.square_access_token,
         environment=platform_settings.square_environment
     )
     
@@ -776,7 +776,7 @@ def auto_upgrade_subscription():
     platform_settings = PlatformSettings.objects.first()
     # Initialize Square client
     square_client = Client(
-        access_token=platform_settings.square_access_token,
+        token=platform_settings.square_access_token,
         environment=platform_settings.square_environment
     )
 

@@ -11,7 +11,7 @@ import requests
 import stripe
 import json
 from base64 import b64encode
-from square.client import Client
+from square import Square as Client
 
 
 @receiver(post_save, sender=Booking)
@@ -44,7 +44,7 @@ def capture_square_payment(payment):
         creds = business.square_credentials
         
         client = Client(
-            access_token=creds.access_token,
+            token=creds.access_token,
             environment='sandbox' if settings.DEBUG else 'production'
         )
         

@@ -249,7 +249,17 @@ CORS_ALLOW_HEADERS = [
 ]
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://localhost:8000', 'https://ceocleaners.up.railway.app', 'https://ai.cleaningbizai.com', 'https://cleaningbizai.up.railway.app', 'https://127.0.0.1:8000', 'http://127.0.0.1:8000', 'https://cleaningbizai.com']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'https://localhost:8000', 
+    'https://ceocleaners.up.railway.app', 
+    'https://ai.cleaningbizai.com', 
+    'https://cleaningbizai.up.railway.app', 
+    'https://127.0.0.1:8000', 
+    'http://127.0.0.1:8000', 
+    'https://cleaningbizai.com',
+    "https://ad1e-39-47-47-199.ngrok-free.app"
+    ]
 
 
 

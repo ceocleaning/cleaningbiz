@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from django.db import models
 import json
 import uuid
-from square.client import Client
+from square import Square as Client
 
 from .models import SubscriptionPlan, BusinessSubscription, BillingHistory, Feature, Coupon, CouponUsage, UsageTracker, SetupFee, SubscriptionRenewalLog
 from saas.models import PlatformSettings
@@ -78,7 +78,7 @@ def subscription_management(request):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
@@ -203,11 +203,11 @@ def billing_history(request):
     if business.square_card_id and business.square_customer_id:
         try:
             # Initialize Square client
-            from square.client import Client
+            from square import Square as Client
             from django.conf import settings
             
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
@@ -532,7 +532,7 @@ def select_plan(request, plan_id=None):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
@@ -654,7 +654,7 @@ def process_payment(request, plan_id):
         if not is_free:
             # Initialize Square client
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
@@ -1098,7 +1098,7 @@ def manage_card(request):
         try:
             # Initialize Square client
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
@@ -1151,7 +1151,7 @@ def manage_card(request):
         
         # Initialize Square client
         square_client = Client(
-            access_token=platform_settings.square_access_token,
+            token=platform_settings.square_access_token,
             environment=platform_settings.square_environment
         )
         
@@ -1305,7 +1305,7 @@ def delete_card(request):
             
             # Initialize Square client
             square_client = Client(
-                access_token=platform_settings.square_access_token,
+                token=platform_settings.square_access_token,
                 environment=platform_settings.square_environment
             )
             
