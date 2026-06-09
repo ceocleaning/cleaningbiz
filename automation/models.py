@@ -365,4 +365,4 @@ class LeadsWebhookLog(models.Model):
             models.Index(fields=['status']),
         ]
     def __str__(self):
-        return f"{self.business.name} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.business.businessName} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"

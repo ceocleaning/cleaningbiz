@@ -87,7 +87,11 @@ def thumbtack_webhook(request, secretKey):
             )
             
             # Extract required fields from the webhook payload
-            lead_data = data.get('data', {})
+            # Support both wrapped format (data: { ... }) and flat format [SF]
+            lead_data = data.get('data')
+            if not isinstance(lead_data, dict):
+                lead_data = data
+            
             customer_data = lead_data.get('customer', {})
             request_data = lead_data.get('request', {})
             location_data = request_data.get('location', {})
@@ -100,35 +104,38 @@ def thumbtack_webhook(request, secretKey):
             
             # Extract questions and answers from details
             for detail in details_list:
-                question = detail.get('question', '')
-                answer = detail.get('answer', '')
-                if question and answer:
-                    details_dict[question] = answer
+                if isinstance(detail, dict):
+                    question = detail.get('question', '')
+                    answer = detail.get('answer', '')
+                    if question and answer:
+                        details_dict[question] = answer
             
             # Create separate tracking for category information
             category = request_data.get('category', {})
             category_name = category.get('name', 'Unknown') if category else 'Unknown'
             
-            # Create separate tracking for proposed times
+            # Create separate tracking for proposed times [REH]
             proposed_times = request_data.get('proposedTimes', [])
-            proposed_start_datetime_str = proposed_times[0].get('start')
-            proposed_end_datetime_str = proposed_times[0].get('end')
-            
-            # Extract proposed start and end datetime
             proposed_start = None
             proposed_end = None
             
-            if proposed_start_datetime_str:
-                try:
-                    proposed_start = datetime.fromisoformat(proposed_start_datetime_str.replace('Z', '+00:00'))
-                except Exception as e:
-                    print(f"Error parsing proposed start datetime: {e}")
-            
-            if proposed_end_datetime_str:
-                try:
-                    proposed_end = datetime.fromisoformat(proposed_end_datetime_str.replace('Z', '+00:00'))
-                except Exception as e:
-                    print(f"Error parsing proposed end datetime: {e}")
+            if proposed_times and isinstance(proposed_times, list):
+                first_time = proposed_times[0]
+                if isinstance(first_time, dict):
+                    proposed_start_datetime_str = first_time.get('start')
+                    proposed_end_datetime_str = first_time.get('end')
+                    
+                    if proposed_start_datetime_str:
+                        try:
+                            proposed_start = datetime.fromisoformat(proposed_start_datetime_str.replace('Z', '+00:00'))
+                        except Exception as e:
+                            print(f"Error parsing proposed start datetime: {e}")
+                    
+                    if proposed_end_datetime_str:
+                        try:
+                            proposed_end = datetime.fromisoformat(proposed_end_datetime_str.replace('Z', '+00:00'))
+                        except Exception as e:
+                            print(f"Error parsing proposed end datetime: {e}")
             
 
             # Parse estimated price

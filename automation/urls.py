@@ -17,7 +17,6 @@ urlpatterns = [
     path('webhook/<str:secretKey>/', handle_retell_webhook, name='retell_webhook'),
     path('webhook/thumbtack/<str:secretKey>/', thumbtack_webhook, name='thumbtack_webhook'),
     path('lead/webhook/<str:secretKey>/', chatgpt_analysis_webhook, name='chatgpt_analysis_webhook'),
-
     # Lead Management URLs
     path('leads/', views.all_leads, name='all_leads'),
     path('leads/create/', views.create_lead, name='create_lead'),

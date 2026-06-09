@@ -265,7 +265,7 @@ def register_business(request):
                 address=address,
                 job_assignment=job_assignment,
                 timezone=selected_timezone,
-                cleaner_payout_percentage=cleaner_payout_percentage,
+                cleaner_payout_percentage=int(cleaner_payout_percentage),
                 isActive=False,  # Set to False by default
                 isApproved=False  # Set to False by default
             )
